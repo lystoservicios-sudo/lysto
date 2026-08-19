@@ -1,12 +1,23 @@
-export function getPublicSupabaseEnv() {
+import { parsePublicEnv, type EnvSource } from '../config/env'
+
+function getNextPublicEnv(): EnvSource {
   return {
-    url: process.env.NEXT_PUBLIC_SUPABASE_URL,
-    anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   }
 }
 
-export function assertPublicSupabaseEnv() {
-  const env = getPublicSupabaseEnv()
-  if (!env.url || !env.anonKey) throw new Error('Missing public Supabase environment variables')
-  return env as { url: string; anonKey: string }
+export function getPublicSupabaseEnv(env: EnvSource = getNextPublicEnv()) {
+  const parsed = parsePublicEnv(env)
+
+  return {
+    url: parsed.supabaseUrl,
+    anonKey: parsed.supabasePublishableKey
+  }
+}
+
+export function assertPublicSupabaseEnv(env: EnvSource = getNextPublicEnv()) {
+  return getPublicSupabaseEnv(env)
 }
