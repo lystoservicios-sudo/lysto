@@ -1,19 +1,27 @@
-node_modules
-.next
-out
-dist
-coverage
-playwright-report
-test-results
+# Dependencies and build output
+node_modules/
+.next/
+out/
+dist/
+coverage/
+
+# Environment files
 .env
 .env.*
 !.env.example
+
+# TypeScript
+*.tsbuildinfo
+
+# Test artifacts
+playwright-report/
+test-results/
+
+# Local tooling and OS files
 .DS_Store
 *.log
-.vercel
-.supabase
+.vercel/
 
-*.tsbuildinfo
-.next/
-node_modules/
-.env.local
+# Supabase local state
+.supabase/
+supabase/.temp/
