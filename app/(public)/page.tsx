@@ -17,7 +17,7 @@ export default function HomePage() {
               <h1 className="text-5xl font-black tracking-tight text-slate-950 sm:text-6xl">No metas a cualquiera en tu casa.</h1>
               <p className="max-w-2xl text-lg leading-8 text-slate-600">Lysto conecta hogares con técnicos de aire acondicionado verificados, con diagnóstico preliminar, pago protegido, seguimiento y respaldo de calidad.</p>
             </div>
-            <div className="flex flex-col gap-3 sm:flex-row"><ButtonLink href="/registro" size="lg">Solicitar técnico</ButtonLink><ButtonLink href="/servicios/aire-acondicionado" variant="secondary" size="lg">Ver servicio inicial</ButtonLink></div>
+            <div className="flex flex-col gap-3 sm:flex-row"><ButtonLink href="/login" size="lg">Solicitar técnico</ButtonLink><ButtonLink href="/servicios/aire-acondicionado" variant="secondary" size="lg">Ver servicio inicial</ButtonLink></div>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">{benefits.map((benefit) => <Card key={benefit} className="p-4 text-sm font-bold text-slate-700">{benefit}</Card>)}</div>
           </div>
           <Card className="relative overflow-hidden p-5 sm:p-7">

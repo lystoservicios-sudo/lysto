@@ -15,8 +15,7 @@ export function MarketingHeader() {
           <Link href="/ayuda">Ayuda</Link>
         </nav>
         <div className="flex items-center gap-2">
-          <ButtonLink href="/login" variant="ghost" className="hidden sm:inline-flex">Ingresar</ButtonLink>
-          <ButtonLink href="/registro">Solicitar</ButtonLink>
+          <ButtonLink href="/login">Ingresar</ButtonLink>
         </div>
       </div>
     </header>
