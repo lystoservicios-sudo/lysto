@@ -25,12 +25,6 @@ export type LoginActionState = {
   message: string
 }
 
-export const initialLoginState: LoginActionState = {
-  status: 'idle',
-  email: '',
-  message: ''
-}
-
 function textValue(formData: FormData, name: string): string {
   const value = formData.get(name)
   return typeof value === 'string' ? value : ''

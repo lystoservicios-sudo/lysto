@@ -6,10 +6,15 @@ import { LockKeyhole, ShieldCheck } from 'lucide-react'
 
 import { Input } from '@/components/ui/input'
 import {
-  initialLoginState,
   loginAction,
   type LoginActionState
 } from './actions'
+
+const initialLoginState: LoginActionState = {
+  status: 'idle',
+  email: '',
+  message: ''
+}
 
 export type LoginFormViewProps = {
   state: LoginActionState
