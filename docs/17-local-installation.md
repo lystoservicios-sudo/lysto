@@ -1,44 +1,32 @@
 # Instalación local
 
-## 1. Copiar archivos al repo
+La guía canónica y mantenida está en [`docs/development/local-setup.md`](development/local-setup.md).
+
+## Inicio rápido seguro
+
+Usá Node.js 22 y ejecutá pnpm mediante Corepack. Corepack lee `packageManager` y selecciona pnpm 9.15.0 sin instalar comandos globales:
 
 ```bash
-git clone https://github.com/lystoservicios-sudo/lysto.git
-cd lysto
-git checkout -b feat/mvp-operativo-base
-# descomprimir el ZIP en esta carpeta
+node --version
+corepack pnpm --version
+corepack pnpm install --frozen-lockfile
 ```
 
-## 2. Instalar pnpm
+`corepack enable` es opcional. Si falla por permisos, no requiere una terminal de administrador; continuá usando `corepack pnpm ...`.
+
+Creá `.env.local` a partir de `.env.example` y completá solo valores de desarrollo mediante canales seguros. No commitees credenciales.
+
+Ejecutá los gates actuales:
 
 ```bash
-corepack enable
-corepack prepare pnpm@9.15.0 --activate
+corepack pnpm lint
+corepack pnpm typecheck
+corepack pnpm test
+corepack pnpm build
 ```
 
-## 3. Instalar dependencias y verificar
+## Supabase
 
-```bash
-pnpm install
-pnpm lint
-pnpm typecheck
-pnpm test
-pnpm test:e2e
-pnpm build
-```
+No enlaces un proyecto ni apliques migraciones desde esta guía. Las migraciones, seeds y políticas Supabase heredadas no están aprobadas para desplegar hasta completar Task 4 de seguridad, autorización y RLS.
 
-## 4. Supabase
-
-```bash
-codex mcp add supabase --url "https://mcp.supabase.com/mcp?project_ref=dqonlqcurvjnjgsczevu&features=docs%2Caccount%2Cdatabase%2Cdebugging%2Cdevelopment%2Cfunctions%2Cbranching"
-codex mcp login supabase
-/mcp
-npx skills add supabase/agent-skills
-```
-
-Aplicar migraciones solo después de revisar:
-
-```bash
-supabase link --project-ref dqonlqcurvjnjgsczevu
-supabase db push
-```
+La presencia de esos archivos no demuestra que exista un proyecto Supabase real conectado.

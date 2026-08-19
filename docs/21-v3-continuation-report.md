@@ -1,5 +1,7 @@
 # Lysto V3 continuation report
 
+> **DOCUMENTO HISTÓRICO — CORTE V3 DEL 2026-08-19.** Los conteos y bloqueos que siguen se conservan como registro de ese momento y ya no representan el estado vigente. Consultá [`README.md`](../README.md), [`checks/TEST_RESULTS.md`](../checks/TEST_RESULTS.md) y [`docs/18-current-implementation-status.md`](18-current-implementation-status.md) para la evidencia actual.
+
 Este bloque agrega más capas funcionales al MVP operativo sin depender todavía de GitHub, Supabase real ni Mercado Pago real.
 
 ## Nuevas funciones agregadas

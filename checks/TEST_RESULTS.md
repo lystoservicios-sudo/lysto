@@ -1,60 +1,37 @@
-# Test results
+# Resultados de calidad
 
 Fecha: 2026-08-19
 
-## Ejecutado en este entorno
+## Gates ejecutados
 
 ```bash
-node --experimental-strip-types tests/run-domain-tests.ts
-```
-
-Resultado actual:
-
-```txt
-124/124 tests passed
-```
-
-Cobertura de los tests ejecutados:
-
-- Diagnóstico preliminar de aire acondicionado.
-- Pricing Flexible/Prioridad.
-- Máquina de estados de requests, jobs y payments.
-- Matching profesional.
-- Permisos por rol.
-- Reviews y calidad.
-- Cierre técnico.
-- Validación de solicitud cliente.
-- Flujo operativo completo cliente → pago → job → asignación → aceptación → cierre → review.
-- Cola operativa admin.
-- Herramientas del profesional.
-- Comprobante público seguro.
-- Workflows admin.
-- Respuesta profesional a solicitudes.
-- Registro de equipos.
-- Garantías, soporte y notificaciones.
-- KPIs operativos.
-- Contrato de schema Supabase: tablas obligatorias, RLS y migraciones sin versiones duplicadas.
-- Mantenimientos recomendados.
-- Validaciones de formularios cliente/profesional/admin/cierre técnico.
-- Inventario de pantallas obligatorias.
-- Inventario de route handlers API obligatorios.
-- Migración transaccional RPC de Supabase.
-- Simulación integral end-to-end de dominio.
-- Auth/access redirects.
-- Scheduling/SLA.
-- Payout/liquidación.
-- Release gates.
-
-## No ejecutado en este entorno
-
-No se pudieron ejecutar estos comandos porque no hay dependencias instaladas en el runtime actual y no hay acceso al registry npm desde este contenedor:
-
-```bash
-pnpm install
 pnpm lint
 pnpm typecheck
-pnpm test:e2e
+pnpm test
 pnpm build
 ```
 
-Quedan preparados en `package.json`, `vitest.config.ts`, `playwright.config.ts` y `.github/workflows/ci.yml` para correr en la máquina local o GitHub Actions.
+Resultados:
+
+- lint: aprobado sin warnings ni errores;
+- typecheck: aprobado;
+- tests de dominio: 124/124 aprobados;
+- tests unitarios: 41/41 aprobados en 5 archivos;
+- build de producción: aprobado con 77 rutas generadas.
+
+La suite cubre dominio, transiciones de estado, pricing, matching, permisos, formularios, workflows operativos, seguridad del comprobante público, contratos API, mapeos de repositorio, adaptadores Supabase, configuración de entorno y gates de release.
+
+## E2E
+
+Los tests E2E de Playwright no se ejecutaron en esta evidencia. La configuración existente no demuestra que los flujos funcionen en un navegador ni contra servicios reales.
+
+## Límites de la evidencia
+
+- Varias pantallas y rutas API todavía utilizan mocks, fixtures o respuestas contractuales.
+- Los tests aprobados no demuestran una integración real con Supabase, Mercado Pago ni otros proveedores.
+- Las migraciones, seeds y políticas Supabase heredadas no se consideran desplegables hasta completar Task 4 de seguridad, autorización y RLS.
+- No se validó un despliegue productivo.
+
+## Próximo hito
+
+Task 4 debe revisar seguridad y RLS antes de aplicar Supabase en cualquier entorno. Después corresponderá conectar integraciones controladas y ejecutar los recorridos E2E críticos.

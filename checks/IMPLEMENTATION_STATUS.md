@@ -1,61 +1,37 @@
-# Estado de implementación Lysto MVP Operativo
+# Estado de implementación de Lysto
 
 Última actualización: 2026-08-19
 
-## Inventario actual
-- Pantallas/rutas con `page.tsx`: 61
-- Route handlers API: 26
-- Módulos TS en `lib/`: 66
-- Tests de dominio: 29 archivos
-- Migraciones Supabase: 4
-- Tests ejecutados en este entorno: 124/124 passed
+## Estado actual
 
-## Estado real
-Esta versión es una base de MVP operativo muy avanzada: tiene pantallas, rutas, diseño, lógica de dominio, contratos API, migraciones, RLS, RPC transaccionales, tests y documentación. Todavía no puede llamarse producción 100% porque faltan credenciales reales, dependencias instaladas en tu entorno, conexión Supabase real, Mercado Pago real, build local/CI y subida al repo.
+La rama `feat/mvp-implementation` es una base de desarrollo verificada. Incluye pantallas, rutas, dominio, contratos API, configuración reproducible y artefactos Supabase heredados, pero todavía no constituye un producto conectado o desplegado.
 
-## Pantallas implementadas
-- Público: landing, servicio aire acondicionado, cómo funciona, ayuda, login, registro, comprobante público.
-- Cliente: dashboard, wizard completo, solicitudes, detalle, trabajos, seguimiento, review, equipos, direcciones, pagos, perfil, garantías, mantenimientos.
-- Profesional: dashboard, onboarding por invitación, solicitudes, detalle, trabajos, operación, agenda, equipos, pagos, perfil, Mercado Pago, soporte, capacitación.
-- Admin: dashboard, solicitudes, detalle, trabajos, detalle, profesionales, invitaciones, clientes, equipos, pagos, precios, servicios, diagnóstico, calidad, configuración, auditoría, reclamos, garantías, notificaciones, zonas, reportes, matching, marketplace.
+Varias pantallas y APIs conservan mocks, fixtures o respuestas contractuales. No se afirma una integración real con Supabase, Mercado Pago ni otros proveedores.
 
-## Funciones implementadas
-- Diagnóstico preliminar.
-- Precios Flexible/Prioridad.
-- Matching y ranking profesional.
-- Asignación admin.
-- Aprobación profesional.
-- Onboarding profesional.
-- Respuesta profesional aceptar/rechazar.
-- Validación de solicitud cliente.
-- Validación de media.
-- Flujo completo de servicio.
-- Máquina de estados.
-- Pagos, split e idempotencia.
-- Registro de equipo.
-- Cierre técnico.
-- Comprobante público.
-- Review y recálculo de rating.
-- Calidad/reclamos/garantías.
-- Notificaciones.
-- KPIs operativos.
-- Auditoría admin.
-- Scheduling/SLA.
-- Liquidación/payout.
-- Validaciones de formularios.
-- Repository layer Supabase preparado.
-- RPC transaccionales Supabase para solicitud, webhook, asignación, respuesta profesional, cierre y review.
+## Evidencia local
 
-## Base de datos
-- Migración 001: esquema central completo.
-- Migración 002: extensiones operativas.
-- Migración 003: funciones, triggers y políticas adicionales.
-- Migración 004: flujos transaccionales RPC.
-- Seed inicial de aire acondicionado.
+- lint aprobado;
+- typecheck aprobado;
+- 124/124 tests de dominio aprobados;
+- 41/41 tests unitarios aprobados;
+- build aprobado con 77 rutas;
+- Playwright E2E no ejecutado.
 
-## Bloqueos externos reales
-- GitHub: la integración devolvió 403 para escribir en `lystoservicios-sudo/lysto`.
-- Dependencias: este contenedor no puede descargar npm/pnpm.
-- Supabase real: las migraciones están creadas, pero requieren aplicar con Supabase MCP/CLI autenticado en tu entorno.
-- Mercado Pago real: requiere credenciales sandbox/producción, app marketplace, webhook URL y OAuth.
-- Producción: requiere correr lint/typecheck/build/e2e en entorno con dependencias.
+Ver `checks/TEST_RESULTS.md` para el detalle y las limitaciones.
+
+## Alcance implementado
+
+- Público: landing, servicio, ayuda, autenticación y comprobante.
+- Cliente: dashboard, solicitud, trabajos, review, equipos, direcciones, pagos, garantías y mantenimientos.
+- Profesional: onboarding, solicitudes, trabajos, agenda, pagos, perfil, soporte y capacitación.
+- Admin: operación, matching, profesionales, clientes, pagos, pricing, calidad, configuración, auditoría y reportes.
+- Dominio: diagnóstico, pricing, matching, estados, pagos, cierre, reviews, calidad, soporte, scheduling, liquidaciones y gates de release.
+- APIs y repositorios: contratos y adaptadores listos para continuar la integración.
+
+## Gate pendiente
+
+Task 4 debe auditar seguridad, autorización, RLS, privilegios, storage y autenticación. Hasta entonces, las migraciones, seeds y políticas Supabase heredadas no deben aplicarse en staging o producción.
+
+Después de ese gate corresponde reemplazar mocks, configurar secrets de forma segura, validar proveedores reales, ejecutar E2E y preparar el despliegue.
+
+La publicación de la rama y el PR están pendientes por decisión de coordinación, no por un error de permisos vigente.

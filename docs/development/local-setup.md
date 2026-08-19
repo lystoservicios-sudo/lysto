@@ -4,23 +4,23 @@
 
 El proyecto usa Node.js 22 y pnpm 9.15.0. Un gestor de versiones de Node puede leer `.node-version` para seleccionar la versión correcta.
 
-Después de instalar Node.js 22, habilitá Corepack y activá la versión de pnpm declarada por el proyecto:
+Después de instalar Node.js 22, invocá pnpm mediante Corepack. Corepack lee la versión exacta desde `packageManager`:
 
 ```bash
 node --version
-corepack enable
-corepack prepare pnpm@9.15.0 --activate
-pnpm --version
+corepack pnpm --version
 ```
 
 Las versiones esperadas son Node `v22.x` y pnpm `9.15.0`. No instales otra versión de pnpm ni actualices dependencias como parte del setup.
+
+`corepack enable` es opcional y solo crea comandos globales más cortos. Si falla por permisos de escritura, no solicites permisos de administrador: usá `corepack pnpm ...` como se muestra en esta guía.
 
 ## Instalar dependencias
 
 Desde la raíz del repositorio, instalá exactamente las versiones registradas en el lockfile:
 
 ```bash
-pnpm install --frozen-lockfile
+corepack pnpm install --frozen-lockfile
 ```
 
 Si el lockfile y `package.json` no coinciden, detenete y revisá el cambio en lugar de regenerar o actualizar dependencias automáticamente.
@@ -46,16 +46,16 @@ Completá únicamente las variables necesarias para la tarea con valores de desa
 Iniciá la aplicación con:
 
 ```bash
-pnpm dev
+corepack pnpm dev
 ```
 
 Antes de entregar un cambio, ejecutá las comprobaciones aplicables:
 
 ```bash
-pnpm lint
-pnpm typecheck
-pnpm test
-pnpm build
+corepack pnpm lint
+corepack pnpm typecheck
+corepack pnpm test
+corepack pnpm build
 ```
 
 ## Supabase local
@@ -69,7 +69,7 @@ Los archivos temporales de Supabase deben permanecer fuera del control de versio
 Usá un worktree y una rama por tarea. En cada worktree:
 
 1. Confirmá la rama activa antes de editar.
-2. Ejecutá `pnpm install --frozen-lockfile` dentro de ese worktree.
+2. Ejecutá `corepack pnpm install --frozen-lockfile` dentro de ese worktree.
 3. Creá su propio `.env.local` si la tarea lo necesita.
 4. Revisá el diff y las verificaciones antes de commitear.
 

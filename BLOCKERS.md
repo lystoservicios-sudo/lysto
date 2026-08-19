@@ -1,84 +1,56 @@
-# Blockers reales para terminar integración en entorno del proyecto
+# Bloqueos y decisiones pendientes
 
-Estas tareas requieren acceso, credenciales o decisiones externas. No bloquean seguir desarrollando pantallas, dominio y tests locales, pero sí bloquean dejar producción real conectada.
+La base local puede seguir evolucionando, pero todavía no está habilitada para operar en producción. Estos son los bloqueos reales para conectar servicios externos y desplegar.
 
-## 1. GitHub
+## 1. Publicación en GitHub
 
-Estado: la integración intentó escribir en `lystoservicios-sudo/lysto` y devolvió `403 Resource not accessible by integration`.
+El push y la apertura de un PR se postergan por decisión de coordinación de este trabajo; no existe un error de permisos registrado como bloqueo actual.
 
-Acción requerida:
+Cuando se autorice la publicación, corresponde revisar el historial local, subir la rama elegida y abrir el PR. Este documento no presupone ese permiso.
 
-```bash
-git clone https://github.com/lystoservicios-sudo/lysto.git
-cd lysto
-git checkout -b feat/mvp-operativo-base
-unzip /ruta/lysto-mvp-operativo-v3.zip -d /tmp/lysto_pkg
-cp -R /tmp/lysto_pkg/lysto/. .
-git add .
-git commit -m "chore: initialize lysto mvp operativo"
-git push -u origin feat/mvp-operativo-base
-```
+## 2. Gate de seguridad y RLS de Supabase
 
-## 2. Dependencias
+El repositorio contiene migraciones, seeds y políticas heredadas, pero no están aprobadas para aplicarse a un proyecto Supabase local o remoto. Task 4 debe revisar como mínimo:
 
-Estado: el entorno actual no pudo descargar pnpm desde registry.
+- aislamiento por rol y propietario;
+- cobertura y comportamiento de RLS;
+- privilegios de funciones y uso de `security definer`;
+- exposición de datos sensibles;
+- operaciones administrativas y auditoría;
+- seguridad de storage y flujos de autenticación.
 
-Acción requerida en tu máquina:
+Hasta completar esa revisión, no se deben enlazar ni desplegar los artefactos Supabase heredados. Su presencia en el repositorio no demuestra una conexión real.
 
-```bash
-corepack enable
-corepack prepare pnpm@9.15.0 --activate
-pnpm install
-pnpm lint
-pnpm typecheck
-pnpm test
-pnpm test:e2e
-pnpm build
-```
+`pnpm audit --prod` no está limpio actualmente: reporta advisories transitivos en Sharp, PostCSS y UUID. No se conoce una superficie habilitada que procese imágenes o CSS no confiables ni buffers UUID, pero las dependencias deben actualizarse y el audit debe revalidarse antes de staging o producción. Este punto queda en el backlog de Task 4/seguridad.
 
-## 3. Supabase MCP / Supabase real
+## 3. Secrets e integraciones externas
 
-Estado: migraciones y seeds están creados, pero no aplicados al proyecto real desde este entorno.
+Faltan credenciales y configuración suministradas por los responsables de cada entorno, entre ellas Supabase, Mercado Pago y proveedores opcionales de email, WhatsApp o IA.
 
-Acción requerida:
+Los valores reales deben cargarse por mecanismos seguros del entorno o de CI. No deben escribirse en `.env.example`, documentación, commits ni logs.
 
-```bash
-codex mcp add supabase --url "https://mcp.supabase.com/mcp?project_ref=dqonlqcurvjnjgsczevu&features=docs%2Caccount%2Cdatabase%2Cdebugging%2Cdevelopment%2Cfunctions%2Cbranching"
-codex mcp login supabase
-/mcp
-```
+## 4. Mercado Pago
 
-Luego aplicar migraciones desde Supabase CLI/Codex MCP.
+Antes de habilitar pagos reales faltan:
 
-## 4. Secrets
+- credenciales sandbox o producción;
+- una URL pública y segura para webhooks;
+- validación de firma e idempotencia con el proveedor real;
+- definición del modelo de cobro, split y liquidación;
+- validación operativa y contable del onboarding profesional.
 
-No se subió ningún secreto al repo. Configurar localmente:
+## 5. Decisiones legales y operativas
 
-```env
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
-MERCADOPAGO_PUBLIC_KEY=
-MERCADOPAGO_ACCESS_TOKEN=
-MERCADOPAGO_WEBHOOK_SECRET=
-LYSTO_DEFAULT_PLATFORM_FEE_RATE=0.18
-```
+Requieren validación humana:
 
-## 5. Mercado Pago real
+- términos, privacidad y texto legal de garantía;
+- política de cancelación y devolución;
+- relación contractual con profesionales;
+- comisión y reglas de liquidación;
+- procedimientos de soporte, reclamos y calidad.
 
-Pendiente:
+## 6. E2E y despliegue
 
-- Credenciales sandbox/producción.
-- Webhook URL pública.
-- Confirmar modelo exacto: cobro directo, autorización/captura, split marketplace, pago a cuenta o liquidación posterior.
-- OAuth profesional para split.
+Playwright está configurado, pero no se ejecutó una suite E2E en navegador para esta evidencia. Tampoco hay un despliegue productivo validado.
 
-## 6. Decisiones comerciales/legales
-
-Pendiente de validación humana:
-
-- Texto legal de garantía.
-- Política de devolución.
-- Relación comercial con profesionales.
-- Comisión Lysto.
-- Momento exacto de liberación/liquidación de pagos.
+Después de Task 4 y de configurar entornos seguros, deben validarse los recorridos críticos E2E y los gates de release antes de cualquier salida a producción.

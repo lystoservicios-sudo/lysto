@@ -1,89 +1,65 @@
 # Estado actual de implementación
 
-Este documento registra el avance real luego de continuar el trabajo sin depender de GitHub ni Supabase productivo.
+Fecha de evidencia: 2026-08-19
 
-## Implementado localmente
+Esta rama es una base de desarrollo verificada, no un sistema operativo de punta a punta ni un entorno productivo conectado.
 
-### UI/pantallas
-- Landing pública.
-- Página del servicio de aire acondicionado.
-- Cómo funciona.
-- Ayuda/FAQ.
-- Login.
-- Registro cliente.
-- Comprobante público.
-- Panel cliente.
-- Solicitudes cliente: listado y detalle.
-- Trabajos cliente: listado y detalle.
-- Equipos cliente: listado y detalle.
-- Direcciones cliente.
-- Pagos cliente.
-- Perfil cliente.
-- Panel profesional.
-- Onboarding profesional por invitación.
-- Solicitudes profesional: listado y detalle.
-- Trabajos profesional: listado y operación.
-- Agenda profesional.
-- Pagos profesional.
-- Perfil profesional.
-- Mercado Pago profesional.
-- Panel admin.
-- Solicitudes admin: listado y detalle con matching sugerido.
-- Trabajos admin: listado y detalle.
-- Profesionales admin: listado, detalle e invitaciones.
-- Clientes admin: listado y detalle.
-- Equipos admin.
-- Pagos admin.
-- Precios admin.
-- Diagnóstico admin.
-- Servicios admin.
-- Calidad admin.
-- Configuración admin.
-- Auditoría admin.
+## Implementado en la base local
 
-### Lógica de dominio
-- Diagnóstico preliminar.
-- Precio Flexible/Prioridad.
-- Matching/ranking profesional.
-- Máquina de estados.
-- Cálculo split marketplace.
-- Validación de webhooks duplicados.
-- Validación de permisos de rutas por rol.
-- Validación de wizard cliente.
-- Validación de cierre técnico.
-- Review y score de calidad.
-- Cola operativa admin.
-- Checklist de herramientas.
-- Comprobante público seguro.
-- Lifecycle de punta a punta.
+### Producto y UI
 
-### Base de datos
-- Migración inicial completa con perfiles, clientes, profesionales, solicitudes, respuestas, media, diagnósticos, precios, trabajos, equipos, pagos, reviews, reclamos, garantías, calidad, settings y auditoría.
-- Migración de extensiones operativas con zonas, capacitación profesional, notificaciones y comprobantes públicos.
-- Seed de aire acondicionado, problemas, preguntas, opciones, precios, settings y módulos de capacitación.
-- RLS base y políticas iniciales para recursos sensibles.
+- Superficies públicas para presentación, servicio, ayuda, login, registro y comprobante.
+- Áreas de cliente para solicitudes, trabajos, equipos, direcciones, pagos y perfil.
+- Área profesional con onboarding, solicitudes, trabajos, agenda, pagos y perfil.
+- Área administrativa para operación, matching, profesionales, clientes, equipos, pagos, precios, diagnóstico, calidad, configuración y auditoría.
 
-### Calidad
-- 50 tests de dominio ejecutados y pasando.
-- CI configurado.
-- Playwright preparado.
-- Checklist QA manual.
-- Checklist RLS.
+Estas superficies permiten desarrollar y revisar los recorridos previstos, pero varias todavía consumen mocks o datos simulados.
 
-## No terminado porque requiere ejecución externa o credenciales
-- Build real con dependencias instaladas.
-- Deploy.
-- Supabase productivo con migraciones aplicadas.
-- Mercado Pago real.
-- Secrets reales.
-- GitHub push/PR por error 403 de integración.
-- Tests E2E reales en navegador luego de instalar dependencias.
+### Dominio y APIs
 
-## Próximo bloque técnico recomendado
-1. Instalar dependencias en entorno local/CI.
-2. Ejecutar typecheck/build y corregir cualquier error de compilación.
-3. Conectar Supabase real con env vars.
-4. Aplicar migraciones en branch/staging.
-5. Cambiar mocks por queries server-side gradualmente.
-6. Integrar Mercado Pago sandbox.
-7. Ejecutar E2E completo.
+- Diagnóstico, pricing Flexible/Prioridad y validación del wizard.
+- Máquinas de estado para solicitudes, trabajos y pagos.
+- Matching profesional, permisos por rol, cierre técnico y reviews.
+- Calidad, garantías, soporte, scheduling, liquidaciones y gates de release.
+- Inventario y contratos de rutas API para los flujos del MVP.
+
+Los contratos y tests no implican que todas las rutas estén conectadas a persistencia o proveedores reales.
+
+### Configuración y automatización
+
+- Node.js 22 y pnpm 9.15.0 fijados para desarrollo y CI.
+- Instalación reproducible mediante `pnpm install --frozen-lockfile`.
+- Validación separada de configuración pública y de servidor.
+- CI con jobs de calidad en Ubuntu y tests de dominio en Windows.
+- Documentación de setup local y reglas para no commitear credenciales.
+
+## Evidencia verificada
+
+- `pnpm lint`: aprobado.
+- `pnpm typecheck`: aprobado.
+- tests de dominio: 124/124 aprobados.
+- tests unitarios: 41/41 aprobados.
+- `pnpm build`: aprobado con 77 rutas.
+- Playwright E2E: no ejecutado.
+
+El detalle está en `checks/TEST_RESULTS.md`.
+
+## Supabase heredado
+
+El repositorio contiene migraciones, seeds y políticas RLS heredadas. No se afirma que estén aplicadas ni que exista un proyecto real conectado.
+
+Estos artefactos no son desplegables hasta completar Task 4, que debe auditar autorización, RLS, privilegios, storage, autenticación y exposición de datos sensibles.
+
+## Pendiente para una operación real
+
+- Reemplazar mocks de UI y APIs por persistencia e integraciones verificadas.
+- Completar Task 4 de seguridad/RLS antes de aplicar Supabase.
+- Configurar secrets por entorno mediante canales seguros.
+- Integrar y validar Mercado Pago en sandbox antes de producción.
+- Ejecutar E2E en navegador sobre los recorridos críticos.
+- Resolver decisiones legales, operativas y de despliegue.
+- Publicar la rama y abrir un PR cuando exista autorización; actualmente se omite por decisión, no por un error de GitHub.
+
+## Próximo hito
+
+Task 4: endurecimiento de seguridad, autorización y RLS. La conexión a servicios reales y la ejecución E2E deben ocurrir después de ese gate.

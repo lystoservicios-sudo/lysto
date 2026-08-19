@@ -1,5 +1,7 @@
 # Reporte de ejecución
 
+> **DOCUMENTO HISTÓRICO — CORTE DEL 2026-08-19, PREVIO A TASK 3.** Los conteos, bloqueos y comandos que siguen describen aquella ejecución y no son el estado vigente. Consultá [`README.md`](../README.md), [`checks/TEST_RESULTS.md`](../checks/TEST_RESULTS.md) y [`docs/18-current-implementation-status.md`](18-current-implementation-status.md) para el estado actual.
+
 ## Resultado
 
 Se avanzó sin esperar nuevas preguntas y se creó un paquete base completo para el MVP operativo de Lysto.

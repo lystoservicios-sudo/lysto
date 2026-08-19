@@ -1,101 +1,81 @@
-# Lysto — MVP Operativo
+# Lysto — MVP en desarrollo
 
-Lysto es una web app responsive, mobile-first, para operar un marketplace gestionado de servicios técnicos para hogares. El MVP inicial cubre técnicos de aire acondicionado en Buenos Aires, Argentina.
+Lysto es una base de desarrollo para un marketplace gestionado de servicios técnicos para hogares. El alcance inicial se concentra en aire acondicionado en Buenos Aires, Argentina.
 
-## Alcance real del MVP
-
-No es una demo. Esta base está pensada para operar el negocio de punta a punta:
-
-- Cliente: landing, registro/login, solicitud guiada, diagnóstico preliminar, dirección, horario, presupuesto Flexible/Prioridad, pago, seguimiento, review e historial de equipos.
-- Profesional: onboarding por invitación, aprobación, documentación, herramientas, zonas, solicitudes, trabajos, registro técnico, cierre, QR/comprobante y pagos.
-- Admin: operación completa, invitaciones, aprobación, clientes, solicitudes, matching/asignación, trabajos, pagos, precios, diagnóstico, calidad y auditoría.
+La rama `feat/mvp-implementation` reúne pantallas, dominio, contratos de API, configuración y automatizaciones de calidad. No representa todavía un sistema conectado y operativo de punta a punta: varias pantallas y APIs conservan datos simulados, y las integraciones externas siguen pendientes.
 
 ## Stack
 
-- Next.js App Router + TypeScript.
+- Next.js App Router y TypeScript.
 - Tailwind CSS.
-- Supabase Auth/Postgres/Storage/RLS.
-- Mercado Pago preparado por módulo.
-- Tests de dominio, Vitest y Playwright.
-- GitHub Actions.
+- Supabase Auth/Postgres/Storage como infraestructura prevista.
+- Mercado Pago preparado para una integración futura.
+- Tests de dominio y unitarios con Vitest.
+- Playwright configurado, pero todavía sin una ejecución E2E registrada.
+- GitHub Actions para los gates de calidad.
 
-## Instalación
+## Configuración local
 
-```bash
-pnpm install
-pnpm dev
-```
-
-Si no tenés `pnpm`:
+Se requieren Node.js 22 y Corepack. Corepack lee `packageManager` y ejecuta pnpm 9.15.0 sin instalar shims globales:
 
 ```bash
-npm install -g pnpm
+node --version
+corepack pnpm --version
+corepack pnpm install --frozen-lockfile
 ```
 
-## Variables de entorno
+`corepack enable` es opcional. Si falla por permisos, no hace falta usar una terminal de administrador: continuá anteponiendo `corepack` a los comandos de pnpm.
 
-Copiar `.env.example` a `.env.local`. No subir `.env.local`.
+Copiá `.env.example` a `.env.local` y usá únicamente valores de desarrollo. Nunca commitees credenciales.
+
+La guía completa está en [`docs/development/local-setup.md`](docs/development/local-setup.md).
+
+Para iniciar la aplicación:
 
 ```bash
-cp .env.example .env.local
+corepack pnpm dev
 ```
 
-## Tests
+## Gates de calidad
+
+Antes de entregar cambios se ejecutan, en este orden:
 
 ```bash
-pnpm test:domain
-pnpm typecheck
-pnpm lint
-pnpm build
+corepack pnpm lint
+corepack pnpm typecheck
+corepack pnpm test
+corepack pnpm build
 ```
 
-Los tests de dominio se pueden correr sin instalar dependencias externas con Node 22:
+El script `scripts/bootstrap-local.sh` prepara pnpm, instala desde el lockfile y ejecuta los mismos gates.
 
-```bash
-node --experimental-strip-types tests/run-domain-tests.ts
-```
+## Evidencia actual
 
-## Supabase MCP
+Evidencia local registrada el 2026-08-19:
 
-```bash
-codex mcp add supabase --url "https://mcp.supabase.com/mcp?project_ref=dqonlqcurvjnjgsczevu&features=docs%2Caccount%2Cdatabase%2Cdebugging%2Cdevelopment%2Cfunctions%2Cbranching"
-codex mcp login supabase
-/mcp
-npx skills add supabase/agent-skills
-```
+- lint sin errores;
+- typecheck sin errores;
+- 124/124 tests de dominio aprobados;
+- 41/41 tests unitarios aprobados;
+- build de producción aprobado con 77 rutas;
+- tests E2E de Playwright no ejecutados.
+
+Ver el detalle en [`checks/TEST_RESULTS.md`](checks/TEST_RESULTS.md).
+
+## Estado y próximo hito
+
+- La UI cubre las superficies públicas, de cliente, profesional y administración, pero todavía incluye mocks.
+- Las rutas API y la lógica de dominio tienen contratos y tests, pero no todas las operaciones están conectadas a persistencia e integraciones reales.
+- Las migraciones, seeds y políticas Supabase heredadas son material de trabajo; no están aprobadas para desplegar.
+- No se afirma que exista un proyecto Supabase real conectado ni que Mercado Pago esté activo.
+
+El próximo hito es Task 4: revisión de seguridad, autorización y RLS. Hasta completarla no se deben aplicar los artefactos Supabase heredados a un entorno remoto.
 
 ## Reglas
 
-- No subir secretos.
-- No hardcodear credenciales.
-- No hacer migraciones destructivas sin revisión.
-- Todas las funciones críticas deben tener tests.
-- Toda tabla sensible debe tener RLS.
+- No subir secretos ni hardcodear credenciales.
+- No aplicar migraciones destructivas sin revisión.
+- Toda función crítica debe tener tests.
 - Todo webhook debe ser idempotente.
-- Todo cambio admin crítico debe auditarse.
-- Toda transición de estado debe pasar por la máquina central.
-
-## Estado de implementación local
-
-Ver:
-
-- `docs/18-current-implementation-status.md`
-- `checks/ROUTE_INVENTORY.md`
-- `checks/TEST_RESULTS.md`
-
-Estado actual:
-
-- Pantallas públicas, cliente, profesional y admin creadas.
-- Diseño visual mobile-first con componentes reutilizables.
-- Dominio principal implementado y testeado.
-- Migraciones Supabase diseñadas.
-- API routes contractuales preparadas.
-- 50/50 tests de dominio pasando.
-
-Pendiente externo:
-
-- Instalar dependencias y ejecutar `pnpm build`/`pnpm typecheck` en entorno con Node + pnpm.
-- Subir a GitHub manualmente o resolver permiso 403 de la integración.
-- Aplicar migraciones a Supabase real.
-- Cargar secrets y credenciales reales.
-- Activar Mercado Pago real/sandbox.
+- Todo cambio administrativo crítico debe auditarse.
+- Toda transición de estado debe pasar por la máquina de estados central.

@@ -2,6 +2,8 @@
 
 Fecha: 2026-08-19
 
+> **DOCUMENTO HISTÓRICO — CORTE V4 DEL 2026-08-19.** Los conteos y bloqueos que siguen se conservan como registro de ese momento y ya no representan el estado vigente. Consultá [`README.md`](../README.md), [`checks/TEST_RESULTS.md`](../checks/TEST_RESULTS.md) y [`docs/18-current-implementation-status.md`](18-current-implementation-status.md) para la evidencia actual.
+
 ## Decisión de supervisión
 No se considera terminado al 100% productivo mientras falten credenciales, migraciones aplicadas en Supabase real, CI ejecutado con dependencias, Mercado Pago sandbox y QA mobile manual. Como esas tareas requieren intervención externa, se siguió avanzando en áreas que no dependen de eso.
 
