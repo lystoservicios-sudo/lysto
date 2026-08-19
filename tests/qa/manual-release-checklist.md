@@ -1,0 +1,22 @@
+# QA manual obligatorio antes de lanzamiento
+
+- [ ] Cliente se registra con email real.
+- [ ] Cliente crea solicitud completa para `No enfría`.
+- [ ] Cliente sube foto y video de prueba.
+- [ ] Cliente carga dirección nueva y luego reutiliza dirección guardada.
+- [ ] Cliente selecciona Flexible y Prioridad en solicitudes separadas.
+- [ ] Pago aprobado cambia solicitud a `payment_approved`.
+- [ ] Pago rechazado permite reintento sin duplicar pagos.
+- [ ] Admin ve solicitud pagada.
+- [ ] Admin asigna profesional aprobado.
+- [ ] Profesional acepta trabajo.
+- [ ] Cliente ve técnico confirmado.
+- [ ] Profesional marca `en camino`, `llegué`, `diagnóstico`, `en progreso`, `terminado`.
+- [ ] Profesional registra equipo del cliente.
+- [ ] Profesional cierra trabajo con diagnóstico real y mantenimiento recomendado.
+- [ ] Cliente ve comprobante/QR.
+- [ ] Cliente deja review una sola vez.
+- [ ] Admin ve calidad, pago, review y audit log.
+- [ ] Cliente A no puede ver datos de Cliente B.
+- [ ] Profesional A no puede ver trabajos de Profesional B.
+- [ ] QR público no expone DNI, CUIL, email privado ni dirección completa sensible.

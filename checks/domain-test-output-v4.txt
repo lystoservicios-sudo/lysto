@@ -1,0 +1,107 @@
+✓ no enfria hace semanas prioriza gas bajo o fuga
+✓ pierde agua prioriza drenaje obstruido
+✓ no enciende incluye checklist electrico
+✓ instalacion no diagnostica falla, releva alcance
+✓ mantenimiento genera recomendacion preventiva
+✓ calcula flexible base para CABA sin ajustes
+✓ prioridad siempre supera flexible
+✓ instalacion aplica ajuste de 20000
+✓ acceso complicado y altura ajustan precio
+✓ sin estacionamiento agrega ajuste
+✓ respeta precio minimo
+✓ request permite flujo pago aprobado a asignacion pendiente
+✓ request no permite saltar de pending_payment a assigned
+✓ job no permite pasar de pending_assignment a completed
+✓ job permite confirmed a technician_on_way
+✓ payment webhook aprobado permite refund posterior
+✓ assertTransition arroja error en estado invalido
+✓ solo profesionales aprobados y aptos son elegibles
+✓ ranking ordena por score y filtra no aptos
+✓ calcula split marketplace 18%
+✓ rechaza totales invalidos
+✓ normaliza estados de mercado pago
+✓ detecta webhook duplicado por provider event id
+✓ cliente accede a app pero no admin
+✓ profesional accede a pro pero no app cliente
+✓ admin accede a todos los paneles internos
+✓ anonimo no accede a rutas privadas
+✓ solo trabajos completos aceptan review
+✓ review positiva suma score y tags
+✓ review baja genera alerta calidad
+✓ cierre tecnico resuelto exige equipo diagnostico trabajo y foto
+✓ no permite cerrar trabajo sin foto posterior
+✓ pendiente de repuesto exige repuestos pendientes
+✓ garantia default depende del estado final
+✓ valida solicitud completa lista para pago
+✓ rechaza solicitud sin direccion ni horario
+✓ custom date exige fecha custom
+✓ canSubmitServiceRequest devuelve true solo cuando el draft es completo
+✓ flujo cliente completo deja solicitud pendiente de pago
+✓ pago aprobado crea job pendiente de asignacion
+✓ admin asigna y profesional acepta
+✓ profesional rechaza y vuelve a matching
+✓ trabajo no puede cerrar sin informe final
+✓ trabajo con informe final queda completado
+✓ pagada sin profesional tiene prioridad alta
+✓ reclamos suben al tope de la cola
+✓ herramientas completas aprueban score 10
+✓ muchas herramientas faltantes no aprueban
+✓ comprobante publico oculta campos sensibles
+✓ token inseguro se rechaza
+✓ use case cliente prepara solicitud lista para pago
+✓ use case cliente rechaza solicitud incompleta
+✓ assertCustomerRequestReadyForPayment acepta draft completo
+✓ payment preference crea idempotency key y split
+✓ payment webhook aprobado crea job y no notifica admin
+✓ payment webhook duplicado no vuelve a mutar pago
+✓ admin asigna mejor candidato elegible
+✓ admin override solo funciona si profesional es elegible
+✓ admin no asigna solicitud impaga
+✓ onboarding listo pasa a under_review
+✓ onboarding under_review completo aprueba
+✓ onboarding incompleto lista faltantes
+✓ profesional acepta trabajo pendiente
+✓ profesional no puede saltar directo de confirmado a llegado
+✓ cierre profesional genera garantía y requiere confirmación cliente
+✓ review closeout actualiza rating y abre calidad si no resuelto
+✓ mantenimiento sin recomendacion no genera recordatorio
+✓ revision electrica queda en prioridad alta y fecha cercana
+✓ pendiente de repuesto ofrece segunda visita
+✓ migraciones no tienen versiones duplicadas
+✓ schema contiene tablas obligatorias del MVP operativo
+✓ tablas sensibles tienen RLS habilitado
+✓ admin assignment chooses only eligible professionals
+✓ admin assignment rejects unpaid requests
+✓ professional approval requires documents and admin
+✓ professional approval blocks missing license document
+✓ pricing update protects negative prices and normalizes values
+✓ professional accepts assigned job
+✓ professional rejection requires reason
+✓ different professional cannot accept job
+✓ valid equipment registration normalizes empty brand and model
+✓ equipment registration validates frigories range
+✓ equipment display name combines known fields
+✓ support case classifies safety risk as critical
+✓ warranty claim is accepted inside warranty window for same problem
+✓ warranty claim rejects expired claims
+✓ notification template for professional confirmed
+✓ operations kpis calculate conversion and margin
+✓ operations health detects critical complaint rate
+✓ customer signup validates required identity and terms
+✓ customer signup rejects weak password and missing terms
+✓ professional invite rejects expired token
+✓ route access blocks professional before approval
+✓ redirect after login sends approved professional to pro dashboard
+✓ normalizes argentina phone to international format
+✓ slot classification detects last places
+✓ priority sla is faster than flexible
+✓ recommendSlots filters full slots and sorts by SLA
+✓ assertSchedulable rejects full slot
+✓ payout is ready after approved payment and completed job
+✓ payout blocks open quality case
+✓ payout blocks missing professional payment account
+✓ settlement reference is deterministic and sanitized
+✓ release gates prevent launch while external secrets and CI are pending
+✓ release gates allow launch only when all required pass
+
+105/105 tests passed
