@@ -25,3 +25,4 @@ test-results/
 # Supabase local state
 .supabase/
 supabase/.temp/
+supabase/.branches/
