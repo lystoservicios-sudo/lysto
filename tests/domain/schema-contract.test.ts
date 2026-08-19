@@ -1,11 +1,12 @@
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { test, expect } from '../_lib/test.ts'
 import { findDuplicateMigrationVersions, findMissingRls, findMissingTables } from '../../lib/db/schema-contract.ts'
 
-const migrationsDir = new URL('../../supabase/migrations/', import.meta.url)
+const migrationsDir = fileURLToPath(new URL('../../supabase/migrations/', import.meta.url))
 const files = readdirSync(migrationsDir).filter((name) => name.endsWith('.sql')).sort()
-const sql = files.map((name) => readFileSync(join(migrationsDir.pathname, name), 'utf8')).join('\n')
+const sql = files.map((name) => readFileSync(join(migrationsDir, name), 'utf8')).join('\n')
 
 test('migraciones no tienen versiones duplicadas', () => {
   expect(findDuplicateMigrationVersions(files).length).toBe(0)

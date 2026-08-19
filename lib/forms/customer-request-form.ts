@@ -1,5 +1,6 @@
 import type { AddressAccessDetails, PropertyType, ServiceIssueSlug, TimeSince, UrgencyLevel } from '../domain/types.ts'
-import { AIR_CONDITIONING_ISSUES, TIME_WINDOWS } from '../domain/constants.ts'
+import { AIR_CONDITIONING_ISSUES } from '../domain/constants.ts'
+import { isValidTimeWindow } from '../scheduling/availability.ts'
 
 export type CustomerRequestFormInput = {
   issue?: ServiceIssueSlug
@@ -61,7 +62,7 @@ export function validateCustomerRequestForm(input: CustomerRequestFormInput): Fo
   const schedule = input.schedule ?? {}
   if (!schedule.dateChoice || !validDateChoices.has(schedule.dateChoice)) errors.push('date_choice_required')
   if (schedule.dateChoice === 'custom' && !clean(schedule.customDate)) errors.push('custom_date_required')
-  if (!schedule.timeWindow || !TIME_WINDOWS.includes(schedule.timeWindow)) errors.push('time_window_required')
+  if (!schedule.timeWindow || !isValidTimeWindow(schedule.timeWindow)) errors.push('time_window_required')
   if (!input.selectedOption || !validOptions.has(input.selectedOption)) errors.push('price_option_required')
 
   if (errors.length) return { ok: false, errors }

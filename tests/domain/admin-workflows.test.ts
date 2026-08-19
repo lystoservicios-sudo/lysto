@@ -3,6 +3,7 @@ import { decideProfessionalAssignment } from '../../lib/admin/assignment.ts'
 import { decideProfessionalApproval } from '../../lib/admin/professional-approval.ts'
 import { validatePricingRuleUpdate } from '../../lib/admin/pricing-admin.ts'
 import type { ProfessionalCandidate } from '../../lib/matching/score-professionals.ts'
+import type { ProfessionalOnboardingInput } from '../../lib/professional/onboarding.ts'
 
 const candidates: ProfessionalCandidate[] = [
   { id: 'bad', name: 'Suspendido', status: 'suspended', serviceSlugs: ['aire_acondicionado'], zones: ['caba'], available: true, hasLicense: true, toolsScore: 10, ratingAvg: 5, jobsCompleted: 100, activeJobs: 0, acceptanceRate: 1, distanceKm: 1, internalScore: 100 },
@@ -23,7 +24,7 @@ const onboarding = {
   zones: ['caba'],
   tools: ['manifold', 'multimetro', 'herramientas_manual', 'elementos_seguridad'],
   availabilitySlots: [{ weekday: 1, startTime: '08:00', endTime: '18:00' }]
-}
+} satisfies ProfessionalOnboardingInput
 
 test('admin assignment chooses only eligible professionals', () => {
   const result = decideProfessionalAssignment({ requestId: 'REQ-1', requestStatus: 'payment_approved', paid: true, candidates, mode: 'auto_suggested' })

@@ -1,6 +1,25 @@
 import { cookies } from 'next/headers'
-import { createServerClient } from '@supabase/ssr'
+import { createServerClient, type SetAllCookies } from '@supabase/ssr'
 import { assertPublicSupabaseEnv } from './env'
+
+const READONLY_COOKIE_ERROR_PREFIX = 'Cookies can only be modified in a Server Action or Route Handler.'
+type CookieToSet = Parameters<SetAllCookies>[0][number]
+type CookieSetter = (cookie: CookieToSet) => void
+
+function isReadonlyCookieStoreError(error: unknown): boolean {
+  return error instanceof Error && error.message.startsWith(READONLY_COOKIE_ERROR_PREFIX)
+}
+
+export function applySupabaseCookies(
+  cookiesToSet: Parameters<SetAllCookies>[0],
+  setCookie: CookieSetter
+): void {
+  try {
+    cookiesToSet.forEach(setCookie)
+  } catch (error) {
+    if (!isReadonlyCookieStoreError(error)) throw error
+  }
+}
 
 export async function createServerSupabaseClient() {
   const cookieStore = await cookies()
@@ -8,8 +27,10 @@ export async function createServerSupabaseClient() {
   return createServerClient(env.url, env.anonKey, {
     cookies: {
       getAll() { return cookieStore.getAll() },
-      setAll(cookiesToSet) {
-        try { cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options)) } catch {}
+      setAll(cookiesToSet: Parameters<SetAllCookies>[0]) {
+        applySupabaseCookies(cookiesToSet, ({ name, value, options }) => {
+          cookieStore.set(name, value, options)
+        })
       }
     }
   })
