@@ -10,15 +10,19 @@ import {
 
 type QueryResult = { data: unknown; error: { message: string } | null }
 
-function createThenableSupabase(result: QueryResult): Parameters<typeof createSupabaseLystoRepository>[0] {
+function createThenableSupabase(
+  result: QueryResult,
+  onSelect?: (columns: string | undefined) => void
+): Parameters<typeof createSupabaseLystoRepository>[0] {
   const query = {
-    upsert() {
+    eq() {
       return query
     },
-    select() {
+    select(columns?: string) {
+      onSelect?.(columns)
       return query
     },
-    single() {
+    maybeSingle() {
       return query
     },
     then<TResult1 = QueryResult, TResult2 = never>(
@@ -32,30 +36,34 @@ function createThenableSupabase(result: QueryResult): Parameters<typeof createSu
   return { from: () => query } as unknown as Parameters<typeof createSupabaseLystoRepository>[0]
 }
 
-const jobRecord = {
-  id: 'job-1',
-  requestId: 'request-1',
-  customerId: 'customer-1',
-  status: 'pending_assignment' as const
-}
-
 describe('Supabase repository mappers', () => {
-  it('maps snake_case profile fields and nullable names', () => {
+  it('maps snake_case profile fields', () => {
     expect(mapProfile({
+      id: 'profile-1',
+      auth_user_id: 'auth-1',
+      role: 'customer',
+      email: 'customer@example.com',
+      first_name: 'Ada',
+      last_name: 'Lovelace'
+    })).toEqual({
+      id: 'profile-1',
+      authUserId: 'auth-1',
+      role: 'customer',
+      email: 'customer@example.com',
+      firstName: 'Ada',
+      lastName: 'Lovelace'
+    })
+  })
+
+  it('rejects nullable names that contradict the generated schema', () => {
+    expect(() => mapProfile({
       id: 'profile-1',
       auth_user_id: 'auth-1',
       role: 'customer',
       email: 'customer@example.com',
       first_name: null,
       last_name: null
-    })).toEqual({
-      id: 'profile-1',
-      authUserId: 'auth-1',
-      role: 'customer',
-      email: 'customer@example.com',
-      firstName: '',
-      lastName: ''
-    })
+    })).toThrow('mapProfile:first_name must be a string')
   })
 
   it('rejects a profile without an auth user id', () => {
@@ -74,9 +82,8 @@ describe('Supabase repository mappers', () => {
       id: 'request-1',
       customer_id: 'customer-1',
       status: 'draft',
-      issue_slug: 'no_enfria',
       selected_price_option_id: null,
-      service_issue_types: null
+      service_issue_types: { slug: 'no_enfria' }
     })).toEqual({
       id: 'request-1',
       customerId: 'customer-1',
@@ -141,7 +148,7 @@ describe('Supabase repository mappers', () => {
     })).toThrow('mapPayment:request_id must be a string')
   })
 
-  it('prefers a direct issue slug and falls back to the related issue', () => {
+  it('reads the issue slug from the generated relationship shape', () => {
     const baseRequest = {
       id: 'request-1',
       customer_id: 'customer-1',
@@ -151,34 +158,44 @@ describe('Supabase repository mappers', () => {
 
     expect(mapServiceRequest({
       ...baseRequest,
-      issue_slug: 'no_enfria',
-      service_issue_types: { slug: 'hace_ruido' }
-    }).issueSlug).toBe('no_enfria')
-
-    expect(mapServiceRequest({
-      ...baseRequest,
-      issue_slug: null,
       service_issue_types: { slug: 'hace_ruido' }
     }).issueSlug).toBe('hace_ruido')
   })
 
-  it('maps a nullable professional score to zero', () => {
-    expect(mapProfessional({
+  it('rejects a request without its required issue relationship', () => {
+    expect(() => mapServiceRequest({
+      id: 'request-1',
+      customer_id: 'customer-1',
+      status: 'diagnosis_completed',
+      selected_price_option_id: null,
+      service_issue_types: null
+    })).toThrow('mapServiceRequest:service_issue_types must be an object')
+  })
+
+  it('rejects a nullable professional score that contradicts the generated schema', () => {
+    expect(() => mapProfessional({
       id: 'professional-1',
       profile_id: 'profile-1',
       status: 'under_review',
       internal_score: null
-    })).toEqual({
-      id: 'professional-1',
-      profileId: 'profile-1',
-      status: 'under_review',
-      score: 0
-    })
+    })).toThrow('mapProfessional:internal_score must be a number')
   })
 })
 
 describe('Supabase repository query results', () => {
-  it('unwraps a successful thenable result', async () => {
+  it('does not expose unsafe generic mutation methods', () => {
+    const repository = createSupabaseLystoRepository(createThenableSupabase({
+      data: null,
+      error: null
+    }))
+
+    expect(repository).not.toHaveProperty('saveServiceRequest')
+    expect(repository).not.toHaveProperty('saveJob')
+    expect(repository).not.toHaveProperty('savePayment')
+    expect(repository).not.toHaveProperty('saveProfessional')
+  })
+
+  it('unwraps a successful getJob result', async () => {
     const repository = createSupabaseLystoRepository(createThenableSupabase({
       data: {
         id: 'job-1',
@@ -190,7 +207,13 @@ describe('Supabase repository query results', () => {
       error: null
     }))
 
-    await expect(repository.saveJob(jobRecord)).resolves.toEqual(jobRecord)
+    await expect(repository.getJob('job-1')).resolves.toEqual({
+      id: 'job-1',
+      requestId: 'request-1',
+      customerId: 'customer-1',
+      professionalId: undefined,
+      status: 'pending_assignment'
+    })
   })
 
   it('reports a thenable query error with its repository context', async () => {
@@ -199,15 +222,41 @@ describe('Supabase repository query results', () => {
       error: { message: 'database unavailable' }
     }))
 
-    await expect(repository.saveJob(jobRecord)).rejects.toThrow('saveJob:database unavailable')
+    await expect(repository.getJob('job-1')).rejects.toThrow('getJob:database unavailable')
   })
 
-  it('reports a not-found thenable result with its repository context', async () => {
+  it('returns null for a not-found getJob result', async () => {
     const repository = createSupabaseLystoRepository(createThenableSupabase({
       data: null,
       error: null
     }))
 
-    await expect(repository.saveJob(jobRecord)).rejects.toThrow('saveJob:not_found')
+    await expect(repository.getJob('job-1')).resolves.toBeNull()
+  })
+
+  it('reads payments without selecting the private provider identifier', async () => {
+    let selectedColumns: string | undefined
+    const repository = createSupabaseLystoRepository(createThenableSupabase({
+      data: {
+        id: 'payment-1',
+        request_id: 'request-1',
+        provider: 'mercadopago',
+        status: 'approved',
+        amount: 1250
+      },
+      error: null
+    }, (columns) => {
+      selectedColumns = columns
+    }))
+
+    await expect(repository.getPayment('payment-1')).resolves.toEqual({
+      id: 'payment-1',
+      requestId: 'request-1',
+      provider: 'mercadopago',
+      providerPaymentId: undefined,
+      status: 'approved',
+      amount: 1250
+    })
+    expect(selectedColumns).toBe('id,request_id,provider,status,amount')
   })
 })

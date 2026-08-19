@@ -1,0 +1,504 @@
+begin;
+
+select plan(35);
+
+create function pg_temp.set_jwt(p_uid uuid, p_app_role text, p_user_metadata jsonb default '{}'::jsonb)
+returns void
+language sql
+as $$
+  select set_config(
+    'request.jwt.claims',
+    jsonb_build_object(
+      'sub', p_uid::text,
+      'role', 'authenticated',
+      'app_metadata', jsonb_build_object('app_role', p_app_role),
+      'user_metadata', p_user_metadata
+    )::text,
+    true
+  )::text;
+$$;
+
+create function pg_temp.receipt_count(p_token uuid)
+returns bigint
+language plpgsql
+as $$
+declare
+  v_count bigint;
+begin
+  execute 'select count(*) from public.lookup_public_receipt($1)' into v_count using p_token;
+  return v_count;
+exception
+  when undefined_function or insufficient_privilege then return -1;
+end;
+$$;
+
+create function pg_temp.receipt_keys(p_token uuid)
+returns text[]
+language plpgsql
+as $$
+declare
+  v_keys text[];
+begin
+  execute $sql$
+    select array_agg(key order by key)
+    from public.lookup_public_receipt($1) receipt
+    cross join lateral jsonb_object_keys(to_jsonb(receipt)) as keys(key)
+  $sql$ into v_keys using p_token;
+  return v_keys;
+exception
+  when undefined_function or insufficient_privilege then return array['missing_lookup'];
+end;
+$$;
+
+create function pg_temp.create_request_price(p_address_id uuid)
+returns numeric
+language plpgsql
+as $$
+declare
+  v_result jsonb;
+  v_amount numeric;
+begin
+  v_result := public.create_service_request_from_app(
+    '12000000-0000-0000-0000-000000000001',
+    p_address_id,
+    'rls-customer-category',
+    'rls-customer-issue',
+    'today',
+    current_date,
+    '08:00-10:00',
+    'flexible',
+    '{"level":"low"}'::jsonb,
+    1,
+    2,
+    1
+  );
+
+  select po.amount
+  into v_amount
+  from public.price_options po
+  where po.id = (v_result ->> 'selected_price_option_id')::uuid;
+
+  return v_amount;
+end;
+$$;
+
+insert into auth.users (
+  instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
+  raw_app_meta_data, raw_user_meta_data, created_at, updated_at
+)
+values
+  ('00000000-0000-0000-0000-000000000000', '10000000-0000-0000-0000-000000000001', 'authenticated', 'authenticated', 'customer-a@lysto.test', '', now(), '{"app_role":"customer"}', '{}', now(), now()),
+  ('00000000-0000-0000-0000-000000000000', '10000000-0000-0000-0000-000000000002', 'authenticated', 'authenticated', 'customer-b@lysto.test', '', now(), '{"app_role":"customer"}', '{}', now(), now());
+
+insert into public.profiles (id, auth_user_id, role, first_name, last_name, email)
+values
+  ('11000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', 'customer', 'Customer', 'A', 'customer-a@lysto.test'),
+  ('11000000-0000-0000-0000-000000000002', '10000000-0000-0000-0000-000000000002', 'customer', 'Customer', 'B', 'customer-b@lysto.test');
+
+insert into public.customer_profiles (id, profile_id)
+values
+  ('12000000-0000-0000-0000-000000000001', '11000000-0000-0000-0000-000000000001'),
+  ('12000000-0000-0000-0000-000000000002', '11000000-0000-0000-0000-000000000002');
+
+insert into public.customer_addresses (id, customer_id, street, number, city, province)
+values
+  ('13000000-0000-0000-0000-000000000001', '12000000-0000-0000-0000-000000000001', 'Calle A', '100', 'Hudson', 'Buenos Aires'),
+  ('13000000-0000-0000-0000-000000000002', '12000000-0000-0000-0000-000000000002', 'Calle B', '200', 'Berazategui', 'Buenos Aires'),
+  ('13000000-0000-0000-0000-000000000003', '12000000-0000-0000-0000-000000000001', 'Calle A', '103', 'Berazategui', 'Buenos Aires'),
+  ('13000000-0000-0000-0000-000000000004', '12000000-0000-0000-0000-000000000001', 'Calle A', '104', 'Quilmes', 'Buenos Aires'),
+  ('13000000-0000-0000-0000-000000000005', '12000000-0000-0000-0000-000000000001', 'Calle A', '105', 'CABA', 'Buenos Aires'),
+  ('13000000-0000-0000-0000-000000000006', '12000000-0000-0000-0000-000000000001', 'Calle A', '106', 'Palermo', 'CABA'),
+  ('13000000-0000-0000-0000-000000000007', '12000000-0000-0000-0000-000000000001', 'Calle A', '107', 'CABA', 'CABA');
+
+insert into public.service_categories (id, slug, name)
+values ('14000000-0000-0000-0000-000000000001', 'rls-customer-category', 'RLS customer category');
+
+insert into public.service_issue_types (id, category_id, slug, name)
+values ('14000000-0000-0000-0000-000000000002', '14000000-0000-0000-0000-000000000001', 'rls-customer-issue', 'RLS customer issue');
+
+insert into public.pricing_rules (
+  id, category_id, issue_type_id, zone_slug, base_price, issue_adjustment, priority_multiplier, platform_fee_rate
+)
+values
+  ('14000000-0000-0000-0000-000000000003', '14000000-0000-0000-0000-000000000001', '14000000-0000-0000-0000-000000000002', 'hudson', 43000, 210, 1.5, 0.18),
+  ('14000000-0000-0000-0000-000000000004', '14000000-0000-0000-0000-000000000001', '14000000-0000-0000-0000-000000000002', 'berazategui', 20000, 200, 1.5, 0.18),
+  ('14000000-0000-0000-0000-000000000005', '14000000-0000-0000-0000-000000000001', '14000000-0000-0000-0000-000000000002', 'gba_sur', 30000, 300, 1.5, 0.18),
+  ('14000000-0000-0000-0000-000000000006', '14000000-0000-0000-0000-000000000001', '14000000-0000-0000-0000-000000000002', 'caba', 10000, 100, 1.5, 0.18);
+
+insert into public.service_requests (id, customer_id, category_id, issue_type_id, address_id, status)
+values
+  ('15000000-0000-0000-0000-000000000001', '12000000-0000-0000-0000-000000000001', '14000000-0000-0000-0000-000000000001', '14000000-0000-0000-0000-000000000002', '13000000-0000-0000-0000-000000000001', 'draft'),
+  ('15000000-0000-0000-0000-000000000002', '12000000-0000-0000-0000-000000000002', '14000000-0000-0000-0000-000000000001', '14000000-0000-0000-0000-000000000002', '13000000-0000-0000-0000-000000000002', 'pending_payment'),
+  ('15000000-0000-0000-0000-000000000003', '12000000-0000-0000-0000-000000000002', '14000000-0000-0000-0000-000000000001', '14000000-0000-0000-0000-000000000002', '13000000-0000-0000-0000-000000000002', 'pending_payment'),
+  ('15000000-0000-0000-0000-000000000004', '12000000-0000-0000-0000-000000000002', '14000000-0000-0000-0000-000000000001', '14000000-0000-0000-0000-000000000002', '13000000-0000-0000-0000-000000000002', 'payment_approved'),
+  ('15000000-0000-0000-0000-000000000005', '12000000-0000-0000-0000-000000000002', '14000000-0000-0000-0000-000000000001', '14000000-0000-0000-0000-000000000002', '13000000-0000-0000-0000-000000000002', 'payment_approved'),
+  ('15000000-0000-0000-0000-000000000006', '12000000-0000-0000-0000-000000000002', '14000000-0000-0000-0000-000000000001', '14000000-0000-0000-0000-000000000002', '13000000-0000-0000-0000-000000000002', 'assigned');
+
+insert into public.request_media (id, request_id, media_type, storage_bucket, storage_path, uploaded_by)
+values
+  ('16000000-0000-0000-0000-000000000001', '15000000-0000-0000-0000-000000000001', 'photo', 'request-media', 'a/photo.jpg', '11000000-0000-0000-0000-000000000001'),
+  ('16000000-0000-0000-0000-000000000002', '15000000-0000-0000-0000-000000000002', 'photo', 'request-media', 'b/photo.jpg', '11000000-0000-0000-0000-000000000002');
+
+insert into public.jobs (id, request_id, customer_id, status)
+values
+  ('17000000-0000-0000-0000-000000000001', '15000000-0000-0000-0000-000000000001', '12000000-0000-0000-0000-000000000001', 'pending_assignment'),
+  ('17000000-0000-0000-0000-000000000002', '15000000-0000-0000-0000-000000000002', '12000000-0000-0000-0000-000000000002', 'pending_assignment'),
+  ('17000000-0000-0000-0000-000000000003', '15000000-0000-0000-0000-000000000003', '12000000-0000-0000-0000-000000000002', 'pending_assignment'),
+  ('17000000-0000-0000-0000-000000000004', '15000000-0000-0000-0000-000000000004', '12000000-0000-0000-0000-000000000002', 'in_progress'),
+  ('17000000-0000-0000-0000-000000000005', '15000000-0000-0000-0000-000000000005', '12000000-0000-0000-0000-000000000002', 'in_progress'),
+  ('17000000-0000-0000-0000-000000000006', '15000000-0000-0000-0000-000000000006', '12000000-0000-0000-0000-000000000002', 'completed_pending_customer_confirmation');
+
+insert into public.payments (
+  id, job_id, request_id, customer_id, provider_payment_id, amount, marketplace_fee, professional_amount
+)
+values
+  ('18000000-0000-0000-0000-000000000001', '17000000-0000-0000-0000-000000000001', '15000000-0000-0000-0000-000000000001', '12000000-0000-0000-0000-000000000001', 'rls-customer-payment-a', 1000, 180, 820),
+  ('18000000-0000-0000-0000-000000000002', '17000000-0000-0000-0000-000000000002', '15000000-0000-0000-0000-000000000002', '12000000-0000-0000-0000-000000000002', 'rls-customer-payment-b', 2000, 360, 1640);
+
+insert into public.customer_equipment (id, customer_id, address_id, category_id, nickname)
+values
+  ('19000000-0000-0000-0000-000000000001', '12000000-0000-0000-0000-000000000001', '13000000-0000-0000-0000-000000000001', '14000000-0000-0000-0000-000000000001', 'Equipo A'),
+  ('19000000-0000-0000-0000-000000000002', '12000000-0000-0000-0000-000000000002', '13000000-0000-0000-0000-000000000002', '14000000-0000-0000-0000-000000000001', 'Equipo B');
+
+insert into public.job_final_reports (
+  id, job_id, equipment_id, real_diagnosis, work_done, final_state, warranty_days
+)
+values
+  ('1c000000-0000-0000-0000-000000000001', '17000000-0000-0000-0000-000000000001', '19000000-0000-0000-0000-000000000001', 'Diagnóstico válido', 'Trabajo realizado', 'resolved', 30),
+  ('1c000000-0000-0000-0000-000000000002', '17000000-0000-0000-0000-000000000002', '19000000-0000-0000-0000-000000000002', 'Diagnóstico expirado', 'Trabajo realizado', 'resolved', 15),
+  ('1c000000-0000-0000-0000-000000000003', '17000000-0000-0000-0000-000000000003', '19000000-0000-0000-0000-000000000002', 'Diagnóstico revocado', 'Trabajo realizado', 'resolved', 15);
+
+insert into public.receipts (id, job_id, final_report_id, public_token, expires_at)
+values
+  ('1d000000-0000-0000-0000-000000000001', '17000000-0000-0000-0000-000000000001', '1c000000-0000-0000-0000-000000000001', '1e000000-0000-0000-0000-000000000001', now() + interval '1 day'),
+  ('1d000000-0000-0000-0000-000000000002', '17000000-0000-0000-0000-000000000002', '1c000000-0000-0000-0000-000000000002', '1e000000-0000-0000-0000-000000000002', now() - interval '1 second'),
+  ('1d000000-0000-0000-0000-000000000003', '17000000-0000-0000-0000-000000000003', '1c000000-0000-0000-0000-000000000003', '1e000000-0000-0000-0000-000000000003', now() + interval '1 day');
+
+do $$
+begin
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'receipts' and column_name = 'revoked_at'
+  ) then
+    execute $sql$
+      update public.receipts
+      set revoked_at = now()
+      where id = '1d000000-0000-0000-0000-000000000003'
+    $sql$;
+  end if;
+end;
+$$;
+
+insert into public.public_receipts (id, job_id, token, service_name, professional_public_name, work_done, warranty_text)
+values
+  ('1a000000-0000-0000-0000-000000000001', '17000000-0000-0000-0000-000000000001', '1b000000-0000-0000-0000-000000000001', 'Servicio A', 'Profesional A', 'Trabajo A', '30 días'),
+  ('1a000000-0000-0000-0000-000000000002', '17000000-0000-0000-0000-000000000002', '1b000000-0000-0000-0000-000000000002', 'Servicio B', 'Profesional B', 'Trabajo B', '30 días');
+
+select pg_temp.set_jwt(
+  '10000000-0000-0000-0000-000000000001',
+  'customer',
+  '{"app_role":"admin","permissions":["owner"]}'::jsonb
+);
+set local role authenticated;
+
+select pg_temp.set_jwt(
+  '10000000-0000-0000-0000-000000000001',
+  'professional',
+  '{}'::jsonb
+);
+select is(
+  (select count(*) from public.customer_addresses),
+  0::bigint,
+  'JWT app_role contradicting profiles.role grants no customer access'
+);
+select pg_temp.set_jwt(
+  '10000000-0000-0000-0000-000000000001',
+  'customer',
+  '{"app_role":"admin","permissions":["owner"]}'::jsonb
+);
+
+select is((select count(*) from public.profiles), 1::bigint, 'customer reads only their own profile');
+select is((select count(*) from public.customer_addresses), 6::bigint, 'customer reads only their own addresses');
+select is((select count(*) from public.service_requests), 1::bigint, 'customer reads only their own request');
+select is((select count(*) from public.request_media), 1::bigint, 'customer reads only their own media metadata');
+select is((select count(*) from public.jobs), 1::bigint, 'customer reads only their own job');
+select is((select count(*) from public.payments), 1::bigint, 'customer reads only their own payment');
+select is((select count(*) from public.customer_equipment), 1::bigint, 'customer reads only their own equipment');
+select is((select count(*) from public.platform_settings), 0::bigint, 'user_metadata cannot grant admin access');
+
+select throws_ok(
+  $$insert into public.customer_equipment(
+    customer_id, address_id, category_id, nickname
+  ) values (
+    '12000000-0000-0000-0000-000000000001',
+    '13000000-0000-0000-0000-000000000002',
+    '14000000-0000-0000-0000-000000000001',
+    'Equipo con dirección ajena'
+  )$$,
+  '23503',
+  null,
+  'customer equipment cannot reference another customer address'
+);
+
+select throws_ok(
+  $$update public.profiles set role = 'admin' where auth_user_id = '10000000-0000-0000-0000-000000000001'$$,
+  '42501',
+  null,
+  'customer cannot promote themselves'
+);
+
+select throws_ok(
+  $$update public.service_requests set status = 'payment_approved' where id = '15000000-0000-0000-0000-000000000001'$$,
+  '42501',
+  null,
+  'customer cannot change protected request state directly'
+);
+
+select throws_ok(
+  $$select public.create_service_request_from_app(
+    '12000000-0000-0000-0000-000000000001',
+    '13000000-0000-0000-0000-000000000002',
+    'rls-customer-category',
+    'rls-customer-issue',
+    'today',
+    current_date,
+    '08:00-10:00',
+    'flexible',
+    '{"level":"low"}'::jsonb,
+    1000,
+    1200,
+    1000
+  )$$,
+  'P0001',
+  null,
+  'customer cannot create a request with another customer address'
+);
+
+select set_config(
+  'test.created_request',
+  public.create_service_request_from_app(
+    '12000000-0000-0000-0000-000000000001',
+    '13000000-0000-0000-0000-000000000001',
+    'rls-customer-category',
+    'rls-customer-issue',
+    'today',
+    current_date,
+    '08:00-10:00',
+    'flexible',
+    '{"level":"low"}'::jsonb,
+    1,
+    2,
+    1
+  )::text,
+  true
+);
+
+select results_eq(
+  $$
+    select po.amount
+    from public.price_options po
+    where po.id = (
+      current_setting('test.created_request', true)::jsonb
+      ->> 'selected_price_option_id'
+    )::uuid
+  $$,
+  $$values (43210.00::numeric)$$,
+  'request pricing is derived server-side from the exact Hudson zone rule'
+);
+
+select is(
+  pg_temp.create_request_price('13000000-0000-0000-0000-000000000003'),
+  20200.00::numeric,
+  'Berazategui in Buenos Aires uses the exact Berazategui pricing zone'
+);
+
+select is(
+  pg_temp.create_request_price('13000000-0000-0000-0000-000000000004'),
+  30300.00::numeric,
+  'a pilot GBA Sur city in Buenos Aires uses the GBA Sur pricing zone'
+);
+
+select is(
+  pg_temp.create_request_price('13000000-0000-0000-0000-000000000005'),
+  10100.00::numeric,
+  'city CABA with legacy Buenos Aires province uses the CABA pricing zone'
+);
+
+select is(
+  pg_temp.create_request_price('13000000-0000-0000-0000-000000000006'),
+  10100.00::numeric,
+  'a CABA barrio with CABA province uses the CABA pricing zone'
+);
+
+select is(
+  pg_temp.create_request_price('13000000-0000-0000-0000-000000000007'),
+  10100.00::numeric,
+  'city and province CABA use the CABA pricing zone'
+);
+
+update public.customer_addresses
+set city = 'Córdoba'
+where id = '13000000-0000-0000-0000-000000000001';
+
+select throws_ok(
+  $$select public.create_service_request_from_app(
+    '12000000-0000-0000-0000-000000000001',
+    '13000000-0000-0000-0000-000000000001',
+    'rls-customer-category',
+    'rls-customer-issue',
+    'today',
+    current_date,
+    '08:00-10:00',
+    'flexible',
+    '{"level":"low"}'::jsonb,
+    1,
+    2,
+    1
+  )$$,
+  'P0001',
+  'Service area not supported',
+  'request creation rejects cities outside the explicit service area'
+);
+
+update public.customer_addresses
+set city = 'Hudson', province = 'Córdoba'
+where id = '13000000-0000-0000-0000-000000000001';
+
+select throws_ok(
+  $$select public.create_service_request_from_app(
+    '12000000-0000-0000-0000-000000000001',
+    '13000000-0000-0000-0000-000000000001',
+    'rls-customer-category',
+    'rls-customer-issue',
+    'today',
+    current_date,
+    '08:00-10:00',
+    'flexible',
+    '{"level":"low"}'::jsonb,
+    1,
+    2,
+    1
+  )$$,
+  'P0001',
+  'Service area not supported',
+  'Hudson with a non-Buenos-Aires province is rejected'
+);
+
+select throws_ok(
+  $$select public.apply_mercadopago_payment_webhook('customer-forged-event', 'missing-payment', 'approved', '{}'::jsonb)$$,
+  '42501',
+  null,
+  'customer cannot invoke the payment webhook'
+);
+
+select throws_ok(
+  $$select public.request_payment_refund(
+    '18000000-0000-0000-0000-000000000001',
+    100,
+    'Intento de devolución cliente',
+    'customer-refund-attempt-0001'
+  )$$,
+  'P0001',
+  'Finance permission required',
+  'customer cannot initiate a refund request'
+);
+
+select throws_ok(
+  $$select public.close_job_with_final_report(
+    '17000000-0000-0000-0000-000000000004',
+    '19000000-0000-0000-0000-000000000002',
+    'Diagnóstico indebido',
+    'Trabajo indebido',
+    null,
+    'resolved',
+    'none',
+    null,
+    0,
+    null
+  )$$,
+  'P0001',
+  'Only an approved assigned professional can close a job',
+  'customer cannot close a job through the professional RPC'
+);
+
+select throws_ok(
+  $$select public.submit_customer_review_transaction(
+    '17000000-0000-0000-0000-000000000006',
+    '12000000-0000-0000-0000-000000000002',
+    5,
+    5,
+    true,
+    true,
+    'Intento ajeno'
+  )$$,
+  'P0001',
+  'Only the owning customer can review this job',
+  'customer cannot review another customer job'
+);
+
+select throws_ok(
+  $$select * from public.lookup_public_receipt('1e000000-0000-0000-0000-000000000001')$$,
+  '42501',
+  null,
+  'authenticated customer cannot execute the server-only receipt lookup'
+);
+
+reset role;
+select set_config('request.jwt.claims', '{}'::text, true);
+set local role anon;
+
+select throws_ok(
+  $$select count(*) from public.public_receipts$$,
+  '42501',
+  null,
+  'anon cannot enumerate legacy public receipts'
+);
+
+select throws_ok(
+  $$select count(*) from public.receipts$$,
+  '42501',
+  null,
+  'anon cannot enumerate canonical receipts'
+);
+
+select throws_ok(
+  $$select * from public.lookup_public_receipt('1e000000-0000-0000-0000-000000000001')$$,
+  '42501',
+  null,
+  'anon cannot execute the server-only receipt lookup'
+);
+
+select throws_ok(
+  $$select public.close_job_with_final_report(
+    '17000000-0000-0000-0000-000000000005',
+    '19000000-0000-0000-0000-000000000002',
+    'Diagnóstico anónimo',
+    'Trabajo anónimo',
+    null,
+    'resolved',
+    'none',
+    null,
+    0,
+    null
+  )$$,
+  '42501',
+  null,
+  'anonymous callers cannot close jobs'
+);
+
+reset role;
+
+set local role service_role;
+select is(pg_temp.receipt_count('1e000000-0000-0000-0000-000000000001'), 1::bigint, 'server lookup returns a valid receipt by full token');
+select is(pg_temp.receipt_count('1effffff-ffff-ffff-ffff-ffffffffffff'), 0::bigint, 'server lookup returns no row for an invalid token');
+select is(pg_temp.receipt_count('1e000000-0000-0000-0000-000000000002'), 0::bigint, 'server lookup returns no row for an expired token');
+select is(pg_temp.receipt_count('1e000000-0000-0000-0000-000000000003'), 0::bigint, 'server lookup returns no row for a revoked token');
+select is(
+  pg_temp.receipt_keys('1e000000-0000-0000-0000-000000000001'),
+  array['issued_at','next_maintenance_date','professional_name','service_name','warranty_days','work_done']::text[],
+  'server lookup exposes only the minimal public receipt projection'
+);
+
+reset role;
+select * from finish();
+rollback;

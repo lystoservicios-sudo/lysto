@@ -15,9 +15,9 @@
     "typecheck": "tsc --noEmit",
     "test:domain": "node --experimental-strip-types tests/run-domain-tests.ts",
     "test:unit": "vitest run",
-    "test": "pnpm test:domain && pnpm test:unit",
+    "test": "node --experimental-strip-types tests/run-domain-tests.ts && vitest run",
     "test:e2e": "playwright test",
-    "test:ci": "pnpm lint && pnpm typecheck && pnpm test && pnpm build"
+    "test:ci": "eslint . --max-warnings=0 && tsc --noEmit && node --experimental-strip-types tests/run-domain-tests.ts && vitest run && next build"
   },
   "dependencies": {
     "@mercadopago/sdk-react": "^0.0.24",

@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers'
 import { createServerClient, type SetAllCookies } from '@supabase/ssr'
 import { assertPublicSupabaseEnv } from './env'
+import type { Database } from './database.types'
 
 const READONLY_COOKIE_ERROR_PREFIX = 'Cookies can only be modified in a Server Action or Route Handler.'
 type CookieToSet = Parameters<SetAllCookies>[0][number]
@@ -24,7 +25,7 @@ export function applySupabaseCookies(
 export async function createServerSupabaseClient() {
   const cookieStore = await cookies()
   const env = assertPublicSupabaseEnv()
-  return createServerClient(env.url, env.anonKey, {
+  return createServerClient<Database>(env.url, env.anonKey, {
     cookies: {
       getAll() { return cookieStore.getAll() },
       setAll(cookiesToSet: Parameters<SetAllCookies>[0]) {

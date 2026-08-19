@@ -52,3 +52,12 @@ export type LystoRepository = {
   saveProfessional(record: ProfessionalRecord): Promise<ProfessionalRecord>
   getProfessional(professionalId: string): Promise<ProfessionalRecord | null>
 }
+
+export type LystoReadRepository = Pick<
+  LystoRepository,
+  | 'getProfile'
+  | 'getServiceRequest'
+  | 'getJob'
+  | 'getPayment'
+  | 'getProfessional'
+>

@@ -1,16 +1,21 @@
 # Próximo plan de agentes
 
-Aunque se avanzó el bloque local sin GitHub/Supabase productivos, para seguir al 100% el orden correcto es:
+Task 4 dejó una base Supabase local reproducible y revisada. Para continuar sin saltar gates, el orden correcto es:
 
 ## A00 Supervisor
-- Revisar build real luego de instalar dependencias.
+- Conservar instalación frozen, 376 pgTAP, lint, typecheck, tests y build verdes.
 - Convertir cualquier error de compilación en tareas concretas.
 - No permitir secretos ni migraciones destructivas.
 
 ## A03 Supabase
-- Aplicar migraciones 001 y 002 en branch/staging.
-- Correr tests RLS manuales desde SQL editor.
-- Confirmar buckets privados.
+- No modificar permisos 005–007 sin pgTAP positivo y negativo.
+- Regenerar `database.types.ts` después de cualquier cambio de esquema.
+- Mantener todo local hasta que exista un staging autorizado con secrets, dry-run, backup y plan de rollback.
+
+## A04 Auth — próximo hito
+- Implementar Task 5: login, sesiones, perfiles y protección por rol.
+- Usar `app_metadata` + rol persistido; nunca confiar en `user_metadata` para autorización.
+- Probar redirects, expiración, sesiones y acceso customer/pro/admin contra RLS real.
 
 ## A05 Cliente
 - Sustituir mocks por queries server-side.
@@ -34,5 +39,5 @@ Aunque se avanzó el bloque local sin GitHub/Supabase productivos, para seguir a
 - Split marketplace cuando credenciales y configuración estén disponibles.
 
 ## A10 QA
-- Ejecutar dominio, unit, integration, E2E.
+- Ejecutar dominio, unit, pgTAP, integration y E2E.
 - Cubrir flujo completo: cliente → pago → admin → profesional → cierre → review.

@@ -8,7 +8,7 @@ La rama `feat/mvp-implementation` reúne pantallas, dominio, contratos de API, c
 
 - Next.js App Router y TypeScript.
 - Tailwind CSS.
-- Supabase Auth/Postgres/Storage como infraestructura prevista.
+- Supabase Postgres/Storage verificado localmente; conexión de Auth pendiente de Task 5.
 - Mercado Pago preparado para una integración futura.
 - Tests de dominio y unitarios con Vitest.
 - Playwright configurado, pero todavía sin una ejecución E2E registrada.
@@ -56,7 +56,10 @@ Evidencia local registrada el 2026-08-19:
 - lint sin errores;
 - typecheck sin errores;
 - 124/124 tests de dominio aprobados;
-- 41/41 tests unitarios aprobados;
+- 45/45 tests unitarios aprobados;
+- reset local de Supabase 001–007 y seed aprobado;
+- 376/376 tests pgTAP de esquema, RLS, Storage, eventos y seed aprobados;
+- lint de los esquemas `public` y `private` sin advertencias;
 - build de producción aprobado con 77 rutas;
 - tests E2E de Playwright no ejecutados.
 
@@ -66,10 +69,11 @@ Ver el detalle en [`checks/TEST_RESULTS.md`](checks/TEST_RESULTS.md).
 
 - La UI cubre las superficies públicas, de cliente, profesional y administración, pero todavía incluye mocks.
 - Las rutas API y la lógica de dominio tienen contratos y tests, pero no todas las operaciones están conectadas a persistencia e integraciones reales.
-- Las migraciones, seeds y políticas Supabase heredadas son material de trabajo; no están aprobadas para desplegar.
+- La base Supabase local fue endurecida con roles confiables, RLS, Storage privado, comprobantes no enumerables, solicitudes de reembolso auditadas e idempotentes e inbox/outbox confiable.
+- El seed piloto cubre CABA, GBA Sur, Berazategui y Hudson; los tipos TypeScript se generan desde el esquema local verificado.
 - No se afirma que exista un proyecto Supabase real conectado ni que Mercado Pago esté activo.
 
-El próximo hito es Task 4: revisión de seguridad, autorización y RLS. Hasta completarla no se deben aplicar los artefactos Supabase heredados a un entorno remoto.
+El próximo hito es Task 5: autenticación, perfiles y protección por rol. Las migraciones ya son aptas para desarrollo local, pero todavía requieren staging, secrets seguros, E2E y revisión de despliegue antes de aplicarse a un entorno remoto o productivo.
 
 ## Reglas
 

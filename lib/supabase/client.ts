@@ -2,8 +2,9 @@
 
 import { createBrowserClient } from '@supabase/ssr'
 import { assertPublicSupabaseEnv } from './env'
+import type { Database } from './database.types'
 
 export function createClient() {
   const env = assertPublicSupabaseEnv()
-  return createBrowserClient(env.url, env.anonKey)
+  return createBrowserClient<Database>(env.url, env.anonKey)
 }

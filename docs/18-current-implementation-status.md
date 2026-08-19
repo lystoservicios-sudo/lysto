@@ -38,23 +38,27 @@ Los contratos y tests no implican que todas las rutas estén conectadas a persis
 - `pnpm lint`: aprobado.
 - `pnpm typecheck`: aprobado.
 - tests de dominio: 124/124 aprobados.
-- tests unitarios: 41/41 aprobados.
+- tests unitarios: 45/45 aprobados.
+- reset local de Supabase 001–007 + seed: aprobado.
+- tests pgTAP: 376/376 aprobados.
+- lint de base `public`/`private`: aprobado sin advertencias.
 - `pnpm build`: aprobado con 77 rutas.
 - Playwright E2E: no ejecutado.
 
 El detalle está en `checks/TEST_RESULTS.md`.
 
-## Supabase heredado
+## Supabase local endurecido
 
-El repositorio contiene migraciones, seeds y políticas RLS heredadas. No se afirma que estén aplicadas ni que exista un proyecto real conectado.
+Las migraciones 001–007 y el seed piloto se aplican desde una base local vacía. La revisión cubre roles confiables, RLS, privilegios por columna, comprobantes, solicitudes de reembolso auditadas e idempotentes, Storage firmado, inbox/outbox y tipos generados.
 
-Estos artefactos no son desplegables hasta completar Task 4, que debe auditar autorización, RLS, privilegios, storage, autenticación y exposición de datos sensibles.
+Esta evidencia aprueba desarrollo local, no un despliegue remoto. No se afirma que exista un proyecto Supabase real conectado; staging, secrets, Auth, backups, E2E y observabilidad siguen pendientes.
 
 ## Pendiente para una operación real
 
 - Reemplazar mocks de UI y APIs por persistencia e integraciones verificadas.
-- Completar Task 4 de seguridad/RLS antes de aplicar Supabase.
+- Conectar Auth, perfiles y protección por rol de Task 5.
 - Configurar secrets por entorno mediante canales seguros.
+- Completar la validación de bytes y limpieza de archivos de Task 8.
 - Integrar y validar Mercado Pago en sandbox antes de producción.
 - Ejecutar E2E en navegador sobre los recorridos críticos.
 - Resolver decisiones legales, operativas y de despliegue.
@@ -62,4 +66,4 @@ Estos artefactos no son desplegables hasta completar Task 4, que debe auditar au
 
 ## Próximo hito
 
-Task 4: endurecimiento de seguridad, autorización y RLS. La conexión a servicios reales y la ejecución E2E deben ocurrir después de ese gate.
+Task 5: autenticación, perfiles y protección por rol. La conexión a servicios reales y la ejecución E2E deben avanzar sobre la base local ya endurecida.

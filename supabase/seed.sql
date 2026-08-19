@@ -27,42 +27,102 @@ from category, (values
 ) as q(code, label, input_type, required, sort_order)
 on conflict (category_id, code) do update set label = excluded.label, input_type = excluded.input_type, required = excluded.required, sort_order = excluded.sort_order, active = true;
 
-with q as (select id from public.service_questions where code = 'time_since')
+with category as (
+  select id from public.service_categories where slug = 'aire_acondicionado'
+), q as (
+  select question.id
+  from public.service_questions as question
+  join category on category.id = question.category_id
+  where question.code = 'time_since'
+)
 insert into public.service_question_options (question_id, value, label, sort_order)
 select q.id, v.value, v.label, v.sort_order
 from q, (values ('today','Hoy',10),('days','Hace días',20),('weeks','Hace semanas',30),('months','Hace meses',40)) as v(value, label, sort_order)
 on conflict (question_id, value) do update set label = excluded.label, sort_order = excluded.sort_order;
 
-with q as (select id from public.service_questions where code = 'access_details')
+with category as (
+  select id from public.service_categories where slug = 'aire_acondicionado'
+), q as (
+  select question.id
+  from public.service_questions as question
+  join category on category.id = question.category_id
+  where question.code = 'access_details'
+)
 insert into public.service_question_options (question_id, value, label, sort_order)
 select q.id, v.value, v.label, v.sort_order
 from q, (values ('has_elevator','Ascensor',10),('has_parking','Estacionamiento',20),('stairs_required','Escalera',30),('outdoor_unit_at_height','Unidad exterior en altura',40),('outdoor_unit_on_balcony','Unidad exterior en balcón',50),('difficult_access','Acceso complicado',60)) as v(value, label, sort_order)
 on conflict (question_id, value) do update set label = excluded.label, sort_order = excluded.sort_order;
 
-with category as (select id from public.service_categories where slug = 'aire_acondicionado'), issues as (select id, slug from public.service_issue_types)
+-- Valores de referencia para staging: no constituyen una tarifa comercial aprobada.
+with category as (
+  select id from public.service_categories where slug = 'aire_acondicionado'
+), issues as (
+  select issue.id, issue.slug
+  from public.service_issue_types as issue
+  join category on category.id = issue.category_id
+  where issue.active
+), zones(zone_slug, base_price) as (
+  values
+    ('caba'::text, 35000::numeric),
+    ('gba_sur', 40000),
+    ('berazategui', 40000),
+    ('hudson', 42000)
+)
 insert into public.pricing_rules (category_id, issue_type_id, zone_slug, base_price, issue_adjustment, priority_multiplier, platform_fee_rate)
-select category.id, issues.id, 'caba', 35000,
+select category.id, issues.id, zones.zone_slug, zones.base_price,
   case issues.slug when 'no_enciende' then 5000 when 'no_funciona_calor' then 5000 when 'instalacion' then 20000 else 0 end,
   1.25,
   0.18
-from category, issues
+from category
+cross join issues
+cross join zones
 where issues.slug in ('no_enfria','pierde_agua','hace_ruido','no_enciende','no_funciona_calor','instalacion','mantenimiento')
 on conflict (category_id, issue_type_id, zone_slug) do update set base_price = excluded.base_price, issue_adjustment = excluded.issue_adjustment, priority_multiplier = excluded.priority_multiplier, platform_fee_rate = excluded.platform_fee_rate, active = true;
 
 insert into public.platform_settings (key, value, description)
 values
   ('maintenance_options', '["none","filters_30_days","filters_60_days","filters_90_days","deep_cleaning_6_months","deep_cleaning_annual","gas_review_30_days","outdoor_unit_review","electrical_review","pending_part_replacement","second_visit_recommended"]'::jsonb, 'Opciones cerradas de mantenimiento recomendadas.'),
-  ('time_windows', '["08:00 – 10:00","10:00 – 12:00","14:00 – 16:00","16:00 – 18:00","18:00 – 20:00"]'::jsonb, 'Franjas horarias iniciales.'),
-  ('platform_fee_rate', '0.18'::jsonb, 'Comisión base de Lysto para MVP.')
+  ('time_windows', '["08:00 – 10:00","10:00 – 12:00","14:00 – 16:00","16:00 – 18:00","18:00 – 20:00"]'::jsonb, 'Compatibilidad: franjas horarias iniciales.'),
+  (
+    'scheduling.default_slots',
+    '{"timezone":"America/Buenos_Aires","windows":[{"start":"08:00","end":"10:00"},{"start":"10:00","end":"12:00"},{"start":"14:00","end":"16:00"},{"start":"16:00","end":"18:00"},{"start":"18:00","end":"20:00"}],"closed_weekdays":["sunday"]}'::jsonb,
+    'Franjas operativas iniciales del piloto.'
+  ),
+  (
+    'scheduling.modalities',
+    '{"flexible":{"label":"Flexible","base_sla_minutes":240,"window":"wide","verified_professional_required":true},"priority":{"label":"Prioridad","base_sla_minutes":90,"window":"short","verified_professional_required":true}}'::jsonb,
+    'Modalidades iniciales; Prioridad llega antes y más cerca de la fecha y hora solicitadas.'
+  ),
+  (
+    'pricing.staging_sample',
+    '{"environment":"staging","nonbinding":true,"currency":"ARS","base_prices":{"caba":35000,"gba_sur":40000,"berazategui":40000,"hudson":42000},"priority_multiplier":1.25,"platform_fee_rate":0.18}'::jsonb,
+    'Precios de muestra no vinculantes para validar el flujo de staging.'
+  ),
+  (
+    'professional.required_tools',
+    '["manifold","vacuum_pump","multimeter","leak_detector","ladder","ppe"]'::jsonb,
+    'Kit mínimo declarado para el onboarding de aire acondicionado.'
+  ),
+  ('marketplace', '{"fee_rate":0.18,"currency":"ARS"}'::jsonb, 'Contrato canónico de comisión del marketplace.'),
+  ('platform_fee_rate', '0.18'::jsonb, 'Compatibilidad: comisión base de Lysto para el MVP.')
 on conflict (key) do update set value = excluded.value, description = excluded.description, updated_at = now();
 
 -- Extensiones operativas
-insert into public.service_zones (name, province, city, priority_weight) values
-  ('CABA Norte', 'Buenos Aires', 'CABA', 20),
-  ('CABA Centro', 'Buenos Aires', 'CABA', 30),
-  ('CABA Sur', 'Buenos Aires', 'CABA', 10),
-  ('AMBA Primer Cordón', 'Buenos Aires', 'AMBA', 5)
-on conflict (name) do update set priority_weight = excluded.priority_weight;
+update public.service_zones
+set active = false, updated_at = now()
+where name not in ('CABA', 'Corredor Sur AMBA', 'Berazategui', 'Hudson');
+
+insert into public.service_zones (name, province, city, active, priority_weight) values
+  ('CABA', 'Ciudad Autónoma de Buenos Aires', 'CABA', true, 40),
+  ('Corredor Sur AMBA', 'Buenos Aires', 'AMBA Sur', true, 30),
+  ('Berazategui', 'Buenos Aires', 'Berazategui', true, 20),
+  ('Hudson', 'Buenos Aires', 'Hudson', true, 10)
+on conflict (name) do update set
+  province = excluded.province,
+  city = excluded.city,
+  active = excluded.active,
+  priority_weight = excluded.priority_weight,
+  updated_at = now();
 
 insert into public.professional_training_modules (title, description, category_slug, required_for_approval) values
   ('Protocolo Lysto en domicilio', 'Presentación, cuidado del hogar, fotos obligatorias y cierre del servicio.', 'aire_acondicionado', true),

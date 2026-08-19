@@ -8,20 +8,18 @@ El push y la apertura de un PR se postergan por decisión de coordinación de es
 
 Cuando se autorice la publicación, corresponde revisar el historial local, subir la rama elegida y abrir el PR. Este documento no presupone ese permiso.
 
-## 2. Gate de seguridad y RLS de Supabase
+## 2. Staging y conexión remota de Supabase
 
-El repositorio contiene migraciones, seeds y políticas heredadas, pero no están aprobadas para aplicarse a un proyecto Supabase local o remoto. Task 4 debe revisar como mínimo:
+Task 4 quedó aprobada para desarrollo local: reset 001–007, 376 pgTAP, RLS, Storage, solicitudes de reembolso, eventos y lint de base están verdes.
 
-- aislamiento por rol y propietario;
-- cobertura y comportamiento de RLS;
-- privilegios de funciones y uso de `security definer`;
-- exposición de datos sensibles;
-- operaciones administrativas y auditoría;
-- seguridad de storage y flujos de autenticación.
+Antes de aplicar estos artefactos a staging o producción todavía faltan:
 
-Hasta completar esa revisión, no se deben enlazar ni desplegar los artefactos Supabase heredados. Su presencia en el repositorio no demuestra una conexión real.
+- crear/configurar el entorno remoto y sus secrets por canales seguros;
+- ejecutar migración dry-run, reset/diff y tests RLS contra staging;
+- validar Auth, backups, restore, observabilidad y E2E;
+- completar inspección de bytes y limpieza de archivos huérfanos de Task 8.
 
-`pnpm audit --prod` no está limpio actualmente: reporta advisories transitivos en Sharp, PostCSS y UUID. No se conoce una superficie habilitada que procese imágenes o CSS no confiables ni buffers UUID, pero las dependencias deben actualizarse y el audit debe revalidarse antes de staging o producción. Este punto queda en el backlog de Task 4/seguridad.
+`pnpm audit --prod` no está limpio actualmente: reporta advisories transitivos en Sharp, PostCSS y UUID. No se conoce una superficie habilitada que procese imágenes o CSS no confiables ni buffers UUID, pero las dependencias deben actualizarse y el audit debe revalidarse antes de staging o producción.
 
 ## 3. Secrets e integraciones externas
 
@@ -53,4 +51,4 @@ Requieren validación humana:
 
 Playwright está configurado, pero no se ejecutó una suite E2E en navegador para esta evidencia. Tampoco hay un despliegue productivo validado.
 
-Después de Task 4 y de configurar entornos seguros, deben validarse los recorridos críticos E2E y los gates de release antes de cualquier salida a producción.
+Después de configurar entornos seguros, deben validarse los recorridos críticos E2E y los gates de release antes de cualquier salida a producción.

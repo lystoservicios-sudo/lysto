@@ -60,7 +60,16 @@ corepack pnpm build
 
 ## Supabase local
 
-Supabase local no forma parte del setup obligatorio actual. Si una tarea futura requiere una instancia local, instalá y configurá la CLI de Supabase siguiendo la documentación acordada por el equipo antes de iniciar sus servicios. La presencia de migraciones o configuración en el repositorio no significa que exista un proyecto remoto real conectado.
+La CLI de Supabase está fijada como dependencia de desarrollo del proyecto. Para trabajar sobre base de datos, Auth, RLS o Storage, iniciá el stack local y recreá el esquema desde cero:
+
+```bash
+corepack pnpm supabase start
+corepack pnpm supabase db reset --local
+corepack pnpm supabase test db --local
+corepack pnpm supabase db lint --local --schema public --schema private --level warning --fail-on warning
+```
+
+Estos comandos usan únicamente los servicios locales configurados en `supabase/config.toml`. No ejecutes `link`, `db push` ni comandos contra un proyecto remoto como parte del setup local. La presencia de migraciones verificadas no significa que exista un proyecto Supabase remoto conectado ni autoriza un despliegue.
 
 Los archivos temporales de Supabase deben permanecer fuera del control de versiones. Las migraciones y `supabase/seed.sql`, en cambio, sí son parte del repositorio.
 

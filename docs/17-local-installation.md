@@ -27,6 +27,13 @@ corepack pnpm build
 
 ## Supabase
 
-No enlaces un proyecto ni apliques migraciones desde esta guía. Las migraciones, seeds y políticas Supabase heredadas no están aprobadas para desplegar hasta completar Task 4 de seguridad, autorización y RLS.
+El esquema local endurecido puede recrearse y probarse sin enlazar un proyecto remoto:
 
-La presencia de esos archivos no demuestra que exista un proyecto Supabase real conectado.
+```bash
+corepack pnpm supabase start
+corepack pnpm supabase db reset --local
+corepack pnpm supabase test db --local
+corepack pnpm supabase db lint --local --schema public --schema private --level warning --fail-on warning
+```
+
+Estos comandos sólo operan el stack local. No uses `link`, `db push` ni credenciales remotas desde esta guía; la evidencia local no demuestra que exista un proyecto Supabase real conectado ni autoriza un despliegue.
