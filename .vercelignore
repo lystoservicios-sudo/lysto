@@ -1,0 +1,13 @@
+.env*
+.vercel/
+.next/
+node_modules/
+supabase/
+docs/
+checks/
+tests/
+prompts/
+coverage/
+playwright-report/
+test-results/
+tsconfig.tsbuildinfo
