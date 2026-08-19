@@ -1,10 +1,51 @@
 import { NextResponse } from 'next/server'
-import { decideProfessionalAssignment } from '@/lib/admin/assignment'
-import { professionals } from '@/lib/mock/lysto-data'
+import { z } from 'zod'
+import { decideProfessionalAssignment, type AssignmentInput } from '../../../../lib/admin/assignment'
+import { professionals } from '../../../../lib/mock/lysto-data'
+
+const assignmentRequestSchema = z.object({
+  requestId: z.string().trim().min(1),
+  jobId: z.string().trim().min(1).optional(),
+  adminProfileId: z.string().trim().min(1).optional(),
+  paid: z.boolean(),
+  currentJobStatus: z.enum([
+    'pending_assignment',
+    'pending_professional_acceptance',
+    'confirmed',
+    'technician_on_way',
+    'arrived',
+    'onsite_diagnosis',
+    'waiting_customer_approval',
+    'in_progress',
+    'completed_pending_customer_confirmation',
+    'completed',
+    'cancelled_by_customer',
+    'cancelled_by_professional',
+    'cancelled_by_admin',
+    'disputed',
+    'warranty_claim'
+  ]).optional(),
+  selectedProfessionalId: z.string().trim().min(1).optional(),
+  override: z.boolean().optional().default(false)
+}).strict().superRefine((body, context) => {
+  if (!body.override) return
+  if (!body.selectedProfessionalId) {
+    context.addIssue({ code: z.ZodIssueCode.custom, path: ['selectedProfessionalId'], message: 'selectedProfessionalId is required for manual assignment' })
+  }
+  if (!body.adminProfileId) {
+    context.addIssue({ code: z.ZodIssueCode.custom, path: ['adminProfileId'], message: 'adminProfileId is required for manual assignment' })
+  }
+})
 
 export async function POST(request: Request) {
-  const body = await request.json().catch(() => null) as { requestPaid?: boolean; professionalId?: string; override?: boolean } | null
-  if (!body) return NextResponse.json({ error: 'Invalid JSON payload' }, { status: 400 })
+  const payload: unknown = await request.json().catch(() => null)
+  const parsed = assignmentRequestSchema.safeParse(payload)
+  if (!parsed.success) {
+    return NextResponse.json({ error: 'Invalid assignment payload', errors: parsed.error.issues.map((issue) => issue.message) }, { status: 400 })
+  }
+  const body = parsed.data
+
+  // TODO: Replace mock professionals with repository-backed candidates.
   const candidates = professionals.map((professional) => ({
     id: professional.id,
     name: professional.name,
@@ -21,7 +62,21 @@ export async function POST(request: Request) {
     distanceKm: 5,
     internalScore: professional.score
   }))
-  const result = decideProfessionalAssignment({ requestPaid: Boolean(body.requestPaid), requestStatus: 'pending_assignment', jobStatus: 'pending_assignment', candidates, overrideProfessionalId: body.override ? body.professionalId : undefined })
-  if (!result.ok) return NextResponse.json({ error: result.reason }, { status: 400 })
-  return NextResponse.json({ assigned: true, professional: result.professional, candidates: result.candidates, status: 'ready_for_db_transaction_and_audit_log' })
+
+  const assignment: AssignmentInput = {
+    requestId: body.requestId,
+    jobId: body.jobId,
+    requestStatus: 'pending_assignment',
+    currentJobStatus: body.currentJobStatus,
+    paid: body.paid,
+    candidates,
+    selectedProfessionalId: body.override ? body.selectedProfessionalId : undefined,
+    mode: body.override ? 'manual' : 'auto_suggested',
+    adminProfileId: body.adminProfileId
+  }
+  const result = decideProfessionalAssignment(assignment)
+  if (!result.ok) {
+    return NextResponse.json({ error: 'Assignment failed', errors: result.errors, ranking: result.ranking }, { status: 400 })
+  }
+  return NextResponse.json({ assigned: true, assignedProfessionalId: result.assignedProfessionalId, ranking: result.ranking, status: 'ready_for_db_transaction_and_audit_log' })
 }
