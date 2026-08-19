@@ -2,7 +2,7 @@
 .vercel/
 .next/
 node_modules/
-supabase/
+/supabase/
 docs/
 checks/
 tests/
