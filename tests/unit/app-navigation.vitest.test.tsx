@@ -60,4 +60,20 @@ describe('authenticated app navigation', () => {
 
     expect(screen.queryByRole('dialog', { name: 'Menú principal' })).toBeNull()
   })
+
+  it('closes from the backdrop or after choosing a destination', () => {
+    render(<AppNavigation role="Admin" />)
+    const trigger = screen.getByRole('button', { name: 'Abrir menú' })
+
+    fireEvent.click(trigger)
+    fireEvent.click(screen.getByRole('button', { name: 'Cerrar menú al tocar fuera' }))
+    expect(screen.queryByRole('dialog', { name: 'Menú principal' })).toBeNull()
+
+    fireEvent.click(trigger)
+    const sidebar = screen.getByRole('dialog', { name: 'Menú principal' })
+    const destination = within(sidebar).getByRole('link', { name: 'Solicitudes' })
+    destination.addEventListener('click', (event) => event.preventDefault(), { once: true })
+    fireEvent.click(destination)
+    expect(screen.queryByRole('dialog', { name: 'Menú principal' })).toBeNull()
+  })
 })
