@@ -23,6 +23,7 @@ import {
   type LucideIcon
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 
 import {
   appNavigation,
@@ -127,7 +128,7 @@ export function AppNavigation({ role }: { role: AppRole }) {
         <span>Menú</span>
       </button>
 
-      {isOpen ? (
+      {isOpen ? createPortal((
         <div className="fixed inset-0 z-40 lg:hidden">
           <button
             type="button"
@@ -208,7 +209,7 @@ export function AppNavigation({ role }: { role: AppRole }) {
             </div>
           </aside>
         </div>
-      ) : null}
+      ), document.body) : null}
     </div>
   )
 }

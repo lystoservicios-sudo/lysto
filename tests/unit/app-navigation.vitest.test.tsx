@@ -40,6 +40,16 @@ describe('authenticated app navigation', () => {
     expect(document.body.style.overflow).toBe('hidden')
   })
 
+  it('renders the overlay at document level so header effects cannot clip it', () => {
+    render(<AppNavigation role="Admin" />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir menú' }))
+
+    const sidebar = screen.getByRole('dialog', { name: 'Menú principal' })
+    const overlay = sidebar.parentElement
+    expect(overlay?.parentElement).toBe(document.body)
+  })
+
   it('closes from its close control and restores focus to the trigger', () => {
     render(<AppNavigation role="Admin" />)
     const trigger = screen.getByRole('button', { name: 'Abrir menú' }) as HTMLButtonElement
