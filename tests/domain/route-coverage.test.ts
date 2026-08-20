@@ -115,7 +115,7 @@ test('customer wizard contains all business steps discussed', () => {
 })
 
 test('admin screens cover quality payments matching and marketplace configuration', () => {
-  const dashboard = read('components/layout/page-shell.tsx')
+  const dashboard = read('components/layout/app-navigation-config.ts')
   for (const text of ['Solicitudes', 'Trabajos', 'Profesionales', 'Pagos', 'Matching', 'Calidad', 'Reportes']) {
     expect(dashboard).toIncludeText(text)
   }
