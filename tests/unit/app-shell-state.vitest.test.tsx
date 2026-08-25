@@ -12,7 +12,7 @@ function StateHarness() {
   const { desktopOpen, mobileOpen, setMobileOpen, toggleSidebar } = useAppShell()
 
   return (
-    <div>
+    <div data-app-shell-content>
       <output aria-label="desktop state">{desktopOpen ? 'open' : 'closed'}</output>
       <output aria-label="mobile state">{mobileOpen ? 'open' : 'closed'}</output>
       <button type="button" onClick={toggleSidebar}>Alternar</button>
@@ -76,5 +76,16 @@ describe('app shell state', () => {
     expect(document.body.style.overflow).toBe('hidden')
     fireEvent.click(screen.getByRole('button', { name: 'Cerrar mobile' }))
     expect(document.body.style.overflow).toBe('clip')
+  })
+
+  it('makes background content inert while mobile navigation is open', () => {
+    setViewport(390)
+    renderState()
+    const content = document.querySelector('[data-app-shell-content]')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Alternar' }))
+    expect(content?.hasAttribute('inert')).toBe(true)
+    fireEvent.click(screen.getByRole('button', { name: 'Cerrar mobile' }))
+    expect(content?.hasAttribute('inert')).toBe(false)
   })
 })

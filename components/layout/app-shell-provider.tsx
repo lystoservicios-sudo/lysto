@@ -95,12 +95,16 @@ export function AppShellProvider({
   useEffect(() => {
     if (!mobileOpen) return
 
+    const shellContent = document.querySelector<HTMLElement>('[data-app-shell-content]')
+    const shellContentWasInert = shellContent?.hasAttribute('inert') ?? false
     previousBodyOverflow.current = document.body.style.overflow
     document.body.style.overflow = 'hidden'
+    shellContent?.setAttribute('inert', '')
 
     return () => {
       document.body.style.overflow = previousBodyOverflow.current ?? ''
       previousBodyOverflow.current = null
+      if (!shellContentWasInert) shellContent?.removeAttribute('inert')
     }
   }, [mobileOpen])
 
