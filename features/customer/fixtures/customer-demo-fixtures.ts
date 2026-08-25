@@ -1,17 +1,21 @@
 import type {
+  CustomerAddressViewModel,
   CustomerEquipmentViewModel,
   CustomerJobViewModel,
   CustomerMaintenanceViewModel,
   CustomerPaymentViewModel,
+  CustomerProfileViewModel,
   CustomerRequestViewModel,
   CustomerWarrantyViewModel
 } from '../view-models'
 
-type CustomerDemoFixtures = {
+export type CustomerDemoFixtures = {
   meta: {
     kind: 'demo'
     label: string
   }
+  profile: CustomerProfileViewModel
+  addresses: CustomerAddressViewModel[]
   requests: CustomerRequestViewModel[]
   jobs: CustomerJobViewModel[]
   equipment: CustomerEquipmentViewModel[]
@@ -28,6 +32,34 @@ export const customerDemoFixtures = {
     kind: 'demo',
     label: 'Vista de demostración para desarrollo'
   },
+  profile: {
+    id: 'customer_demo_marina',
+    firstName: 'Marina',
+    lastName: 'Costa',
+    email: 'marina.demo@example.com',
+    phone: '+54 9 11 5555-0107',
+    notificationPreference: 'both'
+  },
+  addresses: [
+    {
+      id: 'address_demo_home',
+      label: 'Casa',
+      street: 'Av. Corrientes',
+      number: '1240',
+      floor: '7',
+      apartment: 'B',
+      city: 'CABA',
+      province: 'Buenos Aires',
+      access: {
+        hasElevator: true,
+        hasParking: false,
+        stairsRequired: false,
+        outdoorUnitAtHeight: true,
+        outdoorUnitOnBalcony: true,
+        difficultAccess: false
+      }
+    }
+  ],
   requests: [
     {
       id: 'req_demo_cooling',

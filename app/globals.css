@@ -24,26 +24,31 @@ button, input, textarea, select { font: inherit; }
     linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
 }
 
-@keyframes lysto-drawer-enter {
+@keyframes lysto-shell-drawer-enter {
   from { transform: translateX(-100%); }
   to { transform: translateX(0); }
 }
 
-@keyframes lysto-backdrop-enter {
+@keyframes lysto-shell-backdrop-enter {
   from { opacity: 0; }
   to { opacity: 1; }
 }
 
-.lysto-mobile-drawer {
-  animation: lysto-drawer-enter 200ms cubic-bezier(0.16, 1, 0.3, 1);
+.lysto-shell-drawer {
+  animation: lysto-shell-drawer-enter 200ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.lysto-mobile-backdrop {
-  animation: lysto-backdrop-enter 160ms ease-out;
+.lysto-shell-backdrop {
+  animation: lysto-shell-backdrop-enter 160ms ease-out;
 }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  .lysto-mobile-drawer,
-  .lysto-mobile-backdrop { animation: none; }
+  .lysto-shell-drawer,
+  .lysto-shell-backdrop,
+  .lysto-shell-sidebar,
+  .lysto-skip-link {
+    animation: none;
+    transition: none;
+  }
 }

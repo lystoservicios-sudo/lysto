@@ -1,8 +1,22 @@
 import { PageScaffold } from '@/components/layout/page-scaffold'
-import { Card } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Field, Input } from '@/components/ui/input'
+import { AddressSummaryCard } from '@/components/customer/address-summary-card'
+import { CustomerAddressForm } from '@/components/customer/customer-address-form'
+import { InfoNotice } from '@/components/customer/info-notice'
+import { customerDemoFixtures } from '@/features/customer/fixtures/customer-demo-fixtures'
 
 export default function CustomerAddressesPage() {
-  return <PageScaffold title="Direcciones" eyebrow="Cliente" description="Direcciones guardadas para reutilizar en nuevas solicitudes."><Card className="space-y-4"><h2 className="text-xl font-black">Agregar dirección</h2><div className="grid gap-4 md:grid-cols-2"><Field label="Calle"><Input placeholder="Av. Corrientes" /></Field><Field label="Número"><Input placeholder="1240" /></Field><Field label="Piso/depto"><Input placeholder="7 B" /></Field><Field label="Barrio"><Input placeholder="San Nicolás" /></Field></div><div className="grid gap-3 sm:grid-cols-3"><label className="rounded-2xl border p-3 text-sm font-semibold"><input className="mr-2" type="checkbox" />Ascensor</label><label className="rounded-2xl border p-3 text-sm font-semibold"><input className="mr-2" type="checkbox" />Estacionamiento</label><label className="rounded-2xl border p-3 text-sm font-semibold"><input className="mr-2" type="checkbox" />Acceso complejo</label></div><Button>Guardar dirección</Button></Card></PageScaffold>
+  const address = customerDemoFixtures.addresses[0]
+
+  return (
+    <PageScaffold title="Direcciones y accesos" eyebrow="Cliente · Demostración" description="Prepará cada visita con una ubicación clara y condiciones de acceso estructuradas.">
+      <InfoNotice title="Una dirección completa evita demoras" description="Ascensor, estacionamiento, escaleras y altura ayudan a elegir herramientas y organizar la llegada." />
+      <div className="grid gap-5 xl:grid-cols-[22rem_minmax(0,1fr)] xl:items-start">
+        <section aria-labelledby="saved-addresses-title" className="space-y-3">
+          <h2 id="saved-addresses-title" className="text-xl font-black text-slate-950">Direcciones registradas</h2>
+          <AddressSummaryCard address={address} />
+        </section>
+        <CustomerAddressForm initialValue={address} />
+      </div>
+    </PageScaffold>
+  )
 }

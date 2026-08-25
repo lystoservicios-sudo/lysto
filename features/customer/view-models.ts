@@ -108,6 +108,15 @@ export type CustomerAddressViewModel = {
   access: AddressAccessDetails
 }
 
+export type CustomerProfileViewModel = {
+  id: string
+  firstName: string
+  lastName: string
+  email: string
+  phone: string
+  notificationPreference: 'email' | 'whatsapp' | 'both'
+}
+
 export function findCustomerRecordById<T extends { id: string }>(records: readonly T[], id: string): T | null {
   return records.find((record) => record.id === id) ?? null
 }
