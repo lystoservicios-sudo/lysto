@@ -75,6 +75,21 @@ export const customerDemoFixtures = {
       preliminaryPrice: 43750,
       mediaCount: 0,
       nextStep: 'Revisar el presupuesto preliminar'
+    },
+    {
+      id: 'req_demo_maintenance',
+      issue: 'mantenimiento',
+      issueLabel: 'Mantenimiento preventivo',
+      status: 'draft',
+      statusView: { label: 'Borrador', tone: 'neutral' },
+      urgency: 'flexible',
+      address: 'Dirección de demostración, CABA',
+      preferredWindow: 'A definir',
+      createdAt: '2026-08-24T10:30:00.000Z',
+      preliminaryDiagnosis: 'Todavía faltan datos para generar una orientación preliminar.',
+      preliminaryPrice: null,
+      mediaCount: 0,
+      nextStep: 'Continuar la solicitud'
     }
   ],
   jobs: [

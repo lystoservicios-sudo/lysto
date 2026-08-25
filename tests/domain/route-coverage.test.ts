@@ -107,10 +107,13 @@ test('all MVP API route contracts exist', () => {
   expect(missing).toEqual([])
 })
 
-test('customer wizard contains all business steps discussed', () => {
+test('customer wizard stops at deferred payment without simulated fulfillment', () => {
   const content = read('features/service-request/air-conditioning-wizard.tsx')
-  for (const text of ['¿Qué sucede?', 'Contanos un poco más', 'Diagnóstico preliminar', '¿Dónde está el equipo?', 'Elegí el horario', 'Elegí tu presupuesto', 'Pago protegido', 'Buscando el mejor profesional', 'Técnico confirmado']) {
+  for (const text of ['Problema', 'Detalles', 'Diagnóstico', 'Dirección', 'Horario', 'Presupuesto', 'Pago', 'PaymentDeferredPanel']) {
     expect(content).toIncludeText(text)
+  }
+  for (const text of ['Buscando el mejor profesional', 'Técnico confirmado', 'Trabajo creado', 'Pago aprobado']) {
+    expect(content.includes(text)).toBeFalsy()
   }
 })
 

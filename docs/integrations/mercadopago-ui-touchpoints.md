@@ -8,8 +8,8 @@ La interfaz Cliente no crea preferencias, IDs de proveedor, cobros, devoluciones
 
 | Ruta | Componente UI | Acción futura | Datos requeridos | Contrato esperado |
 |---|---|---|---|---|
-| `/app/solicitar/aire-acondicionado` | Paso `payment` de `AirConditioningWizard` + futuro `PaymentDeferredPanel` | Crear preferencia e iniciar checkout | `requestId`, opción elegida, importe, moneda, identidad del cliente, URL de retorno | El servidor entrega un identificador/URL de checkout; la UI nunca marca el pago como aprobado por respuesta local. |
-| `/app/solicitudes/[id]` | Futuro `CustomerRequestDetail` + `PaymentDeferredPanel` | Pagar o reintentar una solicitud pendiente | `requestId`, estado de solicitud, importe preliminar vigente, estado de pago | La disponibilidad surge del estado persistido; la aprobación llega por confirmación del backend/webhook. |
+| `/app/solicitar/aire-acondicionado` | Paso `payment` de `AirConditioningWizard` + `PaymentDeferredPanel` | Crear preferencia e iniciar checkout | `requestId`, opción elegida, importe, moneda, identidad del cliente, URL de retorno | El servidor entrega un identificador/URL de checkout; la UI nunca marca el pago como aprobado por respuesta local. |
+| `/app/solicitudes/[id]` | `CustomerRequestDetail` + `PaymentDeferredPanel` | Pagar o reintentar una solicitud pendiente | `requestId`, estado de solicitud, importe preliminar vigente, estado de pago | La disponibilidad surge del estado persistido; la aprobación llega por confirmación del backend/webhook. |
 | `/app/trabajos/[id]` | Acciones del trabajo + `PaymentDeferredPanel` | Aprobar un importe adicional y consultar comprobante | `jobId`, `paymentId`, concepto, importe, estado, referencia de comprobante autorizada | Las acciones financieras quedan deshabilitadas hasta recibir capacidades explícitas del backend. |
 | `/app/pagos` | Hero, ayuda, estado vacío/diferido + `PaymentDeferredPanel` | Listar movimientos, abrir comprobante y solicitar devolución | movimientos paginados del cliente, importes, fechas, estados, referencias seguras y capacidades | La lista consume registros reales del usuario; sin fixtures aprobados ni movimientos inventados. |
 | `/app/garantias` | Detalle futuro de reclamo + `PaymentDeferredPanel` cuando corresponda | Mostrar el estado de una devolución vinculada a calidad/garantía | `claimId`, `paymentId`, importe elegible, estado y motivo | El reclamo no ejecuta la devolución desde la vista; solo presenta acciones habilitadas por el backend. |
@@ -17,7 +17,8 @@ La interfaz Cliente no crea preferencias, IDs de proveedor, cobros, devoluciones
 ## Estado de esta tanda
 
 - Los fixtures Cliente mantienen `integrationState: 'deferred'` y `movements: []`.
-- `PaymentDeferredPanel` se implementará cuando aparezca su primer consumidor visual en Tanda 2 y se reutilizará en Tanda 6.
+- `PaymentDeferredPanel` quedó implementado como superficie central en Tanda 2 y debe reutilizarse en Tanda 6.
+- El wizard se detiene en pago: no expone matching, profesional confirmado ni trabajo creado sin una confirmación persistida.
 - Los CTAs existentes no se conectan a `alert()`, respuestas falsas ni transiciones locales de pago.
 - Los contratos actuales bajo `lib/payments`, `lib/use-cases`, `lib/data-access` y `lib/config` se conservaron sin cambios. Su existencia no implica que la UI Cliente esté integrada.
 

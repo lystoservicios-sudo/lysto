@@ -1,20 +1,49 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import {
+  AirVent,
+  Building2,
+  CalendarDays,
+  Check,
+  Droplets,
+  Flame,
+  House,
+  Power,
+  ShieldCheck,
+  Sparkles,
+  Volume2,
+  Wrench,
+  type LucideIcon
+} from 'lucide-react'
+import { useMemo, useState, type KeyboardEvent } from 'react'
+
+import { MediaUploader } from '@/components/customer/media-uploader'
+import { PaymentDeferredPanel } from '@/components/customer/payment-deferred-panel'
+import { PreliminaryDiagnosisPanel } from '@/components/customer/preliminary-diagnosis-panel'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+import { Button, ButtonLink } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Field, Input } from '@/components/ui/input'
-import { StatusTimeline } from '@/components/status/status-timeline'
-import { SelectableCard } from '@/components/wizard/selectable-card'
 import { ProgressStepper } from '@/components/wizard/progress-stepper'
 import { AIR_CONDITIONING_ISSUES, TIME_WINDOWS } from '@/lib/domain/constants'
-import type { PropertyType, ServiceIssueSlug, TimeSince, UrgencyLevel } from '@/lib/domain/types'
+import type { AddressAccessDetails, PropertyType, ServiceIssueSlug, TimeSince, UrgencyLevel } from '@/lib/domain/types'
 import { generateDiagnosis } from '@/lib/diagnosis/rules'
-import { calculatePriceOptions } from '@/lib/pricing/calculate-price'
+import { calculatePriceOptions, type PriceBreakdown } from '@/lib/pricing/calculate-price'
 import { validateRequestStep } from '@/lib/service-request/validation'
+import { cn } from '@/lib/utils/cn'
 
-const steps = ['Problema', 'Detalles', 'Diagnóstico', 'Dirección', 'Horario', 'Precio', 'Pago', 'Matching', 'Técnico', 'Seguimiento']
+const steps = ['Problema', 'Detalles', 'Diagnóstico', 'Dirección', 'Horario', 'Presupuesto', 'Pago']
+
+const issueIcons: Record<ServiceIssueSlug, LucideIcon> = {
+  no_enfria: AirVent,
+  pierde_agua: Droplets,
+  hace_ruido: Volume2,
+  no_enciende: Power,
+  no_funciona_calor: Flame,
+  instalacion: Wrench,
+  mantenimiento: Sparkles
+}
+
 const timeSinceOptions: Array<{ value: TimeSince; label: string; description: string }> = [
   { value: 'today', label: 'Hoy', description: 'Empezó hace pocas horas.' },
   { value: 'days', label: 'Hace días', description: 'Viene pasando esta semana.' },
@@ -22,89 +51,355 @@ const timeSinceOptions: Array<{ value: TimeSince; label: string; description: st
   { value: 'months', label: 'Hace meses', description: 'Ya es un problema antiguo.' }
 ]
 
+type AddressDraft = {
+  street: string
+  number: string
+  floor: string
+  apartment: string
+  city: string
+  province: string
+  propertyType: PropertyType
+}
+
+function handleRadioGroupKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+  if (!['ArrowDown', 'ArrowRight', 'ArrowUp', 'ArrowLeft', 'Home', 'End'].includes(event.key)) return
+
+  const radios = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="radio"]'))
+  const current = event.target instanceof Element ? event.target.closest<HTMLButtonElement>('[role="radio"]') : null
+  const currentIndex = current ? radios.indexOf(current) : -1
+  if (!radios.length || currentIndex < 0) return
+
+  event.preventDefault()
+  const nextIndex = event.key === 'Home'
+    ? 0
+    : event.key === 'End'
+      ? radios.length - 1
+      : ['ArrowDown', 'ArrowRight'].includes(event.key)
+        ? (currentIndex + 1) % radios.length
+        : (currentIndex - 1 + radios.length) % radios.length
+  radios[nextIndex]?.focus()
+  radios[nextIndex]?.click()
+}
+
 export function AirConditioningWizard() {
   const [step, setStep] = useState(0)
-  const [issue, setIssue] = useState<ServiceIssueSlug>('no_enfria')
-  const [timeSince, setTimeSince] = useState<TimeSince>('days')
-  const [address, setAddress] = useState({ street: 'Av. Corrientes', number: '1240', floor: '7', apartment: 'B', city: 'CABA', province: 'Buenos Aires', propertyType: 'apartment' as PropertyType })
-  const [access, setAccess] = useState({ hasElevator: true, hasParking: false, difficultAccess: false, outdoorUnitAtHeight: false })
+  const [issue, setIssue] = useState<ServiceIssueSlug | undefined>()
+  const [timeSince, setTimeSince] = useState<TimeSince | undefined>()
+  const [files, setFiles] = useState<File[]>([])
+  const [address, setAddress] = useState<AddressDraft>({
+    street: 'Av. Corrientes',
+    number: '1240',
+    floor: '7',
+    apartment: 'B',
+    city: 'CABA',
+    province: 'Buenos Aires',
+    propertyType: 'apartment'
+  })
+  const [access, setAccess] = useState<AddressAccessDetails>({
+    hasElevator: true,
+    hasParking: false,
+    difficultAccess: false,
+    outdoorUnitAtHeight: false
+  })
   const [selectedDay, setSelectedDay] = useState('Mañana')
-  const [window, setWindow] = useState<string>(TIME_WINDOWS[1])
+  const [timeWindow, setTimeWindow] = useState<string>(TIME_WINDOWS[1])
   const [option, setOption] = useState<UrgencyLevel>('priority')
 
-  const diagnosis = useMemo(() => generateDiagnosis({ issue, timeSince }), [issue, timeSince])
-  const prices = useMemo(() => calculatePriceOptions({ issue, zone: 'caba', propertyType: address.propertyType, access }), [issue, address.propertyType, access])
+  const diagnosis = useMemo(
+    () => issue && timeSince ? generateDiagnosis({ issue, timeSince, hasPhoto: files.some((file) => file.type.startsWith('image/')), hasVideo: files.some((file) => file.type.startsWith('video/')) }) : null,
+    [files, issue, timeSince]
+  )
+  const prices = useMemo(() => calculatePriceOptions({
+    issue: issue ?? 'no_enfria',
+    zone: 'caba',
+    propertyType: address.propertyType,
+    access
+  }), [access, address.propertyType, issue])
   const selectedPrice = option === 'priority' ? prices.priority : prices.flexible
-  const errors = useMemo(() => validateRequestStep({ issue, timeSince, address: { ...address, access }, preferredDate: selectedDay, preferredTimeWindow: window, selectedOption: option }, step === 0 ? 'issue' : step === 1 ? 'details' : step === 3 ? 'address' : step === 4 ? 'schedule' : step === 5 ? 'price' : 'issue'), [issue, timeSince, address, access, selectedDay, window, option, step])
+
+  const validationKey = step === 0
+    ? 'issue'
+    : step === 1
+      ? 'details'
+      : step === 3
+        ? 'address'
+        : step === 4
+          ? 'schedule'
+          : step === 5
+            ? 'price'
+            : null
+  const errors = validationKey ? validateRequestStep({
+    issue,
+    timeSince,
+    address: { ...address, access },
+    preferredDate: selectedDay,
+    preferredTimeWindow: timeWindow,
+    selectedOption: option
+  }, validationKey) : []
+  const isFinalStep = step === steps.length - 1
 
   return (
-    <Card className="mx-auto max-w-3xl p-4 sm:p-6">
-      <ProgressStepper steps={steps} current={step} />
-      <div className="mt-6 min-h-[520px]">
-        {step === 0 ? <StepIssue issue={issue} setIssue={setIssue} /> : null}
-        {step === 1 ? <StepDetails timeSince={timeSince} setTimeSince={setTimeSince} /> : null}
-        {step === 2 ? <StepDiagnosis diagnosis={diagnosis} /> : null}
-        {step === 3 ? <StepAddress address={address} setAddress={setAddress} access={access} setAccess={setAccess} /> : null}
-        {step === 4 ? <StepSchedule selectedDay={selectedDay} setSelectedDay={setSelectedDay} window={window} setWindow={setWindow} /> : null}
-        {step === 5 ? <StepPricing option={option} setOption={setOption} flexible={prices.flexible.total} priority={prices.priority.total} /> : null}
-        {step === 6 ? <StepPayment amount={selectedPrice.total} option={option} /> : null}
-        {step === 7 ? <StepMatching /> : null}
-        {step === 8 ? <StepTechnician /> : null}
-        {step === 9 ? <StepTracking amount={selectedPrice.total} /> : null}
+    <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_20rem] xl:items-start">
+      <Card className="min-w-0 p-4 shadow-none sm:p-6">
+        <ProgressStepper steps={steps} current={step} />
+        <div className="mt-7 min-h-[32rem]">
+          {step === 0 ? <StepIssue issue={issue} setIssue={setIssue} /> : null}
+          {step === 1 ? <StepDetails timeSince={timeSince} setTimeSince={setTimeSince} files={files} setFiles={setFiles} /> : null}
+          {step === 2 && diagnosis ? <StepDiagnosis diagnosis={diagnosis} /> : null}
+          {step === 3 ? <StepAddress address={address} setAddress={setAddress} access={access} setAccess={setAccess} /> : null}
+          {step === 4 ? <StepSchedule selectedDay={selectedDay} setSelectedDay={setSelectedDay} timeWindow={timeWindow} setTimeWindow={setTimeWindow} /> : null}
+          {step === 5 ? <StepPricing option={option} setOption={setOption} flexible={prices.flexible} priority={prices.priority} /> : null}
+          {step === 6 ? <PaymentDeferredPanel amount={selectedPrice.total} planLabel={option === 'priority' ? 'Prioridad' : 'Flexible'} /> : null}
+        </div>
+
+        {errors.length ? <p role="alert" className="mt-4 rounded-2xl bg-amber-50 p-3 text-sm font-semibold text-amber-950">{errors[0]}</p> : null}
+
+        <div className="mt-6 flex flex-col-reverse gap-3 border-t border-slate-200 pt-4 sm:flex-row">
+          <Button variant="secondary" disabled={step === 0} onClick={() => setStep((value) => Math.max(0, value - 1))}>Atrás</Button>
+          {isFinalStep ? (
+            <ButtonLink href="/app/solicitudes" variant="secondary" className="sm:ml-auto">Volver a mis solicitudes</ButtonLink>
+          ) : (
+            <Button className="sm:ml-auto sm:min-w-40" disabled={errors.length > 0} onClick={() => setStep((value) => Math.min(steps.length - 1, value + 1))}>Continuar</Button>
+          )}
+        </div>
+      </Card>
+
+      <RequestBrief
+        issueLabel={issue ? AIR_CONDITIONING_ISSUES.find((item) => item.slug === issue)?.title : undefined}
+        address={`${address.street} ${address.number}`}
+        selectedDay={selectedDay}
+        timeWindow={timeWindow}
+        amount={step >= 5 ? selectedPrice.total : null}
+        fileCount={files.length}
+      />
+    </div>
+  )
+}
+
+function ChoiceCard({ selected, title, description, icon: Icon, onClick }: {
+  selected: boolean
+  title: string
+  description?: string
+  icon?: LucideIcon
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={selected}
+      onClick={onClick}
+      className={cn(
+        'flex min-h-24 w-full items-start gap-3 rounded-2xl border p-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2',
+        selected ? 'border-blue-500 bg-blue-50 text-blue-950' : 'border-slate-200 bg-white text-slate-700 hover:border-blue-300 hover:bg-slate-50'
+      )}
+    >
+      {Icon ? <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-white text-blue-700 ring-1 ring-slate-200"><Icon aria-hidden="true" className="h-5 w-5" /></span> : null}
+      <span className="min-w-0">
+        <span className="block font-black text-slate-950">{title}</span>
+        {description ? <span className="mt-1 block text-sm leading-5 text-slate-600">{description}</span> : null}
+      </span>
+    </button>
+  )
+}
+
+function StepIssue({ issue, setIssue }: { issue?: ServiceIssueSlug; setIssue: (issue: ServiceIssueSlug) => void }) {
+  return (
+    <div className="space-y-5">
+      <div>
+        <Badge tone="blue">Inicio del parte</Badge>
+        <h2 className="mt-3 text-2xl font-black tracking-tight text-slate-950">¿Qué está pasando con el equipo?</h2>
+        <p className="mt-2 text-sm leading-6 text-slate-600">Elegí una opción para orientar el diagnóstico y preparar la visita.</p>
       </div>
-      {errors.length && [0, 1, 3, 4, 5].includes(step) ? <div className="mt-4 rounded-2xl bg-amber-50 p-3 text-sm font-semibold text-amber-900">{errors[0]}</div> : null}
-      <div className="mt-6 flex gap-3 border-t border-slate-200 pt-4">
-        <Button variant="secondary" disabled={step === 0} onClick={() => setStep((value) => Math.max(0, value - 1))}>Atrás</Button>
-        <Button className="flex-1" disabled={errors.length > 0 && [0, 1, 3, 4, 5].includes(step)} onClick={() => setStep((value) => Math.min(steps.length - 1, value + 1))}>{step === steps.length - 1 ? 'Ver trabajo creado' : 'Continuar'}</Button>
+      <div role="radiogroup" aria-label="Problema del equipo" onKeyDown={handleRadioGroupKeyDown} className="grid gap-3 sm:grid-cols-2">
+        {AIR_CONDITIONING_ISSUES.map((item) => (
+          <ChoiceCard key={item.slug} selected={issue === item.slug} icon={issueIcons[item.slug]} title={item.title} description={item.description} onClick={() => setIssue(item.slug)} />
+        ))}
       </div>
+    </div>
+  )
+}
+
+function StepDetails({ timeSince, setTimeSince, files, setFiles }: {
+  timeSince?: TimeSince
+  setTimeSince: (value: TimeSince) => void
+  files: readonly File[]
+  setFiles: (files: File[]) => void
+}) {
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-black tracking-tight text-slate-950">Contanos un poco más</h2>
+        <p className="mt-2 text-sm leading-6 text-slate-600">La antigüedad del problema y la evidencia ayudan a preparar herramientas y repuestos.</p>
+      </div>
+      <div role="radiogroup" aria-label="Antigüedad del problema" onKeyDown={handleRadioGroupKeyDown} className="grid gap-3 sm:grid-cols-2">
+        {timeSinceOptions.map((item) => <ChoiceCard key={item.value} selected={timeSince === item.value} title={item.label} description={item.description} onClick={() => setTimeSince(item.value)} />)}
+      </div>
+      <MediaUploader files={files} onFilesChange={setFiles} />
+    </div>
+  )
+}
+
+function StepDiagnosis({ diagnosis }: { diagnosis: ReturnType<typeof generateDiagnosis> }) {
+  return (
+    <div className="space-y-5">
+      <PreliminaryDiagnosisPanel summary={diagnosis.customerSummary} />
+      <div>
+        <h3 className="font-black text-slate-950">Posibles causas a revisar</h3>
+        <ul className="mt-3 grid gap-2">
+          {diagnosis.causes.map((cause, index) => (
+            <li key={cause.code} className="flex items-start gap-3 rounded-2xl bg-slate-50 p-3 text-sm leading-6 text-slate-700">
+              <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white text-xs font-black text-blue-700 ring-1 ring-slate-200">{index + 1}</span>
+              {cause.label}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  )
+}
+
+function StepAddress({ address, setAddress, access, setAccess }: {
+  address: AddressDraft
+  setAddress: (value: AddressDraft) => void
+  access: AddressAccessDetails
+  setAccess: (value: AddressAccessDetails) => void
+}) {
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-black tracking-tight text-slate-950">¿Dónde está el equipo?</h2>
+        <p className="mt-2 text-sm leading-6 text-slate-600">Completá la ubicación y las condiciones que pueden afectar la visita.</p>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Calle"><Input aria-label="Calle" value={address.street} onChange={(event) => setAddress({ ...address, street: event.target.value })} /></Field>
+        <Field label="Número"><Input aria-label="Número" value={address.number} onChange={(event) => setAddress({ ...address, number: event.target.value })} /></Field>
+        <Field label="Piso"><Input aria-label="Piso" value={address.floor} onChange={(event) => setAddress({ ...address, floor: event.target.value })} /></Field>
+        <Field label="Departamento"><Input aria-label="Departamento" value={address.apartment} onChange={(event) => setAddress({ ...address, apartment: event.target.value })} /></Field>
+        <Field label="Ciudad"><Input aria-label="Ciudad" value={address.city} onChange={(event) => setAddress({ ...address, city: event.target.value })} /></Field>
+        <Field label="Provincia"><Input aria-label="Provincia" value={address.province} onChange={(event) => setAddress({ ...address, province: event.target.value })} /></Field>
+      </div>
+      <div role="radiogroup" aria-label="Tipo de propiedad" onKeyDown={handleRadioGroupKeyDown} className="grid gap-3 sm:grid-cols-2">
+        <ChoiceCard selected={address.propertyType === 'apartment'} title="Departamento" description="Acceso mediante espacios comunes" icon={Building2} onClick={() => setAddress({ ...address, propertyType: 'apartment' })} />
+        <ChoiceCard selected={address.propertyType === 'house'} title="Casa" description="Acceso directo desde la calle" icon={House} onClick={() => setAddress({ ...address, propertyType: 'house' })} />
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <AccessToggle label="Hay ascensor" checked={Boolean(access.hasElevator)} onChange={(checked) => setAccess({ ...access, hasElevator: checked })} />
+        <AccessToggle label="Hay estacionamiento" checked={Boolean(access.hasParking)} onChange={(checked) => setAccess({ ...access, hasParking: checked })} />
+        <AccessToggle label="El acceso es complicado" checked={Boolean(access.difficultAccess)} onChange={(checked) => setAccess({ ...access, difficultAccess: checked })} />
+        <AccessToggle label="La unidad exterior está en altura" checked={Boolean(access.outdoorUnitAtHeight)} onChange={(checked) => setAccess({ ...access, outdoorUnitAtHeight: checked })} />
+      </div>
+    </div>
+  )
+}
+
+function AccessToggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (checked: boolean) => void }) {
+  return (
+    <label className={cn('flex min-h-14 cursor-pointer items-center gap-3 rounded-2xl border p-3 text-sm font-bold', checked ? 'border-blue-300 bg-blue-50 text-blue-950' : 'border-slate-200 bg-white text-slate-700')}>
+      <input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} className="h-5 w-5 rounded border-slate-300 text-blue-600 focus:ring-blue-600" />
+      {label}
+    </label>
+  )
+}
+
+function StepSchedule({ selectedDay, setSelectedDay, timeWindow, setTimeWindow }: {
+  selectedDay: string
+  setSelectedDay: (value: string) => void
+  timeWindow: string
+  setTimeWindow: (value: string) => void
+}) {
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-black tracking-tight text-slate-950">Elegí una franja preferida</h2>
+        <p className="mt-2 text-sm leading-6 text-slate-600">La disponibilidad real se confirmará antes de asignar un profesional.</p>
+      </div>
+      <div role="radiogroup" aria-label="Día preferido" onKeyDown={handleRadioGroupKeyDown} className="grid gap-3 sm:grid-cols-3">
+        {['Hoy', 'Mañana', 'Otro día'].map((day) => <ChoiceCard key={day} selected={selectedDay === day} title={day} icon={CalendarDays} onClick={() => setSelectedDay(day)} />)}
+      </div>
+      <div role="radiogroup" aria-label="Franja horaria" onKeyDown={handleRadioGroupKeyDown} className="grid gap-3 sm:grid-cols-2">
+        {TIME_WINDOWS.map((window) => <ChoiceCard key={window} selected={timeWindow === window} title={window} onClick={() => setTimeWindow(window)} />)}
+      </div>
+    </div>
+  )
+}
+
+function StepPricing({ option, setOption, flexible, priority }: {
+  option: UrgencyLevel
+  setOption: (value: UrgencyLevel) => void
+  flexible: PriceBreakdown
+  priority: PriceBreakdown
+}) {
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-black tracking-tight text-slate-950">Elegí un presupuesto preliminar</h2>
+        <p className="mt-2 text-sm leading-6 text-slate-600">El importe puede cambiar únicamente si el profesional detecta un trabajo adicional y vos lo aprobás.</p>
+      </div>
+      <div role="radiogroup" aria-label="Opción de presupuesto" onKeyDown={handleRadioGroupKeyDown} className="grid gap-3 sm:grid-cols-2">
+        <PriceOption title="Flexible" amount={flexible.total} description="Franja más amplia y menor prioridad de asignación." selected={option === 'flexible'} onClick={() => setOption('flexible')} />
+        <PriceOption title="Prioridad" amount={priority.total} description="Mayor prioridad para encontrar disponibilidad." selected={option === 'priority'} recommended onClick={() => setOption('priority')} />
+      </div>
+      <IncludedServices />
+    </div>
+  )
+}
+
+function PriceOption({ title, amount, description, selected, recommended, onClick }: {
+  title: string
+  amount: number
+  description: string
+  selected: boolean
+  recommended?: boolean
+  onClick: () => void
+}) {
+  return (
+    <button type="button" role="radio" aria-checked={selected} onClick={onClick} className={cn('rounded-3xl border p-5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2', selected ? 'border-blue-500 bg-blue-50' : 'border-slate-200 bg-white hover:border-blue-300')}>
+      <span className="flex items-start justify-between gap-3"><span className="text-lg font-black text-slate-950">{title}</span>{recommended ? <Badge tone="green">Recomendado</Badge> : null}</span>
+      <span className="mt-4 block text-3xl font-black tabular-nums text-slate-950">$ {amount.toLocaleString('es-AR')}</span>
+      <span className="mt-2 block text-sm leading-6 text-slate-600">{description}</span>
+    </button>
+  )
+}
+
+function IncludedServices() {
+  const items = ['Orientación preliminar', 'Coordinación de la visita', 'Confirmación del presupuesto adicional antes de reparar']
+  return (
+    <Card className="shadow-none">
+      <div className="flex items-center gap-2"><ShieldCheck aria-hidden="true" className="h-5 w-5 text-violet-700" /><h3 className="font-black text-slate-950">Qué incluye este paso</h3></div>
+      <ul className="mt-4 grid gap-2 text-sm text-slate-700">
+        {items.map((item) => <li key={item} className="flex items-start gap-2"><Check aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-emerald-700" />{item}</li>)}
+      </ul>
     </Card>
   )
 }
 
-function StepIssue({ issue, setIssue }: { issue: ServiceIssueSlug; setIssue: (issue: ServiceIssueSlug) => void }) {
-  return <div className="space-y-4"><h2 className="text-2xl font-black">¿Qué sucede?</h2><p className="text-sm text-slate-600">Elegí el motivo de tu consulta para generar un diagnóstico preliminar y asignar el técnico adecuado.</p><div className="grid gap-3 sm:grid-cols-2">{AIR_CONDITIONING_ISSUES.map((item) => <SelectableCard key={item.slug} selected={issue === item.slug} icon={item.emoji} title={item.title} description={item.description} onClick={() => setIssue(item.slug)} />)}</div></div>
+function RequestBrief({ issueLabel, address, selectedDay, timeWindow, amount, fileCount }: {
+  issueLabel?: string
+  address: string
+  selectedDay: string
+  timeWindow: string
+  amount: number | null
+  fileCount: number
+}) {
+  return (
+    <Card className="sticky top-20 hidden space-y-4 shadow-none xl:block">
+      <div>
+        <p className="text-xs font-bold uppercase tracking-[0.12em] text-blue-700">Parte en preparación</p>
+        <h2 className="mt-1 text-lg font-black text-slate-950">Resumen de la visita</h2>
+      </div>
+      <dl className="space-y-3 text-sm">
+        <BriefFact label="Problema" value={issueLabel ?? 'Sin elegir'} />
+        <BriefFact label="Dirección" value={address} />
+        <BriefFact label="Horario" value={`${selectedDay} · ${timeWindow}`} />
+        <BriefFact label="Evidencia" value={`${fileCount} ${fileCount === 1 ? 'archivo' : 'archivos'}`} />
+        <BriefFact label="Presupuesto" value={amount === null ? 'Se calcula más adelante' : `$ ${amount.toLocaleString('es-AR')}`} />
+      </dl>
+      <p className="rounded-2xl bg-slate-50 p-3 text-xs leading-5 text-slate-600">Nada se enviará ni cobrará mientras la persistencia y la pasarela estén pendientes.</p>
+    </Card>
+  )
 }
 
-function StepDetails({ timeSince, setTimeSince }: { timeSince: TimeSince; setTimeSince: (value: TimeSince) => void }) {
-  return <div className="space-y-5"><h2 className="text-2xl font-black">Contanos un poco más</h2><div className="grid gap-3 sm:grid-cols-2">{timeSinceOptions.map((item) => <SelectableCard key={item.value} selected={timeSince === item.value} title={item.label} description={item.description} onClick={() => setTimeSince(item.value)} />)}</div><div className="grid gap-3 sm:grid-cols-2"><Card className="border-dashed text-center"><p className="text-3xl">📷</p><p className="font-bold">Tomar foto</p><p className="text-xs text-slate-500">Opcional. Hasta 5 fotos del equipo, control remoto o pérdida.</p></Card><Card className="border-dashed text-center"><p className="text-3xl">🎥</p><p className="font-bold">Agregar video</p><p className="text-xs text-slate-500">Opcional. Ideal para ruidos, goteos o fallas intermitentes.</p></Card></div></div>
-}
-
-function StepDiagnosis({ diagnosis }: { diagnosis: ReturnType<typeof generateDiagnosis> }) {
-  return <div className="space-y-4"><Badge tone="green">Diagnóstico preliminar</Badge><h2 className="text-2xl font-black">{diagnosis.topCause.label}</h2><p className="text-slate-600">{diagnosis.customerSummary}</p><Card className="bg-blue-50"><p className="text-sm font-bold text-blue-900">Nivel de coincidencia: {diagnosis.level === 'high' ? 'Alto' : diagnosis.level === 'medium' ? 'Medio' : 'Bajo'}</p><p className="mt-2 text-sm text-blue-900">{diagnosis.disclaimer}</p></Card><div className="grid gap-2">{diagnosis.causes.map((cause) => <div key={cause.code} className="rounded-2xl bg-slate-50 p-3 text-sm font-semibold text-slate-700">{cause.label} · score interno {Math.round(cause.score * 100)}%</div>)}</div><Card className="bg-slate-950 text-white"><p className="text-sm font-black">Informe para técnico</p><p className="mt-2 text-sm leading-6 text-slate-200">{diagnosis.technicianSummary}</p></Card></div>
-}
-
-function StepAddress({ address, setAddress, access, setAccess }: { address: { street: string; number: string; floor: string; apartment: string; city: string; province: string; propertyType: PropertyType }; setAddress: (value: { street: string; number: string; floor: string; apartment: string; city: string; province: string; propertyType: PropertyType }) => void; access: { hasElevator: boolean; hasParking: boolean; difficultAccess: boolean; outdoorUnitAtHeight: boolean }; setAccess: (value: { hasElevator: boolean; hasParking: boolean; difficultAccess: boolean; outdoorUnitAtHeight: boolean }) => void }) {
-  return <div className="space-y-4"><h2 className="text-2xl font-black">¿Dónde está el equipo?</h2><div className="grid gap-3 sm:grid-cols-2"><Field label="Calle"><Input value={address.street} onChange={(event) => setAddress({ ...address, street: event.target.value })} /></Field><Field label="Número"><Input value={address.number} onChange={(event) => setAddress({ ...address, number: event.target.value })} /></Field><Field label="Piso"><Input value={address.floor} onChange={(event) => setAddress({ ...address, floor: event.target.value })} /></Field><Field label="Departamento"><Input value={address.apartment} onChange={(event) => setAddress({ ...address, apartment: event.target.value })} /></Field></div><div className="grid gap-3 sm:grid-cols-2"><SelectableCard selected={address.propertyType === 'apartment'} title="🏢 Departamento" description="Acceso por edificio" onClick={() => setAddress({ ...address, propertyType: 'apartment' })} /><SelectableCard selected={address.propertyType === 'house'} title="🏠 Casa" description="Acceso desde calle" onClick={() => setAddress({ ...address, propertyType: 'house' })} /></div><div className="grid gap-3 sm:grid-cols-2"><Toggle label="Ascensor" checked={access.hasElevator} onClick={() => setAccess({ ...access, hasElevator: !access.hasElevator })} /><Toggle label="Estacionamiento" checked={access.hasParking} onClick={() => setAccess({ ...access, hasParking: !access.hasParking })} /><Toggle label="Acceso complicado" checked={access.difficultAccess} onClick={() => setAccess({ ...access, difficultAccess: !access.difficultAccess })} /><Toggle label="Unidad exterior en altura" checked={access.outdoorUnitAtHeight} onClick={() => setAccess({ ...access, outdoorUnitAtHeight: !access.outdoorUnitAtHeight })} /></div></div>
-}
-
-function Toggle({ label, checked, onClick }: { label: string; checked: boolean; onClick: () => void }) {
-  return <button type="button" onClick={onClick} className={`rounded-2xl border p-4 text-left text-sm font-bold transition ${checked ? 'border-lysto-blue bg-blue-50 text-blue-900' : 'border-slate-200 bg-white text-slate-700'}`}>{checked ? '✓ ' : ''}{label}</button>
-}
-
-function StepSchedule({ selectedDay, setSelectedDay, window, setWindow }: { selectedDay: string; setSelectedDay: (value: string) => void; window: string; setWindow: (value: string) => void }) {
-  return <div className="space-y-4"><h2 className="text-2xl font-black">Elegí el horario</h2><div className="grid gap-3 sm:grid-cols-3">{['Hoy', 'Mañana', 'Otro día'].map((day) => <SelectableCard key={day} selected={selectedDay === day} title={day === 'Hoy' ? '☀️ Hoy' : day === 'Mañana' ? '🌤️ Mañana' : '📅 Otro día'} onClick={() => setSelectedDay(day)} />)}</div><div className="grid gap-3 sm:grid-cols-2">{TIME_WINDOWS.map((tw) => <SelectableCard key={tw} selected={window === tw} title={tw} onClick={() => setWindow(tw)} />)}</div></div>
-}
-
-function StepPricing({ option, setOption, flexible, priority }: { option: UrgencyLevel; setOption: (value: UrgencyLevel) => void; flexible: number; priority: number }) {
-  return <div className="space-y-4"><h2 className="text-2xl font-black">Elegí tu presupuesto</h2><div className="grid gap-3 sm:grid-cols-2"><PriceCard title="Flexible" amount={flexible} description="Más económico. Franja horaria más amplia, misma verificación Lysto." selected={option === 'flexible'} onClick={() => setOption('flexible')} /><PriceCard title="Prioridad" amount={priority} description="Mayor prioridad de asignación, mejor SLA y seguimiento preferente." selected={option === 'priority'} recommended onClick={() => setOption('priority')} /></div><Card className="bg-emerald-50 text-emerald-900"><p className="text-sm font-bold">El precio es preliminar para visita/servicio base. Si hay reparación adicional, el técnico carga presupuesto final para aprobación.</p></Card></div>
-}
-
-function PriceCard({ title, amount, description, recommended, selected, onClick }: { title: string; amount: number; description: string; recommended?: boolean; selected?: boolean; onClick: () => void }) {
-  return <button type="button" onClick={onClick} className={`rounded-3xl border bg-white p-5 text-left shadow-card transition ${selected ? 'border-lysto-blue ring-4 ring-blue-100' : 'border-slate-200'}`}><div className="flex items-center justify-between"><h3 className="text-lg font-black">{title}</h3>{recommended ? <Badge tone="green">Recomendado</Badge> : null}</div><p className="mt-4 text-3xl font-black">${amount.toLocaleString('es-AR')}</p><p className="mt-2 text-sm leading-6 text-slate-600">{description}</p></button>
-}
-
-function StepPayment({ amount, option }: { amount: number; option: UrgencyLevel }) {
-  return <div className="space-y-4"><Badge tone="blue">Pago protegido</Badge><h2 className="text-2xl font-black">Reservá el servicio con Mercado Pago</h2><p className="text-slate-600">La integración real crea una preferencia, registra el pago, recibe webhook idempotente y actualiza la solicitud.</p><Card className="space-y-3"><div className="flex justify-between"><span>Plan</span><strong>{option === 'priority' ? 'Prioridad' : 'Flexible'}</strong></div><div className="flex justify-between"><span>Total</span><strong>$ {amount.toLocaleString('es-AR')}</strong></div><div className="flex justify-between"><span>Comisión Lysto estimada</span><strong>$ {Math.round(amount * 0.18).toLocaleString('es-AR')}</strong></div><Button className="w-full">Pagar con Mercado Pago</Button></Card></div>
-}
-
-function StepMatching() {
-  return <div className="space-y-4"><Badge tone="amber">Matching</Badge><h2 className="text-2xl font-black">Buscando el mejor profesional...</h2><p className="text-slate-600">El sistema calcula candidatos y el admin puede confirmar o reasignar para mantener control de calidad.</p><div className="grid gap-3 sm:grid-cols-2"><Card>Matrícula verificada</Card><Card>Cercanía por zona</Card><Card>Experiencia y score</Card><Card>Disponibilidad real</Card></div></div>
-}
-
-function StepTechnician() {
-  return <div className="space-y-4"><Badge tone="green">Técnico confirmado</Badge><Card className="flex items-center gap-4"><div className="grid h-16 w-16 place-items-center rounded-3xl bg-blue-100 text-2xl">MG</div><div><h2 className="text-2xl font-black">Martín Gómez</h2><p className="text-sm text-slate-600">Técnico verificado · Aire acondicionado split e inverter · Rating 4.9</p></div></Card><div className="grid gap-3 sm:grid-cols-2"><Card>Sale hacia tu domicilio dentro de la franja elegida.</Card><Card>Vas a recibir avisos cuando esté en camino y cuando llegue.</Card></div></div>
-}
-
-function StepTracking({ amount }: { amount: number }) {
-  return <div className="space-y-5"><Badge tone="green">Trabajo creado</Badge><h2 className="text-2xl font-black">Ya podés seguir el servicio</h2><StatusTimeline current={1} steps={['Pago aprobado', 'Profesional asignado', 'En camino', 'Llegó', 'Trabajo terminado']} /><Card className="space-y-2"><p className="text-sm font-bold text-slate-500">Resumen</p><p className="text-2xl font-black">JOB-5009 · $ {amount.toLocaleString('es-AR')}</p><p className="text-sm leading-6 text-slate-600">Desde el panel vas a poder ver estados, comprobante, QR, historial del equipo y review final.</p></Card></div>
+function BriefFact({ label, value }: { label: string; value: string }) {
+  return <div className="border-b border-slate-100 pb-3 last:border-0 last:pb-0"><dt className="font-medium text-slate-500">{label}</dt><dd className="mt-1 font-bold leading-5 text-slate-950">{value}</dd></div>
 }

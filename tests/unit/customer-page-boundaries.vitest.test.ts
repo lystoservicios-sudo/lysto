@@ -48,4 +48,16 @@ describe('customer page layout boundary', () => {
     expect(batchOneFiles).toHaveLength(3)
     expect(batchOneFiles.every((source) => !source.includes('@/lib/mock/lysto-data'))).toBe(true)
   })
+
+  it('keeps batch two pages independent from global mocks and resolves detail by route id', () => {
+    const batchTwoRoutes = customerScreenRoutes.filter((route) => ['CUS-02', 'CUS-03', 'CUS-04'].includes(route.id))
+    const batchTwoSources = batchTwoRoutes.map((route) => readFileSync(resolve(process.cwd(), route.file), 'utf8'))
+    const detailSource = batchTwoSources[2]
+
+    expect(batchTwoSources).toHaveLength(3)
+    expect(batchTwoSources.every((source) => !source.includes('@/lib/mock/lysto-data'))).toBe(true)
+    expect(detailSource).toContain('findCustomerRecordById')
+    expect(detailSource).toMatch(/params/)
+    expect(detailSource).toContain('notFound()')
+  })
 })
