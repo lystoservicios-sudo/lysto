@@ -1,0 +1,113 @@
+import type {
+  AddressAccessDetails,
+  JobStatus,
+  MaintenanceOption,
+  PaymentStatus,
+  RequestStatus,
+  ServiceIssueSlug,
+  UrgencyLevel
+} from '@/lib/domain/types'
+
+export type CustomerUiTone = 'brand' | 'success' | 'warning' | 'danger' | 'benefit' | 'neutral'
+export type CustomerDataState = 'loading' | 'ready' | 'empty' | 'error'
+
+export type CustomerStatusViewModel = {
+  label: string
+  tone: CustomerUiTone
+}
+
+export type CustomerRequestViewModel = {
+  id: string
+  issue: ServiceIssueSlug
+  issueLabel: string
+  status: RequestStatus
+  statusView: CustomerStatusViewModel
+  urgency: UrgencyLevel
+  address: string
+  preferredWindow: string
+  createdAt: string
+  preliminaryDiagnosis: string
+  preliminaryPrice: number | null
+  mediaCount: number
+  nextStep: string
+  assignedProfessionalName?: string
+}
+
+export type CustomerJobViewModel = {
+  id: string
+  requestId: string
+  status: JobStatus
+  statusView: CustomerStatusViewModel
+  issueLabel: string
+  address: string
+  scheduledAt: string
+  timeWindow: string
+  professionalName?: string
+  equipmentName?: string
+  amount: number | null
+  nextStep: string
+  canReview: boolean
+}
+
+export type CustomerEquipmentViewModel = {
+  id: string
+  nickname: string
+  kind: string
+  brand: string
+  model?: string
+  address: string
+  imageUrl?: string
+  imageAlt?: string
+  lastServiceAt?: string
+  nextMaintenanceAt?: string
+  maintenanceOption: MaintenanceOption
+  serviceCount: number
+}
+
+export type CustomerMaintenanceViewModel = {
+  id: string
+  equipmentId: string
+  equipmentName: string
+  recommendation: string
+  dueAt?: string
+  urgency: 'overdue' | 'soon' | 'planned' | 'none'
+  actionState: 'available' | 'deferred' | 'disabled'
+}
+
+export type CustomerWarrantyViewModel = {
+  id: string
+  jobId: string
+  equipmentName: string
+  status: 'active' | 'claim_open' | 'resolved' | 'rejected' | 'expired'
+  statusView: CustomerStatusViewModel
+  coverageEndsAt?: string
+  safeSummary: string
+  nextStep?: string
+}
+
+export type CustomerPaymentViewModel = {
+  id: string
+  jobId: string
+  status: PaymentStatus
+  statusView: CustomerStatusViewModel
+  amount: number
+  createdAt: string
+  methodLabel?: string
+  receiptAvailable: boolean
+}
+
+export type CustomerAddressViewModel = {
+  id: string
+  label: string
+  street: string
+  number: string
+  floor?: string
+  apartment?: string
+  city: string
+  province: string
+  access: AddressAccessDetails
+}
+
+export function findCustomerRecordById<T extends { id: string }>(records: readonly T[], id: string): T | null {
+  return records.find((record) => record.id === id) ?? null
+}
