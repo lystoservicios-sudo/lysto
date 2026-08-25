@@ -13,7 +13,13 @@ const badgeTone = {
   neutral: 'slate'
 } as const
 
-export function TechnicianProfileCard({ name }: { name?: string }) {
+export function TechnicianProfileCard({ name, specialty, rating, license, verified }: {
+  name?: string
+  specialty?: string
+  rating?: number
+  license?: string
+  verified?: boolean
+}) {
   return (
     <div className="flex min-w-0 items-center gap-3 rounded-2xl bg-slate-50 p-3">
       <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-white text-slate-700">
@@ -22,6 +28,9 @@ export function TechnicianProfileCard({ name }: { name?: string }) {
       <span className="min-w-0">
         <span className="block text-xs font-bold uppercase tracking-wide text-slate-500">Profesional asignado</span>
         <span className="mt-0.5 block truncate font-black text-slate-950">{name ?? 'Asignación pendiente'}</span>
+        {specialty ? <span className="mt-0.5 block text-xs text-slate-600">{specialty}</span> : null}
+        {rating !== undefined || license ? <span className="mt-1 block text-xs text-slate-500">{rating !== undefined ? `${rating.toLocaleString('es-AR')} de 5` : null}{rating !== undefined && license ? ' · ' : null}{license}</span> : null}
+        {name ? <span className="mt-1 block text-xs font-semibold text-slate-500">{verified ? 'Identidad verificada' : 'Datos de demostración'}</span> : null}
       </span>
     </div>
   )

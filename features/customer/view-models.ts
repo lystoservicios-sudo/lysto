@@ -47,6 +47,18 @@ export type CustomerJobViewModel = {
   amount: number | null
   nextStep: string
   canReview: boolean
+  preliminaryDiagnosis?: string
+  professionalDiagnosis?: string
+  preliminaryAmount?: number | null
+  finalAmount?: number | null
+  priceChangeReason?: string
+  professionalSpecialty?: string
+  professionalRating?: number
+  professionalLicense?: string
+  professionalVerified?: boolean
+  trackingStatus?: string
+  completedAt?: string
+  alreadyReviewed?: boolean
 }
 
 export type CustomerEquipmentViewModel = {
