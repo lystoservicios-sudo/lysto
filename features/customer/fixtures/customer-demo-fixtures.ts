@@ -5,6 +5,8 @@ import type {
   CustomerMaintenanceViewModel,
   CustomerPaymentViewModel,
   CustomerProfileViewModel,
+  CustomerProfessionalRecognitionViewModel,
+  CustomerQualityFollowupViewModel,
   CustomerRequestViewModel,
   CustomerWarrantyViewModel
 } from '../view-models'
@@ -21,6 +23,8 @@ export type CustomerDemoFixtures = {
   equipment: CustomerEquipmentViewModel[]
   maintenance: CustomerMaintenanceViewModel[]
   warranties: CustomerWarrantyViewModel[]
+  qualityFollowups: CustomerQualityFollowupViewModel[]
+  recognition: CustomerProfessionalRecognitionViewModel
   payments: {
     integrationState: 'deferred'
     movements: CustomerPaymentViewModel[]
@@ -258,16 +262,62 @@ export const customerDemoFixtures = {
   warranties: [
     {
       id: 'warranty_demo_active',
-      jobId: 'job_demo_visit',
+      jobId: 'job_demo_completed',
       equipmentId: 'eq_demo_living',
       equipmentName: 'Aire del living',
       status: 'active',
       statusView: { label: 'Cobertura vigente', tone: 'success' },
       coverageEndsAt: '2026-09-19T12:00:00.000Z',
       safeSummary: 'Cobertura de demostración sujeta al cierre técnico.',
-      nextStep: 'Conservar el comprobante del servicio'
+      nextStep: 'Conservar el comprobante del servicio',
+      serviceLabel: 'Mantenimiento preventivo',
+      professionalName: 'Profesional de demostración',
+      completedAt: '2026-08-19T18:00:00.000Z'
+    },
+    {
+      id: 'warranty_demo_claim',
+      jobId: 'job_demo_completed',
+      equipmentId: 'eq_demo_living',
+      equipmentName: 'Aire del living',
+      status: 'claim_open',
+      statusView: { label: 'En revisión', tone: 'warning' },
+      coverageEndsAt: '2026-09-24T12:00:00.000Z',
+      safeSummary: 'Se informó una nueva pérdida de agua después del servicio.',
+      nextStep: 'El equipo de calidad revisará el cierre técnico.',
+      serviceLabel: 'Mantenimiento preventivo',
+      professionalName: 'Profesional de demostración',
+      claimOpenedAt: '2026-08-24T18:00:00.000Z',
+      timeline: [
+        { id: 'reported', label: 'Problema informado', state: 'completed', occurredAt: '2026-08-24T18:00:00.000Z' },
+        { id: 'review', label: 'Revisión de antecedentes', state: 'current', description: 'Calidad compara el reclamo con el parte técnico.' },
+        { id: 'resolution', label: 'Resolución y próximos pasos', state: 'pending' }
+      ]
     }
   ],
+  qualityFollowups: [
+    {
+      id: 'quality_demo_followup',
+      equipmentId: 'eq_demo_living',
+      equipmentName: 'Aire del living',
+      kind: 'Seguimiento posterior al servicio',
+      summary: 'Lysto revisa si el resultado se mantuvo después de la visita.',
+      statusView: { label: 'Seguimiento abierto', tone: 'brand' },
+      nextStep: 'Esperar el contacto del equipo de calidad.',
+      updatedAt: '2026-08-25T12:00:00.000Z',
+      actionState: 'deferred'
+    }
+  ],
+  recognition: {
+    id: 'recognition_demo_professional',
+    professionalName: 'Profesional de demostración',
+    specialty: 'Climatización residencial',
+    recognitionLabel: 'Buenas prácticas de servicio',
+    summary: 'Reconocimiento de demostración basado en cierres técnicos y calificaciones confirmadas.',
+    rating: 4.8,
+    acceptanceRate: 98,
+    completedServices: 128,
+    verified: false
+  },
   payments: {
     integrationState: 'deferred',
     movements: []

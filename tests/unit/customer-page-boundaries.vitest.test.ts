@@ -86,4 +86,14 @@ describe('customer page layout boundary', () => {
     expect(batchFourSources[1]).toContain('notFound()')
     expect(batchFourSources[1]).toMatch(/const warranty = .*\.find\(\(item\) => item\.equipmentId === equipment\.id\)/)
   })
+
+  it('keeps the batch five warranty page independent from global mocks', () => {
+    const warrantyRoute = customerScreenRoutes.find((route) => route.id === 'CUS-11')
+    expect(warrantyRoute).toBeTruthy()
+    const source = readFileSync(resolve(process.cwd(), warrantyRoute!.file), 'utf8')
+
+    expect(source).not.toContain('@/lib/mock/lysto-data')
+    expect(source).toContain('CustomerWarrantyCenter')
+    expect(source).toContain('customerDemoFixtures')
+  })
 })

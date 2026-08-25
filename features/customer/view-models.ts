@@ -112,6 +112,43 @@ export type CustomerWarrantyViewModel = {
   coverageEndsAt?: string
   safeSummary: string
   nextStep?: string
+  serviceLabel?: string
+  professionalName?: string
+  completedAt?: string
+  claimOpenedAt?: string
+  timeline?: readonly CustomerCaseTimelineItem[]
+}
+
+export type CustomerCaseTimelineItem = {
+  id: string
+  label: string
+  description?: string
+  occurredAt?: string
+  state: 'completed' | 'current' | 'pending'
+}
+
+export type CustomerQualityFollowupViewModel = {
+  id: string
+  equipmentId: string
+  equipmentName: string
+  kind: string
+  summary: string
+  statusView: CustomerStatusViewModel
+  nextStep: string
+  updatedAt: string
+  actionState: 'available' | 'deferred' | 'disabled'
+}
+
+export type CustomerProfessionalRecognitionViewModel = {
+  id: string
+  professionalName: string
+  specialty: string
+  recognitionLabel: string
+  summary: string
+  rating: number
+  acceptanceRate: number
+  completedServices: number
+  verified: boolean
 }
 
 export type CustomerPaymentViewModel = {

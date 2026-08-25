@@ -57,7 +57,7 @@ describe('customer dashboard', () => {
       expect.objectContaining({ id: 'active-jobs', value: 2 }),
       expect.objectContaining({ id: 'equipment', value: 3 }),
       expect.objectContaining({ id: 'maintenance', value: 2 }),
-      expect.objectContaining({ id: 'warranties', value: 1 })
+      expect.objectContaining({ id: 'warranties', value: 2 })
     ])
   })
 
