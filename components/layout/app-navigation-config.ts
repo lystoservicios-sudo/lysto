@@ -32,6 +32,12 @@ export const appNavigation = {
 export type AppRole = keyof typeof appNavigation
 export type AppNavigationIcon = typeof appNavigation[AppRole][number]['icon']
 
+export const appRoleLabels: Record<AppRole, string> = {
+  Admin: 'Administración',
+  Cliente: 'Espacio cliente',
+  Profesional: 'Espacio profesional'
+}
+
 export function isNavigationItemActive(pathname: string, href: string) {
   return pathname === href || (href !== '/app' && pathname.startsWith(`${href}/`))
 }

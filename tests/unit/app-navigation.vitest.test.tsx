@@ -1,11 +1,32 @@
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { AppNavigation } from '@/components/layout/app-navigation'
+import { AppShellProvider } from '@/components/layout/app-shell-provider'
+import { AppSidebar } from '@/components/layout/app-sidebar'
+import { AppTopbar } from '@/components/layout/app-topbar'
 
 vi.mock('next/navigation', () => ({
   usePathname: () => '/admin/trabajos'
 }))
+
+function setViewport(width: number) {
+  Object.defineProperty(window, 'innerWidth', { configurable: true, writable: true, value: width })
+  window.dispatchEvent(new Event('resize'))
+}
+
+function renderShell(defaultOpen = true) {
+  return render(
+    <AppShellProvider defaultOpen={defaultOpen}>
+      <AppSidebar role="Admin" />
+      <AppTopbar role="Admin" />
+    </AppShellProvider>
+  )
+}
+
+beforeEach(() => {
+  setViewport(1280)
+  document.body.style.overflow = ''
+})
 
 afterEach(() => {
   cleanup()
@@ -13,77 +34,94 @@ afterEach(() => {
 })
 
 describe('authenticated app navigation', () => {
-  it('opens a complete role-aware mobile sidebar and marks the current route', () => {
-    render(<AppNavigation role="Admin" />)
+  it('uses the current role navigation and marks the active route', () => {
+    renderShell()
 
-    const trigger = screen.getByRole('button', { name: 'Abrir menú' })
+    const sidebar = screen.getByRole('complementary', { name: 'Navegación de Administración' })
+    const activeLink = within(sidebar).getByRole('link', { name: 'Trabajos' })
+
+    expect(activeLink.getAttribute('aria-current')).toBe('page')
+    expect(activeLink.getAttribute('data-active')).toBe('true')
+    expect(within(sidebar).queryByText('Productos')).toBeNull()
+    expect(within(sidebar).queryByText('Pedidos')).toBeNull()
+    expect(within(sidebar).queryByText('Ver tienda')).toBeNull()
+  })
+
+  it('collapses and expands the desktop sidebar from the topbar', () => {
+    renderShell()
+
+    const sidebar = screen.getByRole('complementary', { name: 'Navegación de Administración' })
+    const trigger = screen.getByRole('button', { name: 'Contraer navegación' })
+
+    expect(sidebar.getAttribute('data-state')).toBe('expanded')
+    fireEvent.click(trigger)
+    expect(sidebar.getAttribute('data-state')).toBe('collapsed')
+    expect(screen.getByRole('button', { name: 'Expandir navegación' })).toBeTruthy()
+  })
+
+  it('opens an accessible mobile drawer at document level', async () => {
+    setViewport(390)
+    renderShell()
+
+    const trigger = screen.getByRole('button', { name: 'Abrir navegación' })
     expect(trigger.getAttribute('aria-expanded')).toBe('false')
-    expect(screen.queryByRole('dialog', { name: 'Menú principal' })).toBeNull()
-
     fireEvent.click(trigger)
 
-    const sidebar = screen.getByRole('dialog', { name: 'Menú principal' })
-    const links = within(sidebar).getAllByRole('link')
-    expect(links.map((link) => link.textContent?.trim())).toEqual([
-      'Dashboard',
-      'Solicitudes',
-      'Trabajos',
-      'Profesionales',
-      'Pagos',
-      'Matching',
-      'Calidad',
-      'Reportes'
-    ])
-    expect(within(sidebar).getByRole('link', { name: 'Trabajos' }).getAttribute('aria-current'))
-      .toBe('page')
+    const drawer = screen.getByRole('dialog', { name: 'Navegación principal' })
+    expect(drawer.parentElement?.parentElement).toBe(document.body)
     expect(trigger.getAttribute('aria-expanded')).toBe('true')
     expect(document.body.style.overflow).toBe('hidden')
+    await waitFor(() => expect(document.activeElement).toBe(within(drawer).getByRole('button', { name: 'Cerrar navegación' })))
   })
 
-  it('renders the overlay at document level so header effects cannot clip it', () => {
-    render(<AppNavigation role="Admin" />)
+  it('traps focus inside the mobile drawer', async () => {
+    setViewport(390)
+    renderShell()
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir navegación' }))
 
-    fireEvent.click(screen.getByRole('button', { name: 'Abrir menú' }))
+    const drawer = screen.getByRole('dialog', { name: 'Navegación principal' })
+    const close = within(drawer).getByRole('button', { name: 'Cerrar navegación' })
+    const links = within(drawer).getAllByRole('link')
+    const lastLink = links.at(-1) as HTMLAnchorElement
 
-    const sidebar = screen.getByRole('dialog', { name: 'Menú principal' })
-    const overlay = sidebar.parentElement
-    expect(overlay?.parentElement).toBe(document.body)
+    await waitFor(() => expect(document.activeElement).toBe(close))
+    lastLink.focus()
+    fireEvent.keyDown(drawer, { key: 'Tab' })
+    expect(document.activeElement).toBe(close)
+
+    close.focus()
+    fireEvent.keyDown(drawer, { key: 'Tab', shiftKey: true })
+    expect(document.activeElement).toBe(lastLink)
   })
 
-  it('closes from its close control and restores focus to the trigger', () => {
-    render(<AppNavigation role="Admin" />)
-    const trigger = screen.getByRole('button', { name: 'Abrir menú' }) as HTMLButtonElement
+  it('closes the mobile drawer with Escape and restores focus', async () => {
+    setViewport(390)
+    renderShell()
+    const trigger = screen.getByRole('button', { name: 'Abrir navegación' })
 
     fireEvent.click(trigger)
-    fireEvent.click(screen.getByRole('button', { name: 'Cerrar menú' }))
+    await waitFor(() => expect(screen.getByRole('dialog', { name: 'Navegación principal' })).toBeTruthy())
+    fireEvent.keyDown(document, { key: 'Escape' })
 
-    expect(screen.queryByRole('dialog', { name: 'Menú principal' })).toBeNull()
+    expect(screen.queryByRole('dialog', { name: 'Navegación principal' })).toBeNull()
     expect(document.activeElement).toBe(trigger)
     expect(document.body.style.overflow).toBe('')
   })
 
-  it('closes when the user presses Escape', () => {
-    render(<AppNavigation role="Admin" />)
-
-    fireEvent.click(screen.getByRole('button', { name: 'Abrir menú' }))
-    fireEvent.keyDown(document, { key: 'Escape' })
-
-    expect(screen.queryByRole('dialog', { name: 'Menú principal' })).toBeNull()
-  })
-
   it('closes from the backdrop or after choosing a destination', () => {
-    render(<AppNavigation role="Admin" />)
-    const trigger = screen.getByRole('button', { name: 'Abrir menú' })
+    setViewport(390)
+    renderShell()
+    const trigger = screen.getByRole('button', { name: 'Abrir navegación' })
 
     fireEvent.click(trigger)
-    fireEvent.click(screen.getByRole('button', { name: 'Cerrar menú al tocar fuera' }))
-    expect(screen.queryByRole('dialog', { name: 'Menú principal' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Cerrar navegación al tocar fuera' }))
+    expect(screen.queryByRole('dialog', { name: 'Navegación principal' })).toBeNull()
 
     fireEvent.click(trigger)
-    const sidebar = screen.getByRole('dialog', { name: 'Menú principal' })
-    const destination = within(sidebar).getByRole('link', { name: 'Solicitudes' })
+    const drawer = screen.getByRole('dialog', { name: 'Navegación principal' })
+    const destination = within(drawer).getByRole('link', { name: 'Solicitudes' })
     destination.addEventListener('click', (event) => event.preventDefault(), { once: true })
     fireEvent.click(destination)
-    expect(screen.queryByRole('dialog', { name: 'Menú principal' })).toBeNull()
+    expect(screen.queryByRole('dialog', { name: 'Navegación principal' })).toBeNull()
   })
 })
