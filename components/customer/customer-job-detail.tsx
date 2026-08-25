@@ -10,6 +10,7 @@ import { CustomerApprovalPanel } from './customer-approval-panel'
 import { DiagnosisComparison } from './diagnosis-comparison'
 import { InfoNotice } from './info-notice'
 import { LiveTrackingCard } from './live-tracking-card'
+import { PaymentDeferredAction } from './payment-deferred-panel'
 import { ServiceStageTracker, currentCustomerJobStage } from './service-stage-tracker'
 
 const badgeTones: Record<CustomerUiTone, 'blue' | 'green' | 'amber' | 'red' | 'slate'> = {
@@ -65,7 +66,8 @@ export function CustomerJobDetail({ job }: { job: CustomerJobViewModel }) {
         <div className="min-w-0 space-y-5">
           <InfoNotice tone={needsApproval ? 'warning' : job.status === 'completed' ? 'success' : 'info'} title="Parte actual" description={<><span>{stageCopy[stage]}</span><br /><strong>Próximo paso:</strong> {job.nextStep}</>} />
           <DiagnosisComparison preliminaryDiagnosis={job.preliminaryDiagnosis} professionalDiagnosis={job.professionalDiagnosis} preliminaryAmount={job.preliminaryAmount} finalAmount={job.finalAmount} priceChangeReason={job.priceChangeReason} />
-          {needsApproval ? <CustomerApprovalPanel /> : null}
+          {needsApproval ? <><CustomerApprovalPanel /><PaymentDeferredAction action="reserve" /></> : null}
+          {job.status === 'completed' ? <PaymentDeferredAction action="receipt" /> : null}
           {job.canReview ? <Card className="shadow-none"><h2 className="text-lg font-black text-slate-950">Tu opinión cierra el parte</h2><p className="mt-2 text-sm leading-6 text-slate-600">La calificación sólo se registra cuando el envío está conectado.</p><ButtonLink href={`/app/trabajos/${job.id}/review`} className="mt-4">Calificar servicio</ButtonLink></Card> : null}
           <InfoNotice tone="security" title="Información transparente" description="El seguimiento muestra únicamente eventos informados. No inventa posiciones, mensajes, aprobaciones ni cambios de estado." />
         </div>

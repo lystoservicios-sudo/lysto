@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { ButtonLink } from '@/components/ui/button'
 import type { CustomerUiTone, CustomerWarrantyViewModel } from '@/features/customer/view-models'
 import { CaseStatusTimeline } from './case-status-timeline'
+import { PaymentDeferredAction } from './payment-deferred-panel'
 
 const badgeTones: Record<CustomerUiTone, 'blue' | 'green' | 'amber' | 'red' | 'slate'> = {
   brand: 'blue', success: 'green', warning: 'amber', danger: 'red', benefit: 'green', neutral: 'slate'
@@ -32,6 +33,7 @@ export function WarrantyCaseCard({ warranty }: { warranty: CustomerWarrantyViewM
       {warranty.nextStep ? <div className="mt-4 rounded-2xl bg-slate-50 p-3"><p className="text-xs font-bold uppercase tracking-wide text-slate-500">Próximo paso</p><p className="mt-1 text-sm font-semibold leading-6 text-slate-800">{warranty.nextStep}</p></div> : null}
       {warranty.timeline?.length ? <div className="mt-5 border-t border-slate-100 pt-5"><CaseStatusTimeline equipmentName={warranty.equipmentName} steps={warranty.timeline} /></div> : null}
       {warranty.status === 'active' ? <p className="mt-4 flex items-center gap-2 text-xs font-semibold text-emerald-700"><ShieldCheck aria-hidden="true" className="h-4 w-4" />Cobertura vinculada al cierre técnico</p> : null}
+      {warranty.status === 'claim_open' ? <PaymentDeferredAction action="refund" className="mt-5" /> : null}
       <ButtonLink href={`/app/trabajos/${warranty.jobId}`} variant="secondary" size="sm" className="mt-5 w-full sm:w-auto">Ver detalle del servicio</ButtonLink>
     </article>
   )

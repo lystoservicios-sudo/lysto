@@ -41,6 +41,7 @@ describe('customer warranty center', () => {
     expect(screen.getByRole('tab', { name: /Reclamos/ }).getAttribute('aria-selected')).toBe('true')
     expect(screen.getByRole('heading', { name: 'Aire del living' })).toBeTruthy()
     expect(screen.getByRole('list', { name: 'Seguimiento del reclamo de Aire del living' })).toBeTruthy()
+    expect((screen.getByRole('button', { name: 'Solicitar devolución' }) as HTMLButtonElement).disabled).toBe(true)
 
     fireEvent.click(screen.getByRole('tab', { name: /Calidad/ }))
     expect(screen.getByText('Seguimiento posterior al servicio')).toBeTruthy()

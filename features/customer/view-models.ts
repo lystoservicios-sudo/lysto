@@ -154,6 +154,9 @@ export type CustomerProfessionalRecognitionViewModel = {
 export type CustomerPaymentViewModel = {
   id: string
   jobId: string
+  kind: 'payment' | 'refund'
+  serviceLabel: string
+  professionalName: string
   status: PaymentStatus
   statusView: CustomerStatusViewModel
   amount: number

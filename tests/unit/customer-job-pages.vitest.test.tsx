@@ -67,7 +67,14 @@ describe('customer job pages', () => {
     expect(screen.getByText('Drenaje obstruido y bandeja fuera de nivel.')).toBeTruthy()
     expect(screen.getByText('$ 8.000')).toBeTruthy()
     expect((screen.getByRole('button', { name: 'Aprobar presupuesto' }) as HTMLButtonElement).disabled).toBe(true)
+    expect((screen.getByRole('button', { name: 'Reservar importe adicional' }) as HTMLButtonElement).disabled).toBe(true)
     expect(screen.getByText('La aprobación se habilitará cuando exista una acción segura conectada.')).toBeTruthy()
+  })
+
+  it('keeps the completed-job receipt unavailable without a confirmed payment record', () => {
+    render(<CustomerJobDetail job={completedJob} />)
+
+    expect((screen.getByRole('button', { name: 'Ver comprobante' }) as HTMLButtonElement).disabled).toBe(true)
   })
 
   it('covers loading, empty and recoverable error states', () => {
