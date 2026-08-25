@@ -1,9 +1,15 @@
-import { PageScaffold } from '@/components/layout/page-scaffold'
-import { EquipmentCard } from '@/components/business/equipment-card'
-import { Card } from '@/components/ui/card'
-import { equipment } from '@/lib/mock/lysto-data'
+import { notFound } from 'next/navigation'
 
-export default function CustomerEquipmentDetailPage() {
-  const item = equipment[0]
-  return <PageScaffold title={item.nickname} eyebrow="Equipo" description="Ficha técnica, historial, mantenimiento recomendado y servicios relacionados."><div className="grid gap-5 lg:grid-cols-[1fr_0.8fr]"><EquipmentCard item={item} /><Card><h2 className="text-xl font-black">Ficha técnica</h2><dl className="mt-4 grid gap-3 text-sm"><div><dt className="font-bold text-slate-950">Marca/modelo</dt><dd className="text-slate-600">{item.brand} {item.model}</dd></div><div><dt className="font-bold text-slate-950">Tipo</dt><dd className="text-slate-600">{item.type}</dd></div><div><dt className="font-bold text-slate-950">Dirección</dt><dd className="text-slate-600">{item.address}</dd></div></dl></Card></div></PageScaffold>
+import { CustomerEquipmentDetail } from '@/components/customer/customer-equipment-detail'
+import { customerDemoFixtures } from '@/features/customer/fixtures/customer-demo-fixtures'
+import { findCustomerRecordById } from '@/features/customer/view-models'
+
+export default async function CustomerEquipmentDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  const equipment = findCustomerRecordById(customerDemoFixtures.equipment, id)
+  if (!equipment) notFound()
+
+  const warranty = customerDemoFixtures.warranties.find((item) => item.equipmentId === equipment.id)
+  const maintenance = customerDemoFixtures.maintenance.find((item) => item.equipmentId === equipment.id)
+  return <CustomerEquipmentDetail equipment={equipment} warranty={warranty} maintenance={maintenance} />
 }

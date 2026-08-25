@@ -173,10 +173,33 @@ export const customerDemoFixtures = {
       brand: 'Marca de demostración',
       model: 'INV-3200',
       address: 'Dirección de demostración, CABA',
+      statusView: { label: 'Con historial', tone: 'success' },
+      roomLabel: 'Living',
+      capacityLabel: '3200 frigorías',
+      serialNumber: 'SERIE-DEMO-3200',
+      installedAt: '2023-11-10T12:00:00.000Z',
       lastServiceAt: '2026-08-19T12:00:00.000Z',
       nextMaintenanceAt: '2027-02-19T12:00:00.000Z',
       maintenanceOption: 'deep_cleaning_6_months',
-      serviceCount: 2
+      serviceCount: 2,
+      serviceHistory: [
+        {
+          id: 'service_demo_cleaning',
+          jobId: 'job_demo_completed',
+          performedAt: '2026-08-19T18:00:00.000Z',
+          serviceType: 'Mantenimiento preventivo',
+          result: 'Filtros limpios; circuito y drenaje operativos.',
+          professionalName: 'Profesional de demostración',
+          receiptAvailable: false
+        },
+        {
+          id: 'service_demo_diagnosis',
+          performedAt: '2026-02-19T17:00:00.000Z',
+          serviceType: 'Diagnóstico técnico',
+          result: 'Se revisó presión, rendimiento y unidad exterior.',
+          receiptAvailable: false
+        }
+      ]
     },
     {
       id: 'eq_demo_bedroom',
@@ -184,8 +207,24 @@ export const customerDemoFixtures = {
       kind: 'Split',
       brand: 'Marca de demostración',
       address: 'Dirección de demostración, CABA',
+      statusView: { label: 'Sin historial', tone: 'neutral' },
+      roomLabel: 'Dormitorio',
+      nextMaintenanceAt: '2026-08-20T12:00:00.000Z',
       maintenanceOption: 'filters_90_days',
-      serviceCount: 0
+      serviceCount: 0,
+      serviceHistory: []
+    },
+    {
+      id: 'eq_demo_study',
+      nickname: 'Aire del estudio',
+      kind: 'Split',
+      brand: 'Marca no informada',
+      address: 'Dirección de demostración, CABA',
+      statusView: { label: 'Datos incompletos', tone: 'warning' },
+      roomLabel: 'Estudio',
+      maintenanceOption: 'none',
+      serviceCount: 0,
+      serviceHistory: []
     }
   ],
   maintenance: [
@@ -194,15 +233,33 @@ export const customerDemoFixtures = {
       equipmentId: 'eq_demo_bedroom',
       equipmentName: 'Aire del dormitorio',
       recommendation: 'Limpieza preventiva de filtros',
-      dueAt: '2026-10-20T12:00:00.000Z',
+      dueAt: '2026-08-20T12:00:00.000Z',
+      urgency: 'overdue',
+      actionState: 'deferred'
+    },
+    {
+      id: 'maintenance_demo_deep_cleaning',
+      equipmentId: 'eq_demo_living',
+      equipmentName: 'Aire del living',
+      recommendation: 'Limpieza profunda semestral',
+      dueAt: '2027-02-19T12:00:00.000Z',
       urgency: 'planned',
       actionState: 'deferred'
+    },
+    {
+      id: 'maintenance_demo_none',
+      equipmentId: 'eq_demo_study',
+      equipmentName: 'Aire del estudio',
+      recommendation: 'Sin mantenimiento recomendado',
+      urgency: 'none',
+      actionState: 'disabled'
     }
   ],
   warranties: [
     {
       id: 'warranty_demo_active',
       jobId: 'job_demo_visit',
+      equipmentId: 'eq_demo_living',
       equipmentName: 'Aire del living',
       status: 'active',
       statusView: { label: 'Cobertura vigente', tone: 'success' },

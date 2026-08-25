@@ -55,8 +55,8 @@ describe('customer dashboard', () => {
 
     expect(model.metrics).toEqual([
       expect.objectContaining({ id: 'active-jobs', value: 2 }),
-      expect.objectContaining({ id: 'equipment', value: 2 }),
-      expect.objectContaining({ id: 'maintenance', value: 1 }),
+      expect.objectContaining({ id: 'equipment', value: 3 }),
+      expect.objectContaining({ id: 'maintenance', value: 2 }),
       expect.objectContaining({ id: 'warranties', value: 1 })
     ])
   })

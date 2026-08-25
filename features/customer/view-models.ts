@@ -74,6 +74,22 @@ export type CustomerEquipmentViewModel = {
   nextMaintenanceAt?: string
   maintenanceOption: MaintenanceOption
   serviceCount: number
+  statusView?: CustomerStatusViewModel
+  roomLabel?: string
+  capacityLabel?: string
+  serialNumber?: string
+  installedAt?: string
+  serviceHistory?: readonly CustomerEquipmentServiceViewModel[]
+}
+
+export type CustomerEquipmentServiceViewModel = {
+  id: string
+  jobId?: string
+  performedAt: string
+  serviceType: string
+  result: string
+  professionalName?: string
+  receiptAvailable: boolean
 }
 
 export type CustomerMaintenanceViewModel = {
@@ -89,6 +105,7 @@ export type CustomerMaintenanceViewModel = {
 export type CustomerWarrantyViewModel = {
   id: string
   jobId: string
+  equipmentId: string
   equipmentName: string
   status: 'active' | 'claim_open' | 'resolved' | 'rejected' | 'expired'
   statusView: CustomerStatusViewModel

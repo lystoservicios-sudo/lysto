@@ -74,4 +74,16 @@ describe('customer page layout boundary', () => {
     expect(batchThreeSources[2]).toMatch(/params/)
     expect(batchThreeSources[2]).toContain('notFound()')
   })
+
+  it('keeps batch four pages independent from global mocks and resolves equipment by id', () => {
+    const batchFourRoutes = customerScreenRoutes.filter((route) => ['CUS-08', 'CUS-09', 'CUS-10'].includes(route.id))
+    const batchFourSources = batchFourRoutes.map((route) => readFileSync(resolve(process.cwd(), route.file), 'utf8'))
+
+    expect(batchFourSources).toHaveLength(3)
+    expect(batchFourSources.every((source) => !source.includes('@/lib/mock/lysto-data'))).toBe(true)
+    expect(batchFourSources[1]).toContain('findCustomerRecordById')
+    expect(batchFourSources[1]).toMatch(/params/)
+    expect(batchFourSources[1]).toContain('notFound()')
+    expect(batchFourSources[1]).toMatch(/const warranty = .*\.find\(\(item\) => item\.equipmentId === equipment\.id\)/)
+  })
 })

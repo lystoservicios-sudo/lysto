@@ -1,9 +1,14 @@
-import { AirVent, CalendarClock } from 'lucide-react'
+import { CalendarClock } from 'lucide-react'
 
+import { Badge } from '@/components/ui/badge'
 import { ButtonLink } from '@/components/ui/button'
-import type { CustomerEquipmentViewModel } from '@/features/customer/view-models'
+import type { CustomerEquipmentViewModel, CustomerUiTone } from '@/features/customer/view-models'
+import { EquipmentThumbnail } from './equipment-thumbnail'
 
 const dateFormatter = new Intl.DateTimeFormat('es-AR', { day: '2-digit', month: 'short', year: 'numeric' })
+const badgeTones: Record<CustomerUiTone, 'blue' | 'green' | 'amber' | 'red' | 'slate'> = {
+  brand: 'blue', success: 'green', warning: 'amber', danger: 'red', benefit: 'green', neutral: 'slate'
+}
 
 export function EquipmentHistoryCard({ equipment, compact = false }: { equipment: CustomerEquipmentViewModel; compact?: boolean }) {
   const nextMaintenance = equipment.nextMaintenanceAt ? dateFormatter.format(new Date(equipment.nextMaintenanceAt)) : 'Sin fecha programada'
@@ -11,12 +16,14 @@ export function EquipmentHistoryCard({ equipment, compact = false }: { equipment
   return (
     <article className="flex h-full flex-col rounded-3xl border border-slate-200 bg-white p-4">
       <div className="flex items-start gap-3">
-        <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-blue-50 text-blue-700">
-          <AirVent aria-hidden="true" className="h-6 w-6" />
-        </span>
+        <EquipmentThumbnail imageUrl={equipment.imageUrl} imageAlt={equipment.imageAlt} equipmentName={equipment.nickname} size="sm" className="shrink-0" />
         <div className="min-w-0 flex-1">
-          <h3 className="font-black text-slate-950">{equipment.nickname}</h3>
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <h3 className="font-black text-slate-950">{equipment.nickname}</h3>
+            {equipment.statusView ? <Badge tone={badgeTones[equipment.statusView.tone]}>{equipment.statusView.label}</Badge> : null}
+          </div>
           <p className="mt-1 text-sm text-slate-600">{equipment.brand}{equipment.model ? ` · ${equipment.model}` : ''}</p>
+          {!compact ? <p className="mt-1 text-xs text-slate-500">{equipment.kind} · {equipment.roomLabel ?? 'Ambiente no informado'}</p> : null}
         </div>
       </div>
       <div className="mt-4 flex items-start gap-2 rounded-2xl bg-slate-50 p-3 text-sm text-slate-600">
