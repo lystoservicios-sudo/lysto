@@ -1,4 +1,4 @@
-import { Users, Wrench, CreditCard, AlertTriangle, ChevronRight, TrendingUp } from 'lucide-react'
+import { Users, Wrench, CreditCard, ChevronRight, TrendingUp } from 'lucide-react'
 import Link from 'next/link'
 import { adminMetrics, serviceRequests, jobs, professionals } from '@/lib/mock/lysto-data'
 
@@ -96,7 +96,7 @@ export default function AdminDashboardPage() {
           <Link href="/admin/trabajos" className="text-xs font-semibold text-lysto-blue">Ver todos</Link>
         </div>
         <div className="divide-y divide-lysto-border">
-          {jobs.slice(0, 3).map(job => (
+          {activeJobs.slice(0, 3).map(job => (
             <Link
               key={job.id}
               href={`/admin/trabajos/${job.id}`}

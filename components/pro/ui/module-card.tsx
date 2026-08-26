@@ -20,8 +20,6 @@ export function ModuleCard({
 }) {
   const isCompleted = status === 'completed'
   const isInProgress = status === 'in_progress'
-  const isPending = status === 'pending'
-
   const statusBadge = {
     completed: { label: 'Completado', color: 'text-lysto-green bg-green-50 border border-green-200', icon: <CheckCircle2 className="h-3 w-3" /> },
     in_progress: { label: 'En progreso', color: 'text-lysto-blue bg-blue-50 border border-blue-200', icon: <Clock className="h-3 w-3" /> },

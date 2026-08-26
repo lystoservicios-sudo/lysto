@@ -1,6 +1,5 @@
 import { Clock, MapPin, Wrench, DollarSign, Navigation, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
-import { cn } from '@/lib/utils/cn'
 import { StatusBadge } from './status-badge'
 import type { JobRecord } from '@/lib/mock/lysto-data'
 

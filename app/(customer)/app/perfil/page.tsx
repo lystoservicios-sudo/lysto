@@ -1,8 +1,15 @@
 import { PageScaffold } from '@/components/layout/page-scaffold'
-import { Card } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Field, Input } from '@/components/ui/input'
+import { CustomerProfileForm } from '@/components/customer/customer-profile-form'
+import { InfoNotice } from '@/components/customer/info-notice'
+import { customerDemoFixtures } from '@/features/customer/fixtures/customer-demo-fixtures'
 
 export default function CustomerProfilePage() {
-  return <PageScaffold title="Perfil" eyebrow="Cliente" description="Datos del cliente, contacto y preferencias de notificación."><Card className="space-y-4"><div className="grid gap-4 md:grid-cols-2"><Field label="Nombre"><Input defaultValue="Marina" /></Field><Field label="Apellido"><Input defaultValue="Costa" /></Field><Field label="Email"><Input defaultValue="marina@email.com" /></Field><Field label="Teléfono"><Input defaultValue="+54 9 11 5555-0107" /></Field></div><Button>Guardar cambios</Button></Card></PageScaffold>
+  return (
+    <PageScaffold title="Tu perfil" eyebrow="Cliente · Demostración" description="Revisá tus datos de contacto y cómo querés recibir novedades sobre una visita.">
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_22rem] xl:items-start">
+        <CustomerProfileForm initialValue={customerDemoFixtures.profile} />
+        <InfoNotice tone="security" title="Tus datos son parte de la coordinación" description="Lysto usará esta información para identificarte y mantener el contacto dentro de cada servicio. En esta demostración, los cambios no se guardan." />
+      </div>
+    </PageScaffold>
+  )
 }

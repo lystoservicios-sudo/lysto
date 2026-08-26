@@ -2,5 +2,13 @@ import { PageScaffold } from '@/components/layout/page-scaffold'
 import { AirConditioningWizard } from '@/features/service-request/air-conditioning-wizard'
 
 export default function RequestAirConditioningPage() {
-  return <PageScaffold title="Solicitar técnico de aire" eyebrow="Wizard cliente" description="Flujo completo de problema, diagnóstico, dirección, horario, presupuesto y búsqueda del profesional."><AirConditioningWizard /></PageScaffold>
+  return (
+    <PageScaffold
+      title="Solicitar servicio"
+      eyebrow="Cliente · Demostración"
+      description="Prepará el parte técnico, elegí una franja y revisá el presupuesto preliminar. Nada se enviará ni cobrará en esta etapa."
+    >
+      <AirConditioningWizard />
+    </PageScaffold>
+  )
 }

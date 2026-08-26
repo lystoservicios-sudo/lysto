@@ -1,7 +1,7 @@
+import { CustomerEquipmentInventory } from '@/components/customer/customer-equipment-inventory'
 import { PageScaffold } from '@/components/layout/page-scaffold'
-import { EquipmentCard } from '@/components/business/equipment-card'
-import { equipment } from '@/lib/mock/lysto-data'
+import { customerDemoFixtures } from '@/features/customer/fixtures/customer-demo-fixtures'
 
 export default function CustomerEquipmentPage() {
-  return <PageScaffold title="Mis equipos" eyebrow="Cliente" description="Historial técnico tipo historia clínica de cada aire acondicionado atendido por Lysto."><div className="grid gap-4 lg:grid-cols-2">{equipment.map((item) => <EquipmentCard key={item.id} item={item} href={`/app/equipos/${item.id}`} />)}</div></PageScaffold>
+  return <PageScaffold title="Mis equipos" eyebrow="Cliente · Demostración" description="Identificá cada equipo, consultá su historial y revisá el próximo cuidado recomendado."><CustomerEquipmentInventory equipment={customerDemoFixtures.equipment} referenceDate="2026-08-25" /></PageScaffold>
 }

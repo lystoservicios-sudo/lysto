@@ -1,5 +1,4 @@
-import { Clock, MapPin, Calendar, X, Eye, CheckCircle2, Timer, ClipboardList, Info } from 'lucide-react'
-import { cn } from '@/lib/utils/cn'
+import { MapPin, Calendar, X, Eye, CheckCircle2, Timer, ClipboardList, Info } from 'lucide-react'
 import type { ServiceRequestRecord } from '@/lib/mock/lysto-data'
 
 function money(value: number) {
