@@ -1,25 +1,105 @@
-import { PageScaffold } from '@/components/layout/page-scaffold'
-import { MetricsGrid } from '@/components/dashboard/metric-card'
-import { DataList, DataRow } from '@/components/dashboard/data-list'
-import { ButtonLink } from '@/components/ui/button'
-import { ActionPanel } from '@/components/workflow/action-panel'
-import { professionalMetrics, jobs, jobStatusLabels, serviceRequests, money } from '@/lib/mock/lysto-data'
+'use client'
+
+import { useState } from 'react'
+import { ShieldCheck, CheckCircle2, Clock, Calendar } from 'lucide-react'
+import { JobCard } from '@/components/pro/ui/job-card'
+import { InfoBanner } from '@/components/pro/ui/info-banner'
+import { SectionHeader } from '@/components/pro/ui/section-header'
+import { jobs } from '@/lib/mock/lysto-data'
+
+type TabType = 'activos' | 'por_cerrar' | 'finalizados'
 
 export default function ProfessionalDashboardPage() {
+  const [activeTab, setActiveTab] = useState<TabType>('activos')
+
+  const activeJobs = jobs.filter(
+    (j) =>
+      !['completed', 'completed_pending_customer_confirmation', 'cancelled_by_customer', 'cancelled_by_professional', 'cancelled_by_admin'].includes(j.status)
+  )
+  const pendingCloseJobs = jobs.filter((j) => j.status === 'completed_pending_customer_confirmation')
+  const completedJobs = jobs.filter((j) => j.status === 'completed')
+
+  const filteredJobs =
+    activeTab === 'activos'
+      ? activeJobs
+      : activeTab === 'por_cerrar'
+      ? pendingCloseJobs
+      : completedJobs
+
   return (
-    <PageScaffold title="Dashboard profesional" eyebrow="Profesional" description="Agenda, solicitudes asignadas, trabajos en curso, pagos, perfil técnico y calidad.">
-      <MetricsGrid metrics={professionalMetrics} />
-      <div className="grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
-        <DataList title="Agenda de hoy" description="Trabajos confirmados y próximos estados que tenés que marcar.">
-          {jobs.slice(0, 2).map((job) => <DataRow key={job.id} title={`${job.timeWindow} · ${job.customer}`} subtitle={`${job.address} · ${job.issueLabel}`} meta={`${job.equipment} · ${money(job.amount)}`} status={jobStatusLabels[job.status]}><ButtonLink href={`/pro/trabajos/${job.id}`} variant="secondary" size="sm">Operar</ButtonLink></DataRow>)}
-        </DataList>
-        <ActionPanel title="Checklist antes de salir" description="Reducí errores y reclamos verificando herramientas antes de aceptar una visita." primary="Marcar listo" secondary="Pedir soporte">
-          <div className="grid gap-2 text-sm text-slate-300"><span>• Manifold, bomba de vacío y multímetro.</span><span>• Escalera y elementos de seguridad.</span><span>• Confirmar dirección, acceso y estacionamiento.</span></div>
-        </ActionPanel>
+    <div className="space-y-6">
+      <SectionHeader
+        eyebrow="Técnico Profesional"
+        title="Mis trabajos"
+        subtitle="Gestioná tus servicios activos, realizá diagnósticos y avanzá cada trabajo."
+      />
+
+      {/* Interactive Tabs Row */}
+      <div className="flex items-center gap-2 p-1.5 bg-slate-100/80 rounded-2xl border border-slate-200/80 w-fit">
+        {[
+          { key: 'activos' as TabType, label: 'Activos', count: activeJobs.length, icon: Clock },
+          { key: 'por_cerrar' as TabType, label: 'Por cerrar', count: pendingCloseJobs.length, icon: Calendar },
+          { key: 'finalizados' as TabType, label: 'Finalizados', count: completedJobs.length, icon: CheckCircle2 },
+        ].map((tab) => {
+          const Icon = tab.icon
+          const isActive = activeTab === tab.key
+          return (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black transition-all duration-150 ${
+                isActive
+                  ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+              }`}
+            >
+              <Icon className={`h-4 w-4 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+              <span>{tab.label}</span>
+              <span
+                className={`rounded-full px-2 py-0.5 text-[10px] font-black ${
+                  isActive ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'
+                }`}
+              >
+                {tab.count}
+              </span>
+            </button>
+          )
+        })}
       </div>
-      <DataList title="Solicitudes para responder" description="Aceptar o rechazar rápido mejora tu score interno.">
-        {serviceRequests.slice(0, 2).map((request) => <DataRow key={request.id} title={`${request.issueLabel} · ${request.customer}`} subtitle={`${request.address} · ${request.timeWindow}`} meta={`${request.diagnosis} · ${money(request.price)}`} status={request.urgency}><ButtonLink href={`/pro/solicitudes/${request.id}`} variant="secondary" size="sm">Responder</ButtonLink></DataRow>)}
-      </DataList>
-    </PageScaffold>
+
+      {/* Info banner */}
+      <InfoBanner
+        title="Lysto te acompaña en cada servicio"
+        description="Respaldo al profesional, cobro protegido y garantía de 6 meses al cliente."
+      />
+
+      {/* Filtered Jobs List */}
+      <div className="space-y-4">
+        {filteredJobs.length > 0 ? (
+          filteredJobs.map((job) => <JobCard key={job.id} job={job} />)
+        ) : (
+          <div className="rounded-3xl bg-white border border-slate-200 p-12 text-center space-y-3">
+            <div className="h-12 w-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 mx-auto text-xl">
+              📂
+            </div>
+            <p className="text-base font-black text-slate-900">No tenés trabajos en esta pestaña</p>
+            <p className="text-xs text-slate-500 max-w-sm mx-auto">
+              Cuando tengas servicios en este estado, aparecerán automáticamente en esta lista.
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Footer Support */}
+      <div className="pt-4 border-t border-slate-200/80 text-center">
+        <p className="text-xs font-semibold text-slate-500 flex items-center justify-center gap-1.5">
+          <ShieldCheck className="h-4 w-4 text-blue-600" />
+          Si tenés un inconveniente operativo o con el cliente, nuestro equipo te respalda.{' '}
+          <a href="/pro/soporte" className="text-blue-600 font-bold hover:underline">
+            Contactar soporte
+          </a>
+        </p>
+      </div>
+    </div>
   )
 }

@@ -98,7 +98,7 @@ function NavigationItems({ role, compact = false, onNavigate }: {
                 title={compact ? label : undefined}
                 onClick={onNavigate}
                 className={cn(
-                  'group flex min-h-11 items-center rounded-xl text-sm font-semibold transition-colors duration-150',
+                  'group relative flex min-h-11 items-center rounded-xl text-sm font-semibold transition-colors duration-150',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2',
                   compact ? 'justify-center px-2' : 'gap-3 px-3',
                   isActive
@@ -142,7 +142,7 @@ function DesktopSidebar({ role }: { role: AppRole }) {
       aria-label={`Navegación de ${appRoleLabels[role]}`}
       data-state={desktopOpen ? 'expanded' : 'collapsed'}
       className={cn(
-        'sticky top-0 hidden h-screen shrink-0 flex-col border-r border-slate-200/80 bg-white md:flex',
+        'lysto-shell-sidebar sticky top-0 hidden h-screen shrink-0 flex-col border-r border-slate-200/80 bg-white md:flex',
         'transition-[width] duration-200 ease-[cubic-bezier(0.25,1,0.5,1)]',
         desktopOpen ? 'w-64' : 'w-14'
       )}

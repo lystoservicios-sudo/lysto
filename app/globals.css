@@ -1,49 +1,94 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
   --background: #f8fafc;
-  --foreground: #07132f;
+  --foreground: #0f172a;
+  --lysto-canvas: #f8fafc;
+  --lysto-panel: #ffffff;
+  --lysto-ink: #0f172a;
+  --lysto-muted: #64748b;
+  --lysto-line: #e2e8f0;
+  --lysto-active: #2563eb;
+  --lysto-active-soft: #eff6ff;
 }
 
-* { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   margin: 0;
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-}
-a { color: inherit; text-decoration: none; }
-button, input, textarea, select { font: inherit; }
-
-.lysto-gradient {
-  background:
-    radial-gradient(circle at top left, rgba(0, 123, 255, 0.18), transparent 32rem),
-    linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  background-color: #f8fafc;
+  color: #0f172a;
+  font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-@keyframes lysto-drawer-enter {
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+/* Premium Card & Drop Shadows */
+.lysto-card-premium {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 1.25rem;
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 2px 6px -1px rgba(15, 23, 42, 0.02);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.lysto-card-premium:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 12px 32px -4px rgba(15, 23, 42, 0.08), 0 4px 12px -2px rgba(15, 23, 42, 0.03);
+  transform: translateY(-1px);
+}
+
+/* Animations */
+@keyframes lysto-shell-drawer-enter {
   from { transform: translateX(-100%); }
   to { transform: translateX(0); }
 }
 
-@keyframes lysto-backdrop-enter {
+@keyframes lysto-shell-backdrop-enter {
   from { opacity: 0; }
   to { opacity: 1; }
 }
 
-.lysto-mobile-drawer {
-  animation: lysto-drawer-enter 200ms cubic-bezier(0.16, 1, 0.3, 1);
+.lysto-shell-drawer {
+  animation: lysto-shell-drawer-enter 220ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.lysto-mobile-backdrop {
-  animation: lysto-backdrop-enter 160ms ease-out;
+.lysto-shell-backdrop {
+  animation: lysto-shell-backdrop-enter 160ms cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  html { scroll-behavior: auto; }
-  .lysto-mobile-drawer,
-  .lysto-mobile-backdrop { animation: none; }
+  html {
+    scroll-behavior: auto;
+  }
+
+  .lysto-shell-drawer,
+  .lysto-shell-backdrop,
+  .lysto-shell-sidebar,
+  .lysto-skip-link {
+    animation: none;
+    transition: none;
+  }
 }
