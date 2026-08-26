@@ -11,3 +11,6 @@ coverage/
 playwright-report/
 test-results/
 tsconfig.tsbuildinfo
+.codex-remote-attachments/
+.playwright-cli/
+output/
