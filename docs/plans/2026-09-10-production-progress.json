@@ -14,7 +14,7 @@
     "environment": "isolated-local-worktree"
   },
   "currentMilestone": "BASELINE_CAPTURED",
-  "nextTask": "T12",
+  "nextTask": "T08",
   "recommendedOrder": [
     "T00",
     "T01",
@@ -335,7 +335,7 @@
       "blockedBy": [
         "SMTP de staging y D08: documentos legales aprobados pendientes"
       ],
-      "nextAction": "Verificar compilación del checkpoint local; mantener pendientes externos y continuar T12.",
+      "nextAction": "Verificaciones locales y build del commit 1fcc1c7 pasaron. Mantener pendientes externos de SMTP/D08; continuar T12.",
       "deviations": []
     },
     {
@@ -416,7 +416,7 @@
       "blockedBy": [
         "D08: política de retención aprobada pendiente"
       ],
-      "nextAction": "Verificar compilación del checkpoint local; mantener pendientes externos y continuar T12.",
+      "nextAction": "Verificaciones locales y build del commit 1fcc1c7 pasaron. Mantener pendientes externos de SMTP/D08; continuar T12.",
       "deviations": []
     },
     {
@@ -453,13 +453,23 @@
         "B06"
       ],
       "ownerRole": "Agente full stack",
-      "status": "pending",
-      "currentStep": null,
-      "completedSteps": [],
-      "evidence": [],
+      "status": "implemented",
+      "currentStep": 6,
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "evidence": [
+        "docs/release/session-read-models.md",
+        "docs/release/read-models-verification.json"
+      ],
       "commit": null,
       "blockedBy": [],
-      "nextAction": "Definir DTO explícito por rol para solicitudes, trabajos, pagos, equipos, profesionales, reclamos y métricas; inventariar campos sensibles que nunca llegan al navegador ajeno.",
+      "nextAction": "Verificar compilación aislada del checkpoint y continuar T08.",
       "deviations": []
     },
     {
@@ -1567,13 +1577,13 @@
     "updateRequiredAfterImplementation": true
   },
   "checkpoint": {
-    "updatedAt": "2026-09-11T23:31:34.819Z",
+    "updatedAt": "2026-09-11T23:59:51.983Z",
     "branch": "codex/production-readiness",
     "commit": "62ed2c19eb4b84e6f13817d21b2bc0e6eceac743",
     "filesChanged": [],
-    "lastVerification": "404 unit, 171 domain, 7 tooling; HTTP 95 plus 25 and final read-signature regression 17; fresh/upgrade 452 SQL each, populated witness preserved, schema/grants/history/types equal; frozen install, production audit zero, image runtime, lint and types passed. Build pending. No release gate promoted.",
+    "lastVerification": "T12: 423 unit tests, 171 domain, full integration 128 (zero skipped), final read-model 13; fresh and upgrade each 452 SQL, schema/policies/history/types equal. Lint/types passed. Build pending.",
     "unresolvedFailures": [],
-    "nextCommand": "Build isolated T07/T10 checkpoint; execute T12."
+    "nextCommand": "Build T12 candidate; implement T08 MFA and effective session revocation."
   },
   "events": [
     {

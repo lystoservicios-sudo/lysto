@@ -1,13 +1,10 @@
-import { equipment, jobs, payments, professionals, serviceRequests } from '@/lib/mock/lysto-data'
 import type { JobStatus } from '@/lib/domain/types'
+import { jobStatusLabels } from '@/lib/domain/job-status-labels'
+import type { JobDto } from '@/lib/data-access/read-contracts'
 
-// Presentation-only fixture scope. Production must derive ownership from the authenticated user.
-export const demoProfessional = professionals[0]
-export const professionalJobs = jobs.filter(job => job.professional === demoProfessional.name)
-export const professionalPayments = payments.filter(payment => payment.professional === demoProfessional.name)
-export const professionalEquipment = equipment.filter(item => professionalJobs.some(job => job.customer === item.customer))
-export const visibleRequests = serviceRequests.filter(request => request.assignedProfessional === demoProfessional.name || (!request.assignedProfessional && request.status === 'payment_approved'))
-export const availableRequests = visibleRequests.filter(request => !professionalJobs.some(job => job.requestId === request.id))
+export function toProfessionalJobSummary(job:JobDto) {
+  return {...job,statusLabel:jobStatusLabels[job.status],group:jobGroup(job.status),stage:visitStage(job.status)}
+}
 
 export function jobGroup(status: JobStatus): 'active' | 'closing' | 'finished' {
   if (status === 'completed_pending_customer_confirmation') return 'closing'

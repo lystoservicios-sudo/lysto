@@ -1,0 +1,77 @@
+{
+  "status": "local_checks_passed_build_pending",
+  "checkedAt": "2026-09-11T23:59:51.977Z",
+  "task": "T12",
+  "checks": {
+    "unit": {
+      "passed": 423,
+      "files": 51,
+      "log": "output/production-readiness/t12-all-unit-green.log"
+    },
+    "domain": {
+      "passed": 171,
+      "log": "output/production-readiness/t12-domain.log"
+    },
+    "integration": {
+      "passed": 128,
+      "files": 9,
+      "zeroSkipped": true,
+      "report": "output/integration/d03ad4a3-b982-481e-ba17-b86814786dc9/result.json"
+    },
+    "readModels": {
+      "passed": 13,
+      "log": "output/production-readiness/t12-final-read-models.log"
+    },
+    "database": {
+      "passed": 452,
+      "freshAndUpgrade": true,
+      "status": "passed",
+      "projectId": "lysto_production_check",
+      "baseline": "20260911231948",
+      "versions": [
+        "202608190001",
+        "202608190002",
+        "202608190003",
+        "202608190004",
+        "202608190005",
+        "202608190006",
+        "202608190007",
+        "20260910195050",
+        "20260910204604",
+        "20260910220000",
+        "20260911042254",
+        "20260911051612",
+        "20260911053515",
+        "20260911224417",
+        "20260911231948",
+        "20260911234506"
+      ],
+      "witnessPreserved": true,
+      "schemaSha256": "76c0a296ab626df49725b5583a9e6ec3f044307eba21dce11d0ef2772d702a15",
+      "storagePoliciesMatch": true,
+      "typesMatch": true,
+      "checkedAt": "2026-09-11T23:52:41.766Z"
+    },
+    "types": "output/production-readiness/t12-final-types.log",
+    "lint": "output/production-readiness/t12-final-lint.log"
+  },
+  "scope": "Session-bound repositories and pure DTO view models. Legacy screen connection remains in T27–T29.",
+  "review": {
+    "method": "local source, permission matrix, raw schema and regression review",
+    "independentFinalReview": false
+  },
+  "pending": [
+    "isolated production build"
+  ],
+  "releaseReady": false,
+  "plans": [
+    {
+      "path": "output/production-readiness/t12-explain-baseline.json",
+      "sha256": "8e848cac8aa8ca70d5924649d12d49b1703208392837046dad20af70e78f7f66"
+    },
+    {
+      "path": "output/production-readiness/t12-explain-indexed.json",
+      "sha256": "8044d05143e2e5f9aa1406a97690af510189778d756dcc190b6b7f9b4c7c2cd0"
+    }
+  ]
+}

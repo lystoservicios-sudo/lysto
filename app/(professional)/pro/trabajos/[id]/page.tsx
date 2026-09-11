@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 import { JobQuotePanel } from '@/components/pricing/job-quote-panel'
 import { ProfessionalJobDetail } from '@/components/pro/pro-details'
-import { professionalJobs } from '@/components/pro/pro-model'
+import { professionalJobs } from '@/lib/mock/pro-scope'
 
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params

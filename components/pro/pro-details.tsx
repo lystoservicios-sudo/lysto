@@ -12,7 +12,8 @@ import { EquipmentThumbnail } from '@/components/customer/equipment-thumbnail'
 import { jobStatusLabels } from '@/lib/domain/job-status-labels'
 import { money, type EquipmentRecord, type JobRecord, type ServiceRequestRecord } from '@/lib/mock/lysto-data'
 import type { JobStatus } from '@/lib/domain/types'
-import { professionalEquipment, professionalJobs, professionalPayments, visitStage, visitStages } from './pro-model'
+import { visitStage,visitStages } from './pro-model'
+import { professionalEquipment,professionalJobs,professionalPayments } from '@/lib/mock/pro-scope'
 import { DraftFeedback, ProFacts, ProPage, ProPanel, ProShortcut, useProDraft } from './pro-ui'
 
 export function ProfessionalRequestDetail({ request }: { request: ServiceRequestRecord }) {

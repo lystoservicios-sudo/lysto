@@ -4,7 +4,7 @@ import { ProfessionalJobDetail, ProfessionalRequestDetail } from '@/components/p
 import { ProfessionalOnboarding, ProfessionalProfile } from '@/components/pro/pro-account'
 import { ProWorkspace } from '@/components/pro/pro-ui'
 import { ProfessionalAgenda } from '@/components/pro/pro-lists'
-import { professionalJobs } from '@/components/pro/pro-model'
+import { professionalJobs } from '@/lib/mock/pro-scope'
 import { jobs, serviceRequests } from '@/lib/mock/lysto-data'
 import JobRoute from '@/app/(professional)/pro/trabajos/[id]/page'
 import RequestRoute from '@/app/(professional)/pro/solicitudes/[id]/page'

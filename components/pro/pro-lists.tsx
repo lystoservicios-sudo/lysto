@@ -9,7 +9,8 @@ import { Badge } from '@/components/ui/badge'
 import { Button, ButtonLink } from '@/components/ui/button'
 import { StatusPill } from '@/components/business/status-pill'
 import { money } from '@/lib/mock/lysto-data'
-import { availableRequests, dateNumber, demoProfessional, jobGroup, professionalJobs, professionalPayments, searchMatches } from './pro-model'
+import { dateNumber,jobGroup,searchMatches } from './pro-model'
+import { availableRequests,demoProfessional,professionalJobs,professionalPayments } from '@/lib/mock/pro-scope'
 import { ProFacts, ProPage, ProPanel, ProSearch, ProShortcut, VisitCard } from './pro-ui'
 
 export function ProfessionalDashboard() {

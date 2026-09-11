@@ -1,4 +1,9 @@
 import { jobStatusLabels } from '@/lib/domain/job-status-labels'
+import type { JobDto } from '@/lib/data-access/read-contracts'
+
+export function toAdminJobSummary(job:JobDto) {
+  return {...job,statusLabel:jobStatusLabels[job.status]}
+}
 
 export const adminModules = [
   { group: 'Operaciones', items: [['Dashboard', 'dashboard'], ['Solicitudes', 'solicitudes'], ['Trabajos', 'trabajos'], ['Matching', 'matching'], ['Zonas', 'zonas']] },

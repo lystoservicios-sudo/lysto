@@ -7,7 +7,8 @@ import { Input, Textarea } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { EmptyState } from '@/components/customer/states'
 import { InfoNotice } from '@/components/customer/info-notice'
-import { demoProfessional, searchMatches, toolOptions } from './pro-model'
+import { searchMatches,toolOptions } from './pro-model'
+import { demoProfessional } from '@/lib/mock/pro-scope'
 import { DraftFeedback, ProFacts, ProPage, ProPanel, ProSearch, ProShortcut, useProDraft } from './pro-ui'
 
 export function ProfessionalProfile() {

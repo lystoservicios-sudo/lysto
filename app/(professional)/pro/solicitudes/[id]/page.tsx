@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import { ProfessionalRequestDetail } from '@/components/pro/pro-details'
-import { visibleRequests } from '@/components/pro/pro-model'
+import { visibleRequests } from '@/lib/mock/pro-scope'
 
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params

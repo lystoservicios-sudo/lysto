@@ -11,7 +11,7 @@ import { ButtonLink } from '@/components/ui/button'
 import { StatusPill } from '@/components/business/status-pill'
 import { cn } from '@/lib/utils/cn'
 import { money, type JobRecord } from '@/lib/mock/lysto-data'
-import { demoProfessional, professionalPayments } from './pro-model'
+import { demoProfessional, professionalPayments } from '@/lib/mock/pro-scope'
 
 export function ProWorkspace({ children }: { children: ReactNode }) {
   const pathname = usePathname()

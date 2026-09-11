@@ -8,6 +8,13 @@ import type {
   UrgencyLevel
 } from '@/lib/domain/types'
 
+import type { JobDto } from '@/lib/data-access/read-contracts'
+import { customerJobStatusLabels } from '@/lib/domain/job-status-labels'
+
+export function toCustomerJobSummary(job:JobDto) {
+  return {...job,statusLabel:customerJobStatusLabels[job.status]}
+}
+
 export type CustomerUiTone = 'brand' | 'success' | 'warning' | 'danger' | 'benefit' | 'neutral'
 export type CustomerDataState = 'loading' | 'ready' | 'empty' | 'error'
 

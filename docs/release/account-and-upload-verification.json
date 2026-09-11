@@ -1,5 +1,5 @@
 {
-  "status": "locally_verified_build_pending",
+  "status": "locally_verified",
   "tasks": [
     "T07",
     "T10"
@@ -71,7 +71,17 @@
       "vulnerabilities": 0,
       "log": "output/production-readiness/t07-t10-audit.json"
     },
-    "imageRuntime": "output/production-readiness/t07-t10-images.log"
+    "imageRuntime": "output/production-readiness/t07-t10-images.log",
+    "productionBuild": {
+      "commit": "1fcc1c70e666248baf4600655505d94c3b2d186a",
+      "environment": "isolated-local-production-build",
+      "checkout": "E:/Proyectos/GitHub/Lysto-production-build-check",
+      "dependencies": "junction to verified frozen lock installation, including direct Sharp 0.35.4",
+      "status": "passed",
+      "startedAt": "2026-09-11T23:31:58.741Z",
+      "exitCode": 0,
+      "completedAt": "2026-09-11T23:33:13.795Z"
+    }
   },
   "review": {
     "method": "local source and actual authorization regression review",
@@ -79,10 +89,10 @@
     "limitation": "Parallel reviewers could not execute because their usage limit was reached."
   },
   "pending": [
-    "isolated candidate production build",
     "D08 legal documents and retention approval",
     "external staging SMTP",
     "T24/T36 scheduled production cleanup"
   ],
-  "releaseReady": false
+  "releaseReady": false,
+  "codeCommit": "1fcc1c70e666248baf4600655505d94c3b2d186a"
 }
