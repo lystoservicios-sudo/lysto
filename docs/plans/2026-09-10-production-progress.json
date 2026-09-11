@@ -14,7 +14,7 @@
     "environment": "isolated-local-worktree"
   },
   "currentMilestone": "BASELINE_CAPTURED",
-  "nextTask": "T05",
+  "nextTask": "T07",
   "recommendedOrder": [
     "T00",
     "T01",
@@ -229,9 +229,9 @@
         "output/production-readiness/t04-cleanup-types.log",
         "output/production-readiness/t04-t06-lint-green.log"
       ],
-      "commit": null,
+      "commit": "62ed2c19eb4b84e6f13817d21b2bc0e6eceac743",
       "blockedBy": [],
-      "nextAction": "Keep mandatory integration and environment guards enforced. Extend real HTTP and E2E coverage in T06/T34.",
+      "nextAction": "Acceptance verified for the local checkpoint. Preserve controls and extend coverage through dependent tasks.",
       "deviations": []
     },
     {
@@ -248,15 +248,16 @@
         "B08"
       ],
       "ownerRole": "Agente de backend + operaciones",
-      "status": "implemented",
-      "currentStep": 7,
+      "status": "verified",
+      "currentStep": null,
       "completedSteps": [
         1,
         2,
         3,
         4,
         5,
-        6
+        6,
+        7
       ],
       "evidence": [
         "docs/architecture/service-lifecycle.md",
@@ -266,9 +267,9 @@
         "output/production-readiness/t04-t06-t33-unit-retry.log",
         "output/production-readiness/t06-http-concurrency-green.log"
       ],
-      "commit": null,
+      "commit": "62ed2c19eb4b84e6f13817d21b2bc0e6eceac743",
       "blockedBy": [],
-      "nextAction": "Independent specification and quality reviews passed; domain, unit, HTTP, SQL, lint and types passed. Verify clean candidate production build.",
+      "nextAction": "Acceptance verified for the local checkpoint. Preserve controls and extend coverage through dependent tasks.",
       "deviations": []
     },
     {
@@ -283,18 +284,25 @@
         "B06"
       ],
       "ownerRole": "Agente de backend",
-      "status": "implemented",
+      "status": "verified",
       "currentStep": null,
-      "completedSteps": [],
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
       "evidence": [
         "docs/release/identity-and-lifecycle-verification.json",
         "output/production-readiness/t04-t06-t33-domain.log",
         "output/production-readiness/t04-t06-t33-unit-retry.log",
         "output/production-readiness/t06-http-concurrency-green.log"
       ],
-      "commit": null,
+      "commit": "62ed2c19eb4b84e6f13817d21b2bc0e6eceac743",
       "blockedBy": [],
-      "nextAction": "Independent specification and quality reviews passed; domain, unit, HTTP, SQL, lint and types passed. Verify clean candidate production build.",
+      "nextAction": "Acceptance verified for the local checkpoint. Preserve controls and extend coverage through dependent tasks.",
       "deviations": []
     },
     {
@@ -1531,13 +1539,13 @@
     "updateRequiredAfterImplementation": true
   },
   "checkpoint": {
-    "updatedAt": "2026-09-11T05:20:21.017Z",
+    "updatedAt": "2026-09-11T05:25:48.928Z",
     "branch": "codex/production-readiness",
-    "commit": "a19b52a360b05caafe72fd8e09a54a5e98b8d32d",
+    "commit": "62ed2c19eb4b84e6f13817d21b2bc0e6eceac743",
     "filesChanged": [],
-    "lastVerification": "171 domain, 327 unit (42 files), 22 baseline integration + 62 actual HTTP, 434 pgTAP, 7 tooling; types/lint passed. Build of clean checkpoint pending.",
+    "lastVerification": "Checkpoint production build passed; 171 domain, 327 unit, 22+62 real integration, 434 pgTAP, 7 tooling, types and lint. T04–T06 verified. T33 local implementation only.",
     "unresolvedFailures": [],
-    "nextCommand": "Build isolated checkpoint; continue T07 after preserving candidate."
+    "nextCommand": "Implement T07 accounts and T10 private uploads; preserve external release blocks."
   },
   "events": [
     {
@@ -1568,6 +1576,15 @@
       "type": "roadmap_reconfirmed",
       "at": "2026-09-11T05:07:20.416Z",
       "note": "User explicitly kept the 40-task roadmap after discussing a smaller pilot and authorized continued implementation."
+    },
+    {
+      "type": "tasks_verified",
+      "tasks": [
+        "T05",
+        "T06"
+      ],
+      "at": "2026-09-11T05:25:48.929Z",
+      "note": "Specification and quality reviews passed; actual HTTP including concurrent refresh passed; isolated production build of commit 62ed2c1 passed. No launch gate promoted."
     }
   ],
   "executionWorktree": "E:/Proyectos/GitHub/Lysto-production-readiness"

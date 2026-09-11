@@ -1,7 +1,11 @@
 {
   "schemaVersion": 1,
-  "tasks": ["T04", "T05", "T06"],
-  "status": "verification_in_progress",
+  "tasks": [
+    "T04",
+    "T05",
+    "T06"
+  ],
+  "status": "verified_local_checkpoint",
   "environment": {
     "kind": "disposable-local",
     "projectId": "lysto_production_check",
@@ -65,7 +69,10 @@
     {
       "name": "typescript-and-lint",
       "status": "passed",
-      "logs": ["output/production-readiness/t04-cleanup-types.log", "output/production-readiness/t04-t06-lint-green.log"],
+      "logs": [
+        "output/production-readiness/t04-cleanup-types.log",
+        "output/production-readiness/t04-t06-lint-green.log"
+      ],
       "scope": "T04 cleanup and T05/T06 implementation at checkpoint. Later T06 concurrency test and T33 review changes require their own checks."
     },
     {
@@ -73,12 +80,48 @@
       "status": "passed",
       "log": "output/production-readiness/t04-playwright-list.log",
       "scope": "Discovery only; does not establish that browser journeys passed."
+    },
+    {
+      "name": "full-unit",
+      "status": "passed",
+      "executed": 327,
+      "files": 42,
+      "skipped": 0,
+      "log": "output/production-readiness/t04-t06-t33-unit-retry.log",
+      "note": "Initial run failed before discovery due to conflicting default min/max workers; minWorkers=1 fixed configuration. Initial log retained."
+    },
+    {
+      "name": "full-domain",
+      "status": "passed",
+      "executed": 171,
+      "log": "output/production-readiness/t04-t06-t33-domain.log"
+    },
+    {
+      "name": "actual-http",
+      "status": "passed",
+      "executed": 62,
+      "skipped": 0,
+      "log": "output/production-readiness/t06-http-concurrency-green.log",
+      "report": "output/integration/bf4a1ce0-60df-42fb-b97f-508d007f7533/result.json",
+      "redLog": "output/production-readiness/t06-http-concurrency-red.log"
+    },
+    {
+      "name": "checkpoint-build",
+      "commit": "62ed2c19eb4b84e6f13817d21b2bc0e6eceac743",
+      "environment": "isolated-local-production-build",
+      "checkout": "E:/Proyectos/GitHub/Lysto-production-build-check",
+      "dependencies": "junction to identical frozen lock installation plus exact server-only 0.0.1",
+      "status": "passed",
+      "startedAt": "2026-09-11T05:22:04.095Z",
+      "exitCode": 0,
+      "completedAt": "2026-09-11T05:23:40.395Z",
+      "generatedStaticPages": 45,
+      "log": "output/production-readiness/identity-checkpoint-build.log"
     }
   ],
   "pending": [
-    "T06 actual HTTP matrix and concurrent two-tab session refresh",
-    "T06 final specification and quality review",
-    "Joint final checks after T06/T33 review corrections"
+    "Release/staging/provider gates are separate and remain pending; T33 requires actual protected CI evidence."
   ],
-  "releaseReady": false
+  "releaseReady": false,
+  "commit": "62ed2c19eb4b84e6f13817d21b2bc0e6eceac743"
 }

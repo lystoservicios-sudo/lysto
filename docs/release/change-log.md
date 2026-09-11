@@ -28,8 +28,12 @@ El runner exige un proyecto local descartable identificado y rechaza destinos aj
 
 Las revisiones detectaron y corrigieron configuración heredada en Playwright, precedencia de publishable key y limpieza bloqueada por setup/Auth. Ambos servidores validan el backend antes de iniciar Next, rechazan dotenv y reemplazan claves por las locales. Setup y limpieza tienen plazos independientes; las creaciones inciertas quedan registradas como no verificadas. Las regresiones nuevas mostraron fallos antes de corregirse. También pasaron tipos, lint y las pantallas asíncronas afectadas sin advertencias act.
 
-## Bloque activo — T05, T06 y T33
+## T05 y T06 — contrato y acceso del servidor verificados
 
-T05 unifica el ciclo del servicio y preserva el estado canónico de pagos; sus revisiones corrigieron confirmaciones repetidas y propagación de conformidad. T06 centraliza sesión y permisos y cierra endpoints parciales; 140 pruebas dirigidas y 434 pgTAP pasan. Su primera matriz HTTP pasó 61 de 62: el único fallo fue el caso nuevo de refresco concurrente todavía preparado deliberadamente en rojo. T33 fortalece CI y evidencia; las revisiones de falsos verdes siguen en corrección. Estos trabajos todavía no se acreditan como cierre completo.
+T05 unifica el ciclo del servicio y preserva el estado canónico de pagos; sus revisiones corrigieron confirmaciones repetidas y propagación de conformidad. T06 centraliza sesión y permisos y cierra endpoints parciales. La matriz HTTP pasó de 61/62 en el rojo deliberado de doble pestaña a 62/62 con renovación real de ambas sesiones. Las revisiones de especificación y calidad quedaron sin hallazgos pendientes.
 
-Hay 5/40 tareas verificadas. Las rutas históricas del plan se resuelven bajo executionWorktree. Se mantiene la hoja de ruta de 40 tareas por confirmación del usuario, sin promover gates de staging, piloto o producción.
+El commit 62ed2c19eb4b84e6f13817d21b2bc0e6eceac743 pasó 171 pruebas de dominio, 327 unitarias, 22+62 de integración, 434 pgTAP, 7 del harness, tipos y lint. Un checkout separado compiló producción correctamente con 45 páginas estáticas y las superficies privadas dinámicas; no incluyó los nuevos archivos de T07.
+
+T33 queda implementada localmente: catálogo y evidencias estrictos, CI ampliada y pruebas contra falsos verdes. Ejecución remota, protecciones y firmante CI protegido siguen pendientes; no habilita promoción.
+
+Hay 7/40 tareas verificadas. Las rutas históricas del plan se resuelven bajo executionWorktree. Se mantiene la hoja de ruta completa por confirmación del usuario; continúan T07 y T10 sin promover gates de staging, piloto o producción.
