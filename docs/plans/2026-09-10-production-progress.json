@@ -14,7 +14,7 @@
     "environment": "isolated-local-worktree"
   },
   "currentMilestone": "BASELINE_CAPTURED",
-  "nextTask": "T02",
+  "nextTask": "T04",
   "recommendedOrder": [
     "T00",
     "T01",
@@ -88,7 +88,7 @@
       ],
       "commit": null,
       "blockedBy": [],
-      "nextAction": "Preserve snapshot; release build remains unverified until T02.",
+      "nextAction": "Conservar snapshot; compilaciones de release verificadas en T02.",
       "deviations": []
     },
     {
@@ -134,24 +134,27 @@
         "B10"
       ],
       "ownerRole": "Agente técnico",
-      "status": "in_progress",
-      "currentStep": 5,
+      "status": "verified",
+      "currentStep": null,
       "completedSteps": [
         1,
         2,
         3,
-        4
+        4,
+        5,
+        6
       ],
       "evidence": [
         "docs/release/vendor-provenance.json",
         "docs/release/dependency-review.md",
         "output/production-readiness/dependencies-final.json",
         "output/production-readiness/updated-windows-checks.json",
-        "output/production-readiness/image-runtime-after.log"
+        "output/production-readiness/image-runtime-after.log",
+        "docs/release/dependency-verification.json"
       ],
       "commit": null,
       "blockedBy": [],
-      "nextAction": "Reejecutar audit productivo y revisar los avisos oficiales actuales. No fijar una versión por memoria: 15.5.24 era la corrección conocida en la auditoría, no una promesa de vigencia futura.",
+      "nextAction": "Aceptación local verificada. Continuar T04; no habilita lanzamiento.",
       "deviations": []
     },
     {
@@ -164,23 +167,25 @@
         "B10"
       ],
       "ownerRole": "Agente de backend",
-      "status": "in_progress",
-      "currentStep": 6,
+      "status": "verified",
+      "currentStep": null,
       "completedSteps": [
         1,
         2,
         3,
         4,
-        5
+        5,
+        6
       ],
       "evidence": [
         "output/production-readiness/database-clean-tests.log",
         "output/production-readiness/database-comparison.json",
-        "output/production-readiness/database-lint.json"
+        "output/production-readiness/database-lint.json",
+        "docs/release/database-verification.json"
       ],
       "commit": null,
       "blockedBy": [],
-      "nextAction": "Descubrir comandos con supabase --help, db --help y migration --help. Leer historial local y esquema; comparar SQL efectivo, roles, funciones, triggers, índices y permisos, no sólo nombres de tablas.",
+      "nextAction": "Aceptación local verificada. Continuar T04; no habilita lanzamiento.",
       "deviations": [
         "Two independent fresh/upgrade runs reuse the same explicitly marked disposable local project; clean schema and history are captured before reset. No original/remote DB reset.",
         "Generated public types are identical after LF normalization; existing file retained. No new migration justified by verified schema diff."
@@ -1471,13 +1476,13 @@
     "updateRequiredAfterImplementation": true
   },
   "checkpoint": {
-    "updatedAt": "2026-09-11T03:30:42.662Z",
+    "updatedAt": "2026-09-11T03:47:31.620Z",
     "branch": "codex/production-readiness",
-    "commit": "2d1936c7db150832b96b196c13f990501463c21f",
+    "commit": "afb14ba2eb1af5a5f8ab7ba7edd11aba5861a6b3",
     "filesChanged": [],
-    "lastVerification": null,
+    "lastVerification": "T02: audit prod 0, builds Windows/Linux; T03: pgTAP 416 clean + 416 upgrade, 8 DB integration, populated witness preserved.",
     "unresolvedFailures": [],
-    "nextCommand": "Finish bounded Windows/Linux builds and upgrade from migration 202608190007."
+    "nextCommand": "Execute T04 environment guards and isolated full-stack test harness per approved plan."
   },
   "events": [
     {
@@ -1488,6 +1493,15 @@
       "type": "implementation_authorized",
       "at": "2026-09-11T02:56:36.469Z",
       "note": "Usuario autorizó implementación etapa por etapa. Snapshot local aislado; no autorización inferida para cobros reales."
+    },
+    {
+      "type": "tasks_verified",
+      "tasks": [
+        "T02",
+        "T03"
+      ],
+      "at": "2026-09-11T03:47:31.620Z",
+      "note": "Aceptación local y evidencias registradas. Ningún gate de lanzamiento promovido."
     }
   ],
   "executionWorktree": "E:/Proyectos/GitHub/Lysto-production-readiness"

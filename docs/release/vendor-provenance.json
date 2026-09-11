@@ -1,0 +1,28 @@
+{
+  "upstreamCommit": "aeb07a24303edf701004ec1dbb8d4073dc8784af",
+  "sourceUrl": "https://github.com/waltergaltieri/mercadopago-split-node",
+  "originalSha256": "484bc749154d70b6ce4c81fda2f93ba2a832d12e1ef952b339b2688dcd1990ef",
+  "rebuiltSha256": "2adf99f14b191a261485249da0a864879908cb92f5a12d9d37fdccb706cb3c18",
+  "originalFiles": 85,
+  "rebuiltFiles": 85,
+  "missing": [],
+  "added": [],
+  "changed": [],
+  "contentReproducible": true,
+  "license": "UNLICENSED",
+  "verifiedAt": "2026-09-11T03:11:06.147Z",
+  "buildImage": "node@sha256:83f487e0a63425e5b4d146fb5e5be574bcbe1b7b843d3ebafdd95eaf7767a7e5",
+  "buildNode": "22.23.2",
+  "commands": [
+    "git checkout --detach aeb07a24303edf701004ec1dbb8d4073dc8784af",
+    "npm ci --no-audit --no-fund",
+    "npm pack"
+  ],
+  "archiveByteIdentical": false,
+  "archiveContentByteIdentical": true,
+  "notes": [
+    "85 archived file contents match byte-for-byte; tar/gzip container bytes differ. Original vendored archive remains unchanged.",
+    "Upstream declares UNLICENSED; no external redistribution or license change performed. Commercial custody/permission recorded as pending D05.",
+    "Prisma generator warned about libssl detection in slim image but completed successfully. Production runtime smoke and DB acceptance remain separate checks."
+  ]
+}
