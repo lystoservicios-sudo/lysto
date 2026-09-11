@@ -517,6 +517,86 @@ export type Database = {
           },
         ]
       }
+      job_extras: {
+        Row: {
+          amount: number
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          description: string
+          fault: string
+          id: string
+          idempotency_key: string
+          job_id: string
+          platform_fee: number | null
+          professional_amount: number | null
+          professional_id: string
+          safety_amount: number | null
+          status: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          description: string
+          fault: string
+          id?: string
+          idempotency_key: string
+          job_id: string
+          platform_fee?: number | null
+          professional_amount?: number | null
+          professional_id: string
+          safety_amount?: number | null
+          status?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          description?: string
+          fault?: string
+          id?: string
+          idempotency_key?: string
+          job_id?: string
+          platform_fee?: number | null
+          professional_amount?: number | null
+          professional_id?: string
+          safety_amount?: number | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_extras_decided_by_fkey"
+            columns: ["decided_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_extras_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_extras_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "public_receipt_view"
+            referencedColumns: ["job_id"]
+          },
+          {
+            foreignKeyName: "job_extras_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professional_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       job_final_reports: {
         Row: {
           created_at: string
@@ -782,6 +862,314 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      marketplace_checkouts: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          customer_id: string
+          expires_at: string
+          extra_id: string | null
+          id: string
+          init_point: string | null
+          job_id: string
+          last_error: string | null
+          last_reconciled_at: string | null
+          lease_token: string | null
+          lease_until: string | null
+          live_mode: boolean
+          marketplace_fee: number
+          preference_id: string | null
+          preference_spec: Json | null
+          professional_amount: number | null
+          professional_id: string
+          review_reason: string | null
+          sandbox_init_point: string | null
+          seller_account_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          customer_id: string
+          expires_at?: string
+          extra_id?: string | null
+          id?: string
+          init_point?: string | null
+          job_id: string
+          last_error?: string | null
+          last_reconciled_at?: string | null
+          lease_token?: string | null
+          lease_until?: string | null
+          live_mode: boolean
+          marketplace_fee: number
+          preference_id?: string | null
+          preference_spec?: Json | null
+          professional_amount?: number | null
+          professional_id: string
+          review_reason?: string | null
+          sandbox_init_point?: string | null
+          seller_account_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          customer_id?: string
+          expires_at?: string
+          extra_id?: string | null
+          id?: string
+          init_point?: string | null
+          job_id?: string
+          last_error?: string | null
+          last_reconciled_at?: string | null
+          lease_token?: string | null
+          lease_until?: string | null
+          live_mode?: boolean
+          marketplace_fee?: number
+          preference_id?: string | null
+          preference_spec?: Json | null
+          professional_amount?: number | null
+          professional_id?: string
+          review_reason?: string | null
+          sandbox_init_point?: string | null
+          seller_account_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketplace_checkouts_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customer_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketplace_checkouts_extra_id_fkey"
+            columns: ["extra_id"]
+            isOneToOne: false
+            referencedRelation: "job_extras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketplace_checkouts_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketplace_checkouts_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "public_receipt_view"
+            referencedColumns: ["job_id"]
+          },
+          {
+            foreignKeyName: "marketplace_checkouts_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professional_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketplace_payment_observations: {
+        Row: {
+          checkout_id: string
+          issues: Json
+          net_received_amount: number | null
+          observed_at: string
+          provider_fee: number
+          provider_payment_id: string
+          provider_status: string
+          provider_updated_at: string
+          refunded_amount: number
+        }
+        Insert: {
+          checkout_id: string
+          issues?: Json
+          net_received_amount?: number | null
+          observed_at?: string
+          provider_fee?: number
+          provider_payment_id: string
+          provider_status: string
+          provider_updated_at: string
+          refunded_amount?: number
+        }
+        Update: {
+          checkout_id?: string
+          issues?: Json
+          net_received_amount?: number | null
+          observed_at?: string
+          provider_fee?: number
+          provider_payment_id?: string
+          provider_status?: string
+          provider_updated_at?: string
+          refunded_amount?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketplace_payment_observations_checkout_id_fkey"
+            columns: ["checkout_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_checkouts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mp_split_connected_accounts: {
+        Row: {
+          access_token_expires_at: string
+          created_at: string
+          enabled: boolean
+          encrypted_access_token: string
+          encrypted_refresh_token: string | null
+          mercado_pago_user_id: string
+          seller_id: string
+          updated_at: string
+        }
+        Insert: {
+          access_token_expires_at: string
+          created_at: string
+          enabled?: boolean
+          encrypted_access_token: string
+          encrypted_refresh_token?: string | null
+          mercado_pago_user_id: string
+          seller_id: string
+          updated_at: string
+        }
+        Update: {
+          access_token_expires_at?: string
+          created_at?: string
+          enabled?: boolean
+          encrypted_access_token?: string
+          encrypted_refresh_token?: string | null
+          mercado_pago_user_id?: string
+          seller_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      mp_split_oauth_states: {
+        Row: {
+          consumed_at: string | null
+          created_at: string
+          expires_at: string
+          seller_id: string
+          state_hash: string
+        }
+        Insert: {
+          consumed_at?: string | null
+          created_at: string
+          expires_at: string
+          seller_id: string
+          state_hash: string
+        }
+        Update: {
+          consumed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          seller_id?: string
+          state_hash?: string
+        }
+        Relationships: []
+      }
+      mp_split_seller_unlink_events: {
+        Row: {
+          attempts: number
+          available_at: string
+          created_at: string
+          delivered_at: string | null
+          event_id: string
+          last_error: string | null
+          lease_expires_at: string | null
+          mercado_pago_user_id: string
+          seller_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          available_at: string
+          created_at: string
+          delivered_at?: string | null
+          event_id: string
+          last_error?: string | null
+          lease_expires_at?: string | null
+          mercado_pago_user_id: string
+          seller_id: string
+          status: string
+          updated_at: string
+        }
+        Update: {
+          attempts?: number
+          available_at?: string
+          created_at?: string
+          delivered_at?: string | null
+          event_id?: string
+          last_error?: string | null
+          lease_expires_at?: string | null
+          mercado_pago_user_id?: string
+          seller_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      mp_split_webhook_events: {
+        Row: {
+          action: string
+          attempts: number
+          data_id: string
+          event_key: string
+          last_error: string | null
+          lease_expires_at: string | null
+          mercado_pago_user_id: string
+          notification_id: string
+          notification_type: string
+          processed_at: string | null
+          received_at: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          action: string
+          attempts?: number
+          data_id: string
+          event_key: string
+          last_error?: string | null
+          lease_expires_at?: string | null
+          mercado_pago_user_id: string
+          notification_id: string
+          notification_type: string
+          processed_at?: string | null
+          received_at: string
+          status: string
+          updated_at: string
+        }
+        Update: {
+          action?: string
+          attempts?: number
+          data_id?: string
+          event_key?: string
+          last_error?: string | null
+          lease_expires_at?: string | null
+          mercado_pago_user_id?: string
+          notification_id?: string
+          notification_type?: string
+          processed_at?: string | null
+          received_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       notification_events: {
         Row: {
@@ -2191,6 +2579,82 @@ export type Database = {
           },
         ]
       }
+      service_quotes: {
+        Row: {
+          accepted_at: string | null
+          address: Json
+          created_at: string
+          customer_id: string
+          expires_at: string
+          id: string
+          input: Json
+          preferred_date: string
+          quote: Json
+          request_id: string | null
+          review_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          time_window: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          address: Json
+          created_at?: string
+          customer_id: string
+          expires_at: string
+          id?: string
+          input: Json
+          preferred_date: string
+          quote: Json
+          request_id?: string | null
+          review_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status: string
+          time_window: string
+        }
+        Update: {
+          accepted_at?: string | null
+          address?: Json
+          created_at?: string
+          customer_id?: string
+          expires_at?: string
+          id?: string
+          input?: Json
+          preferred_date?: string
+          quote?: Json
+          request_id?: string | null
+          review_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          time_window?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_quotes_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customer_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_quotes_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: true
+            referencedRelation: "service_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_quotes_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       service_requests: {
         Row: {
           address_id: string | null
@@ -2441,6 +2905,10 @@ export type Database = {
         Args: { p_claim_token: string; p_event_id: string }
         Returns: boolean
       }
+      advance_service_job: {
+        Args: { p_expected_status: string; p_job_id: string }
+        Returns: Json
+      }
       apply_mercadopago_payment_webhook: {
         Args: {
           p_provider_event_id: string
@@ -2566,6 +3034,10 @@ export type Database = {
         Args: never
         Returns: Database["public"]["Enums"]["user_role"]
       }
+      decide_job_extra: {
+        Args: { p_decision: string; p_extra_id: string }
+        Returns: Json
+      }
       enqueue_outbox_event: {
         Args: {
           p_aggregate_id: string
@@ -2626,6 +3098,7 @@ export type Database = {
         }
         Returns: string
       }
+      get_quote_policy: { Args: never; Returns: Json }
       is_admin: { Args: never; Returns: boolean }
       log_admin_action: {
         Args: {
@@ -2656,6 +3129,16 @@ export type Database = {
         }
         Returns: Json
       }
+      propose_job_extra: {
+        Args: {
+          p_amount: number
+          p_description: string
+          p_fault: string
+          p_idempotency_key: string
+          p_job_id: string
+        }
+        Returns: Json
+      }
       register_provider_event: {
         Args: {
           p_event_type: string
@@ -2677,6 +3160,10 @@ export type Database = {
         }
         Returns: Json
       }
+      review_service_quote: {
+        Args: { p_quote_id: string; p_reason: string }
+        Returns: Json
+      }
       set_admin_permissions: {
         Args: {
           p_admin_profile_id: string
@@ -2696,6 +3183,8 @@ export type Database = {
         }
         Returns: Json
       }
+      submit_service_quote: { Args: { p_quote_id: string }; Returns: Json }
+      update_quote_policy: { Args: { p_policy: Json }; Returns: Json }
     }
     Enums: {
       admin_permission: "operations" | "finance" | "quality" | "owner"
@@ -2965,3 +3454,4 @@ export const Constants = {
     },
   },
 } as const
+

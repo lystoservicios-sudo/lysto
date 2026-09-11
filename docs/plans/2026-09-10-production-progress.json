@@ -1,0 +1,1446 @@
+{
+  "schemaVersion": 1,
+  "planId": "lysto-production-completion-2026-09-10",
+  "status": "planned",
+  "createdFor": "Plan de implementación solicitado; ninguna tarea ejecutada al crear este registro.",
+  "planPath": "E:/Proyectos/GitHub/Lysto/docs/plans/2026-09-10-production-completion.md",
+  "acceptancePath": "E:/Proyectos/GitHub/Lysto/docs/plans/2026-09-10-production-acceptance.md",
+  "auditPath": "E:/Proyectos/GitHub/Lysto/docs/audits/2026-09-10-cto-production-readiness.md",
+  "baseline": {
+    "auditReferenceCommit": "6bbabd3",
+    "includesUncommittedWork": true,
+    "executionCommit": null,
+    "snapshotHash": null,
+    "environment": null
+  },
+  "currentMilestone": "NOT_PRODUCTION_READY",
+  "nextTask": "T00",
+  "recommendedOrder": [
+    "T00",
+    "T01",
+    "T02",
+    "T03",
+    "T04",
+    "T05",
+    "T06",
+    "T33",
+    "T07",
+    "T10",
+    "T12",
+    "T08",
+    "T13",
+    "T09",
+    "T11",
+    "T14",
+    "T24",
+    "T15",
+    "T16",
+    "T17",
+    "T18",
+    "T19",
+    "T30",
+    "T20",
+    "T32",
+    "T21",
+    "T22",
+    "T23",
+    "T25",
+    "T26",
+    "T27",
+    "T28",
+    "T29",
+    "T31",
+    "T35",
+    "T34",
+    "T36",
+    "T37",
+    "T38",
+    "T39"
+  ],
+  "statusDefinitions": {
+    "pending": "Sin ejecutar/verificar para este plan",
+    "in_progress": "Trabajo iniciado",
+    "implemented": "Código/artefacto creado; aceptación pendiente",
+    "verified": "Criterio y evidencia satisfechos",
+    "blocked_external": "Dependencia externa identificada; continuar otras tareas"
+  },
+  "tasks": [
+    {
+      "id": "T00",
+      "title": "Consolidar la línea base sin perder trabajo existente",
+      "dependencies": [],
+      "auditFindings": [
+        "B10"
+      ],
+      "ownerRole": "Agente técnico",
+      "status": "pending",
+      "currentStep": null,
+      "completedSteps": [],
+      "evidence": [],
+      "commit": null,
+      "blockedBy": [],
+      "nextAction": "Leer AGENTS.md y la auditoría. Si aparece .codegraph, usar CodeGraph antes de localizar código; no indexar por iniciativa propia.",
+      "deviations": []
+    },
+    {
+      "id": "T01",
+      "title": "Registrar decisiones y dependencias externas del lanzamiento",
+      "dependencies": [
+        "T00"
+      ],
+      "auditFindings": [
+        "B02",
+        "B08",
+        "B09",
+        "B10"
+      ],
+      "ownerRole": "Agente + dirección/operaciones/finanzas",
+      "status": "pending",
+      "currentStep": null,
+      "completedSteps": [],
+      "evidence": [],
+      "commit": null,
+      "blockedBy": [],
+      "nextAction": "Crear el registro D01–D12 definido en el anexo de aceptación; estado inicial pending salvo evidencia vigente del responsable.",
+      "deviations": []
+    },
+    {
+      "id": "T02",
+      "title": "Actualizar dependencias y verificar cadena de suministro",
+      "dependencies": [
+        "T00"
+      ],
+      "auditFindings": [
+        "B07",
+        "B10"
+      ],
+      "ownerRole": "Agente técnico",
+      "status": "pending",
+      "currentStep": null,
+      "completedSteps": [],
+      "evidence": [],
+      "commit": null,
+      "blockedBy": [],
+      "nextAction": "Reejecutar audit productivo y revisar los avisos oficiales actuales. No fijar una versión por memoria: 15.5.24 era la corrección conocida en la auditoría, no una promesa de vigencia futura.",
+      "deviations": []
+    },
+    {
+      "id": "T03",
+      "title": "Reproducir esquema completo y reconciliar migraciones",
+      "dependencies": [
+        "T00"
+      ],
+      "auditFindings": [
+        "B10"
+      ],
+      "ownerRole": "Agente de backend",
+      "status": "pending",
+      "currentStep": null,
+      "completedSteps": [],
+      "evidence": [],
+      "commit": null,
+      "blockedBy": [],
+      "nextAction": "Descubrir comandos con supabase --help, db --help y migration --help. Leer historial local y esquema; comparar SQL efectivo, roles, funciones, triggers, índices y permisos, no sólo nombres de tablas.",
+      "deviations": []
+    },
+    {
+      "id": "T04",
+      "title": "Preparar pruebas integrales con identidades y datos aislados",
+      "dependencies": [
+        "T02",
+        "T03"
+      ],
+      "auditFindings": [
+        "B01",
+        "B08",
+        "B10"
+      ],
+      "ownerRole": "Agente + QA",
+      "status": "pending",
+      "currentStep": null,
+      "completedSteps": [],
+      "evidence": [],
+      "commit": null,
+      "blockedBy": [],
+      "nextAction": "Crear tests rojos del guard de entorno: rechazar host no permitido, proyecto productivo, variables faltantes y ejecución de fixtures sin identidad explícita.",
+      "deviations": []
+    },
+    {
+      "id": "T05",
+      "title": "Definir un solo contrato de servicio y sus invariantes",
+      "dependencies": [
+        "T01",
+        "T03"
+      ],
+      "auditFindings": [
+        "B03",
+        "B04",
+        "B06",
+        "B08"
+      ],
+      "ownerRole": "Agente de backend + operaciones",
+      "status": "pending",
+      "currentStep": null,
+      "completedSteps": [],
+      "evidence": [],
+      "commit": null,
+      "blockedBy": [],
+      "nextAction": "Escribir tabla estado/evento/actor/precondición/efecto para solicitud, presupuesto, trabajo, pago, adicional, reclamo y garantía. Usar el contrato normativo del anexo.",
+      "deviations": []
+    },
+    {
+      "id": "T06",
+      "title": "Centralizar sesión, roles y protección del servidor",
+      "dependencies": [
+        "T04",
+        "T05"
+      ],
+      "auditFindings": [
+        "B01",
+        "B06"
+      ],
+      "ownerRole": "Agente de backend",
+      "status": "pending",
+      "currentStep": null,
+      "completedSteps": [],
+      "evidence": [],
+      "commit": null,
+      "blockedBy": [],
+      "nextAction": "Escribir primero pruebas HTTP anónimas de los tres paneles y cada endpoint privado; verificar además acceso horizontal y permisos insuficientes.",
+      "deviations": []
+    },
+    {
+      "id": "T07",
+      "title": "Completar registro, verificación, recuperación y logout",
+      "dependencies": [
+        "T06"
+      ],
+      "auditFindings": [
+        "B02"
+      ],
+      "ownerRole": "Agente full stack",
+      "status": "pending",
+      "currentStep": null,
+      "completedSteps": [],
+      "evidence": [],
+      "commit": null,
+      "blockedBy": [],
+      "nextAction": "Escribir tests de alta válida, email duplicado, verificación pendiente, token vencido/reutilizado, recuperación genérica y logout real.",
+      "deviations": []
+    },
+    {
+      "id": "T08",
+      "title": "MFA administrativo y revocación efectiva de accesos",
+      "dependencies": [
+        "T06",
+        "T07"
+      ],
+      "auditFindings": [
+        "B01",
+        "B02",
+        "B10"
+      ],
+      "ownerRole": "Agente de backend + titular de cuentas",
+      "status": "pending",
+      "currentStep": null,
+      "completedSteps": [],
+      "evidence": [],
+      "commit": null,
+      "blockedBy": [],
+      "nextAction": "Agregar pruebas de admin con aal1, admin aal2, rol retirado con JWT antiguo y profesional suspendido con sesión aún vigente.",
+      "deviations": []
+    },
+    {
+      "id": "T09",
+      "title": "Administrar permisos y dejar auditoría confiable",
+      "dependencies": [
+        "T06",
+        "T08"
+      ],
+      "auditFindings": [
+        "B01",
+        "B02",
+        "B06",
+        "B10"
+      ],
+      "ownerRole": "Agente de backend",
+      "status": "pending",
+      "currentStep": null,
+      "completedSteps": [],
+      "evidence": [],
+      "commit": null,
+      "blockedBy": [],
+      "nextAction": "Escribir tests de operations, finance, quality, owner y usuario sin permiso. Mantener enum actual; no introducir un superadmin paralelo sin necesidad.",
+      "deviations": []
+    },
+    {
+      "id": "T10",
+      "title": "Subir, inspeccionar y consultar evidencia privada",
+      "dependencies": [
+        "T03",
+        "T04",
+        "T06"
+      ],
+      "auditFindings": [
+        "B09",
+        "B04"
+      ],
+      "ownerRole": "Agente full stack",
+      "status": "pending",
+      "currentStep": null,
+      "completedSteps": [],
+      "evidence": [],
+      "commit": null,
+      "blockedBy": [],
+      "nextAction": "Crear tests rojos: dueño ajeno, MIME falso, tamaño excedido, archivo vacío, token vencido, path traversal, archivos no finalizados y acceso tras suspensión.",
+      "deviations": []
+    },
+    {
+      "id": "T11",
+      "title": "Invitación, onboarding, aprobación y suspensión de profesionales",
+      "dependencies": [
+        "T07",
+        "T09",
+        "T10"
+      ],
+      "auditFindings": [
+        "B02",
+        "B09"
+      ],
+      "ownerRole": "Agente full stack + responsable de profesionales",
+      "status": "pending",
+      "currentStep": null,
+      "completedSteps": [],
+      "evidence": [],
+      "commit": null,
+      "blockedBy": [],
+      "nextAction": "Probar invitación válida, vencida, reutilizada, cancelada, email distinto, documentos incompletos y autoaprobación.",
+      "deviations": []
+    },
+    {
+      "id": "T12",
+      "title": "Repositorios y modelos de lectura sin datos ficticios",
+      "dependencies": [
+        "T05",
+        "T06"
+      ],
+      "auditFindings": [
+        "B03",
+        "B06"
+      ],
+      "ownerRole": "Agente full stack",
+      "status": "pending",
+      "currentStep": null,
+      "completedSteps": [],
+      "evidence": [],
+      "commit": null,
+      "blockedBy": [],
+      "nextAction": "Definir DTO explícito por rol para solicitudes, trabajos, pagos, equipos, profesionales, reclamos y métricas; inventariar campos sensibles que nunca llegan al navegador ajeno.",
+      "deviations": []
+    },
+    {
+      "id": "T13",
+      "title": "Perfiles, direcciones y registro de equipos persistentes",
+      "dependencies": [
+        "T10",
+        "T12"
+      ],
+      "auditFindings": [
+        "B03",
+        "B04",
+        "B06"
+      ],
+      "ownerRole": "Agente full stack",
+      "status": "pending",
+      "currentStep": null,
+      "completedSteps": [],
+      "evidence": [],
+      "commit": null,
+      "blockedBy": [],
+      "nextAction": "Probar edición por dueño, cambio de rol prohibido, dirección histórica de presupuesto inmutable y equipo ajeno rechazado.",
+      "deviations": []
+    },
+    {
+      "id": "T14",
+      "title": "Cerrar presupuestos, cobertura, tarifas y aceptación",
+      "dependencies": [
+        "T05",
+        "T09",
+        "T13"
+      ],
+      "auditFindings": [
+        "B03",
+        "B08"
+      ],
+      "ownerRole": "Agente de backend + finanzas",
+      "status": "pending",
+      "currentStep": null,
+      "completedSteps": [],
+      "evidence": [],
+      "commit": null,
+      "blockedBy": [],
+      "nextAction": "Probar cotización sin ruta/precio de repuesto, fecha pasada, fuera de cobertura, versión vencida, moneda/decimales inválidos, cambio de tarifa e intento de enviar total desde cliente.",
+      "deviations": []
+    },
+    {
+      "id": "T15",
+      "title": "Agenda, capacidad y reprogramación verificables",
+      "dependencies": [
+        "T05",
+        "T12",
+        "T14"
+      ],
+      "auditFindings": [
+        "B03",
+        "B04"
+      ],
+      "ownerRole": "Agente backend + operaciones",
+      "status": "pending",
+      "currentStep": null,
+      "completedSteps": [],
+      "evidence": [],
+      "commit": null,
+      "blockedBy": [],
+      "nextAction": "Definir diferencia entre franja preferida del cliente y visita confirmada. No prometer reserva de técnico antes de verificar capacidad.",
+      "deviations": []
+    },
+    {
+      "id": "T16",
+      "title": "Asignación, propuesta y aceptación con recuperación",
+      "dependencies": [
+        "T11",
+        "T14",
+        "T15"
+      ],
+      "auditFindings": [
+        "B03",
+        "B04",
+        "B06"
+      ],
+      "ownerRole": "Agente backend + operaciones",
+      "status": "pending",
+      "currentStep": null,
+      "completedSteps": [],
+      "evidence": [],
+      "commit": null,
+      "blockedBy": [],
+      "nextAction": "Probar asignación a técnico no aprobado, sin especialidad/zona/herramientas, doble operador, rechazo, vencimiento y aceptación tardía.",
+      "deviations": []
+    },
+    {
+      "id": "T17",
+      "title": "Consolidar OAuth, checkout y ledger de pagos",
+      "dependencies": [
+        "T04",
+        "T08",
+        "T14",
+        "T16"
+      ],
+      "auditFindings": [
+        "B08",
+        "B07"
+      ],
+      "ownerRole": "Agente backend",
+      "status": "pending",
+      "currentStep": null,
+      "completedSteps": [],
+      "evidence": [],
+      "commit": null,
+      "blockedBy": [],
+      "nextAction": "Conservar los controles ya probados. Añadir casos negativos de cuenta/moneda/ambiente/importe/comisión diferentes, misma idempotency key con otro payload y cambio de destinatario.",
+      "deviations": []
+    },
+    {
+      "id": "T18",
+      "title": "Operación financiera, devoluciones y sustitución de técnico",
+      "dependencies": [
+        "T09",
+        "T16",
+        "T17"
+      ],
+      "auditFindings": [
+        "B04",
+        "B08"
+      ],
+      "ownerRole": "Agente + finanzas/operaciones",
+      "status": "pending",
+      "currentStep": null,
+      "completedSteps": [],
+      "evidence": [],
+      "commit": null,
+      "blockedBy": [],
+      "nextAction": "Probar devolución parcial/completa, dos solicitudes concurrentes sobre el mismo saldo, contracargo, pago de estado incierto y cancelación con preferencia aún pagable.",
+      "deviations": []
+    },
+    {
+      "id": "T19",
+      "title": "Trabajo en domicilio, diagnóstico y adicionales",
+      "dependencies": [
+        "T10",
+        "T13",
+        "T16",
+        "T17"
+      ],
+      "auditFindings": [
+        "B04",
+        "B08",
+        "B09"
+      ],
+      "ownerRole": "Agente full stack",
+      "status": "pending",
+      "currentStep": null,
+      "completedSteps": [],
+      "evidence": [],
+      "commit": null,
+      "blockedBy": [],
+      "nextAction": "Agregar pruebas de avance por técnico ajeno, pago no aprobado, conflicto de estado, adicional rechazado y aceptación duplicada.",
+      "deviations": []
+    },
+    {
+      "id": "T20",
+      "title": "Cerrar técnicamente con informe, evidencia e historial",
+      "dependencies": [
+        "T05",
+        "T10",
+        "T13",
+        "T19"
+      ],
+      "auditFindings": [
+        "B04",
+        "B06",
+        "B09"
+      ],
+      "ownerRole": "Agente full stack",
+      "status": "pending",
+      "currentStep": null,
+      "completedSteps": [],
+      "evidence": [],
+      "commit": null,
+      "blockedBy": [],
+      "nextAction": "Escribir tests de informe incompleto, equipo ajeno, archivo no verificado, estado inválido, adicional pendiente y doble envío.",
+      "deviations": []
+    },
+    {
+      "id": "T21",
+      "title": "Conformidad, disputa y reseña independientes",
+      "dependencies": [
+        "T20"
+      ],
+      "auditFindings": [
+        "B04",
+        "B06"
+      ],
+      "ownerRole": "Agente full stack",
+      "status": "pending",
+      "currentStep": null,
+      "completedSteps": [],
+      "evidence": [],
+      "commit": null,
+      "blockedBy": [],
+      "nextAction": "Probar dueño ajeno, conformidad repetida, confirmación sin informe, reseña duplicada, desacuerdo y doble pestaña.",
+      "deviations": []
+    },
+    {
+      "id": "T22",
+      "title": "Comprobante verificable y publicación mínima",
+      "dependencies": [
+        "T20",
+        "T21"
+      ],
+      "auditFindings": [
+        "B05"
+      ],
+      "ownerRole": "Agente full stack",
+      "status": "pending",
+      "currentStep": null,
+      "completedSteps": [],
+      "evidence": [],
+      "commit": null,
+      "blockedBy": [],
+      "nextAction": "Crear tests de token inventado, mal formado, revocado, de otro recibo, trabajo sin cierre y ausencia de PII privada.",
+      "deviations": []
+    },
+    {
+      "id": "T23",
+      "title": "Reclamos, garantías, calidad y seguimiento de excepciones",
+      "dependencies": [
+        "T09",
+        "T13",
+        "T18",
+        "T21"
+      ],
+      "auditFindings": [
+        "B04",
+        "B06",
+        "B09"
+      ],
+      "ownerRole": "Agente full stack + soporte/calidad",
+      "status": "pending",
+      "currentStep": null,
+      "completedSteps": [],
+      "evidence": [],
+      "commit": null,
+      "blockedBy": [],
+      "nextAction": "Reutilizar complaints, quality_events y warranty_claims según esquema real. Crear relación/case_events sólo donde falte; evitar tres expedientes inconexos para un problema.",
+      "deviations": []
+    },
+    {
+      "id": "T24",
+      "title": "Notificaciones y worker confiable de outbox",
+      "dependencies": [
+        "T03",
+        "T06",
+        "T09"
+      ],
+      "auditFindings": [
+        "B09",
+        "B10"
+      ],
+      "ownerRole": "Agente backend",
+      "status": "pending",
+      "currentStep": null,
+      "completedSteps": [],
+      "evidence": [],
+      "commit": null,
+      "blockedBy": [],
+      "nextAction": "Escribir tests de dos workers simultáneos, entrega fallida, lease vencido, crash tras envío antes de ack, reintento y dead-letter.",
+      "deviations": []
+    },
+    {
+      "id": "T25",
+      "title": "Historial, mantenimientos y seguimiento técnico",
+      "dependencies": [
+        "T13",
+        "T20",
+        "T23",
+        "T24"
+      ],
+      "auditFindings": [
+        "B03",
+        "B06",
+        "B09"
+      ],
+      "ownerRole": "Agente full stack",
+      "status": "pending",
+      "currentStep": null,
+      "completedSteps": [],
+      "evidence": [],
+      "commit": null,
+      "blockedBy": [],
+      "nextAction": "Probar recomendación desde cierre, none, próxima visita por repuesto, fechas futuras/vencidas y recordatorio duplicado.",
+      "deviations": []
+    },
+    {
+      "id": "T26",
+      "title": "Consolidar y retirar todos los contratos API heredados",
+      "dependencies": [
+        "T06",
+        "T11",
+        "T14",
+        "T16",
+        "T18",
+        "T19",
+        "T20",
+        "T21",
+        "T23",
+        "T24",
+        "T25"
+      ],
+      "auditFindings": [
+        "B01",
+        "B06"
+      ],
+      "ownerRole": "Agente backend",
+      "status": "pending",
+      "currentStep": null,
+      "completedSteps": [],
+      "evidence": [],
+      "commit": null,
+      "blockedBy": [],
+      "nextAction": "Aplicar el inventario de las 36 rutas del anexo, registrando destino canónico, auth, método y prueba. Agregar rutas nuevas a la matriz.",
+      "deviations": []
+    },
+    {
+      "id": "T27",
+      "title": "Conectar toda la experiencia del cliente",
+      "dependencies": [
+        "T07",
+        "T12",
+        "T13",
+        "T14",
+        "T18",
+        "T21",
+        "T22",
+        "T23",
+        "T25"
+      ],
+      "auditFindings": [
+        "B03",
+        "B04",
+        "B05"
+      ],
+      "ownerRole": "Agente full stack",
+      "status": "pending",
+      "currentStep": null,
+      "completedSteps": [],
+      "evidence": [],
+      "commit": null,
+      "blockedBy": [],
+      "nextAction": "Usar el inventario completo de rutas cliente del anexo; añadir tests con usuario sin historial, con operación activa y con error de backend.",
+      "deviations": []
+    },
+    {
+      "id": "T28",
+      "title": "Conectar la experiencia móvil del profesional",
+      "dependencies": [
+        "T11",
+        "T12",
+        "T15",
+        "T16",
+        "T18",
+        "T19",
+        "T20",
+        "T23",
+        "T25"
+      ],
+      "auditFindings": [
+        "B02",
+        "B03",
+        "B04"
+      ],
+      "ownerRole": "Agente full stack",
+      "status": "pending",
+      "currentStep": null,
+      "completedSteps": [],
+      "evidence": [],
+      "commit": null,
+      "blockedBy": [],
+      "nextAction": "Inventariar todas las rutas pro del anexo y sus acciones. Probar técnico sin trabajos, aprobado, suspendido y con caso abierto.",
+      "deviations": []
+    },
+    {
+      "id": "T29",
+      "title": "Convertir administración en consola operativa completa",
+      "dependencies": [
+        "T09",
+        "T12",
+        "T14",
+        "T15",
+        "T16",
+        "T18",
+        "T23",
+        "T24",
+        "T27",
+        "T28"
+      ],
+      "auditFindings": [
+        "B03",
+        "B04",
+        "B08",
+        "B09"
+      ],
+      "ownerRole": "Agente full stack + operadores",
+      "status": "pending",
+      "currentStep": null,
+      "completedSteps": [],
+      "evidence": [],
+      "commit": null,
+      "blockedBy": [],
+      "nextAction": "Aplicar inventario admin completo; listar todas las acciones visibles y qué permiso/servicio las respalda. Pruebas de datasets vacíos, más de 100 filas y usuario sin finance.",
+      "deviations": []
+    },
+    {
+      "id": "T30",
+      "title": "Observabilidad, límites de uso y controles de producción",
+      "dependencies": [
+        "T06",
+        "T09",
+        "T17",
+        "T24"
+      ],
+      "auditFindings": [
+        "B01",
+        "B07",
+        "B10"
+      ],
+      "ownerRole": "Agente técnico",
+      "status": "pending",
+      "currentStep": null,
+      "completedSteps": [],
+      "evidence": [],
+      "commit": null,
+      "blockedBy": [],
+      "nextAction": "Probar redacción de cookies/tokens/PII, rate limit compartido entre instancias, origen indebido, bandera de cobro apagada y configuración productiva incompleta.",
+      "deviations": []
+    },
+    {
+      "id": "T31",
+      "title": "Condiciones comerciales, privacidad y formación de operadores",
+      "dependencies": [
+        "T01",
+        "T18",
+        "T23",
+        "T29"
+      ],
+      "auditFindings": [
+        "B08",
+        "B09",
+        "B10"
+      ],
+      "ownerRole": "Agente prepara; dirección/legal/contabilidad/operaciones validan",
+      "status": "pending",
+      "currentStep": null,
+      "completedSteps": [],
+      "evidence": [],
+      "commit": null,
+      "blockedBy": [],
+      "nextAction": "Preparar borradores completos y decisiones abiertas sobre garantía, cancelación, reintegro, adicionales, profesionales y facturación; no certificar cumplimiento legal ni inventar aprobación.",
+      "deviations": []
+    },
+    {
+      "id": "T32",
+      "title": "Backups, custodia de claves y restauración ensayada",
+      "dependencies": [
+        "T03",
+        "T17",
+        "T24",
+        "T30"
+      ],
+      "auditFindings": [
+        "B08",
+        "B09",
+        "B10"
+      ],
+      "ownerRole": "Agente técnico + titular de infraestructura",
+      "status": "pending",
+      "currentStep": null,
+      "completedSteps": [],
+      "evidence": [],
+      "commit": null,
+      "blockedBy": [],
+      "nextAction": "Inventariar qué respalda el proveedor: DB, Auth, Storage, configuración, roles/passwords especiales, outbox/ledger y tokens cifrados. Confirmar retención real del plan contratado.",
+      "deviations": []
+    },
+    {
+      "id": "T33",
+      "title": "CI completa y gates de release que fallen ante evidencia faltante",
+      "dependencies": [
+        "T02",
+        "T03",
+        "T04",
+        "T05"
+      ],
+      "auditFindings": [
+        "B07",
+        "B10"
+      ],
+      "ownerRole": "Agente técnico",
+      "status": "pending",
+      "currentStep": null,
+      "completedSteps": [],
+      "evidence": [],
+      "commit": null,
+      "blockedBy": [],
+      "nextAction": "Escribir tests de gate ausente, lista vacía, evidencia de otro commit/entorno, duplicada, vencida, skipped y error desconocido: todos deben bloquear. El evaluador actual no debe aprobar por lista vacía.",
+      "deviations": []
+    },
+    {
+      "id": "T34",
+      "title": "E2E de tres roles, aislamiento y experiencia móvil",
+      "dependencies": [
+        "T26",
+        "T27",
+        "T28",
+        "T29",
+        "T30",
+        "T31",
+        "T33"
+      ],
+      "auditFindings": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B05",
+        "B06",
+        "B08",
+        "B09",
+        "B10"
+      ],
+      "ownerRole": "Agente + QA",
+      "status": "pending",
+      "currentStep": null,
+      "completedSteps": [],
+      "evidence": [],
+      "commit": null,
+      "blockedBy": [],
+      "nextAction": "Reemplazar el test del wizard antiguo por escenarios del contrato vigente. Eliminar aserciones de matching simulado; comprobar IDs persistidos y recarga.",
+      "deviations": []
+    },
+    {
+      "id": "T35",
+      "title": "Carga, latencia, capacidad y presupuesto operativo",
+      "dependencies": [
+        "T12",
+        "T29",
+        "T30",
+        "T33"
+      ],
+      "auditFindings": [
+        "B10"
+      ],
+      "ownerRole": "Agente técnico + dirección",
+      "status": "pending",
+      "currentStep": null,
+      "completedSteps": [],
+      "evidence": [],
+      "commit": null,
+      "blockedBy": [],
+      "nextAction": "Definir carga esperada y presupuesto con D01/D10: usuarios concurrentes, solicitudes, checkouts, fotos y pico de operadores. Si faltan datos, usar hipótesis explícita que no habilita escala ilimitada.",
+      "deviations": []
+    },
+    {
+      "id": "T36",
+      "title": "Staging completo y aceptación del proveedor",
+      "dependencies": [
+        "T01",
+        "T17",
+        "T18",
+        "T24",
+        "T30",
+        "T32",
+        "T34",
+        "T35"
+      ],
+      "auditFindings": [
+        "B08",
+        "B09",
+        "B10"
+      ],
+      "ownerRole": "Agente técnico + titular Mercado Pago + QA",
+      "status": "pending",
+      "currentStep": null,
+      "completedSteps": [],
+      "evidence": [],
+      "commit": null,
+      "blockedBy": [],
+      "nextAction": "Desplegar el release candidate en staging identificado usando autorizaciones existentes. Si falta destino/acceso, preparar configuración y solicitar sólo ese dato; nunca adivinar ni usar producción de staging.",
+      "deviations": []
+    },
+    {
+      "id": "T37",
+      "title": "Preparar y ejecutar puesta en producción controlada",
+      "dependencies": [
+        "T31",
+        "T32",
+        "T33",
+        "T34",
+        "T35",
+        "T36"
+      ],
+      "auditFindings": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B05",
+        "B06",
+        "B07",
+        "B08",
+        "B09",
+        "B10"
+      ],
+      "ownerRole": "Agente técnico + dirección/titulares",
+      "status": "pending",
+      "currentStep": null,
+      "completedSteps": [],
+      "evidence": [],
+      "commit": null,
+      "blockedBy": [],
+      "nextAction": "Generar manifest completo G01–G16 vinculado al release candidate y sus evidencias; incluir riesgos/exclusiones aprobadas. TECHNICALLY_READY no significa PROD_ENABLED.",
+      "deviations": []
+    },
+    {
+      "id": "T38",
+      "title": "Ejecutar piloto supervisado y cerrar defectos",
+      "dependencies": [
+        "T37"
+      ],
+      "auditFindings": [
+        "B03",
+        "B04",
+        "B08",
+        "B09",
+        "B10"
+      ],
+      "ownerRole": "Operaciones + finanzas + técnica",
+      "status": "pending",
+      "currentStep": null,
+      "completedSteps": [],
+      "evidence": [],
+      "commit": null,
+      "blockedBy": [],
+      "nextAction": "Aplicar cupo/zonas/horarios D01–D03 con clientes y profesionales autorizados. Referencia inicial: 20 servicios completos y dos semanas; cambiar sólo con decisión registrada.",
+      "deviations": []
+    },
+    {
+      "id": "T39",
+      "title": "Habilitar crecimiento y entregar mantenimiento sostenible",
+      "dependencies": [
+        "T38"
+      ],
+      "auditFindings": [
+        "B10"
+      ],
+      "ownerRole": "Dirección + técnica + operaciones",
+      "status": "pending",
+      "currentStep": null,
+      "completedSteps": [],
+      "evidence": [],
+      "commit": null,
+      "blockedBy": [],
+      "nextAction": "Reconciliar todos los B01–B10, T00–T39, rutas, decisiones y G01–G16 con evidencia actual. Ningún pending puede convertirse en complete por narrativa.",
+      "deviations": []
+    }
+  ],
+  "decisions": [
+    {
+      "id": "D01",
+      "title": "Piloto y capacidad",
+      "ownerRole": "Dirección + operaciones",
+      "status": "pending",
+      "proposal": "Confirmar zona, fecha, cupo, profesionales activos y simultaneidad. Hipótesis inicial: 20 servicios completos, al menos 2 semanas, 3–5 profesionales y 1–2 operadores; son criterios propuestos, no compromisos aceptados.",
+      "value": null,
+      "approvedBy": null,
+      "approvedAt": null,
+      "evidence": []
+    },
+    {
+      "id": "D02",
+      "title": "Atención y responsables",
+      "ownerRole": "Operaciones",
+      "status": "pending",
+      "proposal": "Definir horarios, asignación de turno, SLA por severidad, canal de soporte, suplentes y escalamiento fuera de horario.",
+      "value": null,
+      "approvedBy": null,
+      "approvedAt": null,
+      "evidence": []
+    },
+    {
+      "id": "D03",
+      "title": "Oferta inicial",
+      "ownerRole": "Producto + operaciones",
+      "status": "pending",
+      "proposal": "Definir zonas, servicios incluidos, duración, equipamiento requerido, capacidad y restricciones. Publicar sólo combinaciones operables.",
+      "value": null,
+      "approvedBy": null,
+      "approvedAt": null,
+      "evidence": []
+    },
+    {
+      "id": "D04",
+      "title": "Entornos y hosting",
+      "ownerRole": "Responsable técnico",
+      "status": "pending",
+      "proposal": "Identificar proveedor real, proyectos separados de desarrollo/staging/producción, dominios, región, runtime, scheduler, accesos y facturación. No elegir por un archivo antiguo.",
+      "value": null,
+      "approvedBy": null,
+      "approvedAt": null,
+      "evidence": []
+    },
+    {
+      "id": "D05",
+      "title": "Economía y facturación",
+      "ownerRole": "Dirección + finanzas",
+      "status": "pending",
+      "proposal": "Aprobar quién vende, quién factura, moneda, impuestos, comisiones, costo del proveedor, redondeo, promociones si existen y neto mínimo profesional. Los porcentajes actuales requieren validación comercial.",
+      "value": null,
+      "approvedBy": null,
+      "approvedAt": null,
+      "evidence": []
+    },
+    {
+      "id": "D06",
+      "title": "Excepciones del servicio",
+      "ownerRole": "Producto + operaciones + finanzas",
+      "status": "pending",
+      "proposal": "Aprobar cancelación por etapa, ausencia, rechazo, reprogramación, repuestos, adicionales y momento de pago, plazo de conformidad sin respuesta, garantías y revisitas. No completar automáticamente por silencio sin regla aprobada.",
+      "value": null,
+      "approvedBy": null,
+      "approvedAt": null,
+      "evidence": []
+    },
+    {
+      "id": "D07",
+      "title": "Habilitación profesional",
+      "ownerRole": "Operaciones + responsable legal",
+      "status": "pending",
+      "proposal": "Definir documentos, vencimientos, cualificación, acuerdo, formación obligatoria y suspensión. Responsable humano verifica lo que no puede validar el sistema.",
+      "value": null,
+      "approvedBy": null,
+      "approvedAt": null,
+      "evidence": []
+    },
+    {
+      "id": "D08",
+      "title": "Privacidad y políticas",
+      "ownerRole": "Dirección + responsable legal",
+      "status": "pending",
+      "proposal": "Aprobar términos, privacidad, retención por clase de dato, solicitudes de derechos, evidencias de servicio, tratamiento de fotos y proveedor de soporte. Registrar revisión de profesional competente.",
+      "value": null,
+      "approvedBy": null,
+      "approvedAt": null,
+      "evidence": []
+    },
+    {
+      "id": "D09",
+      "title": "Continuidad",
+      "ownerRole": "Técnica + dirección",
+      "status": "pending",
+      "proposal": "Aprobar pérdida máxima de datos y recuperación. Propuesta a demostrar: RPO ≤1 hora y RTO ≤4 horas. Incluir archivos, identidad, configuración y custodia de claves, además de DB.",
+      "value": null,
+      "approvedBy": null,
+      "approvedAt": null,
+      "evidence": []
+    },
+    {
+      "id": "D10",
+      "title": "Carga, observación y presupuesto",
+      "ownerRole": "Técnica + finanzas",
+      "status": "pending",
+      "proposal": "Aprobar volumen, SLO, alertas, cuotas y presupuesto mensual. Propuesta: p95 lectura ≤1 s, mutación ≤2 s y <1% 5xx en carga convenida, excluyendo duración del checkout externo que se mide separadamente.",
+      "value": null,
+      "approvedBy": null,
+      "approvedAt": null,
+      "evidence": []
+    },
+    {
+      "id": "D11",
+      "title": "Mercado Pago y aceptación",
+      "ownerRole": "Titular comercial + finanzas + técnica",
+      "status": "pending",
+      "proposal": "Identificar aplicación y cuentas; confirmar permisos comerciales, OAuth, ambientes y límites. Cobro/devolución real de prueba requiere autorización explícita con importe y destinatarios. Nunca pedir secretos en el registro.",
+      "value": null,
+      "approvedBy": null,
+      "approvedAt": null,
+      "evidence": []
+    },
+    {
+      "id": "D12",
+      "title": "Alcance opcional explícito",
+      "ownerRole": "Producto + dirección",
+      "status": "pending",
+      "proposal": "Aprobar sólo exclusiones justificadas: IA auxiliar, automatización avanzada de matching, nuevas zonas, recordatorios automáticos o formación no obligatoria. Mantener funciones nucleares, seguridad, dinero, historial y soporte. Una opción excluida se oculta coherentemente y se documenta; no devuelve éxito simulado.",
+      "value": null,
+      "approvedBy": null,
+      "approvedAt": null,
+      "evidence": []
+    }
+  ],
+  "releaseGates": [
+    {
+      "id": "G01",
+      "title": "Fuente reproducible",
+      "sourceTasks": [
+        "T00"
+      ],
+      "status": "pending",
+      "commit": null,
+      "environment": null,
+      "checkedAt": null,
+      "reviewer": null,
+      "evidence": []
+    },
+    {
+      "id": "G02",
+      "title": "Dependencias y secretos",
+      "sourceTasks": [
+        "T02"
+      ],
+      "status": "pending",
+      "commit": null,
+      "environment": null,
+      "checkedAt": null,
+      "reviewer": null,
+      "evidence": []
+    },
+    {
+      "id": "G03",
+      "title": "Base reproducible y permisos",
+      "sourceTasks": [
+        "T03",
+        "T04"
+      ],
+      "status": "pending",
+      "commit": null,
+      "environment": null,
+      "checkedAt": null,
+      "reviewer": null,
+      "evidence": []
+    },
+    {
+      "id": "G04",
+      "title": "Identidad y autorización",
+      "sourceTasks": [
+        "T06",
+        "T08",
+        "T09"
+      ],
+      "status": "pending",
+      "commit": null,
+      "environment": null,
+      "checkedAt": null,
+      "reviewer": null,
+      "evidence": []
+    },
+    {
+      "id": "G05",
+      "title": "Alta y cuentas",
+      "sourceTasks": [
+        "T07",
+        "T11"
+      ],
+      "status": "pending",
+      "commit": null,
+      "environment": null,
+      "checkedAt": null,
+      "reviewer": null,
+      "evidence": []
+    },
+    {
+      "id": "G06",
+      "title": "Solicitud hasta asignación",
+      "sourceTasks": [
+        "T05",
+        "T13",
+        "T14",
+        "T15",
+        "T16"
+      ],
+      "status": "pending",
+      "commit": null,
+      "environment": null,
+      "checkedAt": null,
+      "reviewer": null,
+      "evidence": []
+    },
+    {
+      "id": "G07",
+      "title": "Integridad financiera",
+      "sourceTasks": [
+        "T17",
+        "T18"
+      ],
+      "status": "pending",
+      "commit": null,
+      "environment": null,
+      "checkedAt": null,
+      "reviewer": null,
+      "evidence": []
+    },
+    {
+      "id": "G08",
+      "title": "Servicio y posventa",
+      "sourceTasks": [
+        "T10",
+        "T19",
+        "T20",
+        "T21",
+        "T22",
+        "T23",
+        "T25"
+      ],
+      "status": "pending",
+      "commit": null,
+      "environment": null,
+      "checkedAt": null,
+      "reviewer": null,
+      "evidence": []
+    },
+    {
+      "id": "G09",
+      "title": "Interfaces y APIs reales",
+      "sourceTasks": [
+        "T12",
+        "T26",
+        "T27",
+        "T28",
+        "T29"
+      ],
+      "status": "pending",
+      "commit": null,
+      "environment": null,
+      "checkedAt": null,
+      "reviewer": null,
+      "evidence": []
+    },
+    {
+      "id": "G10",
+      "title": "Calidad automatizada y móvil",
+      "sourceTasks": [
+        "T33",
+        "T34"
+      ],
+      "status": "pending",
+      "commit": null,
+      "environment": null,
+      "checkedAt": null,
+      "reviewer": null,
+      "evidence": []
+    },
+    {
+      "id": "G11",
+      "title": "Operación técnica",
+      "sourceTasks": [
+        "T24",
+        "T30"
+      ],
+      "status": "pending",
+      "commit": null,
+      "environment": null,
+      "checkedAt": null,
+      "reviewer": null,
+      "evidence": []
+    },
+    {
+      "id": "G12",
+      "title": "Capacidad y costo",
+      "sourceTasks": [
+        "T35"
+      ],
+      "status": "pending",
+      "commit": null,
+      "environment": null,
+      "checkedAt": null,
+      "reviewer": null,
+      "evidence": []
+    },
+    {
+      "id": "G13",
+      "title": "Restauración y claves",
+      "sourceTasks": [
+        "T32"
+      ],
+      "status": "pending",
+      "commit": null,
+      "environment": null,
+      "checkedAt": null,
+      "reviewer": null,
+      "evidence": []
+    },
+    {
+      "id": "G14",
+      "title": "Staging y proveedor",
+      "sourceTasks": [
+        "T36"
+      ],
+      "status": "pending",
+      "commit": null,
+      "environment": null,
+      "checkedAt": null,
+      "reviewer": null,
+      "evidence": []
+    },
+    {
+      "id": "G15",
+      "title": "Autorización y operación de lanzamiento",
+      "sourceTasks": [
+        "T31",
+        "T37"
+      ],
+      "status": "pending",
+      "commit": null,
+      "environment": null,
+      "checkedAt": null,
+      "reviewer": null,
+      "evidence": []
+    },
+    {
+      "id": "G16",
+      "title": "Resultados del piloto y mantenimiento",
+      "sourceTasks": [
+        "T38",
+        "T39"
+      ],
+      "status": "pending",
+      "commit": null,
+      "environment": null,
+      "checkedAt": null,
+      "reviewer": null,
+      "evidence": []
+    }
+  ],
+  "releaseTargets": {
+    "technical": [
+      "G01",
+      "G02",
+      "G03",
+      "G04",
+      "G05",
+      "G06",
+      "G07",
+      "G08",
+      "G09",
+      "G10",
+      "G11",
+      "G12",
+      "G13"
+    ],
+    "pilot": [
+      "G01",
+      "G02",
+      "G03",
+      "G04",
+      "G05",
+      "G06",
+      "G07",
+      "G08",
+      "G09",
+      "G10",
+      "G11",
+      "G12",
+      "G13",
+      "G14",
+      "G15"
+    ],
+    "general": [
+      "G01",
+      "G02",
+      "G03",
+      "G04",
+      "G05",
+      "G06",
+      "G07",
+      "G08",
+      "G09",
+      "G10",
+      "G11",
+      "G12",
+      "G13",
+      "G14",
+      "G15",
+      "G16"
+    ]
+  },
+  "inventoryBaseline": {
+    "pageFiles": 69,
+    "apiRouteFiles": 36,
+    "updateRequiredAfterImplementation": true
+  },
+  "checkpoint": {
+    "updatedAt": null,
+    "branch": null,
+    "commit": null,
+    "filesChanged": [],
+    "lastVerification": null,
+    "unresolvedFailures": [],
+    "nextCommand": null
+  },
+  "events": [
+    {
+      "type": "plan_created",
+      "note": "Todas las tareas y gates se inicializan pendientes. Resultados anteriores pertenecen a la auditoría; no se imputan como ejecución del plan."
+    }
+  ]
+}
+

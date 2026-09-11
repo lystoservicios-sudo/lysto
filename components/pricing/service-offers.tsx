@@ -1,0 +1,14 @@
+'use client'
+import { useEffect, useState } from 'react'
+import { jobStatusLabels } from '@/lib/mock/lysto-data'
+import type { JobStatus } from '@/lib/domain/types'
+import { Button, ButtonLink } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+type Offer = { id:string; request_id:string; status:string; scheduled_date:string | null }
+type Professional = { id:string; profiles:{first_name:string;last_name:string} }
+export function ServiceOffers() {
+  const [jobs,setJobs]=useState<Offer[]>([]);const [pros,setPros]=useState<Professional[]>([]);const [role,setRole]=useState('');const [chosen,setChosen]=useState<Record<string,string>>({});const [message,setMessage]=useState('');const [busy,setBusy]=useState(false);const [revision,setRevision]=useState(0)
+  useEffect(()=>{let active=true;fetch('/api/pricing/offers').then(async res=>{const data=await res.json();if(!active)return;if(!res.ok)throw new Error(data.error);setJobs(data.jobs);setPros(data.professionals??[]);setRole(data.role)}).catch(error=>{if(active)setMessage(error.message)});return()=>{active=false}},[revision])
+  async function assign(job:Offer){setBusy(true);try{const res=await fetch('/api/pricing/offers',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({jobId:job.id,professionalId:chosen[job.id],action:'assign'})});const data=await res.json();if(!res.ok)throw new Error(data.error);setRevision(n=>n+1);setMessage('Propuesta enviada al profesional asignado. Si rechaza, vuelve a la cola.')}catch(error){setMessage(error instanceof Error?error.message:'No se pudo asignar.')}finally{setBusy(false)}}
+  return <section className="space-y-4"><h2 className="text-2xl font-black">Propuestas de trabajo</h2>{message?<p role="status" className="text-sm text-blue-800">{message}</p>:null}{!jobs.length?<Card className="p-5">No hay trabajos disponibles para esta cuenta.</Card>:null}{jobs.map(job=><Card key={job.id} className="space-y-3 p-5"><p className="font-bold">Visita {job.scheduled_date??'por coordinar'} · {jobStatusLabels[job.status as JobStatus] ?? job.status}</p><ButtonLink href={role==='professional'?`/pro/trabajos/${job.id}`:role==='admin'?`/admin/calculadora/trabajos/${job.id}`:`/app/trabajos/${job.id}`} variant="secondary">Ver presupuesto y alcance</ButtonLink>{role==='admin'&&job.status==='pending_assignment'?<div className="flex flex-wrap gap-3"><select aria-label="Profesional para la propuesta" className="max-w-full rounded-xl border border-slate-200 p-2" value={chosen[job.id]??''} onChange={e=>setChosen({...chosen,[job.id]:e.target.value})}><option value="">Elegir profesional aprobado</option>{pros.map(pro=><option key={pro.id} value={pro.id}>{pro.profiles.first_name} {pro.profiles.last_name}</option>)}</select><Button disabled={busy||!chosen[job.id]} onClick={()=>void assign(job)}>Proponer trabajo</Button></div>:null}</Card>)}</section>
+}

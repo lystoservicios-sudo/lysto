@@ -1,14 +1,22 @@
 import { NextResponse } from 'next/server'
-import { createPaymentPreferenceDraft } from '@/lib/use-cases/payment-flow'
-
+import { z } from 'zod'
+import { getPricingSession } from '@/lib/pricing/server'
+import { marketplaceConfig, paymentError, sameOrigin } from '@/lib/payments/marketplace-config'
+import { prepareCheckout } from '@/lib/payments/marketplace-ledger'
+import { createCheckoutPreference } from '@/lib/payments/marketplace'
+export const runtime = 'nodejs'
 export async function POST(request: Request) {
-  const body = await request.json().catch(() => null) as { requestId?: string; customerId?: string; amount?: number; option?: 'flexible' | 'priority' } | null
-  if (!body?.requestId || !body.customerId || !body.amount || body.amount <= 0) return NextResponse.json({ error: 'Invalid payment preference payload' }, { status: 400 })
   try {
-    const draft = createPaymentPreferenceDraft({ requestId: body.requestId, customerId: body.customerId, amount: body.amount, selectedOption: body.option ?? 'flexible', platformFeeRate: Number(process.env.LYSTO_DEFAULT_PLATFORM_FEE_RATE ?? 0.18) })
-    // MVP contract: replace mockPreferenceId/initPoint with real Mercado Pago preference after credentials are configured.
-    return NextResponse.json({ preferenceId: `mock-pref-${body.requestId}`, initPoint: null, payment: draft, status: 'mocked_until_credentials_are_configured' })
-  } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : 'Unknown error' }, { status: 400 })
-  }
+    const session = await getPricingSession()
+    if (session.role !== 'customer' || !session.customerId) throw new Error('payment_forbidden')
+    sameOrigin(request)
+    const body = z.object({ jobId:z.string().uuid(), extraId:z.string().uuid().optional() }).strict().parse(await request.json())
+    const config = marketplaceConfig()
+    const checkout = await prepareCheckout(session.customerId,body.jobId,body.extraId,config.liveMode)
+    if (checkout.status === 'approved') return NextResponse.json({ checkoutId:checkout.id,status:checkout.status })
+    const result = await createCheckoutPreference(checkout)
+    const initPoint=config.liveMode ? result.init_point : result.sandbox_init_point
+    if (!initPoint) throw new Error('invalid_provider_response')
+    return NextResponse.json({ checkoutId:result.id,status:result.status,initPoint })
+  } catch(error) { return paymentError(error) }
 }

@@ -1,6 +1,6 @@
 begin;
 
-select plan(35);
+select plan(29);
 
 create function pg_temp.set_jwt(p_uid uuid, p_app_role text, p_user_metadata jsonb default '{}'::jsonb)
 returns void
@@ -47,38 +47,6 @@ begin
   return v_keys;
 exception
   when undefined_function or insufficient_privilege then return array['missing_lookup'];
-end;
-$$;
-
-create function pg_temp.create_request_price(p_address_id uuid)
-returns numeric
-language plpgsql
-as $$
-declare
-  v_result jsonb;
-  v_amount numeric;
-begin
-  v_result := public.create_service_request_from_app(
-    '12000000-0000-0000-0000-000000000001',
-    p_address_id,
-    'rls-customer-category',
-    'rls-customer-issue',
-    'today',
-    current_date,
-    '08:00-10:00',
-    'flexible',
-    '{"level":"low"}'::jsonb,
-    1,
-    2,
-    1
-  );
-
-  select po.amount
-  into v_amount
-  from public.price_options po
-  where po.id = (v_result ->> 'selected_price_option_id')::uuid;
-
-  return v_amount;
 end;
 $$;
 
@@ -254,136 +222,11 @@ select throws_ok(
   'customer cannot change protected request state directly'
 );
 
-select throws_ok(
-  $$select public.create_service_request_from_app(
-    '12000000-0000-0000-0000-000000000001',
-    '13000000-0000-0000-0000-000000000002',
-    'rls-customer-category',
-    'rls-customer-issue',
-    'today',
-    current_date,
-    '08:00-10:00',
-    'flexible',
-    '{"level":"low"}'::jsonb,
-    1000,
-    1200,
-    1000
-  )$$,
-  'P0001',
-  null,
-  'customer cannot create a request with another customer address'
-);
-
-select set_config(
-  'test.created_request',
-  public.create_service_request_from_app(
-    '12000000-0000-0000-0000-000000000001',
-    '13000000-0000-0000-0000-000000000001',
-    'rls-customer-category',
-    'rls-customer-issue',
-    'today',
-    current_date,
-    '08:00-10:00',
-    'flexible',
-    '{"level":"low"}'::jsonb,
-    1,
-    2,
-    1
-  )::text,
-  true
-);
-
-select results_eq(
-  $$
-    select po.amount
-    from public.price_options po
-    where po.id = (
-      current_setting('test.created_request', true)::jsonb
-      ->> 'selected_price_option_id'
-    )::uuid
-  $$,
-  $$values (43210.00::numeric)$$,
-  'request pricing is derived server-side from the exact Hudson zone rule'
-);
-
-select is(
-  pg_temp.create_request_price('13000000-0000-0000-0000-000000000003'),
-  20200.00::numeric,
-  'Berazategui in Buenos Aires uses the exact Berazategui pricing zone'
-);
-
-select is(
-  pg_temp.create_request_price('13000000-0000-0000-0000-000000000004'),
-  30300.00::numeric,
-  'a pilot GBA Sur city in Buenos Aires uses the GBA Sur pricing zone'
-);
-
-select is(
-  pg_temp.create_request_price('13000000-0000-0000-0000-000000000005'),
-  10100.00::numeric,
-  'city CABA with legacy Buenos Aires province uses the CABA pricing zone'
-);
-
-select is(
-  pg_temp.create_request_price('13000000-0000-0000-0000-000000000006'),
-  10100.00::numeric,
-  'a CABA barrio with CABA province uses the CABA pricing zone'
-);
-
-select is(
-  pg_temp.create_request_price('13000000-0000-0000-0000-000000000007'),
-  10100.00::numeric,
-  'city and province CABA use the CABA pricing zone'
-);
-
-update public.customer_addresses
-set city = 'Córdoba'
-where id = '13000000-0000-0000-0000-000000000001';
-
-select throws_ok(
-  $$select public.create_service_request_from_app(
-    '12000000-0000-0000-0000-000000000001',
-    '13000000-0000-0000-0000-000000000001',
-    'rls-customer-category',
-    'rls-customer-issue',
-    'today',
-    current_date,
-    '08:00-10:00',
-    'flexible',
-    '{"level":"low"}'::jsonb,
-    1,
-    2,
-    1
-  )$$,
-  'P0001',
-  'Service area not supported',
-  'request creation rejects cities outside the explicit service area'
-);
-
-update public.customer_addresses
-set city = 'Hudson', province = 'Córdoba'
-where id = '13000000-0000-0000-0000-000000000001';
-
-select throws_ok(
-  $$select public.create_service_request_from_app(
-    '12000000-0000-0000-0000-000000000001',
-    '13000000-0000-0000-0000-000000000001',
-    'rls-customer-category',
-    'rls-customer-issue',
-    'today',
-    current_date,
-    '08:00-10:00',
-    'flexible',
-    '{"level":"low"}'::jsonb,
-    1,
-    2,
-    1
-  )$$,
-  'P0001',
-  'Service area not supported',
-  'Hudson with a non-Buenos-Aires province is rejected'
-);
-
+-- Legacy direct pricing is retired; complete ownership/coverage and quote tests
+-- now live in service_quotes.test.sql and pricing-routes.vitest.test.ts.
+select ok(not has_function_privilege('authenticated', 'public.create_service_request_from_app(uuid,uuid,text,text,text,date,text,public.urgency_level,jsonb,numeric,numeric,numeric)', 'execute'), 'customer cannot bypass immutable quotes through the legacy public RPC');
+select ok(not has_function_privilege('authenticated', 'private.create_service_request_from_app(uuid,uuid,text,text,text,date,text,public.urgency_level,jsonb,numeric,numeric,numeric)', 'execute'), 'customer cannot bypass immutable quotes through the legacy private RPC');
+select ok(has_function_privilege('authenticated', 'public.submit_service_quote(uuid)', 'execute'), 'customer can use the authenticated quote acceptance entrypoint');
 select throws_ok(
   $$select public.apply_mercadopago_payment_webhook('customer-forged-event', 'missing-payment', 'approved', '{}'::jsonb)$$,
   '42501',

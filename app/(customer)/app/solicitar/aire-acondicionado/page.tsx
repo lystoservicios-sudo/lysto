@@ -6,7 +6,7 @@ export default function RequestAirConditioningPage() {
     <PageScaffold
       title="Solicitar servicio"
       eyebrow="Cliente · Demostración"
-      description="Prepará el parte técnico, elegí una franja y revisá el presupuesto preliminar. Nada se enviará ni cobrará en esta etapa."
+      description="Contanos qué necesitás y revisá tu presupuesto. Solo se guarda cuando lo indicás. Sin cobros en esta etapa."
     >
       <AirConditioningWizard />
     </PageScaffold>

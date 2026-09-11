@@ -97,14 +97,14 @@ describe('customer page layout boundary', () => {
     expect(source).toContain('customerDemoFixtures')
   })
 
-  it('centralizes the batch six payment page without global mocks or provider calls', () => {
+  it('connects the payment page to the authenticated ledger without embedding provider logic', () => {
     const paymentRoute = customerScreenRoutes.find((route) => route.id === 'CUS-12')
     expect(paymentRoute).toBeTruthy()
     const source = readFileSync(resolve(process.cwd(), paymentRoute!.file), 'utf8')
 
     expect(source).not.toContain('@/lib/mock/lysto-data')
-    expect(source).toContain('CustomerPaymentsCenter')
-    expect(source).toContain('customerDemoFixtures.payments')
+    expect(source).toContain('PaymentPanel')
+    expect(source).not.toContain('customerDemoFixtures.payments')
     expect(source).not.toMatch(/fetch\(|createPreference|payment approved/i)
   })
 })
