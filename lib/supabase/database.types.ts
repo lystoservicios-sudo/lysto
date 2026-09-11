@@ -3099,6 +3099,7 @@ export type Database = {
         Returns: string
       }
       get_quote_policy: { Args: never; Returns: Json }
+      get_session_context: { Args: never; Returns: Json }
       is_admin: { Args: never; Returns: boolean }
       log_admin_action: {
         Args: {

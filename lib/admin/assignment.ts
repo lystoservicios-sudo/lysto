@@ -8,7 +8,8 @@ export type AssignmentInput = {
   jobId?: string
   requestStatus: RequestStatus
   currentJobStatus?: JobStatus
-  paid: boolean
+  /** Historical callers may supply it; money does not authorize assignment. */
+  paid?: boolean
   candidates: ProfessionalCandidate[]
   match?: MatchInput
   selectedProfessionalId?: string
@@ -35,8 +36,7 @@ export type AssignmentDecision = {
 export function decideProfessionalAssignment(input: AssignmentInput): AssignmentDecision {
   const errors: string[] = []
   if (!input.requestId.trim()) errors.push('request_id_required')
-  if (!input.paid) errors.push('payment_approved_required')
-  if (!['payment_approved', 'matching', 'pending_assignment'].includes(input.requestStatus)) errors.push('request_not_assignable')
+  if (!['pending_assignment', 'matching'].includes(input.requestStatus)) errors.push('request_not_assignable')
   if (input.currentJobStatus && !['pending_assignment', 'pending_professional_acceptance'].includes(input.currentJobStatus)) errors.push('job_not_assignable')
   if (input.mode === 'manual' && !input.adminProfileId) errors.push('manual_assignment_requires_admin')
 

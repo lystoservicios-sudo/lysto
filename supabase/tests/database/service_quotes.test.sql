@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set search_path = public, extensions;
-select plan(25);
+select plan(27);
 select has_table('public', 'service_quotes', 'Immutable service quote snapshots exist');
 select has_table('public', 'job_extras', 'Additional faults are stored separately');
 select has_function('public', 'submit_service_quote', array['uuid'], 'Customer accepts a saved quote without sending an amount');
@@ -36,6 +36,8 @@ select is((public.submit_service_quote('92000000-0000-0000-0000-000000000001')->
 select is((select count(*) from public.jobs where customer_id='91000000-0000-0000-0000-000000000001'),1::bigint,'Exactly one job was created');
 select throws_ok($$update public.customer_addresses set city='Mar del Plata' where customer_id='91000000-0000-0000-0000-000000000001'$$,'P0001','Accepted quote address is immutable: request a new quote','Quoted address cannot change after acceptance');
 reset role;
+select throws_ok($$update public.service_quotes set quote=jsonb_set(quote,'{total}','1') where id='92000000-0000-0000-0000-000000000001'$$,'P0001','Quote snapshot is immutable','Accepted monetary snapshot cannot be overwritten even by a privileged writer');
+select throws_ok($$update public.service_quotes set status='ready' where id='92000000-0000-0000-0000-000000000001'$$,'P0001','Quote snapshot is immutable','Accepted quote cannot return to editable decision state');
 update public.jobs set professional_id='91000000-0000-0000-0000-000000000003',status='confirmed' where customer_id='91000000-0000-0000-0000-000000000001';
 insert into public.marketplace_checkouts(job_id,customer_id,professional_id,seller_account_id,amount,marketplace_fee,live_mode,status)
 select id,customer_id,'91000000-0000-0000-0000-000000000003','12345',130000,23400,false,'approved' from public.jobs where customer_id='91000000-0000-0000-0000-000000000001';

@@ -37,7 +37,7 @@ export type CustomerRequestPrepared = {
   paymentAmount: number
   diagnosis: ReturnType<typeof generateDiagnosis>
   eventCodes: string[]
-  nextAction: 'create_payment_preference'
+  nextAction: 'accept_service_quote'
 }
 
 function deterministicRequestId(input: CustomerRequestCommand): string {
@@ -69,18 +69,17 @@ export function prepareCustomerServiceRequest(command: CustomerRequestCommand): 
   return {
     id: deterministicRequestId(command),
     customerId: command.customerId,
-    status: 'pending_payment',
+    status: 'price_selected',
     selectedOption: command.selectedOption,
     selectedPrice,
     paymentAmount: selectedPrice.total,
     diagnosis,
-    eventCodes: ['diagnosis_completed', 'address_completed', 'schedule_completed', 'price_selected', 'pending_payment'],
-    nextAction: 'create_payment_preference'
+    eventCodes: ['diagnosis_completed', 'address_completed', 'schedule_completed', 'price_selected'],
+    nextAction: 'accept_service_quote'
   }
 }
 
 export function assertCustomerRequestReadyForPayment(command: CustomerRequestCommand): void {
-  const prepared = prepareCustomerServiceRequest(command)
-  if (prepared.status !== 'pending_payment') throw new Error('request_not_ready_for_payment')
-  if (prepared.paymentAmount <= 0) throw new Error('payment_amount_invalid')
+  prepareCustomerServiceRequest(command)
+  throw new Error('Canonical accepted quote and confirmed professional required; use prepare_marketplace_checkout')
 }

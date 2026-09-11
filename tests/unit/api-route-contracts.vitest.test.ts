@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { POST as assignProfessional } from '../../app/api/admin/assign-professional/route'
 import { POST as respondToRequest } from '../../app/api/professional/respond-request/route'
@@ -12,126 +12,24 @@ function jsonRequest(path: string, body: unknown): Request {
   })
 }
 
-describe('admin assignment route', () => {
-  it('rejects a string paid flag instead of coercing it', async () => {
-    const response = await assignProfessional(jsonRequest('/api/admin/assign-professional', {
-      requestId: 'request-1',
-      paid: 'true',
-      override: false
-    }))
-
-    expect(response.status).toBe(400)
+describe('retired admin assignment route', () => {
+  it.each([{ paid: true }, { paid: false }, { paid: 'true' }, { override: true, adminProfileId: 'forged' }])('never assigns from caller supplied authorization', async payload => {
+    const response = await assignProfessional(jsonRequest('/api/admin/assign-professional', payload))
+    expect(response.status).toBe(410)
+    expect(await response.json()).toMatchObject({ error: 'endpoint_retired', replacement: '/api/pricing/offers' })
   })
+})
 
-  it('ignores a selected professional during automatic assignment', async () => {
-    const response = await assignProfessional(jsonRequest('/api/admin/assign-professional', {
-      requestId: 'request-1',
-      paid: true,
-      selectedProfessionalId: 'pro_003'
-    }))
-    const body = await response.json()
-
-    expect(response.status).toBe(200)
-    expect(body.assignedProfessionalId).toBe('pro_001')
-    expect(body.ranking).toBeInstanceOf(Array)
-  })
-
+vi.mock('@/lib/supabase/server', () => ({ createServerSupabaseClient: async () => ({ auth: { getUser: async () => ({ data: { user: null }, error: null }) } }) }))
+describe('closed prototype mutation routes', () => {
   it.each([
-    { adminProfileId: 'admin-1' },
-    { selectedProfessionalId: 'pro_003' }
-  ])('requires both admin and selected professional for manual assignment', async (manualFields) => {
-    const response = await assignProfessional(jsonRequest('/api/admin/assign-professional', {
-      requestId: 'request-1',
-      paid: true,
-      override: true,
-      ...manualFields
-    }))
-
-    expect(response.status).toBe(400)
-  })
-
-  it('uses errors and ranking for domain failures', async () => {
-    const response = await assignProfessional(jsonRequest('/api/admin/assign-professional', {
-      requestId: 'request-1',
-      paid: false,
-      override: false
-    }))
-    const body = await response.json()
-
-    expect(response.status).toBe(400)
-    expect(body.errors).toContain('payment_approved_required')
-    expect(body.ranking).toBeInstanceOf(Array)
-    expect(body.details).toBeUndefined()
-  })
-})
-
-describe('quality case route', () => {
-  it('rejects a quality case whose reason and description are empty', async () => {
-    const response = await openQualityCase(jsonRequest('/api/quality/open-case', {
-      jobId: 'job-1',
-      reason: '   ',
-      description: '  '
-    }))
-
-    expect(response.status).toBe(400)
-  })
-
-  it('combines trimmed reason and description for classification', async () => {
-    const response = await openQualityCase(jsonRequest('/api/quality/open-case', {
-      jobId: '  job-1  ',
-      reason: 'poor repair',
-      description: '  the issue remains  '
-    }))
-    const body = await response.json()
-
-    expect(response.status).toBe(200)
-    expect(body.classification).toMatchObject({
-      status: 'open',
-      severity: 'medium',
-      slaMinutes: 120,
-      tags: ['quality']
-    })
-  })
-})
-
-describe('professional response route', () => {
-  it('rejects whitespace-only professional identifiers', async () => {
-    const response = await respondToRequest(jsonRequest('/api/professional/respond-request', {
-      actorProfessionalId: '   ',
-      assignedProfessionalId: '   ',
-      response: 'accepted'
-    }))
-
-    expect(response.status).toBe(400)
-  })
-
-  it('maps accepted to the domain response and returns next statuses', async () => {
-    const response = await respondToRequest(jsonRequest('/api/professional/respond-request', {
-      actorProfessionalId: '  pro_001 ',
-      assignedProfessionalId: 'pro_001',
-      response: 'accepted'
-    }))
-    const body = await response.json()
-
-    expect(response.status).toBe(200)
-    expect(body).toMatchObject({
-      accepted: true,
-      nextRequestStatus: 'assigned',
-      nextJobStatus: 'confirmed'
-    })
-  })
-
-  it('uses errors for domain rejection failures', async () => {
-    const response = await respondToRequest(jsonRequest('/api/professional/respond-request', {
-      actorProfessionalId: 'pro_001',
-      assignedProfessionalId: 'pro_001',
-      response: 'rejected',
-      rejectionReason: '   '
-    }))
-    const body = await response.json()
-
-    expect(response.status).toBe(400)
-    expect(body.errors).toContain('reject_reason_required')
-    expect(body.details).toBeUndefined()
+    ['/api/quality/open-case', openQualityCase, { jobId: 'job-1', reason: 'poor repair', description: 'the issue remains' }],
+    ['/api/professional/respond-request', respondToRequest, { actorProfessionalId: 'pro_001', assignedProfessionalId: 'pro_001', response: 'accepted' }],
+    ['/api/professional/respond-request', respondToRequest, { actorProfessionalId: 'forged', assignedProfessionalId: 'forged', response: 'rejected' }]
+  ] as const)('requires a verified identity for %s instead of trusting actor fields', async (path, handler, body) => {
+    const response = await handler(jsonRequest(path, body))
+    expect(response.status).toBe(401)
+    expect(await response.json()).toMatchObject({ code: 'unauthorized' })
+    expect(response.headers.get('cache-control')).toContain('no-store')
   })
 })

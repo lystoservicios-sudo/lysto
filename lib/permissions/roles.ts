@@ -1,10 +1,8 @@
 import type { UserRole } from '../domain/types.ts'
+import { canRoleAccessPath } from '../auth/session-routing.ts'
 
 export function canAccessRoute(role: UserRole | null, pathname: string): boolean {
-  if (pathname.startsWith('/admin')) return role === 'admin'
-  if (pathname.startsWith('/pro')) return role === 'professional' || role === 'admin'
-  if (pathname.startsWith('/app')) return role === 'customer' || role === 'admin'
-  return true
+  return canRoleAccessPath(role, pathname)
 }
 
 export function assertCanAccessRoute(role: UserRole | null, pathname: string): void {

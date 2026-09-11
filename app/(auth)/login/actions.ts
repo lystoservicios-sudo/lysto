@@ -86,7 +86,7 @@ export async function loginAction(
       }
     }
 
-    const result = await authenticateLogin(credentials, gateway)
+    const result = await authenticateLogin({ ...credentials, next: textValue(formData, 'next') }, gateway)
     if (!result.ok) {
       return {
         status: 'error',

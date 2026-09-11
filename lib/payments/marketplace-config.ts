@@ -1,6 +1,6 @@
 import { createHmac, timingSafeEqual } from 'node:crypto'
-import { NextResponse } from 'next/server'
 import { ZodError } from 'zod'
+import { ApiError, apiErrorResponse, privateJson } from '@/lib/http/api-error'
 
 export function marketplaceConfig() {
   const clientId = process.env.MERCADOPAGO_MARKETPLACE_CLIENT_ID
@@ -27,6 +27,7 @@ export function sameOrigin(request: Request) {
   if (!origin || origin !== new URL(request.url).origin) throw new Error('payment_forbidden')
 }
 export function paymentError(error: unknown) {
+  if (error instanceof ApiError || error instanceof SyntaxError) return apiErrorResponse(error)
   const code = error instanceof Error ? error.message : ''
   const messages: Record<string,string> = {
     payments_not_configured: 'Los pagos todavía no están configurados para este ambiente.',
@@ -45,6 +46,6 @@ export function paymentError(error: unknown) {
     seller_has_payments: 'Hay pagos asociados a esta cuenta. Operaciones debe revisarlos antes de desconectarla.',
   }
   const known = code in messages
-  return NextResponse.json({ error: error instanceof ZodError ? 'Revisá los datos de la operación.' : known ? messages[code] : 'No se pudo completar la operación con Mercado Pago. Volvé a consultar el estado antes de reintentar.', code: known ? code : 'payment_unavailable' },
+  return privateJson({ error: error instanceof ZodError ? 'Revisá los datos de la operación.' : known ? messages[code] : 'No se pudo completar la operación con Mercado Pago. Volvé a consultar el estado antes de reintentar.', code: known ? code : 'payment_unavailable' },
     { status: code === 'unauthorized' ? 401 : ['forbidden','payment_forbidden','oauth_invalid'].includes(code) ? 403 : code.includes('configured') || code.includes('https_required') ? 503 : code === 'checkout_busy' ? 409 : 400 })
 }

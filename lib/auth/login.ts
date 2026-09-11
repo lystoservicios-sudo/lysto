@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 import type { UserRole } from '../domain/types'
-import { roleHome } from './session-routing'
+import { safeLocalRedirectPath } from './session-routing'
 
 const loginCredentialsSchema = z.object({
   email: z.string().trim().email(),
@@ -28,7 +28,7 @@ export type LoginResult =
   | { ok: false; email: string; message: string }
 
 export async function authenticateLogin(
-  input: { email: string; password: string },
+  input: { email: string; password: string; next?: string },
   gateway: LoginGateway
 ): Promise<LoginResult> {
   const email = input.email.trim().toLowerCase()
@@ -71,5 +71,5 @@ export async function authenticateLogin(
     }
   }
 
-  return { ok: true, redirectTo: roleHome(profile.role) }
+  return { ok: true, redirectTo: safeLocalRedirectPath(input.next, profile.role) }
 }

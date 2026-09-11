@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { jobStatusLabels } from '@/lib/mock/lysto-data'
+import { jobStatusLabels } from '@/lib/domain/job-status-labels'
 import type { JobStatus } from '@/lib/domain/types'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'

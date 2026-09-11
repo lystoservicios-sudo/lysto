@@ -22,6 +22,14 @@ Una base descartable de proyecto/puertos propios aplica diez migraciones desde c
 
 Esquema limpio/actualizado/original coincidente en public/private y tipos generados idénticos. Todas las 53 tablas públicas tienen RLS, y los clientes no tienen acceso directo a tablas OAuth. No se justificó una nueva migración ni se reparó el historial de la base original. Se preservan los intentos fallidos y sus causas en database-verification.json.
 
-## Próximo bloque
+## T04 — integración con identidades reales verificada
 
-T04: guardas de entornos, identidades aisladas y pruebas integrales. T05: contrato único de servicio e invariantes. Las rutas históricas del plan apuntan al repositorio original; para implementar se resuelven bajo executionWorktree del progreso. Al cierre de este bloque hay 4/40 tareas verificadas, sin promover gates de staging, piloto o producción.
+El runner exige un proyecto local descartable identificado y rechaza destinos ajenos, pagos live, variables incompletas y resultados vacíos u omitidos. Crea ocho identidades Auth de roles distintos, comprueba que el cliente B no lee datos de A y ejecuta los ocho tests PostgreSQL de marketplace sin duplicarlos en unitarias. La última corrida ejecutó 22 pruebas, sin omisiones, y verificó la limpieza por UUID.
+
+Las revisiones detectaron y corrigieron configuración heredada en Playwright, precedencia de publishable key y limpieza bloqueada por setup/Auth. Ambos servidores validan el backend antes de iniciar Next, rechazan dotenv y reemplazan claves por las locales. Setup y limpieza tienen plazos independientes; las creaciones inciertas quedan registradas como no verificadas. Las regresiones nuevas mostraron fallos antes de corregirse. También pasaron tipos, lint y las pantallas asíncronas afectadas sin advertencias act.
+
+## Bloque activo — T05, T06 y T33
+
+T05 unifica el ciclo del servicio y preserva el estado canónico de pagos; sus revisiones corrigieron confirmaciones repetidas y propagación de conformidad. T06 centraliza sesión y permisos y cierra endpoints parciales; 140 pruebas dirigidas y 434 pgTAP pasan. Su primera matriz HTTP pasó 61 de 62: el único fallo fue el caso nuevo de refresco concurrente todavía preparado deliberadamente en rojo. T33 fortalece CI y evidencia; las revisiones de falsos verdes siguen en corrección. Estos trabajos todavía no se acreditan como cierre completo.
+
+Hay 5/40 tareas verificadas. Las rutas históricas del plan se resuelven bajo executionWorktree. Se mantiene la hoja de ruta de 40 tareas por confirmación del usuario, sin promover gates de staging, piloto o producción.

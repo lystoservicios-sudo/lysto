@@ -24,7 +24,7 @@ export type AssignmentDecision = {
 export function createAssignmentDecision(command: AssignmentCommand): AssignmentDecision {
   if (!command.adminProfileId.trim()) throw new Error('admin_profile_id_required')
   if (!command.requestId.trim()) throw new Error('request_id_required')
-  if (!['payment_approved', 'matching', 'pending_assignment'].includes(command.requestStatus)) throw new Error(`request_not_assignable:${command.requestStatus}`)
+  if (!['matching', 'pending_assignment'].includes(command.requestStatus)) throw new Error(`request_not_assignable:${command.requestStatus}`)
 
   const matchInput: MatchInput = { serviceSlug: command.serviceSlug, zone: command.zone, requiredToolScore: 6, maxDistanceKm: 35 }
   const rankedCandidates = rankProfessionals(command.candidates, matchInput)

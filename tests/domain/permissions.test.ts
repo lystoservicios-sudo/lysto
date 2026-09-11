@@ -11,10 +11,16 @@ test('profesional accede a pro pero no app cliente', () => {
   expect(canAccessRoute('professional', '/app/trabajos')).toBeFalsy()
 })
 
-test('admin accede a todos los paneles internos', () => {
+test('admin accede solamente a su panel interno', () => {
   expect(canAccessRoute('admin', '/admin')).toBeTruthy()
-  expect(canAccessRoute('admin', '/pro')).toBeTruthy()
-  expect(canAccessRoute('admin', '/app')).toBeTruthy()
+  expect(canAccessRoute('admin', '/pro')).toBeFalsy()
+  expect(canAccessRoute('admin', '/app')).toBeFalsy()
+})
+
+test('los prefijos de panel respetan los límites de segmento', () => {
+  expect(canAccessRoute(null, '/application')).toBeTruthy()
+  expect(canAccessRoute(null, '/professional-public')).toBeTruthy()
+  expect(canAccessRoute(null, '/administrator-help')).toBeTruthy()
 })
 
 test('anonimo no accede a rutas privadas', () => {

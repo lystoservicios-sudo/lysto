@@ -1,5 +1,16 @@
 export type UserRole = 'customer' | 'professional' | 'admin'
 
+// Match persisted columns; expiration is a timestamp condition, not a new enum.
+export type ServiceQuoteStatus = 'needs_review' | 'ready' | 'accepted'
+export type JobExtraStatus = 'proposed' | 'accepted' | 'rejected'
+export type QualityCaseStatus = 'open' | 'in_review' | 'resolved' | 'rejected'
+export type WarrantyClaimStatus = 'open' | 'approved' | 'rejected' | 'completed'
+
+/** Money authority is the checkout/observation, separately from legacy payments. */
+export type MarketplaceCheckoutStatus =
+  | 'creating' | 'ready' | 'pending' | 'in_process' | 'approved' | 'rejected'
+  | 'cancelled' | 'refunded' | 'partially_refunded' | 'charged_back' | 'review' | 'expired'
+
 export type ServiceIssueSlug =
   | 'no_enfria'
   | 'pierde_agua'

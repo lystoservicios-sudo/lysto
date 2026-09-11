@@ -1,4 +1,4 @@
-import { jobStatusLabels } from '@/lib/mock/lysto-data'
+import { jobStatusLabels } from '@/lib/domain/job-status-labels'
 
 export const adminModules = [
   { group: 'Operaciones', items: [['Dashboard', 'dashboard'], ['Solicitudes', 'solicitudes'], ['Trabajos', 'trabajos'], ['Matching', 'matching'], ['Zonas', 'zonas']] },

@@ -42,6 +42,7 @@ export type PaymentWebhookApplication = {
   providerPaymentId: string
   fromStatus: PaymentStatus
   toStatus: PaymentStatus
+  providerStatus: string
   shouldCreateJob: boolean
   shouldNotifyAdmin: boolean
 }
@@ -59,6 +60,7 @@ export function applyPaymentWebhook(params: {
       providerPaymentId,
       fromStatus: params.currentStatus,
       toStatus: params.currentStatus,
+      providerStatus: params.event.status ?? 'unknown',
       shouldCreateJob: false,
       shouldNotifyAdmin: false
     }
@@ -70,7 +72,8 @@ export function applyPaymentWebhook(params: {
     providerPaymentId,
     fromStatus: params.currentStatus,
     toStatus: normalized,
-    shouldCreateJob: normalized === 'approved' || normalized === 'captured',
-    shouldNotifyAdmin: normalized === 'rejected' || normalized === 'failed' || normalized === 'cancelled'
+    providerStatus: params.event.status ?? 'unknown',
+    shouldCreateJob: false,
+    shouldNotifyAdmin: ['rejected', 'failed', 'cancelled', 'refunded', 'partially_refunded'].includes(normalized)
   }
 }

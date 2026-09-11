@@ -29,21 +29,21 @@ const candidates: ProfessionalCandidate[] = [
   { id: 'pro-2', name: 'Diego', status: 'approved', serviceSlugs: ['aire_acondicionado'], zones: ['caba'], available: true, hasLicense: true, toolsScore: 7, ratingAvg: 4.4, jobsCompleted: 11, activeJobs: 0, acceptanceRate: 0.8, distanceKm: 8, internalScore: 75 }
 ]
 
-test('use case cliente prepara solicitud lista para pago', () => {
+test('use case cliente prepara presupuesto para aceptar', () => {
   const prepared = prepareCustomerServiceRequest(validRequest)
-  expect(prepared.status).toBe('pending_payment')
+  expect(prepared.status).toBe('price_selected')
   expect(prepared.selectedOption).toBe('priority')
   expect(prepared.paymentAmount).toBeGreaterThan(35000)
-  expect(prepared.eventCodes.length).toBe(5)
-  expect(prepared.nextAction).toBe('create_payment_preference')
+  expect(prepared.eventCodes.length).toBe(4)
+  expect(prepared.nextAction).toBe('accept_service_quote')
 })
 
 test('use case cliente rechaza solicitud incompleta', () => {
   expect(() => prepareCustomerServiceRequest({ ...validRequest, address: { ...validRequest.address, street: '' } })).toThrow()
 })
 
-test('assertCustomerRequestReadyForPayment acepta draft completo', () => {
-  assertCustomerRequestReadyForPayment(validRequest)
+test('un draft completo no habilita pago sin asignación canónica', () => {
+  expect(() => assertCustomerRequestReadyForPayment(validRequest)).toThrow()
   expect(true).toBeTruthy()
 })
 
@@ -56,11 +56,11 @@ test('payment preference crea idempotency key y split', () => {
   expect(payment.idempotencyKey).toIncludeText(prepared.id)
 })
 
-test('payment webhook aprobado crea job y no notifica admin', () => {
+test('payment webhook aprobado observa pago del job existente', () => {
   const applied = applyPaymentWebhook({ event: { id: 'evt-1', type: 'payment', data: { id: 'mp-1' }, status: 'approved' }, storedEvents: [], currentStatus: 'pending' })
   expect(applied.duplicate).toBeFalsy()
   expect(applied.toStatus).toBe('approved')
-  expect(applied.shouldCreateJob).toBeTruthy()
+  expect(applied.shouldCreateJob).toBeFalsy()
   expect(applied.shouldNotifyAdmin).toBeFalsy()
 })
 

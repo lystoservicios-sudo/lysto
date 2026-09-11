@@ -1,10 +1,10 @@
-import { NextResponse } from 'next/server'
+import { privateJson } from '@/lib/http/api-error'
 import { z } from 'zod'
 import type { Json } from '@/lib/supabase/database.types'
 import { TIME_WINDOWS } from '@/lib/domain/constants'
 import { calculateServiceQuote, quoteInputSchema, routeSchema } from '@/lib/pricing/service-quote'
 import { estimateTravel } from '@/lib/pricing/google-routes'
-import { getPricingSession, getQuotePolicy, pricingError, quoteWriter } from '@/lib/pricing/server'
+import { getPricingSession, getQuotePolicy, pricingError, quoteWriter, requirePricingPermission } from '@/lib/pricing/server'
 
 const schema = quoteInputSchema.omit({ route: true }).extend({
   address: z.object({ street: z.string().trim().min(2).max(150), number: z.string().trim().regex(/^\d{1,6}$/), city: z.string().trim().min(2).max(100), province: z.string().trim().min(2).max(100), floor: z.string().max(20).optional(), apartment: z.string().max(20).optional(), reference: z.string().max(500).optional(), postalCode: z.string().max(20).optional() }).strict(),
@@ -16,6 +16,7 @@ export async function POST(request: Request) {
   try {
     const session = await getPricingSession()
     if (!['customer', 'admin'].includes(session.role)) throw new Error('forbidden')
+    if (session.role === 'admin') await requirePricingPermission(session, 'operations')
     const body = schema.parse(await request.json())
     if (session.role !== 'admin' && (body.manualRoute || body.customerId || body.scenario || body.materials.length || body.materialsConfirmed)) throw new Error('forbidden')
     const now = new Date()
@@ -51,6 +52,6 @@ export async function POST(request: Request) {
       if (error || !data) throw new Error('quote_storage_not_configured')
       quoteId = data.id
     }
-    return NextResponse.json({ quote, quoteId, routingNotice })
+    return privateJson({ quote, quoteId, routingNotice })
   } catch (error) { return pricingError(error) }
 }

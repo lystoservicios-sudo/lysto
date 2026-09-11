@@ -1,6 +1,7 @@
 import './domain/diagnosis.test.ts'
 import './domain/pricing.test.ts'
 import './domain/state-machine.test.ts'
+import './domain/production-lifecycle.test.ts'
 import './domain/matching.test.ts'
 import './domain/payments.test.ts'
 import './domain/permissions.test.ts'

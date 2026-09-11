@@ -1,15 +1,16 @@
-import { decideProfessionalAssignment } from '../admin/assignment.ts'
-import { validateAuditEvent, type AuditEventDraft } from '../admin/audit.ts'
-import { calculateDueDate, shouldCreateMaintenanceReminder } from '../customer/maintenance-plan.ts'
-import type { JobStatus } from '../domain/types.ts'
-import { validateEquipmentRegistration, type EquipmentRegistrationInput } from '../equipment/equipment-registry.ts'
-import { applyProfessionalJobAction, closeProfessionalJob, type FinalCloseoutCommand } from './professional-workflow.ts'
-import { buildPublicReceipt } from '../qr/public-receipt.ts'
-import { submitReviewCloseout, type ReviewCloseoutInput } from './review-closeout.ts'
-import { planJobStatusNotification, planPaymentNotification, planRequestStatusNotification } from '../notifications/events.ts'
-import { prepareCustomerServiceRequest, type CustomerRequestCommand } from './customer-request.ts'
-import { applyPaymentWebhook, createPaymentPreferenceDraft } from './payment-flow.ts'
-import type { ProfessionalCandidate } from '../matching/score-professionals.ts'
+import { decideProfessionalAssignment } from '../../lib/admin/assignment.ts'
+import { validateAuditEvent, type AuditEventDraft } from '../../lib/admin/audit.ts'
+import { calculateDueDate, shouldCreateMaintenanceReminder } from '../../lib/customer/maintenance-plan.ts'
+import type { JobStatus } from '../../lib/domain/types.ts'
+import { validateEquipmentRegistration, type EquipmentRegistrationInput } from '../../lib/equipment/equipment-registry.ts'
+import { applyProfessionalJobAction, closeProfessionalJob, type FinalCloseoutCommand } from '../../lib/use-cases/professional-workflow.ts'
+import { buildPublicReceipt } from '../../lib/qr/public-receipt.ts'
+import { submitReviewCloseout, type ReviewCloseoutInput } from '../../lib/use-cases/review-closeout.ts'
+import { planJobStatusNotification, planPaymentNotification, planRequestStatusNotification } from '../../lib/notifications/events.ts'
+import { prepareCustomerServiceRequest, type CustomerRequestCommand } from '../../lib/use-cases/customer-request.ts'
+import { applyPaymentWebhook, createPaymentPreferenceDraft } from '../../lib/use-cases/payment-flow.ts'
+import type { ProfessionalCandidate } from '../../lib/matching/score-professionals.ts'
+import { confirmCompletedJob } from '../../lib/workflows/service-lifecycle.ts'
 
 export type ManagedServiceSimulationInput = {
   adminProfileId: string
@@ -47,6 +48,24 @@ export type ManagedServiceSimulationOutput = {
 export function runManagedServiceSimulation(input: ManagedServiceSimulationInput): ManagedServiceSimulationOutput {
   if (!input.adminProfileId.trim()) throw new Error('admin_profile_id_required')
   const preparedRequest = prepareCustomerServiceRequest(input.request)
+  const assignment = decideProfessionalAssignment({
+    requestId: preparedRequest.id,
+    jobId: `JOB-${preparedRequest.id.replace('REQ-', '')}`,
+    requestStatus: 'pending_assignment',
+    currentJobStatus: 'pending_assignment',
+    paid: false,
+    candidates: input.candidates,
+    selectedProfessionalId: input.selectedProfessionalId,
+    mode: input.selectedProfessionalId ? 'manual' : 'auto_suggested',
+    adminProfileId: input.selectedProfessionalId ? input.adminProfileId : undefined,
+    match: { serviceSlug: 'aire_acondicionado', zone: input.request.zone ?? 'caba', requiredToolScore: 6, maxDistanceKm: 35 }
+  })
+  if (!assignment.ok) throw new Error(`assignment_failed:${assignment.errors.join(',')}`)
+
+  let jobStatus: JobStatus = assignment.nextJobStatus
+  const professionalId = assignment.assignedProfessionalId
+  const jobId = assignment.jobId ?? `JOB-${preparedRequest.id.replace('REQ-', '')}`
+  jobStatus = applyProfessionalJobAction({ jobId, professionalId, currentStatus: jobStatus, action: 'accept' }).to
   const paymentDraft = createPaymentPreferenceDraft({
     requestId: preparedRequest.id,
     customerId: preparedRequest.customerId,
@@ -63,26 +82,10 @@ export function runManagedServiceSimulation(input: ManagedServiceSimulationInput
     storedEvents: [],
     currentStatus: paymentDraft.status
   })
-  if (!webhook.shouldCreateJob) throw new Error('approved_payment_did_not_create_job')
+  if (webhook.toStatus !== 'approved') throw new Error('payment_not_approved')
 
-  const assignment = decideProfessionalAssignment({
-    requestId: preparedRequest.id,
-    jobId: `JOB-${preparedRequest.id.replace('REQ-', '')}`,
-    requestStatus: 'payment_approved',
-    currentJobStatus: 'pending_assignment',
-    paid: true,
-    candidates: input.candidates,
-    selectedProfessionalId: input.selectedProfessionalId,
-    mode: input.selectedProfessionalId ? 'manual' : 'auto_suggested',
-    adminProfileId: input.selectedProfessionalId ? input.adminProfileId : undefined,
-    match: { serviceSlug: 'aire_acondicionado', zone: input.request.zone ?? 'caba', requiredToolScore: 6, maxDistanceKm: 35 }
-  })
-  if (!assignment.ok) throw new Error(`assignment_failed:${assignment.errors.join(',')}`)
 
-  let jobStatus: JobStatus = assignment.nextJobStatus
-  const professionalId = assignment.assignedProfessionalId
-  const jobId = assignment.jobId ?? `JOB-${preparedRequest.id.replace('REQ-', '')}`
-  const jobActions: Array<'accept' | 'on_way' | 'arrived' | 'start_diagnosis' | 'start_work' | 'finish_work'> = ['accept', 'on_way', 'arrived', 'start_diagnosis', 'start_work', 'finish_work']
+  const jobActions: Array<'accept' | 'on_way' | 'arrived' | 'start_diagnosis' | 'start_work' | 'finish_work'> = ['on_way', 'arrived', 'start_diagnosis', 'start_work', 'finish_work']
   for (const action of jobActions) {
     const result = applyProfessionalJobAction({ jobId, professionalId, currentStatus: jobStatus, action })
     jobStatus = result.to
@@ -93,18 +96,18 @@ export function runManagedServiceSimulation(input: ManagedServiceSimulationInput
 
   const closeout = closeProfessionalJob(input.finalReport)
   jobStatus = closeout.nextStatus
+  // The fixture explicitly simulates customer confirmation before the optional review.
+  jobStatus = confirmCompletedJob({ requestStatus: 'assigned', jobStatus, hasFinalReport: true, events: [] }).jobStatus!
   const reviewCloseout = submitReviewCloseout({
     ...input.review,
     jobId,
     customerId: preparedRequest.customerId,
     professionalId,
-    jobStatus: 'completed',
+    jobStatus,
     alreadyReviewed: input.review.alreadyReviewed ?? false,
     previousRatingAvg: input.review.previousRatingAvg ?? null,
     previousJobsCompleted: input.review.previousJobsCompleted ?? 0
   })
-  jobStatus = 'completed'
-
   const publicReceipt = buildPublicReceipt({
     token: input.receiptToken,
     jobId,
@@ -160,6 +163,7 @@ export function runManagedServiceSimulation(input: ManagedServiceSimulationInput
       'equipment_registered',
       'technical_closeout_created',
       'public_receipt_generated',
+      'customer_confirmed',
       'review_applied',
       'quality_checked',
       'notifications_planned',

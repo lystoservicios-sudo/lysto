@@ -14,7 +14,7 @@
     "environment": "isolated-local-worktree"
   },
   "currentMilestone": "BASELINE_CAPTURED",
-  "nextTask": "T04",
+  "nextTask": "T05",
   "recommendedOrder": [
     "T00",
     "T01",
@@ -204,13 +204,34 @@
         "B10"
       ],
       "ownerRole": "Agente + QA",
-      "status": "pending",
+      "status": "verified",
       "currentStep": null,
-      "completedSteps": [],
-      "evidence": [],
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "evidence": [
+        "docs/release/test-environments.md",
+        "output/production-readiness/integration-guard-red.log",
+        "output/production-readiness/integration-guard-green.log",
+        "output/production-readiness/t04-integration-final.log",
+        "output/integration/98638ade-24c0-4580-85d2-997c263701bd/result.json",
+        "output/production-readiness/t04-playwright-list.log",
+        "docs/release/identity-and-lifecycle-verification.json",
+        "output/integration/c595fc10-443b-4b18-a563-bdab2a71ea17/result.json",
+        "output/production-readiness/t04-cleanup-integration.log",
+        "output/production-readiness/t04-public-key-green.log",
+        "output/production-readiness/t04-fixture-cleanup-green.log",
+        "output/production-readiness/t04-cleanup-types.log",
+        "output/production-readiness/t04-t06-lint-green.log"
+      ],
       "commit": null,
       "blockedBy": [],
-      "nextAction": "Crear tests rojos del guard de entorno: rechazar host no permitido, proyecto productivo, variables faltantes y ejecución de fixtures sin identidad explícita.",
+      "nextAction": "Keep mandatory integration and environment guards enforced. Extend real HTTP and E2E coverage in T06/T34.",
       "deviations": []
     },
     {
@@ -227,13 +248,27 @@
         "B08"
       ],
       "ownerRole": "Agente de backend + operaciones",
-      "status": "pending",
-      "currentStep": null,
-      "completedSteps": [],
-      "evidence": [],
+      "status": "implemented",
+      "currentStep": 7,
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "evidence": [
+        "docs/architecture/service-lifecycle.md",
+        "docs/architecture/adr-001-service-lifecycle-authority.md",
+        "docs/release/identity-and-lifecycle-verification.json",
+        "output/production-readiness/t04-t06-t33-domain.log",
+        "output/production-readiness/t04-t06-t33-unit-retry.log",
+        "output/production-readiness/t06-http-concurrency-green.log"
+      ],
       "commit": null,
       "blockedBy": [],
-      "nextAction": "Escribir tabla estado/evento/actor/precondición/efecto para solicitud, presupuesto, trabajo, pago, adicional, reclamo y garantía. Usar el contrato normativo del anexo.",
+      "nextAction": "Independent specification and quality reviews passed; domain, unit, HTTP, SQL, lint and types passed. Verify clean candidate production build.",
       "deviations": []
     },
     {
@@ -248,13 +283,18 @@
         "B06"
       ],
       "ownerRole": "Agente de backend",
-      "status": "pending",
+      "status": "implemented",
       "currentStep": null,
       "completedSteps": [],
-      "evidence": [],
+      "evidence": [
+        "docs/release/identity-and-lifecycle-verification.json",
+        "output/production-readiness/t04-t06-t33-domain.log",
+        "output/production-readiness/t04-t06-t33-unit-retry.log",
+        "output/production-readiness/t06-http-concurrency-green.log"
+      ],
       "commit": null,
       "blockedBy": [],
-      "nextAction": "Escribir primero pruebas HTTP anónimas de los tres paneles y cada endpoint privado; verificar además acceso horizontal y permisos insuficientes.",
+      "nextAction": "Independent specification and quality reviews passed; domain, unit, HTTP, SQL, lint and types passed. Verify clean candidate production build.",
       "deviations": []
     },
     {
@@ -267,13 +307,13 @@
         "B02"
       ],
       "ownerRole": "Agente full stack",
-      "status": "pending",
-      "currentStep": null,
+      "status": "in_progress",
+      "currentStep": 1,
       "completedSteps": [],
       "evidence": [],
       "commit": null,
       "blockedBy": [],
-      "nextAction": "Escribir tests de alta válida, email duplicado, verificación pendiente, token vencido/reutilizado, recuperación genérica y logout real.",
+      "nextAction": "Observe new lifecycle tests failing, then implement trusted customer bootstrap and complete account flows.",
       "deviations": []
     },
     {
@@ -883,13 +923,28 @@
         "B10"
       ],
       "ownerRole": "Agente técnico",
-      "status": "pending",
-      "currentStep": null,
-      "completedSteps": [],
-      "evidence": [],
+      "status": "implemented",
+      "currentStep": 6,
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        7
+      ],
+      "evidence": [
+        "docs/release/release-policy.md",
+        "output/production-readiness/t04-t06-t33-domain.log",
+        "output/production-readiness/t04-t06-t33-unit-retry.log"
+      ],
       "commit": null,
-      "blockedBy": [],
-      "nextAction": "Escribir tests de gate ausente, lista vacía, evidencia de otro commit/entorno, duplicada, vencida, skipped y error desconocido: todos deben bloquear. El evaluador actual no debe aprobar por lista vacía.",
+      "blockedBy": [
+        "Actual GitHub run and branch protection evidence",
+        "Protected CI attestation signer and external trust policy",
+        "Approved staging identity"
+      ],
+      "nextAction": "Local implementation and reviews passed. Validate actual remote CI and protected promotion configuration when the release environment is identified.",
       "deviations": []
     },
     {
@@ -1476,13 +1531,13 @@
     "updateRequiredAfterImplementation": true
   },
   "checkpoint": {
-    "updatedAt": "2026-09-11T03:47:31.620Z",
+    "updatedAt": "2026-09-11T05:20:21.017Z",
     "branch": "codex/production-readiness",
-    "commit": "afb14ba2eb1af5a5f8ab7ba7edd11aba5861a6b3",
+    "commit": "a19b52a360b05caafe72fd8e09a54a5e98b8d32d",
     "filesChanged": [],
-    "lastVerification": "T02: audit prod 0, builds Windows/Linux; T03: pgTAP 416 clean + 416 upgrade, 8 DB integration, populated witness preserved.",
+    "lastVerification": "171 domain, 327 unit (42 files), 22 baseline integration + 62 actual HTTP, 434 pgTAP, 7 tooling; types/lint passed. Build of clean checkpoint pending.",
     "unresolvedFailures": [],
-    "nextCommand": "Execute T04 environment guards and isolated full-stack test harness per approved plan."
+    "nextCommand": "Build isolated checkpoint; continue T07 after preserving candidate."
   },
   "events": [
     {
@@ -1502,6 +1557,17 @@
       ],
       "at": "2026-09-11T03:47:31.620Z",
       "note": "Aceptación local y evidencias registradas. Ningún gate de lanzamiento promovido."
+    },
+    {
+      "type": "task_verified",
+      "task": "T04",
+      "at": "2026-09-11T05:07:20.414Z",
+      "note": "22 integration tests with real Auth and scoped cleanup, required report suites checked, guard red/green, types/lint and independent spec/quality reviews passed. No browser execution or launch gate credit."
+    },
+    {
+      "type": "roadmap_reconfirmed",
+      "at": "2026-09-11T05:07:20.416Z",
+      "note": "User explicitly kept the 40-task roadmap after discussing a smaller pilot and authorized continued implementation."
     }
   ],
   "executionWorktree": "E:/Proyectos/GitHub/Lysto-production-readiness"

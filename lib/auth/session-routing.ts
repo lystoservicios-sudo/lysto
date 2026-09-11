@@ -38,3 +38,26 @@ export function canRoleAccessPath(role: UserRole | null, pathname: string): bool
   const requiredRole = requiredRoleForPath(pathname)
   return requiredRole === null || role === requiredRole
 }
+
+/** Accept only local destinations belonging to the verified account's surface. */
+export function safeLocalRedirectPath(candidate: unknown, role: UserRole): string {
+  const fallback = roleHome(role)
+  if (typeof candidate !== 'string' || !candidate) return fallback
+  const origin = 'https://lysto.invalid'
+  try {
+    let decoded = candidate
+    for (let depth = 0; depth < 4; depth += 1) {
+      if (!decoded.startsWith('/') || decoded.startsWith('//') || decoded.includes('\\') ||
+          [...decoded].some(character => character.charCodeAt(0) <= 32 || character.charCodeAt(0) === 127)) return fallback
+      const target = new URL(decoded, origin)
+      if (target.origin !== origin || requiredRoleForPath(target.pathname) !== role) return fallback
+      const next = decodeURIComponent(decoded)
+      if (next === decoded) {
+        const destination = new URL(candidate, origin)
+        return destination.pathname + destination.search + destination.hash
+      }
+      decoded = next
+    }
+  } catch { return fallback }
+  return fallback
+}

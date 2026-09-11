@@ -38,6 +38,16 @@ function createGateway(options: {
 }
 
 describe('login flow', () => {
+  it('accepts a local destination inside the authenticated customer panel', async () => {
+    const fake = createGateway()
+    expect(await authenticateLogin({ email: 'customer@lysto.test', password: 'password', next: '/app/trabajos' }, fake.gateway))
+      .toEqual({ ok: true, redirectTo: '/app/trabajos' })
+  })
+  it.each(['https://attacker.test', '//attacker.test', '/admin/dashboard'])('rejects an unauthorized login destination %s', async next => {
+    const fake = createGateway()
+    expect(await authenticateLogin({ email: 'customer@lysto.test', password: 'password', next }, fake.gateway))
+      .toEqual({ ok: true, redirectTo: '/app' })
+  })
   it('rejects incomplete credentials before calling Supabase', async () => {
     const fake = createGateway()
 

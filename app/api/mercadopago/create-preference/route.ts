@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { privateJson } from '@/lib/http/api-error'
 import { z } from 'zod'
 import { getPricingSession } from '@/lib/pricing/server'
 import { marketplaceConfig, paymentError, sameOrigin } from '@/lib/payments/marketplace-config'
@@ -13,10 +13,10 @@ export async function POST(request: Request) {
     const body = z.object({ jobId:z.string().uuid(), extraId:z.string().uuid().optional() }).strict().parse(await request.json())
     const config = marketplaceConfig()
     const checkout = await prepareCheckout(session.customerId,body.jobId,body.extraId,config.liveMode)
-    if (checkout.status === 'approved') return NextResponse.json({ checkoutId:checkout.id,status:checkout.status })
+    if (checkout.status === 'approved') return privateJson({ checkoutId:checkout.id,status:checkout.status })
     const result = await createCheckoutPreference(checkout)
     const initPoint=config.liveMode ? result.init_point : result.sandbox_init_point
     if (!initPoint) throw new Error('invalid_provider_response')
-    return NextResponse.json({ checkoutId:result.id,status:result.status,initPoint })
+    return privateJson({ checkoutId:result.id,status:result.status,initPoint })
   } catch(error) { return paymentError(error) }
 }

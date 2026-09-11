@@ -19,7 +19,11 @@
     "test:e2e": "playwright test",
     "verify:payments": "node scripts/verify-payment-runtime.mjs",
     "verify:images": "node scripts/verify-image-runtime.mjs",
-    "test:ci": "eslint . --max-warnings=0 && tsc --noEmit && node --experimental-strip-types tests/run-domain-tests.ts && vitest run && next build"
+    "test:ci": "eslint . --max-warnings=0 && tsc --noEmit && node --experimental-strip-types tests/run-domain-tests.ts && vitest run && next build",
+    "test:integration": "node scripts/test-integration.mjs",
+    "test:tooling": "node --experimental-strip-types --test tests/tooling/*.test.mjs",
+    "release:check": "node scripts/check-release-evidence.mjs",
+    "test:e2e:staging": "node scripts/test-e2e-staging.mjs"
   },
   "dependencies": {
     "@mercadopago/sdk-react": "^0.0.24",
@@ -31,6 +35,7 @@
     "pg": "8.23.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "server-only": "0.0.1",
     "zod": "^3.24.0"
   },
   "devDependencies": {

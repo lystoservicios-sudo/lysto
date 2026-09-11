@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import Dashboard from '@/app/(professional)/pro/dashboard/page'
 import Requests from '@/app/(professional)/pro/solicitudes/page'
@@ -18,8 +18,8 @@ vi.mock('next/navigation', () => ({ usePathname: () => '/pro/dashboard', notFoun
 afterEach(() => { cleanup(); sessionStorage.clear() })
 
 describe('professional mobile experience', () => {
-  it.each([[Dashboard, 'Tu jornada'], [Requests, 'Solicitudes disponibles'], [Jobs, 'Mis trabajos'], [Agenda, 'Mi agenda'], [Payments, 'Mis cobros'], [Profile, 'Mi perfil'], [Training, 'Aprendé a tu ritmo'], [Support, '¿En qué te ayudamos?'], [MercadoPago, 'Tu cuenta de Mercado Pago']] as const)('renders the redesigned route', (Page, title) => {
-    render(<Page />)
+  it.each([[Dashboard, 'Tu jornada'], [Requests, 'Solicitudes disponibles'], [Jobs, 'Mis trabajos'], [Agenda, 'Mi agenda'], [Payments, 'Mis cobros'], [Profile, 'Mi perfil'], [Training, 'Aprendé a tu ritmo'], [Support, '¿En qué te ayudamos?'], [MercadoPago, 'Tu cuenta de Mercado Pago']] as const)('renders the redesigned route', async (Page, title) => {
+    await act(async () => { render(<Page />) })
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe(title)
   })
   it('does not mix another professional into personal jobs', () => {
