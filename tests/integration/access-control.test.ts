@@ -20,7 +20,7 @@ export const privateHttpMethods = [
   ['POST', '/api/admin/approve-professional'], ['POST', '/api/admin/invite-professional'], ['POST', '/api/admin/pricing/update'], ['POST', '/api/admin/professionals/approve'],
   ['POST', '/api/equipment/register'], ['POST', '/api/jobs/final-report'], ['POST', '/api/maintenance/schedule'], ['POST', '/api/notifications/emit'],
   ['POST', '/api/pro/jobs/action'], ['POST', '/api/pro/onboarding/evaluate'], ['POST', '/api/professional/onboarding'], ['POST', '/api/professional/respond-request'],
-  ['POST', '/api/quality/open-case'], ['POST', '/api/reviews/submit'], ['POST', '/api/uploads/sign'], ['POST', '/api/warranty/claim'], ['POST', '/api/diagnosis/generate']
+  ['POST', '/api/quality/open-case'], ['POST', '/api/reviews/submit'], ['POST', '/api/uploads/sign'], ['POST', '/api/uploads/finalize'], ['POST', '/api/uploads/read'], ['POST', '/api/warranty/claim'], ['POST', '/api/diagnosis/generate']
 ] as const
 
 describe('HTTP access control with real Auth sessions', () => {

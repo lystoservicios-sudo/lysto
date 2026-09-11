@@ -4,8 +4,9 @@ import { PanelLeft } from 'lucide-react'
 
 import { appRoleLabels, type AppRole } from './app-navigation-config'
 import { useAppShell } from './app-shell-provider'
+import type { AccountIdentity } from '@/lib/auth/account-identity'
 
-export function AppTopbar({ role }: { role: AppRole }) {
+export function AppTopbar({ role, identity }: { role: AppRole; identity?: AccountIdentity }) {
   const {
     desktopOpen,
     isMobile,
@@ -37,10 +38,11 @@ export function AppTopbar({ role }: { role: AppRole }) {
 
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-bold text-slate-950">{appRoleLabels[role]}</p>
-        <p className="truncate text-xs font-medium text-slate-500">Centro de servicio Lysto</p>
+        <p className="truncate text-xs font-medium text-slate-500" title={identity?.email}>{identity?.name ?? 'Centro de servicio Lysto'}</p>
       </div>
 
-      <div className="hidden items-center gap-2 text-xs font-medium text-slate-500 lg:flex">
+      {identity && <form action="/auth/logout" method="post"><button type="submit" className="min-h-11 rounded-xl px-3 text-sm font-bold text-slate-700 hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-blue-600">Cerrar sesión</button></form>}
+      <div className="hidden items-center gap-2 text-xs font-medium text-slate-500 xl:flex">
         <span>Alternar menú</span>
         <kbd className="rounded-md border border-slate-200 bg-slate-50 px-1.5 py-1 font-sans text-[0.6875rem] font-semibold text-slate-600">Ctrl B</kbd>
       </div>

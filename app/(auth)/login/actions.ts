@@ -9,6 +9,8 @@ import {
 } from '@/lib/auth/login'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import type { Database } from '@/lib/supabase/database.types'
+import { assertAccountMutationOrigin, bootstrapVerifiedCustomer } from '@/lib/auth/account-server'
+import { readTrustedRole } from '@/lib/auth/session-routing'
 
 type ProfileSelection = Pick<
   Database['public']['Tables']['profiles']['Row'],
@@ -42,7 +44,9 @@ export async function loginAction(
   let destination: string | null = null
 
   try {
+    await assertAccountMutationOrigin()
     const supabase = await createServerSupabaseClient()
+    let trustedRole: string | null = null
     const gateway: LoginGateway = {
       async signIn({ email, password }) {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password })
@@ -55,7 +59,13 @@ export async function loginAction(
           }
         }
 
-        return { ok: true, userId: data.user.id }
+        trustedRole = readTrustedRole(data.user.app_metadata)
+        if (!trustedRole) {
+          await supabase.auth.signOut({ scope: 'local' })
+          return { ok: false, reason: 'unexpected' }
+        }
+        const prepared = await bootstrapVerifiedCustomer(supabase,data.user)
+        return { ok: true, userId: data.user.id, accountIncomplete: prepared === 'incomplete' }
       },
 
       async findProfile(userId): Promise<LoginProfile | null> {
@@ -65,7 +75,7 @@ export async function loginAction(
           .eq('auth_user_id', userId)
           .maybeSingle<ProfileSelection>()
 
-        if (profileError || !profile) return null
+        if (profileError || !profile || profile.role !== trustedRole) return null
         if (profile.role !== 'professional') return { role: profile.role }
 
         const { data: professional, error: professionalError } = await supabase

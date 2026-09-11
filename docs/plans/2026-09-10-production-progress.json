@@ -14,7 +14,7 @@
     "environment": "isolated-local-worktree"
   },
   "currentMilestone": "BASELINE_CAPTURED",
-  "nextTask": "T07",
+  "nextTask": "T12",
   "recommendedOrder": [
     "T00",
     "T01",
@@ -315,13 +315,27 @@
         "B02"
       ],
       "ownerRole": "Agente full stack",
-      "status": "in_progress",
-      "currentStep": 1,
-      "completedSteps": [],
-      "evidence": [],
+      "status": "implemented",
+      "currentStep": 6,
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "evidence": [
+        "docs/release/customer-account-lifecycle.md",
+        "output/production-readiness/t07-admin-and-customer-integration.log",
+        "output/production-readiness/t07-final-pgtap.log",
+        "output/production-readiness/t07-local-final-unit.log",
+        "docs/release/account-and-upload-verification.json"
+      ],
       "commit": null,
-      "blockedBy": [],
-      "nextAction": "Observe new lifecycle tests failing, then implement trusted customer bootstrap and complete account flows.",
+      "blockedBy": [
+        "SMTP de staging y D08: documentos legales aprobados pendientes"
+      ],
+      "nextAction": "Verificar compilación del checkpoint local; mantener pendientes externos y continuar T12.",
       "deviations": []
     },
     {
@@ -382,13 +396,27 @@
         "B04"
       ],
       "ownerRole": "Agente full stack",
-      "status": "pending",
-      "currentStep": null,
-      "completedSteps": [],
-      "evidence": [],
+      "status": "implemented",
+      "currentStep": 6,
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "evidence": [
+        "docs/release/private-uploads.md",
+        "output/production-readiness/t10-http-first.log",
+        "output/production-readiness/t10-pgtap-behavior-retry.log",
+        "output/production-readiness/t10-unit-first-green.log",
+        "docs/release/account-and-upload-verification.json"
+      ],
       "commit": null,
-      "blockedBy": [],
-      "nextAction": "Crear tests rojos: dueño ajeno, MIME falso, tamaño excedido, archivo vacío, token vencido, path traversal, archivos no finalizados y acceso tras suspensión.",
+      "blockedBy": [
+        "D08: política de retención aprobada pendiente"
+      ],
+      "nextAction": "Verificar compilación del checkpoint local; mantener pendientes externos y continuar T12.",
       "deviations": []
     },
     {
@@ -1539,13 +1567,13 @@
     "updateRequiredAfterImplementation": true
   },
   "checkpoint": {
-    "updatedAt": "2026-09-11T05:25:48.928Z",
+    "updatedAt": "2026-09-11T23:31:34.819Z",
     "branch": "codex/production-readiness",
     "commit": "62ed2c19eb4b84e6f13817d21b2bc0e6eceac743",
     "filesChanged": [],
-    "lastVerification": "Checkpoint production build passed; 171 domain, 327 unit, 22+62 real integration, 434 pgTAP, 7 tooling, types and lint. T04–T06 verified. T33 local implementation only.",
+    "lastVerification": "404 unit, 171 domain, 7 tooling; HTTP 95 plus 25 and final read-signature regression 17; fresh/upgrade 452 SQL each, populated witness preserved, schema/grants/history/types equal; frozen install, production audit zero, image runtime, lint and types passed. Build pending. No release gate promoted.",
     "unresolvedFailures": [],
-    "nextCommand": "Implement T07 accounts and T10 private uploads; preserve external release blocks."
+    "nextCommand": "Build isolated T07/T10 checkpoint; execute T12."
   },
   "events": [
     {

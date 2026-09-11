@@ -134,7 +134,7 @@ describe('customer request wizard', () => {
     const photo = new File(['photo'], 'equipo.jpg', { type: 'image/jpeg' })
     const { rerender, unmount } = render(<MediaUploader files={[]} onFilesChange={onFilesChange} />)
 
-    fireEvent.change(screen.getByLabelText('Agregar fotos o video'), { target: { files: [photo] } })
+    fireEvent.change(screen.getByLabelText('Agregar fotos'), { target: { files: [photo] } })
     expect(onFilesChange).toHaveBeenCalledWith([photo])
 
     rerender(<MediaUploader files={[photo]} onFilesChange={onFilesChange} />)

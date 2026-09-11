@@ -1,0 +1,88 @@
+{
+  "status": "locally_verified_build_pending",
+  "tasks": [
+    "T07",
+    "T10"
+  ],
+  "checkedAt": "2026-09-11T23:31:34.816Z",
+  "environment": "lysto_production_check; local Auth, mail and Storage",
+  "checks": {
+    "unit": {
+      "passed": 404,
+      "files": 48,
+      "log": "output/production-readiness/t07-t10-all-unit.log"
+    },
+    "domain": {
+      "passed": 171,
+      "log": "output/production-readiness/t07-t10-domain.log"
+    },
+    "tooling": {
+      "passed": 7,
+      "log": "output/production-readiness/t07-t10-tooling.log"
+    },
+    "httpRegression": {
+      "passed": 95,
+      "log": "output/production-readiness/t07-t10-full-http.log"
+    },
+    "uploadAndMarketplace": {
+      "passed": 25,
+      "log": "output/production-readiness/t10-final-integration.log"
+    },
+    "readSignatureCorrection": {
+      "passed": 17,
+      "red": "output/production-readiness/t10-unbounded-read-red.log",
+      "green": "output/production-readiness/t10-read-signature-green.log"
+    },
+    "database": {
+      "passed": 452,
+      "files": 13,
+      "fresh": "output/production-readiness/t07-t10-fresh-pgtap.log",
+      "upgrade": "output/production-readiness/t07-t10-upgrade-pgtap.log",
+      "status": "passed",
+      "projectId": "lysto_production_check",
+      "baseline": "20260911042254",
+      "versions": [
+        "202608190001",
+        "202608190002",
+        "202608190003",
+        "202608190004",
+        "202608190005",
+        "202608190006",
+        "202608190007",
+        "20260910195050",
+        "20260910204604",
+        "20260910220000",
+        "20260911042254",
+        "20260911051612",
+        "20260911053515",
+        "20260911224417",
+        "20260911231948"
+      ],
+      "witnessPreserved": true,
+      "schemaSha256": "09d1b1c97252fe1044ea1c01d1b16183255109029a1251ee7d27f428c4fba183",
+      "storagePoliciesMatch": true,
+      "typesMatch": true,
+      "checkedAt": "2026-09-11T23:30:19.736Z"
+    },
+    "types": "output/production-readiness/t07-t10-final-types.log",
+    "lint": "output/production-readiness/t07-t10-final-lint.log",
+    "frozenInstall": "output/production-readiness/t07-t10-frozen-install.log",
+    "productionAudit": {
+      "vulnerabilities": 0,
+      "log": "output/production-readiness/t07-t10-audit.json"
+    },
+    "imageRuntime": "output/production-readiness/t07-t10-images.log"
+  },
+  "review": {
+    "method": "local source and actual authorization regression review",
+    "independentFinalReview": false,
+    "limitation": "Parallel reviewers could not execute because their usage limit was reached."
+  },
+  "pending": [
+    "isolated candidate production build",
+    "D08 legal documents and retention approval",
+    "external staging SMTP",
+    "T24/T36 scheduled production cleanup"
+  ],
+  "releaseReady": false
+}

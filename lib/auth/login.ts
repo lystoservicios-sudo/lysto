@@ -14,7 +14,7 @@ export type LoginProfile = {
 }
 
 type SignInResult =
-  | { ok: true; userId: string }
+  | { ok: true; userId: string; accountIncomplete?: boolean }
   | { ok: false; reason: 'invalid_credentials' | 'unexpected' }
 
 export interface LoginGateway {
@@ -51,6 +51,8 @@ export async function authenticateLogin(
         : 'No pudimos iniciar sesión. Intentá nuevamente.'
     }
   }
+
+  if (signIn.accountIncomplete) return { ok: true, redirectTo: '/completar-cuenta' }
 
   const profile = await gateway.findProfile(signIn.userId)
   if (!profile) {

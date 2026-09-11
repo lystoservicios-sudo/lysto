@@ -38,6 +38,11 @@ function createGateway(options: {
 }
 
 describe('login flow', () => {
+  it('keeps the existing Auth session when customer profile completion is required', async () => {
+    const fake = createGateway({ signIn: async () => ({ok:true,userId:'existing-customer',accountIncomplete:true}), profile:null })
+    expect(await authenticateLogin({email:'customer@lysto.test',password:'password'},fake.gateway)).toEqual({ok:true,redirectTo:'/completar-cuenta'})
+    expect(fake.signOutCalls()).toBe(0)
+  })
   it('accepts a local destination inside the authenticated customer panel', async () => {
     const fake = createGateway()
     expect(await authenticateLogin({ email: 'customer@lysto.test', password: 'password', next: '/app/trabajos' }, fake.gateway))

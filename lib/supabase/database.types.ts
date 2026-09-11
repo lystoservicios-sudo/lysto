@@ -2927,6 +2927,8 @@ export type Database = {
         }
         Returns: Json
       }
+      bootstrap_customer_account: { Args: never; Returns: Json }
+      claim_expired_upload_intents: { Args: { p_limit: number }; Returns: Json }
       claim_outbox_events: {
         Args: {
           p_batch_size?: number
@@ -3001,6 +3003,21 @@ export type Database = {
         }
         Returns: Json
       }
+      complete_customer_registration: {
+        Args: {
+          p_accepted: boolean
+          p_first_name: string
+          p_last_name: string
+          p_phone: string
+          p_privacy_version: string
+          p_terms_version: string
+        }
+        Returns: Json
+      }
+      complete_upload_cleanup: {
+        Args: { p_intent_id: string; p_lease_token: string }
+        Returns: boolean
+      }
       create_admin_audit_event: {
         Args: {
           action: string
@@ -3024,6 +3041,19 @@ export type Database = {
           p_selected_amount: number
           p_selected_option: Database["public"]["Enums"]["urgency_level"]
           p_time_since: string
+        }
+        Returns: Json
+      }
+      create_upload_intent: {
+        Args: {
+          p_document_type: string
+          p_draft_id: string
+          p_entity_id: string
+          p_kind: string
+          p_mime_type: string
+          p_phase: string
+          p_sha256: string
+          p_size_bytes: number
         }
         Returns: Json
       }
@@ -3098,8 +3128,22 @@ export type Database = {
         }
         Returns: string
       }
+      finalize_verified_upload: {
+        Args: {
+          p_actor_auth_user_id: string
+          p_actual_mime_type: string
+          p_actual_sha256: string
+          p_actual_size_bytes: number
+          p_intent_id: string
+          p_output_sha256: string
+          p_output_size_bytes: number
+        }
+        Returns: Json
+      }
       get_quote_policy: { Args: never; Returns: Json }
+      get_registration_policy: { Args: never; Returns: Json }
       get_session_context: { Args: never; Returns: Json }
+      get_upload_intent: { Args: { p_intent_id: string }; Returns: Json }
       is_admin: { Args: never; Returns: boolean }
       log_admin_action: {
         Args: {

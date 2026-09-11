@@ -10,7 +10,7 @@ import {
 } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 
-import { MediaUploader } from '@/components/customer/media-uploader'
+import { MediaUploader, type SavedPhoto } from '@/components/customer/media-uploader'
 import { ServiceDiagnosisStep, serviceIssueVisuals } from '@/components/customer/service-diagnosis-step'
 import { Badge } from '@/components/ui/badge'
 import { Button, ButtonLink } from '@/components/ui/button'
@@ -79,6 +79,8 @@ export function AirConditioningWizard() {
   const isPlannedService = issue === 'instalacion' || issue === 'mantenimiento'
   const [timeSince, setTimeSince] = useState<TimeSince | undefined>()
   const [files, setFiles] = useState<File[]>([])
+  const [savedPhotos, setSavedPhotos] = useState<SavedPhoto[]>([])
+  const [uploadBusy, setUploadBusy] = useState(false)
   const [address, setAddress] = useState<AddressDraft>({
     street: 'Av. Corrientes',
     number: '1240',
@@ -168,7 +170,7 @@ export function AirConditioningWizard() {
     selectedDay: selectedDay === 'Otro día' ? customDate || 'Fecha por elegir' : selectedDay,
     timeWindow,
     amount: step >= 5 ? selectedPrice.total : null,
-    fileCount: files.length
+    fileCount: savedPhotos.length
   }
 
   return (
@@ -179,7 +181,7 @@ export function AirConditioningWizard() {
         </div>
         <div className="mt-6 min-h-80 sm:min-h-[32rem]">
           {step === 0 ? <StepIssue issue={issue} setIssue={selectIssue} /> : null}
-          {step === 1 ? <><StepDetails planned={isPlannedService} timeSince={timeSince} setTimeSince={setTimeSince} files={files} setFiles={setFiles} /><div className="mt-5 grid gap-4 sm:grid-cols-2"><Field label="Capacidad del aire (frigorías/h)"><select aria-label="Capacidad del aire (frigorías/h)" className="w-full rounded-xl border border-slate-200 p-3" value={capacity ?? ''} onChange={e => setCapacity(Number(e.target.value) || undefined)}><option value="">No lo sé</option>{[2250,3000,4500,6000,8000,9000,18000].map(n => <option key={n}>{n}</option>)}</select></Field><Field label="Tecnología del equipo"><select aria-label="Tecnología del equipo" className="w-full rounded-xl border border-slate-200 p-3" value={technology} onChange={e => setTechnology(e.target.value as typeof technology)}><option value="unknown">No lo sé</option><option value="conventional">Convencional</option><option value="inverter">Inverter</option></select></Field></div></> : null}
+          {step === 1 ? <><StepDetails planned={isPlannedService} timeSince={timeSince} setTimeSince={setTimeSince} files={files} setFiles={setFiles} savedPhotos={savedPhotos} setSavedPhotos={setSavedPhotos} setUploadBusy={setUploadBusy} /><div className="mt-5 grid gap-4 sm:grid-cols-2"><Field label="Capacidad del aire (frigorías/h)"><select aria-label="Capacidad del aire (frigorías/h)" className="w-full rounded-xl border border-slate-200 p-3" value={capacity ?? ''} onChange={e => setCapacity(Number(e.target.value) || undefined)}><option value="">No lo sé</option>{[2250,3000,4500,6000,8000,9000,18000].map(n => <option key={n}>{n}</option>)}</select></Field><Field label="Tecnología del equipo"><select aria-label="Tecnología del equipo" className="w-full rounded-xl border border-slate-200 p-3" value={technology} onChange={e => setTechnology(e.target.value as typeof technology)}><option value="unknown">No lo sé</option><option value="conventional">Convencional</option><option value="inverter">Inverter</option></select></Field></div></> : null}
           {step === 2 && diagnosis ? <ServiceDiagnosisStep diagnosis={diagnosis} /> : null}
           {step === 3 ? <StepAddress address={address} setAddress={setAddress} access={access} setAccess={setAccess} /> : null}
           {step === 4 ? <><StepSchedule selectedDay={selectedDay} setSelectedDay={setSelectedDay} timeWindow={timeWindow} setTimeWindow={setTimeWindow} />{selectedDay === 'Otro día' ? <div className="mt-4"><Field label="Fecha de visita"><Input aria-label="Fecha de visita" type="date" value={customDate} onChange={e => setCustomDate(e.target.value)} /></Field></div> : null}</> : null}
@@ -192,11 +194,11 @@ export function AirConditioningWizard() {
         <div className="sticky bottom-0 z-10 -mx-4 -mb-4 mt-6 border-t border-slate-200 bg-white px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:static sm:mx-0 sm:mb-0 sm:px-0 sm:pb-0">
           {errors.length ? <p role="status" className="mb-3 text-sm leading-5 text-slate-600">{step === 0 ? 'Elegí una opción para continuar.' : step === 1 && isPlannedService ? 'Indicá desde cuándo necesitás el servicio.' : errors[0]}</p> : null}
           <div className="flex items-center gap-3">
-          <Button variant="secondary" size="lg" disabled={step === 0} onClick={() => setStep((value) => Math.max(0, value - 1))}>Atrás</Button>
+          <Button variant="secondary" size="lg" disabled={uploadBusy || step === 0} onClick={() => setStep((value) => Math.max(0, value - 1))}>Atrás</Button>
           {isFinalStep ? (
             <ButtonLink href="/app/solicitudes" variant="secondary" className="h-auto min-h-12 flex-1 py-2 text-center sm:ml-auto sm:flex-none">Volver a mis solicitudes</ButtonLink>
           ) : (
-            <Button size="lg" className="flex-1 shadow-none sm:ml-auto sm:min-w-40 sm:flex-none" disabled={errors.length > 0} onClick={() => setStep((value) => Math.min(steps.length - 1, value + 1))}>Continuar</Button>
+            <Button size="lg" className="flex-1 shadow-none sm:ml-auto sm:min-w-40 sm:flex-none" disabled={uploadBusy || errors.length > 0} onClick={() => setStep((value) => Math.min(steps.length - 1, value + 1))}>Continuar</Button>
           )}
           </div>
         </div>
@@ -252,23 +254,26 @@ function StepIssue({ issue, setIssue }: { issue?: ServiceIssueSlug; setIssue: (i
   )
 }
 
-function StepDetails({ timeSince, setTimeSince, files, setFiles, planned }: {
+function StepDetails({ timeSince, setTimeSince, files, setFiles, planned, savedPhotos, setSavedPhotos, setUploadBusy }: {
   planned: boolean
   timeSince?: TimeSince
   setTimeSince: (value: TimeSince) => void
   files: readonly File[]
   setFiles: (files: File[]) => void
+  savedPhotos: readonly SavedPhoto[]
+  setSavedPhotos: (photos: SavedPhoto[]) => void
+  setUploadBusy: (busy: boolean) => void
 }) {
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-black tracking-tight text-slate-950">Contanos un poco más</h2>
-        <p className="mt-2 text-sm leading-6 text-slate-600">{planned ? '¿Desde cuándo necesitás este servicio? Podés agregar fotos del equipo o del lugar para preparar la visita.' : '¿Desde cuándo pasa? Las fotos o un video también pueden ayudar a preparar la visita.'}</p>
+        <p className="mt-2 text-sm leading-6 text-slate-600">{planned ? '¿Desde cuándo necesitás este servicio? Podés agregar fotos del equipo o del lugar para preparar la visita.' : '¿Desde cuándo pasa? Las fotos también pueden ayudar a preparar la visita.'}</p>
       </div>
       <div role="radiogroup" aria-label={planned ? 'Desde cuándo necesitás el servicio' : 'Antigüedad del problema'} onKeyDown={handleRadioGroupKeyDown} className="grid gap-3 sm:grid-cols-2">
         {timeSinceOptions.map((item) => <ChoiceCard key={item.value} selected={timeSince === item.value} title={item.label} description={planned ? undefined : item.description} onClick={() => setTimeSince(item.value)} />)}
       </div>
-      <MediaUploader files={files} onFilesChange={setFiles} />
+      <MediaUploader files={files} onFilesChange={setFiles} savedPhotos={savedPhotos} onSavedPhotosChange={setSavedPhotos} onBusyChange={setUploadBusy} />
     </div>
   )
 }
@@ -419,7 +424,7 @@ function BriefContents({ issueLabel, address, selectedDay, timeWindow, amount, f
         <BriefFact label="Evidencia" value={`${fileCount} ${fileCount === 1 ? 'archivo' : 'archivos'}`} />
         <BriefFact label="Presupuesto" value={amount === null ? 'Se calcula más adelante' : `$ ${amount.toLocaleString('es-AR')}`} />
       </dl>
-      <p className="rounded-2xl bg-slate-50 p-3 text-xs leading-5 text-slate-600">El botón de guardar registra el presupuesto para revisión. Las fotos seleccionadas todavía no se adjuntan al presupuesto. No se realiza ningún cobro.</p>
+      <p className="rounded-2xl bg-slate-50 p-3 text-xs leading-5 text-slate-600">Las fotos verificadas quedan guardadas en un borrador privado. Guardá el presupuesto para enviarlo a revisión. No se realiza ningún cobro.</p>
     </div>
   )
 }

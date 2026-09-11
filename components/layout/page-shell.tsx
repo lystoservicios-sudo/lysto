@@ -5,12 +5,13 @@ import type { AppRole } from './app-navigation-config'
 import { AppShellProvider } from './app-shell-provider'
 import { AppTopbar } from './app-topbar'
 import { MarketingHeader } from './marketing-header'
+import type { AccountIdentity } from '@/lib/auth/account-identity'
 
 export function PublicShell({ children }: { children: ReactNode }) {
   return <div className="min-h-screen bg-white"><MarketingHeader />{children}</div>
 }
 
-export async function AppShell({ children, role }: { children: ReactNode; role: AppRole }) {
+export async function AppShell({ children, role, identity }: { children: ReactNode; role: AppRole; identity?: AccountIdentity }) {
   const cookieStore = await cookies()
   const defaultOpen = cookieStore.get('sidebar_state')?.value !== 'false'
 
@@ -25,7 +26,7 @@ export async function AppShell({ children, role }: { children: ReactNode; role: 
         </a>
         <AppSidebar role={role} />
         <div className="flex min-w-0 flex-1 flex-col">
-          <AppTopbar role={role} />
+          <AppTopbar role={role} identity={identity} />
           <main id="main-content" tabIndex={-1} className="min-w-0 flex-1 px-4 pb-8 pt-6 md:px-6 md:pt-8">
             <div className="mx-auto w-full max-w-[90rem]">{children}</div>
           </main>

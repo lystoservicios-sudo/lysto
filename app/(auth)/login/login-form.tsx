@@ -77,6 +77,13 @@ export function LoginFormView({ state, pending, formAction }: LoginFormViewProps
       </button>
 
       <Link
+        href="/recuperar"
+        className="block text-center text-sm font-bold text-blue-700 underline"
+      >
+        Olvidé mi contraseña
+      </Link>
+
+      <Link
         href="/registro"
         className="inline-flex h-12 w-full items-center justify-center rounded-xl border border-slate-300 bg-white px-5 text-base font-bold text-slate-900 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-100"
       >

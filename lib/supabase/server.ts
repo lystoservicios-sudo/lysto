@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers'
 import { createServerClient, type SetAllCookies } from '@supabase/ssr'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import { assertPublicSupabaseEnv } from './env'
 import type { Database } from './database.types'
 
@@ -22,7 +23,7 @@ export function applySupabaseCookies(
   }
 }
 
-export async function createServerSupabaseClient() {
+export async function createServerSupabaseClient(): Promise<SupabaseClient<Database>> {
   const cookieStore = await cookies()
   const env = assertPublicSupabaseEnv()
   return createServerClient<Database>(env.url, env.anonKey, {
@@ -34,5 +35,7 @@ export async function createServerSupabaseClient() {
         })
       }
     }
-  })
+  // The installed SSR adapter predates supabase-js's newer schema generics.
+  // Expose the generated database contract at this single compatibility boundary.
+  }) as unknown as SupabaseClient<Database>
 }
