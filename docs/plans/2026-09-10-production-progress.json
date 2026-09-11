@@ -1,20 +1,20 @@
 {
   "schemaVersion": 1,
   "planId": "lysto-production-completion-2026-09-10",
-  "status": "planned",
+  "status": "in_progress",
   "createdFor": "Plan de implementación solicitado; ninguna tarea ejecutada al crear este registro.",
-  "planPath": "E:/Proyectos/GitHub/Lysto/docs/plans/2026-09-10-production-completion.md",
-  "acceptancePath": "E:/Proyectos/GitHub/Lysto/docs/plans/2026-09-10-production-acceptance.md",
-  "auditPath": "E:/Proyectos/GitHub/Lysto/docs/audits/2026-09-10-cto-production-readiness.md",
+  "planPath": "E:/Proyectos/GitHub/Lysto-production-readiness/docs/plans/2026-09-10-production-completion.md",
+  "acceptancePath": "E:/Proyectos/GitHub/Lysto-production-readiness/docs/plans/2026-09-10-production-acceptance.md",
+  "auditPath": "E:/Proyectos/GitHub/Lysto-production-readiness/docs/audits/2026-09-10-cto-production-readiness.md",
   "baseline": {
     "auditReferenceCommit": "6bbabd3",
     "includesUncommittedWork": true,
-    "executionCommit": null,
-    "snapshotHash": null,
-    "environment": null
+    "executionCommit": "2d1936c7db150832b96b196c13f990501463c21f",
+    "snapshotHash": "78e4627223acba17868dd509b2833c950f563bd5",
+    "environment": "isolated-local-worktree"
   },
-  "currentMilestone": "NOT_PRODUCTION_READY",
-  "nextTask": "T00",
+  "currentMilestone": "BASELINE_CAPTURED",
+  "nextTask": "T02",
   "recommendedOrder": [
     "T00",
     "T01",
@@ -73,13 +73,22 @@
         "B10"
       ],
       "ownerRole": "Agente técnico",
-      "status": "pending",
+      "status": "verified",
       "currentStep": null,
-      "completedSteps": [],
-      "evidence": [],
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "evidence": [
+        "docs/release/baseline-manifest.json"
+      ],
       "commit": null,
       "blockedBy": [],
-      "nextAction": "Leer AGENTS.md y la auditoría. Si aparece .codegraph, usar CodeGraph antes de localizar código; no indexar por iniciativa propia.",
+      "nextAction": "Preserve snapshot; release build remains unverified until T02.",
       "deviations": []
     },
     {
@@ -95,13 +104,23 @@
         "B10"
       ],
       "ownerRole": "Agente + dirección/operaciones/finanzas",
-      "status": "pending",
+      "status": "verified",
       "currentStep": null,
-      "completedSteps": [],
-      "evidence": [],
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "evidence": [
+        "docs/release/decision-register.md",
+        "docs/release/environment-register.md"
+      ],
       "commit": null,
       "blockedBy": [],
-      "nextAction": "Crear el registro D01–D12 definido en el anexo de aceptación; estado inicial pending salvo evidencia vigente del responsable.",
+      "nextAction": "Mantener decisiones pending hasta recibir evidencia; actualizar D04 con respuesta.",
       "deviations": []
     },
     {
@@ -115,10 +134,21 @@
         "B10"
       ],
       "ownerRole": "Agente técnico",
-      "status": "pending",
-      "currentStep": null,
-      "completedSteps": [],
-      "evidence": [],
+      "status": "in_progress",
+      "currentStep": 5,
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "evidence": [
+        "docs/release/vendor-provenance.json",
+        "docs/release/dependency-review.md",
+        "output/production-readiness/dependencies-final.json",
+        "output/production-readiness/updated-windows-checks.json",
+        "output/production-readiness/image-runtime-after.log"
+      ],
       "commit": null,
       "blockedBy": [],
       "nextAction": "Reejecutar audit productivo y revisar los avisos oficiales actuales. No fijar una versión por memoria: 15.5.24 era la corrección conocida en la auditoría, no una promesa de vigencia futura.",
@@ -134,14 +164,27 @@
         "B10"
       ],
       "ownerRole": "Agente de backend",
-      "status": "pending",
-      "currentStep": null,
-      "completedSteps": [],
-      "evidence": [],
+      "status": "in_progress",
+      "currentStep": 6,
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "evidence": [
+        "output/production-readiness/database-clean-tests.log",
+        "output/production-readiness/database-comparison.json",
+        "output/production-readiness/database-lint.json"
+      ],
       "commit": null,
       "blockedBy": [],
       "nextAction": "Descubrir comandos con supabase --help, db --help y migration --help. Leer historial local y esquema; comparar SQL efectivo, roles, funciones, triggers, índices y permisos, no sólo nombres de tablas.",
-      "deviations": []
+      "deviations": [
+        "Two independent fresh/upgrade runs reuse the same explicitly marked disposable local project; clean schema and history are captured before reset. No original/remote DB reset.",
+        "Generated public types are identical after LF normalization; existing file retained. No new migration justified by verified schema diff."
+      ]
     },
     {
       "id": "T04",
@@ -1428,19 +1471,24 @@
     "updateRequiredAfterImplementation": true
   },
   "checkpoint": {
-    "updatedAt": null,
-    "branch": null,
-    "commit": null,
+    "updatedAt": "2026-09-11T03:30:42.662Z",
+    "branch": "codex/production-readiness",
+    "commit": "2d1936c7db150832b96b196c13f990501463c21f",
     "filesChanged": [],
     "lastVerification": null,
     "unresolvedFailures": [],
-    "nextCommand": null
+    "nextCommand": "Finish bounded Windows/Linux builds and upgrade from migration 202608190007."
   },
   "events": [
     {
       "type": "plan_created",
       "note": "Todas las tareas y gates se inicializan pendientes. Resultados anteriores pertenecen a la auditoría; no se imputan como ejecución del plan."
+    },
+    {
+      "type": "implementation_authorized",
+      "at": "2026-09-11T02:56:36.469Z",
+      "note": "Usuario autorizó implementación etapa por etapa. Snapshot local aislado; no autorización inferida para cobros reales."
     }
-  ]
+  ],
+  "executionWorktree": "E:/Proyectos/GitHub/Lysto-production-readiness"
 }
-

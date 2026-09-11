@@ -1,0 +1,72 @@
+{
+  "capturedAt": "2026-09-11T02:56:36.459Z",
+  "parent": "6bbabd3187498a3bf0b69b9f2d714bf787fb1ca0",
+  "commit": "2d1936c7db150832b96b196c13f990501463c21f",
+  "tree": "78e4627223acba17868dd509b2833c950f563bd5",
+  "branch": "codex/production-readiness",
+  "worktree": "E:/Proyectos/GitHub/Lysto-production-readiness",
+  "candidateCount": 536,
+  "sourceIndexUnchanged": true,
+  "versions": {
+    "node": "v22.23.2",
+    "pnpm": "9.15.0",
+    "supabase": "2.115.0"
+  },
+  "hashes": {
+    "package.json": "ddef6e14b824c042bfb23b4691d559967fe87aaf00e7bf1d41962ead367cf6d0",
+    "pnpm-lock.yaml": "83638b145687cf43180335bebc05d6889744b0fead188accd45e97622ac784cc",
+    "vendor/waltergaltieri-mercadopago-split-0.1.0.tgz": "484bc749154d70b6ce4c81fda2f93ba2a832d12e1ef952b339b2688dcd1990ef",
+    "supabase/migrations/202608190001_initial_schema.sql": "02a7bfe90300b68e1e17924d1c9e16f854572aaff4f08e3954ab791234fe70f4",
+    "supabase/migrations/202608190002_operational_extensions.sql": "e9b42f4cf9d807977b06f23959a023c90d705cd7ca03fc2a3ea4be722091cb96",
+    "supabase/migrations/202608190003_operational_functions.sql": "95fdfaf476d9c75084cbf8b2e17143fe55ca5fad2b089cc1b80b0ea7e6bf6284",
+    "supabase/migrations/202608190004_transactional_workflows.sql": "723af88bc4d6564e06ecb0698950a2ee079eb0da3ce2d5f78b48feedefae802c",
+    "supabase/migrations/202608190005_security_and_roles.sql": "3f8ab5eb04b9614749e99d0e6f94d8938ad3efc20345985e6dd8b28aafb1147f",
+    "supabase/migrations/202608190006_storage_buckets.sql": "78c191f910427229ae253d08b085199fc14150dceb4631b97b6791228cf3a8ed",
+    "supabase/migrations/202608190007_outbox_and_idempotency.sql": "c2ac0ba88339cd7fbd55fe56f26678e84c4470ae0f534162137e3898a1917786",
+    "supabase/migrations/20260910195050_service_quotes_and_onsite_extras.sql": "ade4c8d1a1b2a72d6e4b3362510eb746becdcc37d66041fabc87f16e870eefdf",
+    "supabase/migrations/20260910204604_marketplace_split_checkout.sql": "c1cbcb0c69e65cdac31107368c76e6851782ad1699120f4273230632fd1e0177",
+    "supabase/migrations/20260910220000_marketplace_guards.sql": "28ab7cfc312a3c2136dc18769e44b64f453163694a93431dfd55ea678360dce8"
+  },
+  "secretScan": {
+    "scope": "536 candidate source/documentation files; binary vendor provenance reviewed separately",
+    "method": "private key / known credential patterns, filenames only reported",
+    "findings": 0,
+    "limitation": "A bounded pattern scan is not a guarantee of absence; T33 adds release secret scanning."
+  },
+  "checks": {
+    "install": {
+      "exitCode": 0,
+      "log": "output/production-readiness/baseline-install.log"
+    },
+    "lint": {
+      "exitCode": 0,
+      "log": "output/production-readiness/baseline-lint.log"
+    },
+    "typecheck": {
+      "exitCode": 0,
+      "log": "output/production-readiness/baseline-typecheck.log"
+    },
+    "tests": {
+      "exitCode": 0,
+      "domainPassed": 124,
+      "unitPassed": 263,
+      "databaseSkipped": 8,
+      "log": "output/production-readiness/baseline-test.log"
+    },
+    "build": {
+      "status": "interrupted",
+      "exitCode": -1,
+      "compiledSuccessfully": true,
+      "log": "output/production-readiness/baseline-build-resource-interrupted.log",
+      "note": "First attempt included a temporary upstream source under output; moved outside app. Second compiled and reached page data, then deliberately stopped due host memory pressure. No complete baseline build pass claimed; T02 must validate bounded workers."
+    }
+  },
+  "exclusions": [
+    "local env files and secrets",
+    "output",
+    "build artifacts",
+    "attachments",
+    "browser test artifacts",
+    "node_modules"
+  ]
+}

@@ -27,3 +27,10 @@ test-results/
 .supabase/
 supabase/.temp/
 supabase/.branches/
+
+# Isolated release verification and local attachments
+.next-*/
+output/
+.codex-remote-attachments/
+.playwright-cli/
+.worktrees/
