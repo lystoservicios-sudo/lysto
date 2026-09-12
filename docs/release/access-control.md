@@ -24,7 +24,9 @@ El middleware refresca cookies Supabase SSR mediante getAll/setAll. Transmite lo
 
 `safeLocalRedirectPath()` admite destinos locales dentro del panel del rol verificado. Rechaza orígenes externos, URLs relativas a otro host, barras invertidas, caracteres de control, codificación inválida y navegación a otro panel. El login usa este filtro para el campo opcional next y mantiene el destino por rol cuando el valor no es válido.
 
-## Matriz de las 36 rutas API
+## Matriz histórica de las 36 rutas API
+
+Esta sección conserva la línea base de T05. El inventario operativo vigente, generado desde el código y verificado automáticamente por T26, está en [api-inventory.md](../architecture/api-inventory.md). Ese inventario contiene 92 métodos exportados, incluidas las rutas agregadas después de esta auditoría.
 
 Se conservan 14 rutas con implementación DB/proveedor: 13 privadas y un webhook público. Se mantienen 5 rutas retiradas. Se cierran explícitamente 16 rutas parciales y un cálculo auxiliar pendiente de límites/contrato. La matriz HTTP cubre los 37 métodos exportados de las rutas privadas activas o cerradas; los 5 retiros y el webhook tienen contratos separados. HEAD/OPTIONS generados por el framework no se cuentan como métodos exportados de aplicación.
 

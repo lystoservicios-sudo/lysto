@@ -10,7 +10,12 @@ const sessionlessApis = new Set([
   '/api/service-request/preview',
   '/api/admin/assign-professional',
   '/api/jobs/advance',
-  '/api/jobs/update-status'
+  '/api/jobs/update-status',
+  '/api/admin/approve-professional',
+  '/api/admin/pricing/update',
+  '/api/pro/jobs/action',
+  '/api/pro/onboarding/evaluate',
+  '/api/professional/respond-request'
 ])
 
 export async function middleware(request: NextRequest) {

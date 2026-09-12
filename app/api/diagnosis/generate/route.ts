@@ -1,4 +1,8 @@
-import { unavailableRoute } from '@/lib/http/route-handler'
+import { calculatePreliminaryDiagnosis } from '@/lib/diagnosis/preliminary'
+import { privateJson } from '@/lib/http/api-error'
+import { readPrivateJsonBody } from '@/lib/http/private-json-body'
+import { privateRoute } from '@/lib/http/route-handler'
 
-// Closed until the authorized, persistent implementation replaces this contract.
-export const POST = unavailableRoute({ roles: ['customer', 'admin'] })
+export const POST = privateRoute({ roles: ['customer', 'admin'] }, async (request) => {
+  return privateJson(calculatePreliminaryDiagnosis(await readPrivateJsonBody(request, 4096)))
+})

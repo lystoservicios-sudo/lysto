@@ -1,6 +1,2 @@
-import { NextResponse } from 'next/server'
-
-export async function POST(_request: Request) {
-  void _request
-  return NextResponse.json({ error: 'endpoint_retired', replacement: '/api/pricing/offers' }, { status: 410 })
-}
+import { retiredPost } from '@/lib/http/retired-route'
+export const POST = retiredPost('/api/pricing/offers')

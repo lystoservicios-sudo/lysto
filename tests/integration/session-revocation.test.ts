@@ -138,7 +138,7 @@ describe('effective session revocation and administrative MFA', () => {
     a.refreshToken = result.data.session.refresh_token
   }
   it('requires administrative MFA in both the API and direct financial reads', async () => {
-    const response = await http('/api/admin/pricing/update', 'finance', 'POST')
+    const response = await http('/api/pricing/policy', 'finance', 'PUT')
     expect(response.status).toBe(403)
     expect((await response.json()).code).toBe('mfa_required')
     expect(
@@ -162,7 +162,7 @@ describe('effective session revocation and administrative MFA', () => {
       Buffer.from(fixture.accounts.finance.accessToken.split('.')[1], 'base64url').toString()
     )
     expect(claims.aal).toBe('aal2')
-    expect((await http('/api/admin/pricing/update', 'finance', 'POST')).status).toBe(503)
+    expect((await http('/api/pricing/policy', 'finance', 'PUT')).status).toBe(400)
     expect(
       await (
         await raw(`payments?select=id&id=eq.${paymentId}`, fixture.accounts.finance.accessToken)
@@ -189,17 +189,26 @@ describe('effective session revocation and administrative MFA', () => {
     try {
       const context = await browser.newContext()
       const header = await fixtureCookieHeader(fixture.accounts.quality)
-      await context.addCookies(header.split('; ').map(cookie => {
-        const separator = cookie.indexOf('=')
-        return { name: cookie.slice(0, separator), value: cookie.slice(separator + 1), url: app!.baseURL, sameSite: 'Lax' as const }
-      }))
+      await context.addCookies(
+        header.split('; ').map((cookie) => {
+          const separator = cookie.indexOf('=')
+          return {
+            name: cookie.slice(0, separator),
+            value: cookie.slice(separator + 1),
+            url: app!.baseURL,
+            sameSite: 'Lax' as const
+          }
+        })
+      )
       const page = await context.newPage()
       await page.goto(new URL('/seguridad', app!.baseURL).toString())
       await page.getByRole('button', { name: 'Configurar autenticador' }).click()
       const key = page.getByLabel('Clave de configuración')
       await key.waitFor({ state: 'visible' })
       await page.waitForFunction(() => {
-        const image = document.querySelector<HTMLImageElement>('img[alt="QR para configurar tu autenticador"]')
+        const image = document.querySelector<HTMLImageElement>(
+          'img[alt="QR para configurar tu autenticador"]'
+        )
         return image?.complete && image.naturalWidth > 0
       })
       const secret = await key.inputValue()
@@ -207,14 +216,20 @@ describe('effective session revocation and administrative MFA', () => {
       await page.getByRole('button', { name: 'Verificar y continuar' }).click()
       await page.waitForURL(new URL('/admin/dashboard', app!.baseURL).toString())
       expect(await page.getByLabel('Clave de configuración').count()).toBe(0)
-      expect(await page.evaluate(() => Object.keys(localStorage).filter(key => /secret|totp|setup/i.test(key)))).toEqual([])
+      expect(
+        await page.evaluate(() =>
+          Object.keys(localStorage).filter((key) => /secret|totp|setup/i.test(key))
+        )
+      ).toEqual([])
       await page.reload()
       expect(new URL(page.url()).pathname).toBe('/admin/dashboard')
       await context.close()
     } catch {
       // Playwright action logs can include a filled OTP. Never persist them.
       throw new Error('Browser MFA flow failed; session and setup material were not recorded')
-    } finally { await browser.close() }
+    } finally {
+      await browser.close()
+    }
   }, 90000)
   it('suspends with an audited reason and alerts operations once while retaining financial history', async () => {
     const operations = fixture.accounts.operations,
@@ -329,7 +344,7 @@ describe('effective session revocation and administrative MFA', () => {
     )
     try {
       expect(await (await raw(`payments?select=id&id=eq.${paymentId}`, token)).json()).toEqual([])
-      expect((await http('/api/admin/pricing/update', 'finance', 'POST')).status).toBe(403)
+      expect((await http('/api/pricing/policy', 'finance', 'PUT')).status).toBe(403)
     } finally {
       await database!.query(
         "insert into private.admin_profile_permissions(admin_profile_id,permission) values($1,'finance')",

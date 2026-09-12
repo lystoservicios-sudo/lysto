@@ -28,17 +28,13 @@ export const privateHttpMethods = [
   ['POST', '/api/mercadopago/create-preference'],
   ['POST', '/api/mercadopago/oauth/authorize'],
   ['GET', '/api/mercadopago/oauth/callback'],
-  ['POST', '/api/admin/approve-professional'],
   ['POST', '/api/admin/invite-professional'],
-  ['POST', '/api/admin/pricing/update'],
   ['POST', '/api/admin/professionals/approve'],
   ['POST', '/api/admin/professionals/suspend'],
   ['POST', '/api/equipment/register'],
   ['POST', '/api/jobs/final-report'],
   ['POST', '/api/maintenance/schedule'],
   ['POST', '/api/notifications/emit'],
-  ['POST', '/api/pro/jobs/action'],
-  ['POST', '/api/pro/onboarding/evaluate'],
   ['POST', '/api/professional/onboarding'],
   ['GET', '/api/professional/onboarding'],
   ['GET', '/api/professional/onboarding/context'],
@@ -53,7 +49,6 @@ export const privateHttpMethods = [
   ['POST', '/api/admin/professionals/review'],
   ['POST', '/api/admin/professionals/documents/review'],
   ['PATCH', '/api/admin/invite-professional'],
-  ['POST', '/api/professional/respond-request'],
   ['POST', '/api/quality/open-case'],
   ['POST', '/api/reviews/submit'],
   ['POST', '/api/uploads/sign'],
@@ -343,14 +338,14 @@ describe('HTTP access control with real Auth sessions', () => {
   }, 600_000)
 
   it.each([['professionalApproved', '/api/jobs/final-report']] as const)(
-    'does not simulate completion for authorized %s on %s',
+    'rejects invalid completion input for authorized %s on %s',
     async (account, path) => {
       const response = await request('POST', path, account, {
         adminProfileId: 'forged',
         ownerId: 'forged'
       })
-      expect(response.status).toBe(503)
-      expect(await response.json()).toMatchObject({ code: 'feature_unavailable' })
+      expect(response.status).toBe(400)
+      expect(await response.json()).toMatchObject({ code: 'invalid_input' })
     },
     240_000
   )

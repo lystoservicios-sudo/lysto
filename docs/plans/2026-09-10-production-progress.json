@@ -14,7 +14,7 @@
     "environment": "isolated-local-worktree"
   },
   "currentMilestone": "IMPLEMENTATION_CONTINUES_WITH_DATABASE_VERIFICATION_BLOCKED",
-  "nextTask": "T26",
+  "nextTask": "T27",
   "recommendedOrder": [
     "T00",
     "T01",
@@ -1015,14 +1015,31 @@
         "B06"
       ],
       "ownerRole": "Agente backend",
-      "status": "pending",
-      "currentStep": null,
-      "completedSteps": [],
-      "evidence": [],
+      "status": "in_progress",
+      "currentStep": 6,
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "evidence": [
+        "docs/architecture/api-inventory.md",
+        "docs/architecture/api-inventory.json",
+        "docs/release/api-inventory-verification.json"
+      ],
       "commit": null,
-      "blockedBy": [],
-      "nextAction": "Aplicar el inventario de las 36 rutas del anexo, registrando destino canónico, auth, método y prueba. Agregar rutas nuevas a la matriz.",
-      "deviations": []
+      "blockedBy": [
+        "Docker Desktop stale dockerInference runtime socket blocks full authenticated HTTP integration",
+        "Full 92-method HTTP matrix requires designated staging environment"
+      ],
+      "nextAction": "Run test:integration -- api-inventory with disposable Supabase when Docker recovers and execute the complete 92-method matrix in staging; continue T27 meanwhile.",
+      "deviations": [
+        "The original 36-route baseline grew to 92 exported methods; the AST-generated inventory is authoritative.",
+        "Ten legacy POST contracts return 410 with a canonical destination and never redirect request bodies.",
+        "Diagnosis remains an authenticated, rate-limited preliminary calculation with persisted=false."
+      ]
     },
     {
       "id": "T27",
