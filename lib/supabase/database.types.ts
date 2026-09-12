@@ -3672,13 +3672,17 @@ export type Database = {
       submit_customer_review_transaction: {
         Args: {
           p_comment: string
-          p_customer_id: string
+          p_idempotency_key: string
           p_job_id: string
           p_problem_resolved: boolean
           p_professional_rating: number
           p_service_rating: number
           p_would_hire_again: boolean
         }
+        Returns: Json
+      }
+      confirm_job_outcome: {
+        Args: { p_job_id: string; p_decision: string; p_reason: string | null; p_idempotency_key: string }
         Returns: Json
       }
       submit_professional_application: {
