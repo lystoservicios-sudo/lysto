@@ -1,6 +1,6 @@
 # T11 — Alta y habilitación de profesionales
 
-Implementación local en verificación final. La hoja de ruta conserva las 40 tareas y la salida de producción sigue bloqueada por sus puertas de aceptación.
+Implementación verificada localmente. La hoja de ruta conserva las 40 tareas y la salida de producción sigue bloqueada por sus puertas de aceptación.
 
 ## Operación
 

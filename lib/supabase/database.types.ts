@@ -2681,62 +2681,109 @@ export type Database = {
       }
       service_quotes: {
         Row: {
+          acceptance_result: Json | null
           accepted_at: string | null
           address: Json
           created_at: string
+          created_by: string | null
           customer_id: string
           expires_at: string
           id: string
           input: Json
+          manual_route_reason: string | null
+          policy_id: string | null
+          policy_snapshot: Json | null
           preferred_date: string
+          previous_quote_id: string | null
           quote: Json
           request_id: string | null
           review_reason: string | null
           reviewed_at: string | null
           reviewed_by: string | null
+          revision: number
+          revision_reason: string | null
+          root_quote_id: string | null
           status: string
           time_window: string
+          upload_intent_ids: string[]
+          version: number
         }
         Insert: {
+          acceptance_result?: Json | null
           accepted_at?: string | null
           address: Json
           created_at?: string
+          created_by?: string | null
           customer_id: string
           expires_at: string
           id?: string
           input: Json
+          manual_route_reason?: string | null
+          policy_id?: string | null
+          policy_snapshot?: Json | null
           preferred_date: string
+          previous_quote_id?: string | null
           quote: Json
           request_id?: string | null
           review_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          revision?: number
+          revision_reason?: string | null
+          root_quote_id?: string | null
           status: string
           time_window: string
+          upload_intent_ids?: string[]
+          version?: number
         }
         Update: {
+          acceptance_result?: Json | null
           accepted_at?: string | null
           address?: Json
           created_at?: string
+          created_by?: string | null
           customer_id?: string
           expires_at?: string
           id?: string
           input?: Json
+          manual_route_reason?: string | null
+          policy_id?: string | null
+          policy_snapshot?: Json | null
           preferred_date?: string
+          previous_quote_id?: string | null
           quote?: Json
           request_id?: string | null
           review_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          revision?: number
+          revision_reason?: string | null
+          root_quote_id?: string | null
           status?: string
           time_window?: string
+          upload_intent_ids?: string[]
+          version?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "service_quotes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "service_quotes_customer_id_fkey"
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customer_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_quotes_previous_quote_id_fkey"
+            columns: ["previous_quote_id"]
+            isOneToOne: true
+            referencedRelation: "service_quotes"
             referencedColumns: ["id"]
           },
           {
@@ -2751,6 +2798,13 @@ export type Database = {
             columns: ["reviewed_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_quotes_root_quote_id_fkey"
+            columns: ["root_quote_id"]
+            isOneToOne: false
+            referencedRelation: "service_quotes"
             referencedColumns: ["id"]
           },
         ]
@@ -3285,6 +3339,7 @@ export type Database = {
             Returns: Json
           }
       get_quote_policy: { Args: never; Returns: Json }
+      get_quote_policy_record: { Args: never; Returns: Json }
       get_registration_policy: { Args: never; Returns: Json }
       get_session_context: { Args: never; Returns: Json }
       get_upload_intent: { Args: { p_intent_id: string }; Returns: Json }
@@ -3326,6 +3381,15 @@ export type Database = {
           warranty_days: number
           work_done: string
         }[]
+      }
+      persist_calculated_quote: {
+        Args: {
+          p_actor_session_id: string
+          p_actor_user_id: string
+          p_customer_id: string
+          p_payload: Json
+        }
+        Returns: Json
       }
       professional_invitation_matches: {
         Args: { p_email: string; p_token: string }
@@ -3387,6 +3451,14 @@ export type Database = {
         Args: { p_quote_id: string; p_reason: string }
         Returns: Json
       }
+      review_service_quote_v2: {
+        Args: {
+          p_expected_version: number
+          p_quote_id: string
+          p_reason: string
+        }
+        Returns: Json
+      }
       save_professional_onboarding: {
         Args: { p_expected_version: number; p_input: Json }
         Returns: Json
@@ -3420,11 +3492,19 @@ export type Database = {
         Returns: Json
       }
       submit_service_quote: { Args: { p_quote_id: string }; Returns: Json }
+      submit_service_quote_v2: {
+        Args: { p_expected_version: number; p_quote_id: string }
+        Returns: Json
+      }
       suspend_professional: {
         Args: { p_professional_id: string; p_reason: string }
         Returns: Json
       }
       update_quote_policy: { Args: { p_policy: Json }; Returns: Json }
+      update_quote_policy_v2: {
+        Args: { p_expected_revision: number; p_policy: Json; p_reason: string }
+        Returns: Json
+      }
       write_customer_asset: {
         Args: {
           p_archive?: boolean

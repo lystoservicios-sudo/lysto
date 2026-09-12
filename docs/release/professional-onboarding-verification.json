@@ -1,7 +1,7 @@
 {
   "task": "T11",
-  "status": "implemented_build_pending",
-  "checkedAt": "2026-09-12T04:11:06.549Z",
+  "status": "locally_verified",
+  "checkedAt": "2026-09-12T04:13:43.081Z",
   "releaseReady": false,
   "checks": {
     "unit": {
@@ -84,20 +84,29 @@
       "addedSinceBaseline": 0,
       "baselineLog": "output/production-readiness/t11-baseline-advisors.log",
       "finalLog": "output/production-readiness/t11-advisors.log"
+    },
+    "build": {
+      "commit": "4613ae78f79b4b48bc5dacc3486b878be4c6efd5",
+      "environment": "isolated-local-production-build",
+      "checkout": "E:/Proyectos/GitHub/Lysto-production-build-check",
+      "dependencies": "junction to verified frozen lock installation, including direct Sharp 0.35.4",
+      "status": "passed",
+      "startedAt": "2026-09-12T04:11:27.799Z",
+      "exitCode": 0,
+      "completedAt": "2026-09-12T04:12:51.699Z"
     }
   },
   "review": {
     "method": "local review of session and grant locks, invitation role binding, anonymous gateway boundaries, versioned submission snapshots, documentary expiry and direct Storage guards, atomic audit rollback, SSR hydration and browser persistence",
     "independentFinalReview": false
   },
-  "pending": [
-    "isolated production build"
-  ],
+  "pending": [],
   "externalDependencies": [
     "D08/T36: actual documentary requirements, legal approval and human environment acceptance",
     "T24: invitation outbox delivery and sandbox confirmation",
     "T36: inventory legacy infrastructure approvals",
     "T28: documentary renewal/reactivation workflow"
   ],
-  "originalIndexSha256": "85c6b16dcb04891642c46370bfd9c5342a21e79dea59eff11cc4fac915c84f67"
+  "originalIndexSha256": "85c6b16dcb04891642c46370bfd9c5342a21e79dea59eff11cc4fac915c84f67",
+  "codeCommit": "4613ae78f79b4b48bc5dacc3486b878be4c6efd5"
 }

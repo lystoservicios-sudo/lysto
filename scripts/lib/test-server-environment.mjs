@@ -10,6 +10,7 @@ export function createTestServerEnvironment(env, cwd = process.cwd()) {
   }
   const isolated = { ...env }
   for (const key of Object.keys(isolated)) if (key.startsWith('MERCADOPAGO_')) delete isolated[key]
+  delete isolated.GOOGLE_MAPS_SERVER_API_KEY
   return { ...isolated, APP_ENV: 'test', MERCADOPAGO_MODE: 'test', MERCADOPAGO_DATABASE_URL: target.databaseUrl,
     NEXT_PUBLIC_SUPABASE_URL: target.apiUrl, NEXT_PUBLIC_SUPABASE_ANON_KEY: env.LYSTO_TEST_ANON_KEY,
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: env.LYSTO_TEST_ANON_KEY,

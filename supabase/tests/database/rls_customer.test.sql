@@ -229,7 +229,7 @@ select throws_ok(
 -- now live in service_quotes.test.sql and pricing-routes.vitest.test.ts.
 select ok(not has_function_privilege('authenticated', 'public.create_service_request_from_app(uuid,uuid,text,text,text,date,text,public.urgency_level,jsonb,numeric,numeric,numeric)', 'execute'), 'customer cannot bypass immutable quotes through the legacy public RPC');
 select ok(not has_function_privilege('authenticated', 'private.create_service_request_from_app(uuid,uuid,text,text,text,date,text,public.urgency_level,jsonb,numeric,numeric,numeric)', 'execute'), 'customer cannot bypass immutable quotes through the legacy private RPC');
-select ok(has_function_privilege('authenticated', 'public.submit_service_quote(uuid)', 'execute'), 'customer can use the authenticated quote acceptance entrypoint');
+select ok(has_function_privilege('authenticated', 'public.submit_service_quote_v2(uuid,integer)', 'execute'), 'customer can use the authenticated versioned quote acceptance entrypoint');
 select throws_ok(
   $$select public.apply_mercadopago_payment_webhook('customer-forged-event', 'missing-payment', 'approved', '{}'::jsonb)$$,
   '42501',

@@ -32,7 +32,7 @@ El script valida la identidad descartable. La ejecución programada en producci�
 
 ## Integraciones posteriores
 
-T13/T14 deben incorporar el identificador del borrador a la transacción de envío de la solicitud. T11 añade el acceso limitado de profesionales todavía en onboarding; la API actual conserva el requisito T06 de profesional aprobado. T12/T19/T20 reemplazan las fichas profesionales demostrativas por trabajos reales y enlazan estos adjuntos con el informe. Las fotos seleccionadas en la ficha demostrativa no habilitan una subida contra un trabajo ficticio.
+T14 conserva los identificadores de las fotos verificadas seleccionadas dentro del presupuesto, los hereda en sus revisiones y los vincula atómicamente al aceptar la solicitud mediante `private.attach_quote_uploads`. Se comprueban cliente, borrador, objeto y estado; no se adjuntan archivos deseleccionados ni pendientes. T11 incorpora rutas limitadas para documentos de onboarding; la API general mantiene el requisito T06 de profesional habilitado. T12/T19/T20 reemplazan las fichas profesionales demostrativas por trabajos reales y enlazan estos adjuntos con el informe. Las fotos seleccionadas en la ficha demostrativa no habilitan una subida contra un trabajo ficticio.
 
 La suite antigua de Storage que admitía firmas privadas y finalización sin inspección se sustituye por pruebas del cierre de esos contratos y del ciclo de intentos. Se conservan pruebas de avatares, identidad, rutas, permisos, aislamiento y prohibición de escritura arbitraria. Las pruebas HTTP ejercitan bytes reales; los fixtures SQL sólo representan el acuse confiable de una inspección.
 

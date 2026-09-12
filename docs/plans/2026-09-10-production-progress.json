@@ -14,7 +14,7 @@
     "environment": "isolated-local-worktree"
   },
   "currentMilestone": "BASELINE_CAPTURED",
-  "nextTask": "T11",
+  "nextTask": "T14",
   "recommendedOrder": [
     "T00",
     "T01",
@@ -454,8 +454,8 @@
         "B09"
       ],
       "ownerRole": "Agente full stack + responsable de profesionales",
-      "status": "implemented",
-      "currentStep": 6,
+      "status": "verified",
+      "currentStep": null,
       "completedSteps": [
         1,
         2,
@@ -468,9 +468,9 @@
         "docs/release/professional-onboarding.md",
         "docs/release/professional-onboarding-verification.json"
       ],
-      "commit": null,
+      "commit": "4613ae78f79b4b48bc5dacc3486b878be4c6efd5",
       "blockedBy": [],
-      "nextAction": "Build aislado del checkpoint; luego continuar T14.",
+      "nextAction": "Continuar T14; entrega de invitaciones en T24 y renovación documental en T28.",
       "deviations": []
     },
     {
@@ -552,13 +552,24 @@
         "B08"
       ],
       "ownerRole": "Agente de backend + finanzas",
-      "status": "pending",
-      "currentStep": null,
-      "completedSteps": [],
-      "evidence": [],
+      "status": "implemented",
+      "currentStep": 6,
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "evidence": [
+        "docs/release/pricing-acceptance.md",
+        "docs/release/pricing-verification.json"
+      ],
       "commit": null,
-      "blockedBy": [],
-      "nextAction": "Probar cotización sin ruta/precio de repuesto, fecha pasada, fuera de cobertura, versión vencida, moneda/decimales inválidos, cambio de tarifa e intento de enviar total desde cliente.",
+      "blockedBy": [
+        "D05: aprobación de casos financieros reales"
+      ],
+      "nextAction": "Build aislado; continuar T24 manteniendo pendiente la aprobación comercial.",
       "deviations": []
     },
     {
@@ -1626,13 +1637,13 @@
     "updateRequiredAfterImplementation": true
   },
   "checkpoint": {
-    "updatedAt": "2026-09-12T04:11:06.557Z",
+    "updatedAt": "2026-09-12T05:05:30.826Z",
     "branch": "codex/production-readiness",
-    "commit": "87c6e6db50ef1ebce071b13c33b76b7912b876e9",
+    "commit": "4613ae78f79b4b48bc5dacc3486b878be4c6efd5",
     "filesChanged": [],
-    "lastVerification": "T11: 448 unit, 171 domain, 7 tooling, 198 integration zero skipped; 495 SQL fresh/upgrade y 37 migraciones con datos y esquema conservados. Tipos/lint y advisors sin nuevos hallazgos. Build aislado pendiente.",
+    "lastVerification": "T14: 452 unit, 171 domain, 8 tooling, 216 integration sin omisiones; 511 SQL fresh/upgrade y 41 migraciones, dos presupuestos históricos conservados; tipos/lint y cero nuevos advisors. Build aislado pendiente.",
     "unresolvedFailures": [],
-    "nextCommand": "Build isolated T11 candidate."
+    "nextCommand": "Build isolated T14 candidate."
   },
   "events": [
     {

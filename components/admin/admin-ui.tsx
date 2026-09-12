@@ -39,6 +39,7 @@ export function AdminWorkspace({ children }: { children: ReactNode }) {
   const [query, setQuery] = useState('')
   const pathname = usePathname()
   const connected =
+    pathname === '/admin/calculadora' ||
     pathname === '/admin/configuracion' ||
     pathname === '/admin/auditoria' ||
     pathname === '/admin/profesionales' ||

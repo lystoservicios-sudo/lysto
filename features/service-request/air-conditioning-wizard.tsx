@@ -186,7 +186,7 @@ export function AirConditioningWizard({
         ? prices.priority
         : prices.flexible
   async function saveQuote() {
-    if (quoteBusy) return
+    if (quoteBusy || uploadBusy || savedPhotos.length !== files.length) return
     setQuoteBusy(true)
     setQuoteNotice('')
     try {
@@ -213,6 +213,7 @@ export function AirConditioningWizard({
           },
           preferredDate: selectedDay === 'Otro día' ? customDate : day,
           timeWindow,
+          uploadIntentIds: savedPhotos.map((photo) => photo.upload.intentId),
           save: true
         })
       })
@@ -386,7 +387,12 @@ export function AirConditioningWizard({
               />
               <QuoteBreakdown quote={selectedPrice} />
               <Button
-                disabled={quoteBusy || (selectedDay === 'Otro día' && !customDate)}
+                disabled={
+                  quoteBusy ||
+                  uploadBusy ||
+                  savedPhotos.length !== files.length ||
+                  (selectedDay === 'Otro día' && !customDate)
+                }
                 onClick={() => void saveQuote()}
               >
                 {quoteBusy
