@@ -1,0 +1,8 @@
+{
+  "task": "T22",
+  "status": "implemented_database_verification_pending",
+  "migration": "supabase/migrations/20260912151657_receipt_revocation_and_public_projection.sql",
+  "implemented": ["server-only-token-lookup", "strict-minimal-projection", "revocation-compatible-cache", "noindex-no-referrer", "shared-rate-limit", "audited-token-revocation-regeneration", "service-not-fiscal-copy"],
+  "localChecks": ["domain-171", "access-control-unit", "typecheck", "lint"],
+  "pending": ["integration-public-receipt-disposable-supabase", "pgtap-disposable-supabase", "hosting URL-log redaction", "D05/D08 fiscal and privacy approval"]
+}

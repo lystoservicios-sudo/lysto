@@ -3524,13 +3524,19 @@ export type Database = {
       lookup_public_receipt: {
         Args: { p_token: string }
         Returns: {
+          confirmation_status: string
+          final_state: string
           issued_at: string
-          next_maintenance_date: string
+          next_maintenance_date: string | null
           professional_name: string
           service_name: string
-          warranty_days: number
+          warranty_until: string | null
           work_done: string
         }[]
+      }
+      manage_public_receipt_token: {
+        Args: { p_receipt_id: string; p_expected_token: string; p_action: string; p_reason: string }
+        Returns: Json
       }
       retry_outbox_delivery: {
         Args: { p_event_id: string; p_expected_revision: number; p_reason: string }

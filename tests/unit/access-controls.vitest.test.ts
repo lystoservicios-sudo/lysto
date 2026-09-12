@@ -59,8 +59,10 @@ beforeEach(() => {
 })
 
 describe('authorization before parsing input or side effects', () => {
-  it('does not issue a public receipt before token-backed publication is implemented', () => {
-    expect(() => PublicReceiptPage()).toThrow('NEXT_HTTP_ERROR_FALLBACK;404')
+  it('rejects a malformed public receipt token before data access', async () => {
+    await expect(
+      PublicReceiptPage({ params: Promise.resolve({ token: 'malformed' }) })
+    ).rejects.toThrow('NEXT_HTTP_ERROR_FALLBACK;404')
   })
   it('rejects a finance administrator before privileged quote calculation', async () => {
     actor('admin', ['finance'])

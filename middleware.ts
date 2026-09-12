@@ -36,6 +36,7 @@ export async function middleware(request: NextRequest) {
   if (pathname === '/comprobante' || pathname.startsWith('/comprobante/')) {
     const response = withCorrelation(privateResponse(nextResponse()))
     response.headers.set('X-Robots-Tag', 'noindex, nofollow')
+    response.headers.set('Referrer-Policy', 'no-referrer')
     return response
   }
   const privatePage = requiredRoleForPath(pathname) !== null || pathname === '/seguridad'

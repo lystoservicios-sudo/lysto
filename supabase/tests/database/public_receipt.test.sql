@@ -1,0 +1,18 @@
+begin;
+create extension if not exists pgtap with schema extensions;
+set search_path=public,extensions;
+select plan(12);
+select has_column('public','receipts','revoked_at','Receipt can be revoked');
+select has_column('public','receipts','expires_at','Receipt cache lifetime is bounded');
+select has_table('private','receipt_token_events','Token rotations are audited privately');
+select ok((select relrowsecurity and relforcerowsecurity from pg_class where oid=to_regclass('private.receipt_token_events')),'Token audit forces RLS');
+select ok(not has_table_privilege('service_role','private.receipt_token_events','select'),'Service role cannot read token audit directly');
+select ok(has_function_privilege('service_role','public.lookup_public_receipt(uuid)','execute'),'Server can resolve public receipt');
+select ok(not has_function_privilege('anon','public.lookup_public_receipt(uuid)','execute'),'Anonymous SQL cannot resolve receipt');
+select ok(not has_function_privilege('authenticated','public.lookup_public_receipt(uuid)','execute'),'Authenticated SQL cannot bypass server rate limit');
+select ok(has_function_privilege('authenticated','public.manage_public_receipt_token(uuid,uuid,text,text)','execute'),'Admin can enter guarded token management');
+select ok(not has_function_privilege('anon','public.manage_public_receipt_token(uuid,uuid,text,text)','execute'),'Anonymous cannot manage receipt tokens');
+select ok(to_regclass('public.public_receipt_view') is null,'Broad legacy receipt view is removed');
+select ok(not has_table_privilege('authenticated','public.receipts','update'),'Receipt mutation remains transactional');
+select * from finish();
+rollback;
