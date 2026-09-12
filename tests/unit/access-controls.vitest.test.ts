@@ -12,21 +12,51 @@ import { POST as upload } from '@/app/api/uploads/sign/route'
 import PublicReceiptPage from '@/app/comprobante/[token]/page'
 
 function request(path: string, body: unknown = {}) {
-  return new Request(`https://lysto.test${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: 'https://lysto.test' }, body: JSON.stringify(body) })
+  return new Request(`https://lysto.test${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Origin: 'https://lysto.test' },
+    body: JSON.stringify(body)
+  })
 }
 function actor(role = 'admin', permissions = ['operations']) {
-  const ctx = { profile_id: '00000000-0000-4000-8000-000000000002', role,
-    session_id: '00000000-0000-4000-8000-000000000001', session_active: true, aal: 'aal2',
+  const ctx = {
+    profile_id: '00000000-0000-4000-8000-000000000002',
+    role,
+    session_id: '00000000-0000-4000-8000-000000000001',
+    session_active: true,
+    aal: 'aal2',
     admin_profile_id: role === 'admin' ? '00000000-0000-4000-8000-000000000003' : null,
     customer_id: role === 'customer' ? '00000000-0000-4000-8000-000000000004' : null,
     professional_id: role === 'professional' ? '00000000-0000-4000-8000-000000000005' : null,
-    professional_status: role === 'professional' ? 'approved' : null, permissions: role === 'admin' ? permissions : [] }
-  const from = vi.fn(() => ({ select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), single: vi.fn().mockResolvedValue({ data: { id: ctx.profile_id, role }, error: null }) }))
+    professional_status: role === 'professional' ? 'approved' : null,
+    professional_eligible: role === 'professional',
+    permissions: role === 'admin' ? permissions : []
+  }
+  const from = vi.fn(() => ({
+    select: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    single: vi.fn().mockResolvedValue({ data: { id: ctx.profile_id, role }, error: null })
+  }))
   const rpc = vi.fn().mockResolvedValue({ data: ctx, error: null })
-  mocks.client.mockResolvedValue({ auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: '00000000-0000-4000-8000-000000000001', app_metadata: { app_role: role } } }, error: null }) }, rpc, from })
+  mocks.client.mockResolvedValue({
+    auth: {
+      getUser: vi.fn().mockResolvedValue({
+        data: {
+          user: { id: '00000000-0000-4000-8000-000000000001', app_metadata: { app_role: role } }
+        },
+        error: null
+      })
+    },
+    rpc,
+    from
+  })
   return { rpc, from }
 }
-beforeEach(() => { vi.clearAllMocks(); actor() })
+beforeEach(() => {
+  vi.clearAllMocks()
+  vi.stubEnv('NEXT_PUBLIC_APP_URL', 'https://lysto.test')
+  actor()
+})
 
 describe('authorization before parsing input or side effects', () => {
   it('does not issue a public receipt before token-backed publication is implemented', () => {
@@ -44,16 +74,20 @@ describe('authorization before parsing input or side effects', () => {
     ['/api/jobs/final-report', report],
     ['/api/uploads/sign', upload]
   ] as const)('rejects anonymous %s before evaluating attacker input', async (path, handler) => {
-    mocks.client.mockResolvedValue({ auth: { getUser: vi.fn().mockResolvedValue({ data: { user: null }, error: null }) } })
+    mocks.client.mockResolvedValue({
+      auth: { getUser: vi.fn().mockResolvedValue({ data: { user: null }, error: null }) }
+    })
     const response = await handler(request(path, { adminProfileId: 'forged', ownerId: 'forged' }))
     expect(response.status).toBe(401)
     expect(response.headers.get('cache-control')).toContain('no-store')
   })
-  it('does not return simulated success to a correctly authorized operator', async () => {
+  it('rejects forged actor fields on the implemented professional approval endpoint', async () => {
     actor()
-    const response = await approve(request('/api/admin/professionals/approve', { adminProfileId: 'forged' }))
-    expect(response.status).toBe(503)
-    expect(await response.json()).toMatchObject({ code: 'feature_unavailable' })
+    const response = await approve(
+      request('/api/admin/professionals/approve', { adminProfileId: 'forged' })
+    )
+    expect(response.status).toBe(400)
+    expect(await response.json()).toMatchObject({ code: 'invalid_input' })
   })
   it('does not allow a customer to approve a professional', async () => {
     actor('customer', [])

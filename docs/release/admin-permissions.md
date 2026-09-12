@@ -1,6 +1,6 @@
 # T09 — Permisos administrativos y auditoría
 
-Implementación local en verificación. La habilitación de producción continúa sujeta al resto del plan y a T36.
+Implementación verificada localmente. La habilitación de producción continúa sujeta al resto del plan y a T36.
 
 ## Matriz efectiva
 
@@ -35,4 +35,4 @@ Los helpers de auditoría en TypeScript existentes son constructores de dominio,
 
 Migraciones nuevas `20260912015711_admin_permission_and_audit_workflows.sql` y `20260912020601_serialize_owner_authority.sql`. La segunda añade el bloqueo del grant vigente; no modifica el archivo previamente aplicado. Restaurar una UI anterior no debe restaurar el acceso de aplicación a la RPC de provisión ni ampliar lectura de metadata. Los eventos escritos se conservan.
 
-La evidencia consolidada se incorpora en `admin-permissions-verification.json` al cerrar pruebas, protocolo de actualización y build aislado. No se utilizaron cuentas reales ni se enviaron notificaciones externas.
+La evidencia consolidada está en `admin-permissions-verification.json`, con pruebas, protocolo de actualización y build aislado completados. No se utilizaron cuentas reales ni se enviaron notificaciones externas.

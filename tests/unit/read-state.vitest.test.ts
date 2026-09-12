@@ -61,8 +61,11 @@ describe('read errors and presentation boundaries', () => {
           customer_id: '10000000-0000-4000-8000-000000000002',
           professional_id: null,
           professional_status: null,
+          professional_eligible: false,
           role: 'customer',
-          permissions: [], session_active: true, aal: 'aal1'
+          permissions: [],
+          session_active: true,
+          aal: 'aal1'
         },
         error: null
       }),

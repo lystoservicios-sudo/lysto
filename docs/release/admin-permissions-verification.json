@@ -1,7 +1,7 @@
 {
   "task": "T09",
-  "status": "implemented_build_pending",
-  "checkedAt": "2026-09-12T02:30:16.054Z",
+  "status": "locally_verified",
+  "checkedAt": "2026-09-12T02:32:01.291Z",
   "releaseReady": false,
   "checks": {
     "unit": {
@@ -73,17 +73,26 @@
       "addedSinceBaseline": 0,
       "baselineLog": "output/production-readiness/t09-baseline-advisors.log",
       "finalLog": "output/production-readiness/t09-advisors.log"
+    },
+    "build": {
+      "commit": "87c6e6db50ef1ebce071b13c33b76b7912b876e9",
+      "environment": "isolated-local-production-build",
+      "checkout": "E:/Proyectos/GitHub/Lysto-production-build-check",
+      "dependencies": "junction to verified frozen lock installation, including direct Sharp 0.35.4",
+      "status": "passed",
+      "startedAt": "2026-09-12T02:30:29.890Z",
+      "exitCode": 0,
+      "completedAt": "2026-09-12T02:31:34.098Z"
     }
   },
   "review": {
     "method": "local review of session and grant locks, RPC ACLs, audit projection, atomic rollback and real browser flow",
     "independentFinalReview": false
   },
-  "pending": [
-    "isolated production build"
-  ],
+  "pending": [],
   "externalDependencies": [
     "Real owner recovery custodians and environment acceptance: T08/T36"
   ],
-  "originalIndexSha256": "85c6b16dcb04891642c46370bfd9c5342a21e79dea59eff11cc4fac915c84f67"
+  "originalIndexSha256": "85c6b16dcb04891642c46370bfd9c5342a21e79dea59eff11cc4fac915c84f67",
+  "codeCommit": "87c6e6db50ef1ebce071b13c33b76b7912b876e9"
 }

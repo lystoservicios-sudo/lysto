@@ -72,12 +72,12 @@ jobs:
         run: pnpm exec supabase test db --local --workdir "$RUNNER_TEMP/lysto-integration-ci" | tee output/ci/database-tests.log
       - name: Database lint and generated types
         run: |
-          pnpm exec supabase db lint --local --schema public,private --fail-on error --workdir "$RUNNER_TEMP/lysto-integration-ci" | tee output/ci/database-lint.log
+          pnpm exec supabase db lint --local --schema public,private,invitation_gateway --fail-on error --workdir "$RUNNER_TEMP/lysto-integration-ci" | tee output/ci/database-lint.log
           node scripts/verify-ci-schema.mjs "$RUNNER_TEMP/lysto-integration-ci"
-      - name: Mandatory Auth and payment integration; zero skipped
-        run: pnpm test:integration -- --local-workdir "$RUNNER_TEMP/lysto-integration-ci" | tee output/ci/integration.log
       - name: Install E2E browsers
         run: pnpm exec playwright install --with-deps chromium webkit
+      - name: Mandatory Auth and payment integration; zero skipped
+        run: pnpm test:integration -- --local-workdir "$RUNNER_TEMP/lysto-integration-ci" | tee output/ci/integration.log
       - name: Production build and E2E with disposable backend; zero skipped
         run: node scripts/test-e2e-ci.mjs "$RUNNER_TEMP/lysto-integration-ci"
       - name: Verify incomplete release manifest is blocked

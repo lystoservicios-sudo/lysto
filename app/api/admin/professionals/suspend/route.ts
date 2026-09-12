@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { privateRoute } from '@/lib/http/route-handler'
 import { ApiError, privateJson } from '@/lib/http/api-error'
+import { readPrivateJsonBody } from '@/lib/http/private-json-body'
 
 const schema = z
   .object({ professionalId: z.string().uuid(), reason: z.string().trim().min(10).max(1000) })
@@ -9,7 +10,7 @@ const schema = z
 export const POST = privateRoute(
   { roles: ['admin'], permission: 'operations' },
   async (request, session) => {
-    const input = schema.parse(await request.json())
+    const input = schema.parse(await readPrivateJsonBody(request))
     const { data, error } = await session.client.rpc('suspend_professional', {
       p_professional_id: input.professionalId,
       p_reason: input.reason

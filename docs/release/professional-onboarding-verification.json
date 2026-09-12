@@ -1,0 +1,103 @@
+{
+  "task": "T11",
+  "status": "implemented_build_pending",
+  "checkedAt": "2026-09-12T04:11:06.549Z",
+  "releaseReady": false,
+  "checks": {
+    "unit": {
+      "passed": 448,
+      "files": 58,
+      "report": "output/production-readiness/t11-unit-final.json"
+    },
+    "domain": {
+      "passed": 171,
+      "log": "output/production-readiness/t11-final-domain.log"
+    },
+    "tooling": {
+      "passed": 7,
+      "log": "output/production-readiness/t11-final-tooling.log"
+    },
+    "integration": {
+      "passed": 198,
+      "files": 13,
+      "zeroSkipped": true,
+      "report": "E:/Proyectos/GitHub/Lysto-production-readiness/output/integration/f5dbb16d-c07a-49c0-8f83-3a073169ff4a/result.json"
+    },
+    "database": {
+      "status": "passed",
+      "projectId": "lysto_production_check",
+      "baseline": "20260912020601",
+      "versions": [
+        "202608190001",
+        "202608190002",
+        "202608190003",
+        "202608190004",
+        "202608190005",
+        "202608190006",
+        "202608190007",
+        "20260910195050",
+        "20260910204604",
+        "20260910220000",
+        "20260911042254",
+        "20260911051612",
+        "20260911053515",
+        "20260911224417",
+        "20260911231948",
+        "20260911234506",
+        "20260912000828",
+        "20260912002838",
+        "20260912003701",
+        "20260912005741",
+        "20260912011452",
+        "20260912011853",
+        "20260912012604",
+        "20260912013847",
+        "20260912015711",
+        "20260912020601",
+        "20260912023256",
+        "20260912023858",
+        "20260912025001",
+        "20260912030114",
+        "20260912030508",
+        "20260912032500",
+        "20260912033500",
+        "20260912033529",
+        "20260912033923",
+        "20260912034105",
+        "20260912034321"
+      ],
+      "witnessPreserved": true,
+      "schemaSha256": "7acd0106e5136112860f8d13b7cfbd8eba013683944806c8bf8ec601e8a70fec",
+      "storagePoliciesMatch": true,
+      "typesMatch": true,
+      "checkedAt": "2026-09-12T03:48:05.413Z",
+      "tests": 495,
+      "files": 14
+    },
+    "static": {
+      "types": 0,
+      "lint": 0
+    },
+    "advisors": {
+      "errors": 0,
+      "warnings": 42,
+      "addedSinceBaseline": 0,
+      "baselineLog": "output/production-readiness/t11-baseline-advisors.log",
+      "finalLog": "output/production-readiness/t11-advisors.log"
+    }
+  },
+  "review": {
+    "method": "local review of session and grant locks, invitation role binding, anonymous gateway boundaries, versioned submission snapshots, documentary expiry and direct Storage guards, atomic audit rollback, SSR hydration and browser persistence",
+    "independentFinalReview": false
+  },
+  "pending": [
+    "isolated production build"
+  ],
+  "externalDependencies": [
+    "D08/T36: actual documentary requirements, legal approval and human environment acceptance",
+    "T24: invitation outbox delivery and sandbox confirmation",
+    "T36: inventory legacy infrastructure approvals",
+    "T28: documentary renewal/reactivation workflow"
+  ],
+  "originalIndexSha256": "85c6b16dcb04891642c46370bfd9c5342a21e79dea59eff11cc4fac915c84f67"
+}

@@ -14,7 +14,7 @@
     "environment": "isolated-local-worktree"
   },
   "currentMilestone": "BASELINE_CAPTURED",
-  "nextTask": "T09",
+  "nextTask": "T11",
   "recommendedOrder": [
     "T00",
     "T01",
@@ -386,8 +386,8 @@
         "B10"
       ],
       "ownerRole": "Agente de backend",
-      "status": "implemented",
-      "currentStep": 6,
+      "status": "verified",
+      "currentStep": null,
       "completedSteps": [
         1,
         2,
@@ -400,9 +400,9 @@
         "docs/release/admin-permissions.md",
         "docs/release/admin-permissions-verification.json"
       ],
-      "commit": null,
+      "commit": "87c6e6db50ef1ebce071b13c33b76b7912b876e9",
       "blockedBy": [],
-      "nextAction": "Build aislado del checkpoint; luego T11.",
+      "nextAction": "Conservar controles de autorización y auditoría en las mutaciones posteriores; continuar T11.",
       "deviations": []
     },
     {
@@ -454,13 +454,23 @@
         "B09"
       ],
       "ownerRole": "Agente full stack + responsable de profesionales",
-      "status": "pending",
-      "currentStep": null,
-      "completedSteps": [],
-      "evidence": [],
+      "status": "implemented",
+      "currentStep": 6,
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "evidence": [
+        "docs/release/professional-onboarding.md",
+        "docs/release/professional-onboarding-verification.json"
+      ],
       "commit": null,
       "blockedBy": [],
-      "nextAction": "Probar invitación válida, vencida, reutilizada, cancelada, email distinto, documentos incompletos y autoaprobación.",
+      "nextAction": "Build aislado del checkpoint; luego continuar T14.",
       "deviations": []
     },
     {
@@ -1616,13 +1626,13 @@
     "updateRequiredAfterImplementation": true
   },
   "checkpoint": {
-    "updatedAt": "2026-09-12T02:30:16.059Z",
+    "updatedAt": "2026-09-12T04:11:06.557Z",
     "branch": "codex/production-readiness",
-    "commit": "62ed2c19eb4b84e6f13817d21b2bc0e6eceac743",
+    "commit": "87c6e6db50ef1ebce071b13c33b76b7912b876e9",
     "filesChanged": [],
-    "lastVerification": "T09: 441 unit, 171 domain, 7 tooling, 169 integration, 471 SQL fresh/upgrade, tipos/lint passed; cero hallazgos nuevos de advisors. Build aislado pendiente.",
+    "lastVerification": "T11: 448 unit, 171 domain, 7 tooling, 198 integration zero skipped; 495 SQL fresh/upgrade y 37 migraciones con datos y esquema conservados. Tipos/lint y advisors sin nuevos hallazgos. Build aislado pendiente.",
     "unresolvedFailures": [],
-    "nextCommand": "Build isolated T09 candidate."
+    "nextCommand": "Build isolated T11 candidate."
   },
   "events": [
     {

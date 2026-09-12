@@ -151,10 +151,10 @@ set local role authenticated;
 
 select is((select count(*) from public.professional_profiles), 1::bigint, 'operations admin can read professional records');
 
-select results_eq(
+select throws_ok(
   $$update public.professional_profiles set status = 'under_review' where id = '33000000-0000-0000-0000-000000000001' returning id$$,
-  $$values ('33000000-0000-0000-0000-000000000001'::uuid)$$,
-  'operations admin can change professional approval state'
+  '42501', null,
+  'operations admin must use the versioned review workflow to change approval state'
 );
 
 select throws_ok(
@@ -164,10 +164,10 @@ select throws_ok(
   'operations admin cannot forge document reviewer identity'
 );
 
-select results_eq(
+select throws_ok(
   $$update public.professional_documents set status = 'approved' where id = '34000000-0000-0000-0000-000000000002' returning reviewed_by$$,
-  $$values ('31000000-0000-0000-0000-000000000001'::uuid)$$,
-  'document review derives reviewed_by from the authenticated actor'
+  '42501', null,
+  'document approval must use the attributed review RPC'
 );
 
 select ok(
@@ -229,9 +229,9 @@ select throws_ok(
   null,
   'pricing multiplier rejects positive infinity'
 );
-select results_eq(
+select throws_ok(
   $$update public.professional_profiles set status = 'suspended' where id = '33000000-0000-0000-0000-000000000001' returning id$$,
-  $$select id from public.professional_profiles where false$$,
+  '42501', null,
   'finance admin cannot approve or suspend professionals'
 );
 

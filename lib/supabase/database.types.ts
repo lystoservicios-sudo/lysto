@@ -1697,35 +1697,44 @@ export type Database = {
         Row: {
           created_at: string
           document_type: string
+          expires_at: string | null
           id: string
           professional_id: string
+          review_reason: string | null
           reviewed_at: string | null
           reviewed_by: string | null
           status: string
           storage_bucket: string
           storage_path: string
+          version: number
         }
         Insert: {
           created_at?: string
           document_type: string
+          expires_at?: string | null
           id?: string
           professional_id: string
+          review_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string
           storage_bucket: string
           storage_path: string
+          version?: number
         }
         Update: {
           created_at?: string
           document_type?: string
+          expires_at?: string | null
           id?: string
           professional_id?: string
+          review_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string
           storage_bucket?: string
           storage_path?: string
+          version?: number
         }
         Relationships: [
           {
@@ -1746,6 +1755,8 @@ export type Database = {
       }
       professional_invitations: {
         Row: {
+          bound_auth_user_id: string | null
+          consumed_at: string | null
           created_at: string
           created_by: string | null
           email: string
@@ -1756,8 +1767,11 @@ export type Database = {
           status: string
           token_hash: string
           updated_at: string
+          version: number
         }
         Insert: {
+          bound_auth_user_id?: string | null
+          consumed_at?: string | null
           created_at?: string
           created_by?: string | null
           email: string
@@ -1768,8 +1782,11 @@ export type Database = {
           status?: string
           token_hash: string
           updated_at?: string
+          version?: number
         }
         Update: {
+          bound_auth_user_id?: string | null
+          consumed_at?: string | null
           created_at?: string
           created_by?: string | null
           email?: string
@@ -1780,6 +1797,7 @@ export type Database = {
           status?: string
           token_hash?: string
           updated_at?: string
+          version?: number
         }
         Relationships: [
           {
@@ -1846,6 +1864,7 @@ export type Database = {
           birthdate: string | null
           created_at: string
           cuil: string | null
+          current_submission_id: string | null
           dni: string | null
           has_mobility: boolean
           id: string
@@ -1860,6 +1879,7 @@ export type Database = {
           rating_avg: number | null
           status: Database["public"]["Enums"]["professional_status"]
           updated_at: string
+          version: number
           years_experience: number
         }
         Insert: {
@@ -1869,6 +1889,7 @@ export type Database = {
           birthdate?: string | null
           created_at?: string
           cuil?: string | null
+          current_submission_id?: string | null
           dni?: string | null
           has_mobility?: boolean
           id?: string
@@ -1883,6 +1904,7 @@ export type Database = {
           rating_avg?: number | null
           status?: Database["public"]["Enums"]["professional_status"]
           updated_at?: string
+          version?: number
           years_experience?: number
         }
         Update: {
@@ -1892,6 +1914,7 @@ export type Database = {
           birthdate?: string | null
           created_at?: string
           cuil?: string | null
+          current_submission_id?: string | null
           dni?: string | null
           has_mobility?: boolean
           id?: string
@@ -1906,6 +1929,7 @@ export type Database = {
           rating_avg?: number | null
           status?: Database["public"]["Enums"]["professional_status"]
           updated_at?: string
+          version?: number
           years_experience?: number
         }
         Relationships: [
@@ -1971,6 +1995,7 @@ export type Database = {
           id: string
           professional_id: string
           radius_km: number
+          service_zone_id: string | null
           zone_name: string
           zone_slug: string
         }
@@ -1980,6 +2005,7 @@ export type Database = {
           id?: string
           professional_id: string
           radius_km?: number
+          service_zone_id?: string | null
           zone_name: string
           zone_slug: string
         }
@@ -1989,6 +2015,7 @@ export type Database = {
           id?: string
           professional_id?: string
           radius_km?: number
+          service_zone_id?: string | null
           zone_name?: string
           zone_slug?: string
         }
@@ -1998,6 +2025,13 @@ export type Database = {
             columns: ["professional_id"]
             isOneToOne: false
             referencedRelation: "professional_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "professional_service_zones_service_zone_id_fkey"
+            columns: ["service_zone_id"]
+            isOneToOne: false
+            referencedRelation: "service_zones"
             referencedColumns: ["id"]
           },
         ]
@@ -2959,6 +2993,10 @@ export type Database = {
       }
     }
     Functions: {
+      accept_professional_invitation: {
+        Args: { p_token: string }
+        Returns: Json
+      }
       ack_outbox_event: {
         Args: {
           p_claim_token: string
@@ -2994,6 +3032,10 @@ export type Database = {
         Returns: Json
       }
       bootstrap_customer_account: { Args: never; Returns: Json }
+      cancel_professional_invitation: {
+        Args: { p_expected_version: number; p_id: string; p_reason: string }
+        Returns: Json
+      }
       change_admin_permissions: {
         Args: {
           p_admin_profile_id: string
@@ -3102,6 +3144,10 @@ export type Database = {
         }
         Returns: string
       }
+      create_professional_invitation: {
+        Args: { p_email: string; p_reason: string; p_specialty_slug: string }
+        Returns: Json
+      }
       create_service_request_from_app: {
         Args: {
           p_address_id: string
@@ -3141,6 +3187,15 @@ export type Database = {
       }
       decide_job_extra: {
         Args: { p_decision: string; p_extra_id: string }
+        Returns: Json
+      }
+      decide_professional_application: {
+        Args: {
+          p_decision: string
+          p_expected_version: number
+          p_professional_id: string
+          p_reason: string
+        }
         Returns: Json
       }
       enqueue_outbox_event: {
@@ -3243,6 +3298,15 @@ export type Database = {
         }
         Returns: Json
       }
+      list_professional_workflow: {
+        Args: {
+          p_before_created_at?: string
+          p_before_id?: string
+          p_limit?: number
+          p_resource: string
+        }
+        Returns: Json
+      }
       log_admin_action: {
         Args: {
           p_action: string
@@ -3263,6 +3327,10 @@ export type Database = {
           work_done: string
         }[]
       }
+      professional_invitation_matches: {
+        Args: { p_email: string; p_token: string }
+        Returns: boolean
+      }
       professional_respond_to_job: {
         Args: {
           p_job_id: string
@@ -3272,6 +3340,7 @@ export type Database = {
         }
         Returns: Json
       }
+      professional_review_context: { Args: { p_id?: string }; Returns: Json }
       propose_job_extra: {
         Args: {
           p_amount: number
@@ -3282,6 +3351,7 @@ export type Database = {
         }
         Returns: Json
       }
+      read_professional_onboarding: { Args: never; Returns: Json }
       register_provider_event: {
         Args: {
           p_event_type: string
@@ -3303,8 +3373,22 @@ export type Database = {
         }
         Returns: Json
       }
+      review_professional_document: {
+        Args: {
+          p_decision: string
+          p_document_id: string
+          p_expected_version: number
+          p_expires_at: string
+          p_reason: string
+        }
+        Returns: Json
+      }
       review_service_quote: {
         Args: { p_quote_id: string; p_reason: string }
+        Returns: Json
+      }
+      save_professional_onboarding: {
+        Args: { p_expected_version: number; p_input: Json }
         Returns: Json
       }
       set_admin_permissions: {
@@ -3323,6 +3407,15 @@ export type Database = {
           p_professional_rating: number
           p_service_rating: number
           p_would_hire_again: boolean
+        }
+        Returns: Json
+      }
+      submit_professional_application: {
+        Args: {
+          p_accepted: boolean
+          p_expected_version: number
+          p_privacy_version: string
+          p_terms_version: string
         }
         Returns: Json
       }

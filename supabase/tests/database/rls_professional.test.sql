@@ -123,9 +123,9 @@ select throws_ok(
   'professional cannot update their protected approval and score fields'
 );
 
-select results_eq(
+select throws_ok(
   $$update public.professional_profiles set status = 'suspended' where id = '22000000-0000-0000-0000-000000000001' returning id$$,
-  $$select id from public.professional_profiles where false$$,
+  '42501', null,
   'professional cannot approve, suspend or otherwise change their own status'
 );
 

@@ -29,7 +29,7 @@ const requiredPages = [
   'app/(customer)/app/garantias',
   'app/(customer)/app/mantenimientos',
   'app/(professional)/pro/dashboard',
-  'app/(professional)/pro/onboarding/[token]',
+  'app/(professional-onboarding)/pro/onboarding/[token]',
   'app/(professional)/pro/solicitudes',
   'app/(professional)/pro/solicitudes/[id]',
   'app/(professional)/pro/trabajos',
@@ -109,24 +109,53 @@ test('all MVP API route contracts exist', () => {
 
 test('customer wizard leads to saved quotes without simulated payment or fulfillment', () => {
   const content = read('features/service-request/air-conditioning-wizard.tsx')
-  for (const text of ['Problema', 'Detalles', 'Diagnóstico', 'Dirección', 'Horario', 'Presupuesto', 'Pago', '/app/presupuestos']) {
+  for (const text of [
+    'Problema',
+    'Detalles',
+    'Diagnóstico',
+    'Dirección',
+    'Horario',
+    'Presupuesto',
+    'Pago',
+    '/app/presupuestos'
+  ]) {
     expect(content).toIncludeText(text)
   }
-  for (const text of ['Buscando el mejor profesional', 'Técnico confirmado', 'Trabajo creado', 'Pago aprobado']) {
+  for (const text of [
+    'Buscando el mejor profesional',
+    'Técnico confirmado',
+    'Trabajo creado',
+    'Pago aprobado'
+  ]) {
     expect(content.includes(text)).toBeFalsy()
   }
 })
 
 test('admin screens cover quality payments matching and marketplace configuration', () => {
   const dashboard = read('components/layout/app-navigation-config.ts')
-  for (const text of ['Solicitudes', 'Trabajos', 'Profesionales', 'Pagos', 'Matching', 'Calidad', 'Reportes']) {
+  for (const text of [
+    'Solicitudes',
+    'Trabajos',
+    'Profesionales',
+    'Pagos',
+    'Matching',
+    'Calidad',
+    'Reportes'
+  ]) {
     expect(dashboard).toIncludeText(text)
   }
 })
 
 test('transactional Supabase workflow migration exists', () => {
   const content = read('supabase/migrations/202608190004_transactional_workflows.sql')
-  for (const fn of ['create_service_request_from_app', 'apply_mercadopago_payment_webhook', 'assign_professional_to_job', 'professional_respond_to_job', 'close_job_with_final_report', 'submit_customer_review_transaction']) {
+  for (const fn of [
+    'create_service_request_from_app',
+    'apply_mercadopago_payment_webhook',
+    'assign_professional_to_job',
+    'professional_respond_to_job',
+    'close_job_with_final_report',
+    'submit_customer_review_transaction'
+  ]) {
     expect(content).toIncludeText(fn)
   }
 })

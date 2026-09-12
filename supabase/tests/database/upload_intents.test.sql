@@ -190,6 +190,15 @@ select is(public.get_upload_intent((select (data->>'id')::uuid from t10_uploads 
 insert into t10_uploads values('job',public.create_upload_intent('job-photo','image/png',102,repeat('a',64),'60000000-0000-0000-0000-000000000001',null,'before',null));
 select throws_ok($$select public.create_upload_intent('job-photo','image/png',102,repeat('a',64),'60000000-0000-0000-0000-000000000002',null,'before',null)$$,'42501','Upload access denied','professional cannot upload to another job');
 reset role;
+insert into public.professional_invitations(id,email,token_hash,status) values('96000000-0000-4000-8000-000000000010','documentary-clearance-test@lysto.test',repeat('f',64),'completed');
+update public.professional_profiles set invitation_id='96000000-0000-4000-8000-000000000010' where id='22000000-0000-0000-0000-000000000001';
+set local role authenticated;
+select is(public.get_session_context()->>'professional_eligible','false','approval alone does not grant clearance to an invited professional without a reviewed submission');
+select throws_ok($$select public.get_upload_intent((select (data->>'id')::uuid from t10_uploads where label='draft'))$$,'42501','Upload access denied','missing clearance blocks direct request-evidence reads');
+select throws_ok($$select public.create_upload_intent('job-photo','image/png',102,repeat('a',64),'60000000-0000-0000-0000-000000000001',null,'before',null)$$,'42501','Upload access denied','missing clearance blocks direct job uploads');
+select ok(not private.can_sign_upload_quarantine((select data->>'quarantinePath' from t10_uploads where label='job'),'20000000-0000-0000-0000-000000000001'),'missing clearance revokes a pending job upload signature');
+reset role;
+update public.professional_profiles set invitation_id=null where id='22000000-0000-0000-0000-000000000001';
 update public.professional_profiles set status='suspended' where id='22000000-0000-0000-0000-000000000001';
 set local role authenticated;
 select throws_ok($$select public.get_upload_intent((select (data->>'id')::uuid from t10_uploads where label='draft'))$$,'42501','Upload access denied','suspension revokes new evidence reads with an old JWT');

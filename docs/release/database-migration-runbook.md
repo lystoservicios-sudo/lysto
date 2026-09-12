@@ -17,7 +17,7 @@ La copia descartable contiene config, diez migraciones, seed y tests/fixtures SQ
 3. Desde el worktree, ejecutar `corepack pnpm exec supabase db start --workdir E:/Proyectos/GitHub/Lysto-production-db-check`.
 4. Confirmar historial de las diez migraciones, capturar schema-only y ejecutar `corepack pnpm exec supabase test db --local --workdir E:/Proyectos/GitHub/Lysto-production-db-check`.
 5. Generar tipos con `corepack pnpm exec supabase gen types --local --lang typescript --schema public --workdir E:/Proyectos/GitHub/Lysto-production-db-check`. Separar stdout de mensajes stderr; comparar antes de reemplazar tipos en código.
-6. Ejecutar `corepack pnpm exec supabase db lint --local --schema public,private --fail-on error --workdir E:/Proyectos/GitHub/Lysto-production-db-check`. Comprobar resultado, no sólo exit code cuando se use el default fail-on none.
+6. Ejecutar `corepack pnpm exec supabase db lint --local --schema public,private,invitation_gateway --fail-on error --workdir E:/Proyectos/GitHub/Lysto-production-db-check`. Comprobar resultado, no sólo exit code cuando se use el default fail-on none.
 
 Resultado observado: diez migraciones y seed aplicados; 416 tests pgTAP en nueve archivos pasaron. El lint de public/private devolvió results vacío. Los tipos generados son idénticos a los versionados al normalizar finales de línea; no se sobrescribió el archivo ni se agregó una migración innecesaria.
 
