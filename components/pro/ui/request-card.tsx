@@ -1,8 +1,22 @@
 import { MapPin, Calendar, X, Eye, CheckCircle2, Timer, ClipboardList, Info } from 'lucide-react'
-import type { ServiceRequestRecord } from '@/lib/mock/lysto-data'
+type ServiceRequestRecord = {
+  issue: string
+  urgency: string
+  issueLabel: string
+  customer: string
+  address: string
+  timeWindow: string
+  price: number
+  diagnosis: string
+  mediaCount: number
+}
 
 function money(value: number) {
-  return value.toLocaleString('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 })
+  return value.toLocaleString('es-AR', {
+    style: 'currency',
+    currency: 'ARS',
+    maximumFractionDigits: 0
+  })
 }
 
 const issueIcons: Record<string, string> = {
@@ -12,7 +26,7 @@ const issueIcons: Record<string, string> = {
   no_enciende: '⚡',
   instalacion: '🔧',
   mantenimiento: '🔩',
-  calor: '🌡️',
+  calor: '🌡️'
 }
 
 export function RequestCard({ request }: { request: ServiceRequestRecord }) {
@@ -48,15 +62,22 @@ export function RequestCard({ request }: { request: ServiceRequestRecord }) {
             </div>
             <div className="min-w-0">
               <h3 className="font-black text-slate-900 text-lg leading-tight tracking-tight">
-                {request.issueLabel} <span className="font-semibold text-slate-500">· {request.customer}</span>
+                {request.issueLabel}{' '}
+                <span className="font-semibold text-slate-500">· {request.customer}</span>
               </h3>
               <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 font-medium">
-                <span className="flex items-center gap-1.5"><MapPin className="h-4 w-4 text-blue-600" />{request.address}</span>
+                <span className="flex items-center gap-1.5">
+                  <MapPin className="h-4 w-4 text-blue-600" />
+                  {request.address}
+                </span>
                 <span className="text-slate-400">|</span>
                 <span>12 min (4,2 km)</span>
               </div>
               <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 font-medium">
-                <span className="flex items-center gap-1.5"><Calendar className="h-4 w-4 text-blue-600" />Hoy · {request.timeWindow}</span>
+                <span className="flex items-center gap-1.5">
+                  <Calendar className="h-4 w-4 text-blue-600" />
+                  Hoy · {request.timeWindow}
+                </span>
                 <span className="text-slate-400">|</span>
                 <span>Split living · Surrey inverter</span>
               </div>
@@ -64,8 +85,12 @@ export function RequestCard({ request }: { request: ServiceRequestRecord }) {
           </div>
 
           <div className="shrink-0 text-right bg-slate-50 border border-slate-200/80 px-4 py-3 rounded-2xl">
-            <p className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">Ingreso estimado</p>
-            <p className="text-2xl font-black text-slate-900 leading-tight mt-0.5">{money(request.price)}</p>
+            <p className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">
+              Ingreso estimado
+            </p>
+            <p className="text-2xl font-black text-slate-900 leading-tight mt-0.5">
+              {money(request.price)}
+            </p>
             <p className="text-[10px] text-slate-400 mt-0.5">Incluye visita y mano de obra</p>
           </div>
         </div>
@@ -80,8 +105,12 @@ export function RequestCard({ request }: { request: ServiceRequestRecord }) {
               <span>Diagnóstico preliminar LYSTO</span>
               <Info className="h-3.5 w-3.5 text-slate-400" />
             </div>
-            <p className="text-xs text-slate-600 font-medium leading-relaxed mt-1">{request.diagnosis}.</p>
-            <p className="text-[10px] text-slate-400 mt-0.5">El diagnóstico definitivo se realiza al revisar el equipo.</p>
+            <p className="text-xs text-slate-600 font-medium leading-relaxed mt-1">
+              {request.diagnosis}.
+            </p>
+            <p className="text-[10px] text-slate-400 mt-0.5">
+              El diagnóstico definitivo se realiza al revisar el equipo.
+            </p>
           </div>
 
           {/* Photo thumbnails */}

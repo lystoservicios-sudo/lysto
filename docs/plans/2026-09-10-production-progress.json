@@ -14,7 +14,7 @@
     "environment": "isolated-local-worktree"
   },
   "currentMilestone": "IMPLEMENTATION_CONTINUES_WITH_DATABASE_VERIFICATION_BLOCKED",
-  "nextTask": "T28",
+  "nextTask": "T29",
   "recommendedOrder": [
     "T00",
     "T01",
@@ -1106,14 +1106,31 @@
         "B04"
       ],
       "ownerRole": "Agente full stack",
-      "status": "pending",
-      "currentStep": null,
-      "completedSteps": [],
-      "evidence": [],
+      "status": "in_progress",
+      "currentStep": 6,
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "evidence": [
+        "docs/release/professional-live-pages-verification.json",
+        "tests/integration/professional-pages.test.ts",
+        "10 focused professional tests, typecheck and lint passed"
+      ],
       "commit": null,
-      "blockedBy": [],
-      "nextAction": "Inventariar todas las rutas pro del anexo y sus acciones. Probar técnico sin trabajos, aprobado, suspendido y con caso abierto.",
-      "deviations": []
+      "blockedBy": [
+        "Docker Desktop stale dockerInference runtime socket blocks authenticated page integration",
+        "D07: approved documentary expiry, renewal and reactivation policy",
+        "Complete mobile and interrupted-network walkthrough requires designated staging"
+      ],
+      "nextAction": "Run professional-pages integration when Docker recovers; execute mobile recovery walkthrough and D07 renewal policy in staging; continue T29 meanwhile.",
+      "deviations": [
+        "Training remains non-persisted reference material and explicitly does not represent certification.",
+        "The professional interface consumes existing canonical workflow APIs rather than duplicating mutations in page components."
+      ]
     },
     {
       "id": "T29",
