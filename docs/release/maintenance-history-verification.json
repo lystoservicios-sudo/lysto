@@ -1,0 +1,8 @@
+{
+  "task": "T25",
+  "status": "implemented_database_verification_pending",
+  "migration": "supabase/migrations/20260912153952_maintenance_reminder_workflows.sql",
+  "implemented": ["server-derived-plan", "append-only-history-reference", "deduplicated-reminder-state", "contact-preferences", "quality-case-suppression", "archived-equipment-cancellation", "customer-reschedule", "draft-request-without-booking-or-payment", "real-customer-screen"],
+  "localChecks": ["domain-174", "customer-equipment-pages-9", "typecheck", "lint", "diff-check"],
+  "pending": ["integration-maintenance-history-disposable-supabase", "pgtap-disposable-supabase", "D12 commercial reminder decision", "staging reminder worker execution"]
+}

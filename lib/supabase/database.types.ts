@@ -397,6 +397,12 @@ export type Database = {
           },
         ]
       }
+      customer_contact_preferences: {
+        Row: { commercial_reminders_enabled: boolean; customer_id: string; email_enabled: boolean; in_app_enabled: boolean; updated_at: string }
+        Insert: { commercial_reminders_enabled?: boolean; customer_id: string; email_enabled?: boolean; in_app_enabled?: boolean; updated_at?: string }
+        Update: { commercial_reminders_enabled?: boolean; customer_id?: string; email_enabled?: boolean; in_app_enabled?: boolean; updated_at?: string }
+        Relationships: [{ foreignKeyName: "customer_contact_preferences_customer_id_fkey"; columns: ["customer_id"]; isOneToOne: true; referencedRelation: "customer_profiles"; referencedColumns: ["id"] }]
+      }
       customer_profiles: {
         Row: {
           created_at: string
@@ -1015,6 +1021,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      maintenance_plans: {
+        Row: {
+          created_at: string
+          customer_id: string
+          due_date: string | null
+          equipment_id: string
+          id: string
+          recommendation: Database["public"]["Enums"]["maintenance_option"]
+          requested_service_request_id: string | null
+          source_job_id: string | null
+          source_service_record_id: string | null
+          status: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          due_date?: string | null
+          equipment_id: string
+          id?: string
+          recommendation: Database["public"]["Enums"]["maintenance_option"]
+          requested_service_request_id?: string | null
+          source_job_id?: string | null
+          source_service_record_id?: string | null
+          status: string
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          due_date?: string | null
+          equipment_id?: string
+          id?: string
+          recommendation?: Database["public"]["Enums"]["maintenance_option"]
+          requested_service_request_id?: string | null
+          source_job_id?: string | null
+          source_service_record_id?: string | null
+          status?: string
+          updated_at?: string
+          version?: number
+        }
+        Relationships: []
       }
       marketplace_checkouts: {
         Row: {
@@ -3522,6 +3573,17 @@ export type Database = {
         Returns: Database["public"]["Enums"]["user_role"]
       }
       list_support_cases: { Args: { p_limit?: number }; Returns: Json }
+      list_customer_maintenance: { Args: never; Returns: Json }
+      manage_maintenance_plan: {
+        Args: {
+          p_action: string
+          p_address_id: string | null
+          p_due_date: string | null
+          p_expected_version: number
+          p_plan_id: string
+        }
+        Returns: Json
+      }
       open_support_case: {
         Args: {
           p_category: string
