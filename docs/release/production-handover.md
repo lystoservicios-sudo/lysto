@@ -4,7 +4,7 @@ Fecha de preparación: 2026-09-12. Estado final demostrado: **PREPARACIÓN LOCAL
 
 ## Versión y destino
 
-La implementación está en la rama local `codex/production-readiness`. El candidato definitivo debe crearse después de todos los cambios desde un checkout limpio; este documento no fija un deployment ni un dominio. No existe staging o producción identificado y aprobado en la evidencia del plan.
+La implementación está en la rama local `codex/production-readiness`. El candidato definitivo debe crearse después de todos los cambios desde un checkout limpio. El Supabase remoto `dqonlqcurvjnjgsczevu` fue identificado como `PRODUCTION`, pero todavía no existe staging identificado ni un destino de hosting aprobado para el candidato.
 
 El registro canónico es `docs/plans/2026-09-10-production-progress.json`. En el cierre de preparación registra 11 tareas verificadas, 6 implementadas con verificación externa pendiente, 19 en progreso por pruebas DB/staging/proveedor y T36–T39 bloqueadas por dependencias externas. Las 40 tareas fueron trabajadas; ese contador no equivale a release.
 
@@ -23,7 +23,7 @@ La verificación local final aprobó lint, tipos, 174 pruebas de dominio, 503 pr
 
 ## Bloqueos para el piloto
 
-1. Identificar y autenticar el Supabase remoto conectado, comprobar entorno y backup, y ejecutar allí las migraciones e integraciones pendientes de T15–T31 con pgTAP. No usar Supabase local ni Docker.
+1. Autenticar el CLI con la cuenta propietaria del Supabase remoto ya identificado, crear un dump o backup recuperable y ejecutar allí las 49 migraciones e integraciones pendientes de T15–T31 con pgTAP. El estado inicial remoto es 7/56 migraciones, 45/45 tablas públicas con RLS, 3 usuarios Auth, 0 objetos Storage y 0 filas de negocio estimadas. No usar Supabase local ni Docker.
 2. Designar staging/hosting, project ref, dominio, secretos, remitente, scheduler y destinos de alertas; ejecutar T32, T34, T35 y T36 allí.
 3. Identificar la aplicación y cuentas Mercado Pago, completar MP01–MP12 y cualquier prueba financiera real expresamente autorizada.
 4. Resolver D01–D12, aprobar políticas, economía, soporte, RPO/RTO, capacidad y responsables/suplentes nominales.
@@ -41,4 +41,4 @@ Usar `docs/runbooks/daily-operations.md` para turnos, `docs/release/production-r
 
 Sólo pueden postergarse mejoras no bloqueantes registradas con responsable, vencimiento y riesgo aceptado. Seguridad, aislamiento, integridad monetaria, trazabilidad, soporte, backups, funciones nucleares y cualquier S0/S1 quedan fuera de ese backlog.
 
-Próxima revisión: al recuperar la base descartable o al designar staging, lo que ocurra primero. Hasta entonces mantener ambos interruptores de entrada apagados en cualquier entorno que pudiera recibir tráfico real.
+Próxima revisión: al vincular el CLI/DB con `dqonlqcurvjnjgsczevu` y asegurar un backup recuperable, o al designar staging, lo que ocurra primero. Hasta entonces mantener ambos interruptores de entrada apagados en cualquier entorno que pudiera recibir tráfico real.

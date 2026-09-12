@@ -10,8 +10,30 @@
     "mode": "remote_only",
     "setBy": "user",
     "setAt": "2026-09-12",
-    "rule": "Do not start or use local Supabase or Docker. Execute pending database validation only against the explicitly identified connected remote Supabase project after a read-only identity and backup preflight.",
+    "rule": "Do not start or use local Supabase or Docker. The connected remote project is dqonlqcurvjnjgsczevu and is classified as PRODUCTION. Execute pending database validation there only after a recoverable backup and traceable owner-level CLI or database connection are available.",
     "supersedes": "Any task nextAction that says to wait for or use local Docker/Supabase."
+  },
+  "remoteSupabaseAudit": {
+    "checkedAt": "2026-09-12",
+    "projectRef": "dqonlqcurvjnjgsczevu",
+    "classification": "PRODUCTION",
+    "availability": "ACTIVE",
+    "appliedMigrations": 7,
+    "lastMigration": "202608190007",
+    "repositoryMigrations": 56,
+    "pendingMigrations": 49,
+    "publicTables": 45,
+    "publicViews": 1,
+    "publicTablesWithRls": 45,
+    "publicTablesWithoutRls": 0,
+    "publicPolicies": 149,
+    "privateTables": 4,
+    "authUsers": 3,
+    "storageObjects": 0,
+    "estimatedDomainRows": 0,
+    "backup": "UNAVAILABLE_FREE_PLAN",
+    "cliAccess": "AUTHENTICATED_TO_DIFFERENT_ACCOUNT",
+    "evidence": "docs/release/remote-supabase-audit-2026-09-12.md"
   },
   "baseline": {
     "auditReferenceCommit": "6bbabd3",
@@ -20,7 +42,7 @@
     "snapshotHash": "78e4627223acba17868dd509b2833c950f563bd5",
     "environment": "isolated-local-worktree"
   },
-  "currentMilestone": "AGENT_PREPARATION_COMPLETE_PRODUCTION_BLOCKED",
+  "currentMilestone": "REMOTE_SUPABASE_IDENTIFIED_MIGRATION_ACCESS_BLOCKED",
   "nextTask": "T15",
   "recommendedOrder": [
     "T00",
@@ -2089,6 +2111,11 @@
       ],
       "at": "2026-09-11T05:25:48.929Z",
       "note": "Specification and quality reviews passed; actual HTTP including concurrent refresh passed; isolated production build of commit 62ed2c1 passed. No launch gate promoted."
+    },
+    {
+      "type": "remote_supabase_audited",
+      "at": "2026-09-12",
+      "note": "Project dqonlqcurvjnjgsczevu was identified in the authenticated dashboard as PRODUCTION and active. Read-only SQL confirmed 7/56 migrations, 45/45 public tables with RLS, 149 public policies, 3 Auth users, 0 Storage objects and 0 estimated domain rows. The Free plan has no backups and the local CLI is authenticated to another account; no mutations were performed."
     }
   ],
   "executionWorktree": "E:/Proyectos/GitHub/Lysto-production-readiness"
