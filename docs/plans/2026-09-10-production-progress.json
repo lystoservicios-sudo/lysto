@@ -1590,6 +1590,7 @@
         "checks/HONEST_SYSTEM_STATUS.md",
         "checks/IMPLEMENTATION_STATUS.md",
         "checks/FINAL_SCOPE_MATRIX.md",
+        "checks/TEST_RESULTS.md",
         "README.md",
         "BLOCKERS.md",
         "tests/tooling/maintenance-handover.test.mjs"

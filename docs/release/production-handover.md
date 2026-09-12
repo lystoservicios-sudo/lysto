@@ -12,6 +12,8 @@ El registro canónico es `docs/plans/2026-09-10-production-progress.json`. En el
 
 G01–G16 permanecen `pending` porque no existe un manifest del candidato final con evidencia autenticada. D01–D12 también permanecen pendientes. Por lo tanto no se ha demostrado TECHNICALLY_READY, PILOT_ENABLED ni GENERAL_PRODUCTION_READY. El manifiesto se genera con `pnpm release:manifest` y debe validarse contra la confianza protegida; una evidencia local o este traspaso no firma gates.
 
+La verificación local final aprobó lint, tipos, 174 pruebas de dominio, 503 pruebas unitarias en 78 archivos, 24 controles de tooling, build de 81 páginas, auditoría productiva sin vulnerabilidades conocidas y verificadores de pagos e imágenes sin llamadas externas. Playwright descubrió 36 casos en siete suites y tres proyectos; no se ejecutaron porque requieren Supabase descartable o staging.
+
 ## Trabajo entregado
 
 - Arquitectura de aplicación, autorización, almacenamiento privado, workflows del servicio, dinero, soporte, mantenimiento, notificaciones, observabilidad y consola operativa implementados o preparados según el registro.
