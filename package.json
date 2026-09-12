@@ -22,6 +22,7 @@
     "test:ci": "eslint . --max-warnings=0 && tsc --noEmit && node --experimental-strip-types tests/run-domain-tests.ts && vitest run && next build",
     "test:integration": "node scripts/test-integration.mjs",
     "test:tooling": "node --experimental-strip-types --test tests/tooling/*.test.mjs",
+    "release:manifest": "node scripts/create-release-manifest.mjs",
     "release:check": "node scripts/check-release-evidence.mjs",
     "test:e2e:staging": "node scripts/test-e2e-staging.mjs"
   },

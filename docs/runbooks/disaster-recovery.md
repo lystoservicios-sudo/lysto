@@ -21,3 +21,9 @@ Cada copia de Storage lleva bucket, ruta, tamaño y SHA-256 del derivado verific
 ## Reanudación
 
 Antes de habilitar tráfico, conciliar eventos del proveedor posteriores al punto recuperado. Mantener nuevos checkouts y solicitudes apagados mientras se aplican webhooks faltantes por su clave idempotente. Revisar outbox restaurado para evitar mensajes ya entregados y conservar IDs de proveedor. Activar primero lecturas y conciliación, luego solicitudes, y por último checkouts. Producción requiere una decisión de lanzamiento separada.
+
+## Rollback de release y restore
+
+Un rollback de aplicación vuelve a un artefacto compatible y no revierte automáticamente migraciones. Es la primera opción ante un defecto de código porque conserva operaciones, auditoría, ledger, outbox y eventos recibidos. Si el esquema nuevo no admite la aplicación anterior, mantener entradas cerradas y aplicar un forward fix probado.
+
+Un restore reemplaza estado y sólo corresponde a corrupción o pérdida confirmada. Requiere incidente declarado, responsable, destino, punto recuperable, autorización y conciliación posterior de webhooks, pagos, outbox y archivos. Nunca ejecutar restore como atajo de despliegue ni borrar eventos recibidos durante la pausa.

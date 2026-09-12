@@ -1502,14 +1502,33 @@
         "B10"
       ],
       "ownerRole": "Agente técnico + dirección/titulares",
-      "status": "pending",
-      "currentStep": null,
-      "completedSteps": [],
-      "evidence": [],
+      "status": "blocked_external",
+      "currentStep": 4,
+      "completedSteps": [
+        1,
+        2,
+        3
+      ],
+      "evidence": [
+        "docs/release/production-runbook.md",
+        "docs/release/go-no-go.md",
+        "docs/release/release-policy.md",
+        "docs/runbooks/disaster-recovery.md",
+        "scripts/create-release-manifest.mjs",
+        "tests/tooling/production-release-package.test.mjs"
+      ],
       "commit": null,
-      "blockedBy": [],
-      "nextAction": "Generar manifest completo G01–G16 vinculado al release candidate y sus evidencias; incluir riesgos/exclusiones aprobadas. TECHNICALLY_READY no significa PROD_ENABLED.",
-      "deviations": []
+      "blockedBy": [
+        "G01-G15 do not yet have complete authenticated evidence for an exact production candidate",
+        "D01-D11 and the named GO/NO-GO signatories are pending",
+        "No approved production destination, deployment window or verified production backup exists",
+        "Any real financial test requires separate authorization with amount and recipients"
+      ],
+      "nextAction": "After T32-T36 external evidence and D01-D11 are complete, regenerate the manifest for the exact clean candidate, verify target pilot against protected trust, obtain signed GO, then execute steps 4-6 with both entry switches initially off.",
+      "deviations": [
+        "No deployment, migration, payment, refund, production switch or external account was changed.",
+        "The generated manifest is deliberately NO_GO until authenticated evidence is attached."
+      ]
     },
     {
       "id": "T38",

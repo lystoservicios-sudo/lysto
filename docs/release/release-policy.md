@@ -30,6 +30,8 @@ Además se exige `attestation` en la evidencia automatizada, con el mismo format
 
 ## Uso del verificador
 
+El inventario de un candidato se genera desde un checkout limpio con `pnpm release:manifest -- --release-id <id> --environment <staging|production> --output output/release/<id>/manifest.json`. El generador fija commit y hash de migraciones, incluye G01–G16 exactamente una vez y lo marca `NO_GO`; no recoge evidencia, firma ni concede aprobación.
+
 Registrar los scripts `release:check` (`node scripts/check-release-evidence.mjs`) y `test:e2e:staging` (`node scripts/test-e2e-staging.mjs`). El verificador exige manifest, objetivo, ID de release, entorno y archivo externo de confianza; compara commit y migraciones con el checkout limpio actual y comprueba cada artefacto dentro del directorio del manifest. No sigue rutas absolutas ni enlaces que escapen de ese directorio.
 
 ```text
@@ -63,3 +65,7 @@ El runner exige `APP_ENV=staging`, `MERCADOPAGO_MODE=test`, origen HTTPS exacto,
 ## Configuración externa pendiente
 
 Para cerrar T33 se debe ejecutar el workflow en GitHub, conservar URL del run del commit candidato y comprobar un fallo real ante evidencia incompleta. Configurar en las reglas de `main` los checks obligatorios `Quality gates (Ubuntu)` y `Domain tests (Windows)`, revisión obligatoria del cambio, prohibición de force push y actualización de checks al cambiar la base. El proceso que promueva a staging/producción debe exigir el resultado del verificador para el objetivo correspondiente, tomar la confianza desde un entorno protegido y requerir responsables distintos del autor del cambio para los gates externos. Este repositorio no incluye un despliegue automático ni modifica reglas remotas. Hasta verificar esas protecciones, T33 permanece parcialmente implementada.
+
+## Promoción a producción
+
+El objetivo `pilot` validado es condición necesaria, pero la activación además requiere el acta GO firmada, backup verificado, artefacto exacto, ventana y operadores disponibles. El despliegue comienza con solicitudes y checkouts nuevos desactivados. La prueba financiera real necesita una autorización separada con importe y destinatarios. La ampliación general exige objetivo `general`, incluido G16 con resultados del piloto y traspaso de mantenimiento.
