@@ -14,7 +14,7 @@
     "environment": "isolated-local-worktree"
   },
   "currentMilestone": "BASELINE_CAPTURED",
-  "nextTask": "T13",
+  "nextTask": "T09",
   "recommendedOrder": [
     "T00",
     "T01",
@@ -386,13 +386,23 @@
         "B10"
       ],
       "ownerRole": "Agente de backend",
-      "status": "pending",
-      "currentStep": null,
-      "completedSteps": [],
-      "evidence": [],
+      "status": "implemented",
+      "currentStep": 6,
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "evidence": [
+        "docs/release/admin-permissions.md",
+        "docs/release/admin-permissions-verification.json"
+      ],
       "commit": null,
       "blockedBy": [],
-      "nextAction": "Escribir tests de operations, finance, quality, owner y usuario sin permiso. Mantener enum actual; no introducir un superadmin paralelo sin necesidad.",
+      "nextAction": "Build aislado del checkpoint; luego T11.",
       "deviations": []
     },
     {
@@ -497,8 +507,8 @@
         "B06"
       ],
       "ownerRole": "Agente full stack",
-      "status": "implemented",
-      "currentStep": 6,
+      "status": "verified",
+      "currentStep": null,
       "completedSteps": [
         1,
         2,
@@ -511,9 +521,9 @@
         "docs/release/customer-assets.md",
         "docs/release/customer-assets-verification.json"
       ],
-      "commit": null,
+      "commit": "928676f05f6ff2b35865dc35fa46ab44a3e4b354",
       "blockedBy": [],
-      "nextAction": "Build aislado del checkpoint; luego T09.",
+      "nextAction": "Conservar evidencia local; la aceptación del entorno real corresponde a T36. Continuar T09.",
       "deviations": [
         "Servicios y contratos agrupados en lib/customer-assets para compartir validaciones, paginación y control de versión entre perfil, direcciones y equipos.",
         "Correcciones aditivas: compatibilidad office, correo Auth confirmado, fotos verificadas, archivado de dirección cotizada y vínculo a ubicación del servicio."
@@ -926,10 +936,12 @@
       "status": "pending",
       "currentStep": null,
       "completedSteps": [],
-      "evidence": [],
+      "evidence": [
+        "output/production-readiness/t13-advisors-summary.json"
+      ],
       "commit": null,
       "blockedBy": [],
-      "nextAction": "Probar redacción de cookies/tokens/PII, rate limit compartido entre instancias, origen indebido, bandera de cobro apagada y configuración productiva incompleta.",
+      "nextAction": "Probar redacción de cookies/tokens/PII, rate limit compartido entre instancias, origen indebido, bandera de cobro apagada y configuración productiva incompleta. Revisar warnings heredados de advisors: search_path de public.set_updated_at y extensión citext en public; no se introdujeron con T13.",
       "deviations": []
     },
     {
@@ -1067,10 +1079,12 @@
       "status": "pending",
       "currentStep": null,
       "completedSteps": [],
-      "evidence": [],
+      "evidence": [
+        "output/production-readiness/t13-advisors-summary.json"
+      ],
       "commit": null,
       "blockedBy": [],
-      "nextAction": "Definir carga esperada y presupuesto con D01/D10: usuarios concurrentes, solicitudes, checkouts, fotos y pico de operadores. Si faltan datos, usar hipótesis explícita que no habilita escala ilimitada.",
+      "nextAction": "Definir carga esperada y presupuesto con D01/D10: usuarios concurrentes, solicitudes, checkouts, fotos y pico de operadores. Si faltan datos, usar hipótesis explícita que no habilita escala ilimitada. Medir las 40 advertencias heredadas de políticas RLS permisivas múltiples antes de consolidar políticas.",
       "deviations": []
     },
     {
@@ -1602,13 +1616,13 @@
     "updateRequiredAfterImplementation": true
   },
   "checkpoint": {
-    "updatedAt": "2026-09-12T01:53:47.877Z",
+    "updatedAt": "2026-09-12T02:30:16.059Z",
     "branch": "codex/production-readiness",
     "commit": "62ed2c19eb4b84e6f13817d21b2bc0e6eceac743",
     "filesChanged": [],
-    "lastVerification": "T13: 438 unit, 171 domain, 7 tooling, 154 integration, 465 SQL fresh/upgrade, tipos/lint passed; cero hallazgos nuevos de advisors. Build aislado pendiente.",
+    "lastVerification": "T09: 441 unit, 171 domain, 7 tooling, 169 integration, 471 SQL fresh/upgrade, tipos/lint passed; cero hallazgos nuevos de advisors. Build aislado pendiente.",
     "unresolvedFailures": [],
-    "nextCommand": "Build isolated T13 candidate."
+    "nextCommand": "Build isolated T09 candidate."
   },
   "events": [
     {

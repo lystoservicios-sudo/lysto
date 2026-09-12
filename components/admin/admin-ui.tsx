@@ -17,10 +17,11 @@ export function AdminWorkspace({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const pathname = usePathname()
+  const connected = pathname === '/admin/configuracion' || pathname === '/admin/auditoria'
   useEffect(() => { setOpen(false); setQuery('') }, [pathname])
   return <DraftContext.Provider value={{ drafts, save: (key, values) => setDrafts(previous => ({ ...previous, [key]: values })) }}>
     <div className="admin-workspace">
-      <div className="adm-workspace-bar"><span><span className="adm-live-dot" /> Entorno de demostración</span><button className="adm-button adm-button-quiet" onClick={() => setOpen(!open)} aria-expanded={open} aria-controls="admin-tools"><LayoutGrid size={16} /> Todas las herramientas <ChevronDown size={15} /></button></div>
+      <div className="adm-workspace-bar"><span><span className="adm-live-dot" /> {connected ? 'Administración de la cuenta' : 'Entorno de demostración'}</span><button className="adm-button adm-button-quiet" onClick={() => setOpen(!open)} aria-expanded={open} aria-controls="admin-tools"><LayoutGrid size={16} /> Todas las herramientas <ChevronDown size={15} /></button></div>
       {open && <nav id="admin-tools" aria-label="Todas las herramientas de administración" className="adm-panel adm-modules" onKeyDown={event => { if (event.key === 'Escape') { setOpen(false); document.querySelector<HTMLButtonElement>('[aria-controls="admin-tools"]')?.focus() } }}>
         <div className="adm-panel-heading"><h2>¿Qué necesitás gestionar?</h2><button className="adm-icon-button" aria-label="Cerrar herramientas" onClick={() => setOpen(false)}><X size={20} /></button></div>
         <label className="adm-search"><Search size={18} /><input aria-label="Buscar herramienta" value={query} onChange={event => setQuery(event.target.value)} placeholder="Buscar una herramienta…" /></label>
@@ -28,7 +29,7 @@ export function AdminWorkspace({ children }: { children: ReactNode }) {
         {adminModules.every(group => group.items.every(([label]) => !matchesSearch(query, [label]))) && <p>No encontramos herramientas con ese nombre.</p>}
       </nav>}
       {children}
-      <p className="adm-demo-footnote"><CircleHelp size={15} /> Datos demostrativos. Los borradores duran esta sesión; no se envían mensajes ni se realizan cobros.</p>
+      {!connected && <p className="adm-demo-footnote"><CircleHelp size={15} /> Datos demostrativos. Los borradores duran esta sesión; no se envían mensajes ni se realizan cobros.</p>}
     </div>
   </DraftContext.Provider>
 }

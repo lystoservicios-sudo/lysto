@@ -2,6 +2,11 @@ import { NextResponse } from 'next/server'
 import { ZodError } from 'zod'
 
 const errors = {
+  last_owner: {
+    status: 409,
+    message:
+      'Necesitás otro owner con cuenta activa y autenticador verificado antes de retirar este permiso.'
+  },
   unauthorized: { status: 401, message: 'Iniciá sesión para continuar.' },
   forbidden: { status: 403, message: 'Tu cuenta no tiene permiso para esta operación.' },
   mfa_required: { status: 403, message: 'Verificá tu autenticador en Seguridad para continuar.' },

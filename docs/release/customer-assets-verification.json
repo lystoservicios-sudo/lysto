@@ -1,7 +1,7 @@
 {
   "task": "T13",
-  "status": "implemented_build_pending",
-  "checkedAt": "2026-09-12T01:53:47.874Z",
+  "status": "locally_verified",
+  "checkedAt": "2026-09-12T01:56:28.389Z",
   "releaseReady": false,
   "checks": {
     "unit": {
@@ -71,18 +71,27 @@
       "addedSinceBaseline": 0,
       "baselineLog": "output/production-readiness/t13-baseline-advisors.log",
       "finalLog": "output/production-readiness/t13-advisors.log"
+    },
+    "build": {
+      "commit": "928676f05f6ff2b35865dc35fa46ab44a3e4b354",
+      "environment": "isolated-local-production-build",
+      "checkout": "E:/Proyectos/GitHub/Lysto-production-build-check",
+      "dependencies": "junction to verified frozen lock installation, including direct Sharp 0.35.4",
+      "status": "passed",
+      "startedAt": "2026-09-12T01:54:52.232Z",
+      "exitCode": 0,
+      "completedAt": "2026-09-12T01:56:00.558Z"
     }
   },
   "review": {
     "method": "local source, SQL permissions, historical snapshot and real browser regression review",
     "independentFinalReview": false
   },
-  "pending": [
-    "isolated production build"
-  ],
+  "pending": [],
   "externalDependencies": [
     "SMTP/templates and double confirmation acceptance in the real environment: T07/T36",
     "approved retention and scheduled upload cleanup: D08/T24/T36"
   ],
-  "originalIndexSha256": "85c6b16dcb04891642c46370bfd9c5342a21e79dea59eff11cc4fac915c84f67"
+  "originalIndexSha256": "85c6b16dcb04891642c46370bfd9c5342a21e79dea59eff11cc4fac915c84f67",
+  "codeCommit": "928676f05f6ff2b35865dc35fa46ab44a3e4b354"
 }

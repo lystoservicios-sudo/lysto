@@ -53,6 +53,7 @@ export type Database = {
           can_manage_professionals: boolean
           created_at: string
           id: string
+          permissions_version: number
           profile_id: string
           updated_at: string
         }
@@ -61,6 +62,7 @@ export type Database = {
           can_manage_professionals?: boolean
           created_at?: string
           id?: string
+          permissions_version?: number
           profile_id: string
           updated_at?: string
         }
@@ -69,6 +71,7 @@ export type Database = {
           can_manage_professionals?: boolean
           created_at?: string
           id?: string
+          permissions_version?: number
           profile_id?: string
           updated_at?: string
         }
@@ -2991,6 +2994,15 @@ export type Database = {
         Returns: Json
       }
       bootstrap_customer_account: { Args: never; Returns: Json }
+      change_admin_permissions: {
+        Args: {
+          p_admin_profile_id: string
+          p_expected_version: number
+          p_permissions: Database["public"]["Enums"]["admin_permission"][]
+          p_reason: string
+        }
+        Returns: Json
+      }
       claim_expired_upload_intents: { Args: { p_limit: number }; Returns: Json }
       claim_outbox_events: {
         Args: {
@@ -3222,6 +3234,15 @@ export type Database = {
       get_session_context: { Args: never; Returns: Json }
       get_upload_intent: { Args: { p_intent_id: string }; Returns: Json }
       is_admin: { Args: never; Returns: boolean }
+      list_admin_workflow: {
+        Args: {
+          p_cursor_at: string
+          p_cursor_id: string
+          p_limit: number
+          p_resource: string
+        }
+        Returns: Json
+      }
       log_admin_action: {
         Args: {
           p_action: string

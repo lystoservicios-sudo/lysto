@@ -1,6 +1,6 @@
 # T13 — Activos persistentes del cliente
 
-Implementación local en verificación. No habilita producción ni modifica decisiones comerciales D01–D12.
+Implementación verificada localmente. No habilita producción ni modifica decisiones comerciales D01–D12.
 
 ## Comportamiento
 
@@ -30,6 +30,6 @@ Las correcciones se agregaron en migraciones nuevas. No se reescribieron las ant
 
 ## Evidencia
 
-El registro consolidado `customer-assets-verification.json` se completa al finalizar las comprobaciones. Incluye pruebas HTTP/Auth/Storage reales, navegador, errores de red y concurrencia; instalación desde cero y actualización con datos testigo; tipos, lint y build aislado. Los tokens, códigos de correo y URLs privadas no se incluyen en el registro de aceptación.
+El registro consolidado `customer-assets-verification.json` contiene las comprobaciones completadas. Incluye pruebas HTTP/Auth/Storage reales, navegador, errores de red y concurrencia; instalación desde cero y actualización con datos testigo; tipos, lint y build aislado. Los tokens, códigos de correo y URLs privadas no se incluyen en el registro de aceptación.
 
 La API de actualización de identidad y los tipos de confirmación fueron contrastados con la documentación oficial de [updateUser](https://supabase.com/docs/reference/javascript/auth-updateuser) y [verifyOtp](https://supabase.com/docs/reference/javascript/auth-verifyotp). La prueba local verifica el comportamiento de la versión instalada.

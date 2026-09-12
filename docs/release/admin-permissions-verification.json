@@ -1,0 +1,89 @@
+{
+  "task": "T09",
+  "status": "implemented_build_pending",
+  "checkedAt": "2026-09-12T02:30:16.054Z",
+  "releaseReady": false,
+  "checks": {
+    "unit": {
+      "passed": 441,
+      "files": 56,
+      "report": "output/production-readiness/t09-unit-final.json"
+    },
+    "domain": {
+      "passed": 171
+    },
+    "tooling": {
+      "passed": 7
+    },
+    "integration": {
+      "passed": 169,
+      "files": 12,
+      "zeroSkipped": true,
+      "report": "E:/Proyectos/GitHub/Lysto-production-readiness/output/integration/5adefece-93c8-40e2-a6fe-34435a4a22e0/result.json"
+    },
+    "database": {
+      "status": "passed",
+      "projectId": "lysto_production_check",
+      "baseline": "20260912013847",
+      "versions": [
+        "202608190001",
+        "202608190002",
+        "202608190003",
+        "202608190004",
+        "202608190005",
+        "202608190006",
+        "202608190007",
+        "20260910195050",
+        "20260910204604",
+        "20260910220000",
+        "20260911042254",
+        "20260911051612",
+        "20260911053515",
+        "20260911224417",
+        "20260911231948",
+        "20260911234506",
+        "20260912000828",
+        "20260912002838",
+        "20260912003701",
+        "20260912005741",
+        "20260912011452",
+        "20260912011853",
+        "20260912012604",
+        "20260912013847",
+        "20260912015711",
+        "20260912020601"
+      ],
+      "witnessPreserved": true,
+      "schemaSha256": "1262860da72341c81a9dd20a3c4c647cab037184a7b7eaaf15f3478f4cdd0cfa",
+      "storagePoliciesMatch": true,
+      "typesMatch": true,
+      "checkedAt": "2026-09-12T02:22:48.669Z",
+      "tests": 471,
+      "files": 13
+    },
+    "static": {
+      "types": 0,
+      "lint": 0,
+      "tooling": 0,
+      "checkedAt": "2026-09-12T02:23:28.102Z"
+    },
+    "advisors": {
+      "errors": 0,
+      "warnings": 42,
+      "addedSinceBaseline": 0,
+      "baselineLog": "output/production-readiness/t09-baseline-advisors.log",
+      "finalLog": "output/production-readiness/t09-advisors.log"
+    }
+  },
+  "review": {
+    "method": "local review of session and grant locks, RPC ACLs, audit projection, atomic rollback and real browser flow",
+    "independentFinalReview": false
+  },
+  "pending": [
+    "isolated production build"
+  ],
+  "externalDependencies": [
+    "Real owner recovery custodians and environment acceptance: T08/T36"
+  ],
+  "originalIndexSha256": "85c6b16dcb04891642c46370bfd9c5342a21e79dea59eff11cc4fac915c84f67"
+}

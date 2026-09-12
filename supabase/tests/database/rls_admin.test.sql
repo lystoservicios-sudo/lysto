@@ -3,7 +3,7 @@ begin;
 \ir ../fixtures/session.sql.inc
 
 
-select plan(55);
+select plan(61);
 
 create function pg_temp.set_jwt(p_uid uuid, p_user_metadata jsonb default '{}'::jsonb)
 returns void
@@ -793,21 +793,46 @@ select pg_temp.set_jwt('30000000-0000-0000-0000-000000000004');
 set local role authenticated;
 
 select lives_ok(
-  $$select public.set_admin_permissions(
+  $$select public.change_admin_permissions(
     '32000000-0000-0000-0000-000000000001',
-    array['operations']::public.admin_permission[]
+    (select permissions_version from public.admin_profiles where id='32000000-0000-0000-0000-000000000001'),
+    array['operations','quality']::public.admin_permission[],
+    'Responsable de operaciones y calidad'
   )$$,
   'owner can manage admin permissions through the audited RPC'
 );
 
 select throws_ok(
-  $$select public.set_admin_permissions(
+  $$select public.change_admin_permissions(
     '32000000-0000-0000-0000-000000000004',
-    array[]::public.admin_permission[]
+    (select permissions_version from public.admin_profiles where id='32000000-0000-0000-0000-000000000004'),
+    array[]::public.admin_permission[],
+    'Intento de retirar el último owner'
   )$$,
-  'P0001',
-  'Cannot remove the last owner permission',
+  '40001',
+  'Cannot remove the final usable owner',
   'serialized permission changes cannot remove the last owner'
+);
+
+select throws_ok(
+  $$select public.set_admin_permissions('32000000-0000-0000-0000-000000000001',array['owner']::public.admin_permission[])$$,
+  '42501', null, 'authenticated owner cannot bypass version and reason with legacy provisioning RPC'
+);
+select throws_ok($$select metadata from public.admin_audit_logs$$,
+  '42501', null, 'even owner cannot select unsanitized audit metadata directly');
+select ok(
+  exists(select 1 from jsonb_array_elements(public.list_admin_workflow('audit',100,null,null)->'items') item
+    where item->>'action'='admin.permissions.updated'
+      and item->'metadata'->'before'='["operations"]'::jsonb
+      and item->'metadata'->'after'='["operations","quality"]'::jsonb
+      and item->'metadata'->>'reason'='Responsable de operaciones y calidad'),
+  'owner reads complete before and after through the restricted audit projection'
+);
+select ok(not has_table_privilege('service_role','public.admin_audit_logs','UPDATE'), 'service role cannot rewrite audit history');
+select ok(not has_table_privilege('service_role','public.admin_audit_logs','DELETE'), 'service role cannot delete audit history');
+select throws_ok(
+  $$select public.list_admin_workflow('audit',101,null,null)$$,
+  '22023', null, 'direct audit RPC enforces bounded page size'
 );
 
 select is(
