@@ -1,85 +1,40 @@
-# Lysto — MVP en desarrollo
+# Lysto
 
-Lysto es una base de desarrollo para un marketplace gestionado de servicios técnicos para hogares. El alcance inicial se concentra en aire acondicionado en Buenos Aires, Argentina.
+Lysto es un marketplace gestionado de servicios técnicos para hogares, con alcance inicial de aire acondicionado en Buenos Aires. Este repositorio contiene la preparación de producto y operación para clientes, profesionales y operadores.
 
-La rama `feat/mvp-implementation` reúne pantallas, dominio, contratos de API, configuración y automatizaciones de calidad. No representa todavía un sistema conectado y operativo de punta a punta: varias pantallas y APIs conservan datos simulados, y las integraciones externas siguen pendientes.
+## Estado actual
 
-## Stack
+**Preparación local avanzada; producción no habilitada.** Las 40 tareas de la hoja de ruta fueron abordadas, pero varias conservan verificaciones de DB, staging, proveedor, responsables o piloto real. El contador de tareas no autoriza tráfico ni cobros. El estado verificable está en [production-handover](docs/release/production-handover.md) y el registro estructurado en [production-progress](docs/plans/2026-09-10-production-progress.json).
 
-- Next.js App Router y TypeScript.
-- Tailwind CSS.
-- Supabase Postgres/Storage verificado localmente; conexión de Auth pendiente de Task 5.
-- Mercado Pago preparado para una integración futura.
-- Tests de dominio y unitarios con Vitest.
-- Playwright configurado, pero todavía sin una ejecución E2E registrada.
-- GitHub Actions para los gates de calidad.
+## Desarrollo local
 
-## Configuración local
-
-Se requieren Node.js 22 y Corepack. Corepack lee `packageManager` y ejecuta pnpm 9.15.0 sin instalar shims globales:
+Requiere Node.js 22 y pnpm 9.15.0 mediante Corepack:
 
 ```bash
-node --version
-corepack pnpm --version
 corepack pnpm install --frozen-lockfile
-```
-
-`corepack enable` es opcional. Si falla por permisos, no hace falta usar una terminal de administrador: continuá anteponiendo `corepack` a los comandos de pnpm.
-
-Copiá `.env.example` a `.env.local` y usá únicamente valores de desarrollo. Nunca commitees credenciales.
-
-La guía completa está en [`docs/development/local-setup.md`](docs/development/local-setup.md).
-
-Para iniciar la aplicación:
-
-```bash
-corepack pnpm dev
-```
-
-## Gates de calidad
-
-Antes de entregar cambios se ejecutan, en este orden:
-
-```bash
 corepack pnpm lint
 corepack pnpm typecheck
 corepack pnpm test
+corepack pnpm test:tooling
 corepack pnpm build
 ```
 
-El script `scripts/bootstrap-local.sh` prepara pnpm, instala desde el lockfile y ejecuta los mismos gates.
+Copiar `.env.example` a `.env.local` sólo con valores de desarrollo. Las pruebas de integración requieren un proyecto Supabase descartable identificado como no productivo. Nunca usar credenciales o datos de producción en un checkout.
 
-## Evidencia actual
+## Release
 
-Evidencia local registrada el 2026-08-19:
+Los gates G01–G16 y la evidencia firmada gobiernan el lanzamiento. `technical` exige G01–G13, `pilot` G01–G15 y `general` G01–G16. Crear un inventario NO-GO desde un checkout limpio:
 
-- lint sin errores;
-- typecheck sin errores;
-- 124/124 tests de dominio aprobados;
-- 45/45 tests unitarios aprobados;
-- reset local de Supabase 001–007 y seed aprobado;
-- 376/376 tests pgTAP de esquema, RLS, Storage, eventos y seed aprobados;
-- lint de los esquemas `public` y `private` sin advertencias;
-- build de producción aprobado con 77 rutas;
-- tests E2E de Playwright no ejecutados.
+```bash
+corepack pnpm release:manifest -- --release-id <id> --environment staging --output output/release/<id>/manifest.json
+```
 
-Ver el detalle en [`checks/TEST_RESULTS.md`](checks/TEST_RESULTS.md).
+Seguir [release-policy](docs/release/release-policy.md), [production-runbook](docs/release/production-runbook.md) y [go-no-go](docs/release/go-no-go.md). No publicar políticas definitivas, desplegar, activar cobros ni abrir tráfico basándose sólo en documentación local.
 
-## Estado y próximo hito
+## Reglas técnicas
 
-- La UI cubre las superficies públicas, de cliente, profesional y administración, pero todavía incluye mocks.
-- Las rutas API y la lógica de dominio tienen contratos y tests, pero no todas las operaciones están conectadas a persistencia e integraciones reales.
-- La base Supabase local fue endurecida con roles confiables, RLS, Storage privado, comprobantes no enumerables, solicitudes de reembolso auditadas e idempotentes e inbox/outbox confiable.
-- El seed piloto cubre CABA, GBA Sur, Berazategui y Hudson; los tipos TypeScript se generan desde el esquema local verificado.
-- No se afirma que exista un proyecto Supabase real conectado ni que Mercado Pago esté activo.
-
-El próximo hito es Task 5: autenticación, perfiles y protección por rol. Las migraciones ya son aptas para desarrollo local, pero todavía requieren staging, secrets seguros, E2E y revisión de despliegue antes de aplicarse a un entorno remoto o productivo.
-
-## Reglas
-
-- No subir secretos ni hardcodear credenciales.
-- No aplicar migraciones destructivas sin revisión.
-- Toda función crítica debe tener tests.
-- Todo webhook debe ser idempotente.
-- Todo cambio administrativo crítico debe auditarse.
-- Toda transición de estado debe pasar por la máquina de estados central.
+- Secretos fuera del repositorio y logs; cuentas personales con MFA.
+- Mutaciones críticas autorizadas en servidor, invariantes en transacción y auditoría durable.
+- Webhooks, comandos, outbox, pagos y devoluciones idempotentes.
+- RLS y Storage privado por propietario/rol; DTO mínimos y paginación estable.
+- Migraciones compatibles, backup verificado, rollback de aplicación y restore sólo bajo incidente.

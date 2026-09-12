@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "planId": "lysto-production-completion-2026-09-10",
-  "status": "in_progress",
+  "status": "blocked_external",
   "createdFor": "Plan de implementación solicitado; ninguna tarea ejecutada al crear este registro.",
   "planPath": "E:/Proyectos/GitHub/Lysto-production-readiness/docs/plans/2026-09-10-production-completion.md",
   "acceptancePath": "E:/Proyectos/GitHub/Lysto-production-readiness/docs/plans/2026-09-10-production-acceptance.md",
@@ -13,8 +13,8 @@
     "snapshotHash": "78e4627223acba17868dd509b2833c950f563bd5",
     "environment": "isolated-local-worktree"
   },
-  "currentMilestone": "IMPLEMENTATION_CONTINUES_WITH_DATABASE_VERIFICATION_BLOCKED",
-  "nextTask": "T39",
+  "currentMilestone": "AGENT_PREPARATION_COMPLETE_PRODUCTION_BLOCKED",
+  "nextTask": "T15",
   "recommendedOrder": [
     "T00",
     "T01",
@@ -1576,14 +1576,36 @@
         "B10"
       ],
       "ownerRole": "Dirección + técnica + operaciones",
-      "status": "pending",
-      "currentStep": null,
-      "completedSteps": [],
-      "evidence": [],
+      "status": "blocked_external",
+      "currentStep": 3,
+      "completedSteps": [
+        1,
+        2,
+        4
+      ],
+      "evidence": [
+        "docs/operations/maintenance-calendar.md",
+        "docs/architecture/ownership-map.md",
+        "docs/release/production-handover.md",
+        "checks/HONEST_SYSTEM_STATUS.md",
+        "checks/IMPLEMENTATION_STATUS.md",
+        "checks/FINAL_SCOPE_MATRIX.md",
+        "README.md",
+        "BLOCKERS.md",
+        "tests/tooling/maintenance-handover.test.mjs"
+      ],
       "commit": null,
-      "blockedBy": [],
-      "nextAction": "Reconciliar todos los B01–B10, T00–T39, rutas, decisiones y G01–G16 con evidencia actual. Ningún pending puede convertirse en complete por narrativa.",
-      "deviations": []
+      "blockedBy": [
+        "T38 and G16 require a completed real pilot before general production readiness",
+        "Code, database, infrastructure, payments, operations and privacy owners and backups are not named",
+        "D01-D12 and G01-G16 remain pending",
+        "Capacity growth cannot be approved without observed pilot results"
+      ],
+      "nextAction": "Resume T15-T31 database verification when the disposable runtime is available, then complete staging/provider acceptance and the real pilot; assign named owners and verify target general before signing the final handover.",
+      "deviations": [
+        "Reconciled all 40 tasks without converting external or unexecuted evidence into completion.",
+        "Prepared ownership, maintenance and handover artifacts with explicit pending assignees rather than invented names."
+      ]
     }
   ],
   "decisions": [

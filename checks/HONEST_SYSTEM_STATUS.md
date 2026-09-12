@@ -1,42 +1,9 @@
-# Estado honesto del sistema Lysto
+# Estado honesto de Lysto
 
-Fecha de evidencia: 2026-08-19
+Fecha: 2026-09-12.
 
-## Respuesta corta
+Lysto tiene preparación local avanzada y una implementación amplia de recorridos, persistencia, autorización, dinero, operación y release. **No se ha demostrado TECHNICALLY_READY ni se habilitó producción.**
 
-Lysto es una base de MVP en desarrollo con una superficie amplia de UI, dominio, rutas API y automatización de calidad. No es todavía un sistema productivo conectado y operativo de punta a punta.
+El registro actual contiene 11 tareas verificadas, 6 implementadas con cierre externo pendiente, 19 en progreso y T36–T39 bloqueadas externamente. G01–G16 y D01–D12 permanecen pendientes. Docker/Supabase local no está disponible para cerrar las integraciones recientes; staging, proveedor, CI protegida, restore, carga, UAT y piloto tampoco tienen evidencia real completa.
 
-## Evidencia verificada
-
-- 124/124 tests de dominio aprobados.
-- 45/45 tests unitarios aprobados.
-- 376/376 tests pgTAP aprobados después de un reset local completo 001–007.
-- lint de los esquemas `public` y `private` sin advertencias.
-- lint y typecheck aprobados.
-- build de producción aprobado con 77 rutas.
-- Playwright E2E no ejecutado.
-
-El detalle y los límites de esta evidencia están en `checks/TEST_RESULTS.md`.
-
-## Qué está implementado
-
-- Pantallas y navegación para los ámbitos público, cliente, profesional y administrativo.
-- Dominio para diagnóstico, pricing, matching, estados, pagos, cierre, calidad, soporte, scheduling y liquidaciones.
-- Contratos de rutas API, repositorios y adaptadores para continuar la integración.
-- Base Supabase local endurecida: roles/RLS, Storage, recibos, solicitudes de reembolso auditadas e idempotentes, inbox/outbox, seed piloto y tipos generados.
-- Configuración de entorno validada y CI reproducible.
-
-Varias pantallas y APIs todavía utilizan mocks, fixtures o respuestas contractuales. Los tests demuestran la base persistente local, pero no que la aplicación ya la use de punta a punta ni que existan proveedores reales.
-
-## Qué falta para producción
-
-- Reemplazar mocks por persistencia e integraciones verificadas.
-- Configurar secrets por canales seguros.
-- Conectar Auth/perfiles y validar Supabase remoto, Mercado Pago y proveedores opcionales en entornos controlados.
-- Implementar la validación de bytes y limpieza de archivos privados de Task 8.
-- Ejecutar E2E en navegador y validar un despliegue.
-- Resolver requisitos legales y operativos.
-
-Las migraciones 001–007 son reproducibles y verificadas localmente. Eso no autoriza todavía un despliegue remoto: no se afirma que exista un proyecto Supabase real conectado ni que staging, backups o E2E estén validados.
-
-El push y el PR están omitidos por decisión de coordinación, no por un error 403 actual.
+La fuente de verdad es `docs/plans/2026-09-10-production-progress.json`. `docs/release/production-handover.md` explica qué debe ocurrir antes del piloto y de la salida general. Los resultados históricos anteriores a esta hoja de ruta no se usan para autorizar el candidato actual.
