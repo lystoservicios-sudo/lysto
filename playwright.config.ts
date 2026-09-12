@@ -1,18 +1,31 @@
 import { defineConfig, devices } from '@playwright/test'
 
 const target = new URL(process.env.LYSTO_E2E_BASE_URL ?? 'http://127.0.0.1:3100')
-if (target.protocol !== 'http:' || !['127.0.0.1', 'localhost'].includes(target.hostname) || !target.port || target.username || target.password || target.pathname !== '/' || target.search || target.hash) {
+if (
+  target.protocol !== 'http:' ||
+  !['127.0.0.1', 'localhost'].includes(target.hostname) ||
+  !target.port ||
+  target.username ||
+  target.password ||
+  target.pathname !== '/' ||
+  target.search ||
+  target.hash
+) {
   throw new Error('Playwright requires an explicit local test origin')
 }
 const baseURL = target.origin
 
 export default defineConfig({
   testDir: './tests/e2e',
+  fullyParallel: false,
+  workers: 1,
   timeout: 30_000,
   retries: process.env.CI ? 2 : 0,
   use: {
     baseURL,
-    trace: 'on-first-retry'
+    trace: 'off',
+    screenshot: 'only-on-failure',
+    video: 'retain-on-failure'
   },
   projects: [
     { name: 'chromium-mobile', use: { ...devices['Pixel 7'] } },

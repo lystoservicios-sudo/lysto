@@ -39,5 +39,5 @@ export async function enrollFixtureMfa(account: FixtureAccount) {
   if (verified.error || !verified.data) throw Error('Unable to verify disposable MFA factor')
   account.accessToken = verified.data.access_token
   account.refreshToken = verified.data.refresh_token
-  return { factorId: enrolled.data.id }
+  return { factorId: enrolled.data.id, secret: enrolled.data.totp.secret }
 }

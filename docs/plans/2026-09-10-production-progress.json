@@ -14,7 +14,7 @@
     "environment": "isolated-local-worktree"
   },
   "currentMilestone": "IMPLEMENTATION_CONTINUES_WITH_DATABASE_VERIFICATION_BLOCKED",
-  "nextTask": "T34",
+  "nextTask": "T36",
   "recommendedOrder": [
     "T00",
     "T01",
@@ -1369,14 +1369,33 @@
         "B10"
       ],
       "ownerRole": "Agente + QA",
-      "status": "pending",
-      "currentStep": null,
-      "completedSteps": [],
-      "evidence": [],
+      "status": "in_progress",
+      "currentStep": 2,
+      "completedSteps": [
+        1
+      ],
+      "evidence": [
+        "tests/e2e/auth-access.spec.ts",
+        "tests/e2e/customer-production.spec.ts",
+        "tests/e2e/professional-production.spec.ts",
+        "tests/e2e/admin-production.spec.ts",
+        "tests/e2e/service-lifecycle.spec.ts",
+        "tests/e2e/financial-exceptions.spec.ts",
+        "tests/e2e/accessibility.spec.ts",
+        "tests/qa/manual-release-checklist.md",
+        "docs/release/e2e-verification.json"
+      ],
       "commit": null,
-      "blockedBy": [],
-      "nextAction": "Reemplazar el test del wizard antiguo por escenarios del contrato vigente. Eliminar aserciones de matching simulado; comprobar IDs persistidos y recarga.",
-      "deviations": []
+      "blockedBy": [
+        "Docker Desktop stale dockerInference runtime socket blocks disposable backend execution",
+        "D04 designated staging identity",
+        "Physical phone and named customer/professional/operator/finance/quality UAT"
+      ],
+      "nextAction": "Execute all 36 discovered cases against the disposable release build and designated staging with zero skipped/failed; complete E01-E18 plus physical-phone UAT and record sanitized artifacts; continue T36 preparation meanwhile.",
+      "deviations": [
+        "Playwright discovery passed for all seven mandatory files across Chromium desktop/mobile and WebKit mobile; discovery is not execution evidence.",
+        "Failure artifacts use screenshots/video with MFA visually masked; traces are disabled to avoid recording credentials."
+      ]
     },
     {
       "id": "T35",
