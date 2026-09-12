@@ -13,6 +13,13 @@ import {
   requirePricingPermission,
   throwPricingDatabaseError
 } from '@/lib/pricing/server'
+import {
+  enforceRateLimit,
+  RateLimitExceeded,
+  rateLimitResponse,
+  requestSubject
+} from '@/lib/security/rate-limit'
+import { requireNewRequests } from '@/lib/release/runtime-switches'
 
 const schema = quoteInputSchema
   .omit({ route: true })
@@ -67,7 +74,9 @@ export async function POST(request: Request) {
     const session = await getPricingSession()
     if (!['customer', 'admin'].includes(session.role)) throw new Error('forbidden')
     if (session.role === 'admin') await requirePricingPermission(session, 'operations')
+    await enforceRateLimit('quote', `${session.profileId}:${requestSubject(request)}`)
     const body = schema.parse(await readPrivateJsonBody(request, 32768))
+    if (body.save) requireNewRequests()
     if (
       session.role !== 'admin' &&
       (body.manualRoute ||
@@ -151,6 +160,7 @@ export async function POST(request: Request) {
     }
     return privateJson({ quote, quoteId, routingNotice })
   } catch (error) {
+    if (error instanceof RateLimitExceeded) return rateLimitResponse(error)
     return pricingError(error)
   }
 }

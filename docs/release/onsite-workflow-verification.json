@@ -1,0 +1,21 @@
+{
+  "task": "T19",
+  "status": "implementation_in_progress_database_verification_pending",
+  "updatedAt": "2026-09-12T14:47:00-03:00",
+  "migration": "20260912143504_onsite_diagnosis_and_extras_guards.sql",
+  "implemented": [
+    "assigned-professional visit transitions with canonical payment checks",
+    "onsite diagnosis distinct from preliminary diagnosis",
+    "verified equipment and private evidence requirements",
+    "customer change request or explicit scope acceptance",
+    "separate accepted/rejected extras with zero Lysto fee",
+    "accepted-extra payment gate before work",
+    "durable command replay and browser-session recovery after timeout",
+    "shared professional/customer diagnosis presentation"
+  ],
+  "verified": { "onsiteRetryUnit": 3, "typecheck": "passed", "lint": "passed" },
+  "pending": [
+    "Docker Desktop engine must be available for onsite-workflow integration and pgTAP",
+    "D06 approval for additional-work payment timing"
+  ]
+}

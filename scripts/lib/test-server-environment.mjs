@@ -15,11 +15,13 @@ export function createTestServerEnvironment(env, cwd = process.cwd()) {
   delete isolated.NOTIFICATIONS_EMAIL_FROM
   delete isolated.OUTBOX_WORKER_SECRET
   delete isolated.REFUND_WORKER_SECRET
+  delete isolated.RATE_LIMIT_HASH_KEY
   isolated.OUTBOX_WORKER_ENABLED = 'false'
   isolated.REFUND_WORKER_ENABLED = 'false'
   isolated.NOTIFICATIONS_EMAIL_ENABLED = 'false'
   return { ...isolated, APP_ENV: 'test', MERCADOPAGO_MODE: 'test', MERCADOPAGO_DATABASE_URL: target.databaseUrl,
     NEXT_PUBLIC_SUPABASE_URL: target.apiUrl, NEXT_PUBLIC_SUPABASE_ANON_KEY: env.LYSTO_TEST_ANON_KEY,
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: env.LYSTO_TEST_ANON_KEY,
-    SUPABASE_SERVICE_ROLE_KEY: env.LYSTO_TEST_SERVICE_ROLE_KEY }
+    SUPABASE_SERVICE_ROLE_KEY: env.LYSTO_TEST_SERVICE_ROLE_KEY,
+    RATE_LIMIT_HASH_KEY: 'lysto-disposable-test-rate-limit-key' }
 }

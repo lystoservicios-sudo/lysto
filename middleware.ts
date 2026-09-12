@@ -15,6 +15,16 @@ const sessionlessApis = new Set([
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
+  const correlationId =
+    request.headers.get('x-correlation-id')?.match(/^[A-Za-z0-9_-]{8,80}$/)?.[0] ??
+    crypto.randomUUID()
+  const requestHeaders = new Headers(request.headers)
+  requestHeaders.set('x-correlation-id', correlationId)
+  const nextResponse = () => NextResponse.next({ request: { headers: requestHeaders } })
+  const withCorrelation = <T extends Response>(response: T): T => {
+    response.headers.set('X-Correlation-Id', correlationId)
+    return response
+  }
   const onboarding = pathname === '/pro/onboarding' || pathname.startsWith('/pro/onboarding/')
   function onboardingHeaders<T extends Response>(response: T): T {
     if (onboarding) {
@@ -24,14 +34,14 @@ export async function middleware(request: NextRequest) {
     return response
   }
   if (pathname === '/comprobante' || pathname.startsWith('/comprobante/')) {
-    const response = privateResponse(NextResponse.next({ request }))
+    const response = withCorrelation(privateResponse(nextResponse()))
     response.headers.set('X-Robots-Tag', 'noindex, nofollow')
     return response
   }
   const privatePage = requiredRoleForPath(pathname) !== null || pathname === '/seguridad'
   const api = pathname.startsWith('/api/')
-  if (!privatePage && !api) return NextResponse.next()
-  let response = onboardingHeaders(privateResponse(NextResponse.next({ request })))
+  if (!privatePage && !api) return withCorrelation(nextResponse())
+  let response = withCorrelation(onboardingHeaders(privateResponse(nextResponse())))
   if (sessionlessApis.has(pathname)) return response
   try {
     const env = assertPublicSupabaseEnv()
@@ -46,7 +56,7 @@ export async function middleware(request: NextRequest) {
             request.cookies.set(cookie.name, cookie.value)
             pending.set(cookie.name, cookie)
           }
-          response = onboardingHeaders(privateResponse(NextResponse.next({ request })))
+          response = withCorrelation(onboardingHeaders(privateResponse(nextResponse())))
           for (const { name, value, options } of pending.values())
             response.cookies.set(name, value, options)
         }
@@ -57,7 +67,7 @@ export async function middleware(request: NextRequest) {
     await supabase.auth.getUser()
     return response
   } catch {
-    return onboardingHeaders(apiErrorResponse(new ApiError('session_unavailable')))
+    return withCorrelation(onboardingHeaders(apiErrorResponse(new ApiError('session_unavailable'))))
   }
 }
 

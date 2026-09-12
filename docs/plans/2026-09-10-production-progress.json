@@ -14,7 +14,7 @@
     "environment": "isolated-local-worktree"
   },
   "currentMilestone": "IMPLEMENTATION_CONTINUES_WITH_DATABASE_VERIFICATION_BLOCKED",
-  "nextTask": "T19",
+  "nextTask": "T20",
   "recommendedOrder": [
     "T00",
     "T01",
@@ -741,14 +741,29 @@
         "B09"
       ],
       "ownerRole": "Agente full stack",
-      "status": "pending",
-      "currentStep": null,
-      "completedSteps": [],
-      "evidence": [],
+      "status": "in_progress",
+      "currentStep": 6,
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "evidence": [
+        "docs/plans/2026-09-12-t19-onsite-workflow-design.md",
+        "docs/release/onsite-workflow-verification.json"
+      ],
       "commit": null,
-      "blockedBy": [],
-      "nextAction": "Agregar pruebas de avance por técnico ajeno, pago no aprobado, conflicto de estado, adicional rechazado y aceptación duplicada.",
-      "deviations": []
+      "blockedBy": [
+        "Docker Desktop stale dockerInference runtime socket blocks migration/integration/pgTAP",
+        "D06: approved additional-work payment timing"
+      ],
+      "nextAction": "Apply migration 20260912143504 and run onsite-workflow integration plus pgTAP when Docker recovers; continue T30 meanwhile.",
+      "deviations": [
+        "Customer scope acceptance, rather than a professional-only button, moves the job into in_progress.",
+        "Accepted extras require canonical approved payment until D06 approves another rule."
+      ]
     },
     {
       "id": "T20",
@@ -1034,16 +1049,31 @@
         "B10"
       ],
       "ownerRole": "Agente técnico",
-      "status": "pending",
-      "currentStep": null,
-      "completedSteps": [],
+      "status": "in_progress",
+      "currentStep": 6,
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
       "evidence": [
-        "output/production-readiness/t13-advisors-summary.json"
+        "output/production-readiness/t13-advisors-summary.json",
+        "docs/plans/2026-09-12-t30-production-controls-design.md",
+        "docs/runbooks/alerts.md",
+        "docs/release/production-controls-verification.json"
       ],
       "commit": null,
-      "blockedBy": [],
-      "nextAction": "Probar redacción de cookies/tokens/PII, rate limit compartido entre instancias, origen indebido, bandera de cobro apagada y configuración productiva incompleta. Revisar warnings heredados de advisors: search_path de public.set_updated_at y extensión citext en public; no se introdujeron con T13.",
-      "deviations": []
+      "blockedBy": [
+        "Docker Desktop stale dockerInference runtime socket blocks migration/integration/pgTAP",
+        "Staging alert destinations and thresholds require deployment environment"
+      ],
+      "nextAction": "Apply migration 20260912144559 and run production-controls integration plus pgTAP when Docker recovers; wire alert destinations in staging; continue T20 meanwhile.",
+      "deviations": [
+        "Receipt rate limiting is defined here and will be attached when the public receipt endpoint is implemented in T21.",
+        "No production environment or alert destination was modified."
+      ]
     },
     {
       "id": "T31",

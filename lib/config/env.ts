@@ -49,6 +49,10 @@ export const publicEnvSchema = z
 
 const serverEnvShape = {
   ...publicEnvShape,
+  APP_ENV: z.enum(['development', 'test', 'staging', 'production']).default('development'),
+  LYSTO_ACCEPT_NEW_REQUESTS: z.enum(['true', 'false']).optional(),
+  LYSTO_ALLOW_NEW_CHECKOUTS: z.enum(['true', 'false']).optional(),
+  RATE_LIMIT_HASH_KEY: optionalValue,
   SUPABASE_SERVICE_ROLE_KEY: requiredValue('SUPABASE_SERVICE_ROLE_KEY'),
   PAYMENTS_PROVIDER: z.enum(['mock', 'mercadopago', 'mercadopago_split']).default('mock'),
   MERCADOPAGO_MODE: z.enum(['test', 'live']).optional(),
@@ -99,6 +103,34 @@ export const serverEnvSchema = z
   .object(serverEnvShape)
   .superRefine((env, context) => {
     requirePublicSupabaseKey(env, context)
+    if (env.APP_ENV === 'production') {
+      for (const name of ['LYSTO_ACCEPT_NEW_REQUESTS', 'LYSTO_ALLOW_NEW_CHECKOUTS'] as const) {
+        if (env[name] !== undefined) continue
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `${name} is required in production`,
+          path: [name]
+        })
+      }
+    }
+    if (
+      ['staging', 'production'].includes(env.APP_ENV) &&
+      !/^[A-Za-z0-9_-]{32,128}$/.test(env.RATE_LIMIT_HASH_KEY ?? '')
+    ) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          'RATE_LIMIT_HASH_KEY must contain 32 to 128 safe characters outside local environments',
+        path: ['RATE_LIMIT_HASH_KEY']
+      })
+    }
+    if (env.APP_ENV === 'production' && env.PAYMENTS_PROVIDER !== 'mercadopago_split') {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Production requires PAYMENTS_PROVIDER=mercadopago_split',
+        path: ['PAYMENTS_PROVIDER']
+      })
+    }
     requireWhenEnabled(env, context, env.PAYMENTS_PROVIDER === 'mercadopago_split', [
       'MERCADOPAGO_MODE',
       'MERCADOPAGO_DATABASE_URL',
@@ -154,6 +186,12 @@ export const serverEnvSchema = z
     }
   })
   .transform((env) => ({
+    runtime: {
+      appEnv: env.APP_ENV,
+      acceptNewRequests: env.LYSTO_ACCEPT_NEW_REQUESTS === 'true',
+      allowNewCheckouts: env.LYSTO_ALLOW_NEW_CHECKOUTS === 'true',
+      rateLimitHashKey: env.RATE_LIMIT_HASH_KEY
+    },
     public: {
       appUrl: env.NEXT_PUBLIC_APP_URL,
       supabaseUrl: env.NEXT_PUBLIC_SUPABASE_URL,
@@ -226,6 +264,12 @@ export function parseServerEnv(env: EnvSource): ServerEnv {
 
 export function redactEnvForLogs(env: ServerEnv) {
   return {
+    runtime: {
+      appEnv: env.runtime.appEnv,
+      acceptNewRequests: env.runtime.acceptNewRequests,
+      allowNewCheckouts: env.runtime.allowNewCheckouts,
+      rateLimitHashKey: REDACTED
+    },
     public: {
       appUrl: env.public.appUrl,
       supabaseUrl: env.public.supabaseUrl,

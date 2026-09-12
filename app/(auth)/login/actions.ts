@@ -2,20 +2,14 @@
 
 import { redirect } from 'next/navigation'
 
-import {
-  authenticateLogin,
-  type LoginGateway,
-  type LoginProfile
-} from '@/lib/auth/login'
+import { authenticateLogin, type LoginGateway, type LoginProfile } from '@/lib/auth/login'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import type { Database } from '@/lib/supabase/database.types'
 import { assertAccountMutationOrigin, bootstrapVerifiedCustomer } from '@/lib/auth/account-server'
 import { readTrustedRole } from '@/lib/auth/session-routing'
+import { enforceRateLimit, serverActionSubject } from '@/lib/security/rate-limit'
 
-type ProfileSelection = Pick<
-  Database['public']['Tables']['profiles']['Row'],
-  'id' | 'role'
->
+type ProfileSelection = Pick<Database['public']['Tables']['profiles']['Row'], 'id' | 'role'>
 type ProfessionalSelection = Pick<
   Database['public']['Tables']['professional_profiles']['Row'],
   'status'
@@ -45,6 +39,7 @@ export async function loginAction(
 
   try {
     await assertAccountMutationOrigin()
+    await enforceRateLimit('auth', await serverActionSubject(credentials.email))
     const supabase = await createServerSupabaseClient()
     let trustedRole: string | null = null
     const gateway: LoginGateway = {
@@ -53,9 +48,7 @@ export async function loginAction(
         if (error || !data.user) {
           return {
             ok: false,
-            reason: error?.code === 'invalid_credentials'
-              ? 'invalid_credentials'
-              : 'unexpected'
+            reason: error?.code === 'invalid_credentials' ? 'invalid_credentials' : 'unexpected'
           }
         }
 
@@ -64,7 +57,7 @@ export async function loginAction(
           await supabase.auth.signOut({ scope: 'local' })
           return { ok: false, reason: 'unexpected' }
         }
-        const prepared = await bootstrapVerifiedCustomer(supabase,data.user)
+        const prepared = await bootstrapVerifiedCustomer(supabase, data.user)
         return { ok: true, userId: data.user.id, accountIncomplete: prepared === 'incomplete' }
       },
 
@@ -96,7 +89,10 @@ export async function loginAction(
       }
     }
 
-    const result = await authenticateLogin({ ...credentials, next: textValue(formData, 'next') }, gateway)
+    const result = await authenticateLogin(
+      { ...credentials, next: textValue(formData, 'next') },
+      gateway
+    )
     if (!result.ok) {
       return {
         status: 'error',

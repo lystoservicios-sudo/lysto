@@ -61,6 +61,19 @@ describe('parsePublicEnv', () => {
 })
 
 describe('parseServerEnv', () => {
+  it('rejects incomplete and mock production configuration', () => {
+    expect(() => parseServerEnv({ ...serverEnv, APP_ENV: 'production' })).toThrow()
+    expect(() =>
+      parseServerEnv({
+        ...serverEnv,
+        APP_ENV: 'production',
+        LYSTO_ACCEPT_NEW_REQUESTS: 'true',
+        LYSTO_ALLOW_NEW_CHECKOUTS: 'true',
+        RATE_LIMIT_HASH_KEY: 'r'.repeat(48),
+        PAYMENTS_PROVIDER: 'mock'
+      })
+    ).toThrow(/PAYMENTS_PROVIDER/)
+  })
   it('accepts split configuration without requiring a platform access token and keeps its secrets redacted', () => {
     const parsed = parseServerEnv({
       ...serverEnv,

@@ -1373,6 +1373,61 @@ export type Database = {
           },
         ]
       }
+      onsite_diagnoses: {
+        Row: {
+          actual_diagnosis: string
+          base_scope: string
+          decided_at: string | null
+          decided_by: string | null
+          decision_reason: string | null
+          equipment_id: string
+          evidence_ids: string[]
+          id: string
+          job_id: string
+          professional_id: string
+          status: string
+          submitted_at: string
+          submitted_by: string
+          version: number
+        }
+        Insert: {
+          actual_diagnosis: string
+          base_scope: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_reason?: string | null
+          equipment_id: string
+          evidence_ids: string[]
+          id?: string
+          job_id: string
+          professional_id: string
+          status?: string
+          submitted_at?: string
+          submitted_by: string
+          version?: number
+        }
+        Update: {
+          actual_diagnosis?: string
+          base_scope?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_reason?: string | null
+          equipment_id?: string
+          evidence_ids?: string[]
+          id?: string
+          job_id?: string
+          professional_id?: string
+          status?: string
+          submitted_at?: string
+          submitted_by?: string
+          version?: number
+        }
+        Relationships: [
+          { foreignKeyName: "onsite_diagnoses_job_id_fkey"; columns: ["job_id"]; isOneToOne: true; referencedRelation: "jobs"; referencedColumns: ["id"] },
+          { foreignKeyName: "onsite_diagnoses_equipment_id_fkey"; columns: ["equipment_id"]; isOneToOne: false; referencedRelation: "customer_equipment"; referencedColumns: ["id"] },
+          { foreignKeyName: "onsite_diagnoses_professional_id_fkey"; columns: ["professional_id"]; isOneToOne: false; referencedRelation: "professional_profiles"; referencedColumns: ["id"] }
+        ]
+      }
       payment_events: {
         Row: {
           created_at: string
@@ -3095,6 +3150,12 @@ export type Database = {
       }
     }
     Functions: {
+      consume_rate_limit: {
+        Args: { p_key: string; p_limit: number; p_window_seconds: number }
+        Returns: Json
+      }
+      production_readiness_probe: { Args: never; Returns: Json }
+      prune_rate_limits: { Args: { p_limit?: number }; Returns: number }
       accept_professional_invitation: {
         Args: { p_token: string }
         Returns: Json
