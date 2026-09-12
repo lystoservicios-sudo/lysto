@@ -14,7 +14,7 @@
     "environment": "isolated-local-worktree"
   },
   "currentMilestone": "IMPLEMENTATION_CONTINUES_WITH_DATABASE_VERIFICATION_BLOCKED",
-  "nextTask": "T31",
+  "nextTask": "T35",
   "recommendedOrder": [
     "T00",
     "T01",
@@ -1238,14 +1238,33 @@
         "B10"
       ],
       "ownerRole": "Agente prepara; dirección/legal/contabilidad/operaciones validan",
-      "status": "pending",
-      "currentStep": null,
-      "completedSteps": [],
-      "evidence": [],
+      "status": "in_progress",
+      "currentStep": 6,
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "evidence": [
+        "docs/operations/service-policies.md",
+        "docs/operations/privacy-requests.md",
+        "docs/operations/operator-handbook.md",
+        "docs/release/policy-readiness-verification.json",
+        "tests/policy-pages.vitest.test.tsx"
+      ],
       "commit": null,
-      "blockedBy": [],
-      "nextAction": "Preparar borradores completos y decisiones abiertas sobre garantía, cancelación, reintegro, adicionales, profesionales y facturación; no certificar cumplimiento legal ni inventar aprobación.",
-      "deviations": []
+      "blockedBy": [
+        "Docker Desktop stale dockerInference runtime socket blocks migration/integration/pgTAP",
+        "D02/D05/D06/D08 human approvals are pending",
+        "Operator and finance training/UAT requires named participants"
+      ],
+      "nextAction": "Apply migration 20260912170000 and run policy-acceptance integration plus pgTAP when Docker recovers; obtain named approvals and training evidence before enabling registration or publishing a definitive version; continue T35 meanwhile.",
+      "deviations": [
+        "Public policy routes identify themselves as unapproved drafts and are noindex; registration remains gated by the existing approved-version configuration.",
+        "No legal compliance claim or human approval was inferred."
+      ]
     },
     {
       "id": "T32",

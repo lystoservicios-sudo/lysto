@@ -5,19 +5,47 @@ import type { AppRole } from './app-navigation-config'
 import { AppShellProvider } from './app-shell-provider'
 import { AppTopbar } from './app-topbar'
 import { MarketingHeader } from './marketing-header'
+import Link from 'next/link'
 import type { AccountIdentity } from '@/lib/auth/account-identity'
 
 export function PublicShell({ children }: { children: ReactNode }) {
-  return <div className="min-h-screen bg-white"><MarketingHeader />{children}</div>
+  return (
+    <div className="min-h-screen bg-white">
+      <MarketingHeader />
+      {children}
+      <footer className="border-t border-slate-200 bg-slate-50">
+        <nav
+          aria-label="Información legal"
+          className="mx-auto flex max-w-6xl flex-wrap gap-5 px-4 py-8 text-sm font-semibold text-slate-700 sm:px-6"
+        >
+          <Link href="/terminos">Términos</Link>
+          <Link href="/privacidad">Privacidad</Link>
+          <Link href="/cancelaciones">Cancelaciones</Link>
+          <Link href="/ayuda">Ayuda</Link>
+        </nav>
+      </footer>
+    </div>
+  )
 }
 
-export async function AppShell({ children, role, identity }: { children: ReactNode; role: AppRole; identity?: AccountIdentity }) {
+export async function AppShell({
+  children,
+  role,
+  identity
+}: {
+  children: ReactNode
+  role: AppRole
+  identity?: AccountIdentity
+}) {
   const cookieStore = await cookies()
   const defaultOpen = cookieStore.get('sidebar_state')?.value !== 'false'
 
   return (
     <AppShellProvider defaultOpen={defaultOpen}>
-      <div data-app-shell-content className="flex min-h-screen w-full bg-[var(--lysto-canvas)] text-[var(--lysto-ink)]">
+      <div
+        data-app-shell-content
+        className="flex min-h-screen w-full bg-[var(--lysto-canvas)] text-[var(--lysto-ink)]"
+      >
         <a
           href="#main-content"
           className="lysto-skip-link fixed left-4 top-4 z-[60] -translate-y-24 rounded-lg bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition-transform duration-150 focus:translate-y-0 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2"
@@ -27,7 +55,11 @@ export async function AppShell({ children, role, identity }: { children: ReactNo
         <AppSidebar role={role} />
         <div className="flex min-w-0 flex-1 flex-col">
           <AppTopbar role={role} identity={identity} />
-          <main id="main-content" tabIndex={-1} className="min-w-0 flex-1 px-4 pb-8 pt-6 md:px-6 md:pt-8">
+          <main
+            id="main-content"
+            tabIndex={-1}
+            className="min-w-0 flex-1 px-4 pb-8 pt-6 md:px-6 md:pt-8"
+          >
             <div className="mx-auto w-full max-w-[90rem]">{children}</div>
           </main>
         </div>
