@@ -32,7 +32,8 @@ Valores se administran en el gestor de secretos de cada ambiente; este registro 
 | NOTIFICATIONS_EMAIL_ENABLED, RESEND_API_KEY | Correo | Buzones de prueba primero; worker T24 y autorización de destinatarios |
 | WHATSAPP_ENABLED, WHATSAPP_API_TOKEN, WHATSAPP_PHONE_NUMBER_ID | Canal opcional | Pendiente de alcance; sin envíos externos en esta etapa |
 | AI_ENABLED, AI_PROVIDER, OPENAI_API_KEY | Función opcional | D12; límites y habilitación explícitos |
-| APP_ENV, LYSTO_ACCEPT_NEW_REQUESTS, LYSTO_ALLOW_NEW_CHECKOUTS | Controles propuestos T30 | Todavía no implementados; no asumir que estas variables protegen hoy |
+| APP_ENV, LYSTO_ACCEPT_NEW_REQUESTS, LYSTO_ALLOW_NEW_CHECKOUTS | Controles operativos T30 | Implementados; producción exige valores explícitos y proveedor split. Validar ambos interruptores en cada deploy. |
+| RATE_LIMIT_HASH_KEY | HMAC de claves opacas para límites compartidos | 32–128 caracteres aleatorios, distinto por ambiente; nunca frontend |
 | LYSTO_TEST_DATABASE_URL | Pruebas PostgreSQL locales | Exclusivamente DB descartable identificada; guard T04 |
 
 En el .env.local original se detectó configuración pública de Supabase y metadatos de Vercel, incluyendo token de contexto. Ningún valor fue copiado al snapshot, logs versionados o este registro. No afirmar presencia de secretos de Mercado Pago por existir nombres en .env.example.
@@ -45,5 +46,9 @@ En el .env.local original se detectó configuración pública de Supabase y meta
 - Worker/scheduler: ruta interna autenticada de T24 con identidad separada; nunca cron público sin secreto/permiso.
 - Observabilidad: servicio, proyecto, canal de alertas y responsables D10.
 - DNS/SMTP: propietarios, verificación del dominio y remitente de prueba; procedimiento revisable antes de enviar.
+
+## Recuperación pendiente de designación
+
+El verificador y los runbooks T32 están implementados. D04 debe designar un proyecto aislado de restore y D09 debe aprobar RPO/RTO, titulares, suplentes, retención real del plan y ubicación de copias independientes de Storage. Ningún entorno existente se presume apto para el ensayo.
 
 Los marcadores de dominio no son URLs configuradas. Antes de cualquier migración remota, registrar project ref, historial, backup, responsable y autorización aplicable.

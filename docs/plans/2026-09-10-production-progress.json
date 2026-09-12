@@ -14,7 +14,7 @@
     "environment": "isolated-local-worktree"
   },
   "currentMilestone": "IMPLEMENTATION_CONTINUES_WITH_DATABASE_VERIFICATION_BLOCKED",
-  "nextTask": "T32",
+  "nextTask": "T21",
   "recommendedOrder": [
     "T00",
     "T01",
@@ -1129,14 +1129,31 @@
         "B10"
       ],
       "ownerRole": "Agente técnico + titular de infraestructura",
-      "status": "pending",
-      "currentStep": null,
-      "completedSteps": [],
-      "evidence": [],
+      "status": "implemented",
+      "currentStep": 5,
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "evidence": [
+        "docs/runbooks/disaster-recovery.md",
+        "docs/runbooks/secret-rotation.md",
+        "docs/release/restore-manifest.example.json",
+        "docs/release/restore-verification.json"
+      ],
       "commit": null,
-      "blockedBy": [],
-      "nextAction": "Inventariar qué respalda el proveedor: DB, Auth, Storage, configuración, roles/passwords especiales, outbox/ledger y tokens cifrados. Confirmar retención real del plan contratado.",
-      "deviations": []
+      "blockedBy": [
+        "D04: designated isolated restore project and provider inventory",
+        "D09: approved RPO/RTO, backup retention and accountable custodians",
+        "Docker Desktop stale dockerInference runtime socket blocks even the local verifier integration"
+      ],
+      "nextAction": "Restore a real DB/Auth/Storage/config backup into the designated non-production target, run verify-restore with synthetic login and encryption canary, record measured RPO/RTO, then obtain D09 sign-off; continue T21 meanwhile.",
+      "deviations": [
+        "The disposable integration validates the verifier itself but is not represented as a restore drill.",
+        "No backup, secret, remote environment or source database was modified."
+      ]
     },
     {
       "id": "T33",

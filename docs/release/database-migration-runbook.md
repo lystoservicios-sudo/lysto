@@ -50,4 +50,6 @@ No ejecutar `migration repair` a ciegas. Para reconciliar un entorno persistente
 - Rollback de app sólo si compatible con esquema. Preferir forward fix si ya existen datos nuevos. No borrar pagos ni devolver la DB a un instante anterior sin reconciliar eventos posteriores del proveedor.
 - El ensayo de migraciones no demuestra recuperación de Storage, secretos u operaciones remotas; esa aceptación corresponde a T32.
 
+El procedimiento T32 está en `docs/runbooks/disaster-recovery.md`. Su verificador compara el historial completo esperado y falla ante una versión faltante o adicional; el manifiesto de ejemplo contiene sólo una versión ilustrativa y debe reemplazarse por el inventario exacto del backup ensayado.
+
 Referencias: [CLI Supabase](https://supabase.com/docs/reference/cli/supabase-db-start), [migraciones](https://supabase.com/docs/guides/local-development/database-migrations). Se verificaron comandos de la CLI instalada 2.115.0 con --help.
