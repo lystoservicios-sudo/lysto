@@ -6,6 +6,13 @@
   "planPath": "E:/Proyectos/GitHub/Lysto-production-readiness/docs/plans/2026-09-10-production-completion.md",
   "acceptancePath": "E:/Proyectos/GitHub/Lysto-production-readiness/docs/plans/2026-09-10-production-acceptance.md",
   "auditPath": "E:/Proyectos/GitHub/Lysto-production-readiness/docs/audits/2026-09-10-cto-production-readiness.md",
+  "databaseExecutionPolicy": {
+    "mode": "remote_only",
+    "setBy": "user",
+    "setAt": "2026-09-12",
+    "rule": "Do not start or use local Supabase or Docker. Execute pending database validation only against the explicitly identified connected remote Supabase project after a read-only identity and backup preflight.",
+    "supersedes": "Any task nextAction that says to wait for or use local Docker/Supabase."
+  },
   "baseline": {
     "auditReferenceCommit": "6bbabd3",
     "includesUncommittedWork": true,

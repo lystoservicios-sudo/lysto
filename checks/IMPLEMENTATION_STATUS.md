@@ -11,4 +11,4 @@
 
 Las 40 tareas fueron trabajadas y ninguna queda sin diagnóstico o siguiente acción. Esto no equivale a 40 tareas completas: el manifest conserva G01–G16 pendientes y la decisión es NO-GO.
 
-Consultar `docs/plans/2026-09-10-production-progress.json` para pasos, commits, evidencia, bloqueos y desviaciones de cada tarea. El próximo trabajo técnico ejecutable es cerrar T15–T31 contra Supabase descartable cuando vuelva el runtime; luego corresponde staging y aceptación externa.
+Consultar `docs/plans/2026-09-10-production-progress.json` para pasos, commits, evidencia, bloqueos y desviaciones de cada tarea. El próximo trabajo técnico ejecutable es identificar y verificar en modo lectura el Supabase remoto conectado y cerrar T15–T31 allí, con backup y controles de entorno; luego corresponde staging y aceptación externa.

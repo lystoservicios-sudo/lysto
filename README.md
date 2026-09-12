@@ -19,7 +19,7 @@ corepack pnpm test:tooling
 corepack pnpm build
 ```
 
-Copiar `.env.example` a `.env.local` sólo con valores de desarrollo. Las pruebas de integración requieren un proyecto Supabase descartable identificado como no productivo. Nunca usar credenciales o datos de producción en un checkout.
+Copiar `.env.example` a `.env.local` sólo con valores del entorno autorizado. Por decisión del proyecto, las validaciones pendientes usan exclusivamente el Supabase remoto conectado, después de comprobar su identidad, entorno y backup. No iniciar Supabase local ni Docker para esta hoja de ruta. Nunca registrar credenciales o datos reales en el checkout.
 
 ## Release
 

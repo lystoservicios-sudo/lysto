@@ -23,7 +23,7 @@ La verificación local final aprobó lint, tipos, 174 pruebas de dominio, 503 pr
 
 ## Bloqueos para el piloto
 
-1. Recuperar un runtime Docker/Supabase descartable y ejecutar las migraciones e integraciones pendientes de T15–T31 con pgTAP, además del E2E local completo.
+1. Identificar y autenticar el Supabase remoto conectado, comprobar entorno y backup, y ejecutar allí las migraciones e integraciones pendientes de T15–T31 con pgTAP. No usar Supabase local ni Docker.
 2. Designar staging/hosting, project ref, dominio, secretos, remitente, scheduler y destinos de alertas; ejecutar T32, T34, T35 y T36 allí.
 3. Identificar la aplicación y cuentas Mercado Pago, completar MP01–MP12 y cualquier prueba financiera real expresamente autorizada.
 4. Resolver D01–D12, aprobar políticas, economía, soporte, RPO/RTO, capacidad y responsables/suplentes nominales.

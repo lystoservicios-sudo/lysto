@@ -4,7 +4,7 @@ Fecha: 2026-09-12. Estado: producción y piloto no habilitados.
 
 | Bloqueo | Impacto | Condición de salida |
 | --- | --- | --- |
-| Runtime Docker/Supabase local indisponible | impide ejecutar migraciones nuevas, integración real y pgTAP de T15–T31 | recuperar runtime sin destruir datos del usuario; ejecutar protocolo fresh/upgrade y cero skips críticos |
+| Identidad/acceso del Supabase remoto inconsistente | la app local apunta a `dqonlqcurvjnjgsczevu`, el MCP `supabase` a `zsqwagnozrnetlpluzpg` y ambos dominios no resuelven; `supabase-studioflow` apunta a `rmkngkkuglexnzzuvdgb`, que responde pero no autenticó | identificar cuál referencia pertenece a Lysto, autenticar acceso de sólo lectura, verificar entorno/backup y recién entonces ejecutar el protocolo remoto |
 | Staging/hosting D04 sin identificar | bloquea E2E remoto, carga, alertas, restore, dominio y smoke | dueño, proyecto `production:false`, dominio, secretos y evidencia del candidato |
 | Mercado Pago D11 sin app/cuentas | bloquea MP01–MP12, conciliación y aceptación comercial | titular, cuentas oficiales, webhook y matriz proveedor aprobada |
 | Decisiones D01–D12 pendientes | bloquea políticas, economía, soporte, continuidad, capacidad y alcance | decisiones fechadas por responsables con referencias verificables |
@@ -14,4 +14,4 @@ Fecha: 2026-09-12. Estado: producción y piloto no habilitados.
 
 Además faltan backup/restore medidos, ejecución completa E2E en Chromium/WebKit y móviles físicos, perfiles de carga en staging, remitente/scheduler/alertas y aprobación legal de políticas. Un archivo local no resuelve esos puntos.
 
-No hay autorización para despliegue, migración remota, pago, devolución, correo externo o activación de tráfico. Al resolverse un bloqueo, actualizar el registro estructurado y adjuntar evidencia al manifest del candidato exacto.
+No se usará Supabase local ni Docker. La instrucción de usar el Supabase remoto autoriza orientar las pruebas hacia ese entorno, pero no permite aplicar migraciones a una referencia ambigua. Antes de escribir se debe demostrar identidad, clasificación del entorno, backup y alcance. No hay autorización para pago, devolución, correo externo o activación de tráfico.
