@@ -2,7 +2,11 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 
-export function CustomerWarrantyClaimForm() {
+export function CustomerWarrantyClaimForm({
+  jobs = []
+}: {
+  jobs?: readonly { id: string; label: string }[]
+}) {
   const [jobId, setJobId] = useState(''),
     [description, setDescription] = useState(''),
     [sameProblem, setSameProblem] = useState(true),
@@ -44,12 +48,28 @@ export function CustomerWarrantyClaimForm() {
       <form onSubmit={submit} className="mt-4 space-y-4">
         <label className="block text-sm font-bold">
           ID del trabajo
-          <input
-            required
-            value={jobId}
-            onChange={(e) => setJobId(e.target.value)}
-            className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2"
-          />
+          {jobs.length ? (
+            <select
+              required
+              value={jobId}
+              onChange={(e) => setJobId(e.target.value)}
+              className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2"
+            >
+              <option value="">Seleccioná un trabajo</option>
+              {jobs.map((job) => (
+                <option key={job.id} value={job.id}>
+                  {job.label}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <input
+              required
+              value={jobId}
+              onChange={(e) => setJobId(e.target.value)}
+              className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2"
+            />
+          )}
         </label>
         <label className="block text-sm font-bold">
           ¿Qué volvió a ocurrir?

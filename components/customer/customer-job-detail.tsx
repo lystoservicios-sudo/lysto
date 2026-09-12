@@ -51,7 +51,7 @@ export function CustomerJobDetail({ job }: { job: CustomerJobViewModel }) {
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.12em] text-blue-700">
-                {job.id} · Demostración
+                Trabajo {job.id.slice(0, 8)}
               </p>
               <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950">
                 {job.issueLabel}

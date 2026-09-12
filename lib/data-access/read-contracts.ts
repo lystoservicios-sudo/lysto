@@ -12,6 +12,7 @@ type Dated = { id: string; createdAt: string }
 export type RequestDto = Dated & {
   status: Enums['request_status']
   issueTypeId: string
+  addressId: string | null
   equipmentId: string | null
   preferredDate: string | null
   preferredWindow: string | null
@@ -25,6 +26,7 @@ export type JobDto = Dated & {
   timeWindow: string | null
   completedAt: string | null
   finalAmount: number | null
+  warrantyUntil?: string | null
 }
 type PaymentBase = Dated & {
   requestId: string | null

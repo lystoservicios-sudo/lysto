@@ -11,8 +11,8 @@ import type {
 import type { JobDto } from '@/lib/data-access/read-contracts'
 import { customerJobStatusLabels } from '@/lib/domain/job-status-labels'
 
-export function toCustomerJobSummary(job:JobDto) {
-  return {...job,statusLabel:customerJobStatusLabels[job.status]}
+export function toCustomerJobSummary(job: JobDto) {
+  return { ...job, statusLabel: customerJobStatusLabels[job.status] }
 }
 
 export type CustomerUiTone = 'brand' | 'success' | 'warning' | 'danger' | 'benefit' | 'neutral'
@@ -43,6 +43,7 @@ export type CustomerRequestViewModel = {
 export type CustomerJobViewModel = {
   id: string
   requestId: string
+  equipmentId?: string
   status: JobStatus
   statusView: CustomerStatusViewModel
   issueLabel: string
@@ -112,7 +113,7 @@ export type CustomerMaintenanceViewModel = {
 export type CustomerWarrantyViewModel = {
   id: string
   jobId: string
-  equipmentId: string
+  equipmentId?: string
   equipmentName: string
   status: 'active' | 'claim_open' | 'resolved' | 'rejected' | 'expired'
   statusView: CustomerStatusViewModel
@@ -193,6 +194,9 @@ export type CustomerProfileViewModel = {
   notificationPreference: 'email' | 'whatsapp' | 'both'
 }
 
-export function findCustomerRecordById<T extends { id: string }>(records: readonly T[], id: string): T | null {
+export function findCustomerRecordById<T extends { id: string }>(
+  records: readonly T[],
+  id: string
+): T | null {
   return records.find((record) => record.id === id) ?? null
 }

@@ -1,15 +1,8 @@
 import { CustomerDashboard } from '@/components/customer/customer-dashboard'
-import { buildCustomerDashboardViewModel } from '@/features/customer/dashboard-view-model'
-import { customerDemoFixtures } from '@/features/customer/fixtures/customer-demo-fixtures'
+import { requirePageSession } from '@/lib/auth/session'
+import { customerLiveData } from '@/lib/customer/live-model'
 
-export default function CustomerDashboardPage() {
-  const model = buildCustomerDashboardViewModel({
-    customerName: customerDemoFixtures.profile.firstName,
-    jobs: customerDemoFixtures.jobs,
-    equipment: customerDemoFixtures.equipment,
-    maintenance: customerDemoFixtures.maintenance,
-    warranties: customerDemoFixtures.warranties
-  })
-
-  return <CustomerDashboard model={model} />
+export default async function CustomerDashboardPage() {
+  const data = await customerLiveData(await requirePageSession('customer'))
+  return <CustomerDashboard model={data.dashboard} />
 }

@@ -14,7 +14,7 @@
     "environment": "isolated-local-worktree"
   },
   "currentMilestone": "IMPLEMENTATION_CONTINUES_WITH_DATABASE_VERIFICATION_BLOCKED",
-  "nextTask": "T27",
+  "nextTask": "T28",
   "recommendedOrder": [
     "T00",
     "T01",
@@ -1061,14 +1061,30 @@
         "B05"
       ],
       "ownerRole": "Agente full stack",
-      "status": "pending",
-      "currentStep": null,
-      "completedSteps": [],
-      "evidence": [],
+      "status": "in_progress",
+      "currentStep": 6,
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "evidence": [
+        "docs/release/customer-live-pages-verification.json",
+        "tests/integration/customer-pages.test.ts",
+        "28 focused customer unit tests, 174 domain tests, typecheck and lint passed"
+      ],
       "commit": null,
-      "blockedBy": [],
-      "nextAction": "Usar el inventario completo de rutas cliente del anexo; añadir tests con usuario sin historial, con operación activa y con error de backend.",
-      "deviations": []
+      "blockedBy": [
+        "Docker Desktop stale dockerInference runtime socket blocks authenticated page integration",
+        "Complete mobile and reload walkthrough requires designated staging"
+      ],
+      "nextAction": "Run customer-pages integration when Docker recovers and complete the mobile/reload walkthrough in staging; continue T28 meanwhile.",
+      "deviations": [
+        "Existing connected customer asset, payment, quote and maintenance surfaces were reviewed instead of duplicated.",
+        "Customer history uses cursor pages of 25; the dashboard uses a bounded recent summary."
+      ]
     },
     {
       "id": "T28",

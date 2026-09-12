@@ -34,6 +34,7 @@ const schemas = {
     ...base,
     status: z.enum(Constants.public.Enums.request_status),
     issue_type_id: uuid,
+    address_id: uuid.nullable(),
     equipment_id: uuid.nullable(),
     preferred_date: nullableString,
     preferred_time_window: nullableString,
@@ -47,7 +48,8 @@ const schemas = {
     scheduled_date: nullableString,
     scheduled_time_window: nullableString,
     completed_at: date.nullable(),
-    final_amount: number.nullable()
+    final_amount: number.nullable(),
+    warranty_until: nullableString
   }),
   payments: z.object({
     ...base,
@@ -88,12 +90,12 @@ const definitions = {
   requests: {
     table: 'service_requests',
     columns:
-      'id,created_at,status,issue_type_id,equipment_id,preferred_date,preferred_time_window,urgency_level'
+      'id,created_at,status,issue_type_id,address_id,equipment_id,preferred_date,preferred_time_window,urgency_level'
   },
   jobs: {
     table: 'jobs',
     columns:
-      'id,created_at,request_id,status,professional_id,scheduled_date,scheduled_time_window,completed_at,final_amount'
+      'id,created_at,request_id,status,professional_id,scheduled_date,scheduled_time_window,completed_at,final_amount,warranty_until'
   },
   payments: { table: 'payments', columns: 'id,created_at,request_id,job_id,status,currency' },
   equipment: {
@@ -124,7 +126,8 @@ const contextSchema = z.object({
   professional_id: uuid.nullable(),
   professional_status: nullableString,
   permissions: z.array(z.enum(['operations', 'finance', 'quality', 'owner'])),
-  session_active:z.literal(true), aal:z.enum(['aal1','aal2'])
+  session_active: z.literal(true),
+  aal: z.enum(['aal1', 'aal2'])
 })
 const optionsSchema = z
   .object({
@@ -175,7 +178,7 @@ async function resolveReader(client: SupabaseClient<Database>, role: ReadRole): 
     (!parsed.data.professional_id || parsed.data.professional_status !== 'approved')
   )
     throw new ReadModelError('forbidden')
-  if (role === 'admin' && (parsed.data.permissions.length === 0 || parsed.data.aal!=='aal2'))
+  if (role === 'admin' && (parsed.data.permissions.length === 0 || parsed.data.aal !== 'aal2'))
     throw new ReadModelError('forbidden')
   return parsed.data
 }
@@ -215,6 +218,7 @@ function project<R extends ReadRole, K extends ReadResource>(
         createdAt: r.created_at,
         status: r.status,
         issueTypeId: r.issue_type_id,
+        addressId: r.address_id,
         equipmentId: r.equipment_id,
         preferredDate: r.preferred_date,
         preferredWindow: r.preferred_time_window,
@@ -233,7 +237,8 @@ function project<R extends ReadRole, K extends ReadResource>(
         scheduledDate: r.scheduled_date,
         timeWindow: r.scheduled_time_window,
         completedAt: r.completed_at,
-        finalAmount: r.final_amount
+        finalAmount: r.final_amount,
+        warrantyUntil: r.warranty_until
       }
       break
     }
