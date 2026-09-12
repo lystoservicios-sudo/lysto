@@ -53,6 +53,8 @@ El verificador y los runbooks T32 están implementados. D04 debe designar un pro
 
 Los marcadores de dominio no son URLs configuradas. Antes de cualquier migración remota, registrar project ref, historial, backup, responsable y autorización aplicable.
 
+La plantilla `staging-identity.example.json` describe únicamente la forma; sus valores `.invalid` no son un destino. La aceptación se registra en `staging-acceptance.md` y la matriz externa en `provider-acceptance.md`.
+
 ## Capacidad y gasto
 
 El perfil de carga seguro y las hipótesis base/2×/5× están en `docs/release/performance-and-cost.md`. Staging debe registrar CPU, memoria, conexiones, locks, egress, colas y latencias propias por candidato. Configurar avisos de gasto al 50%, 75% y 90% del presupuesto D10 y conservar el límite de conexiones del pool de pagos por instancia. Ninguna estimación local habilita aumento de cupo comercial.

@@ -14,7 +14,7 @@
     "environment": "isolated-local-worktree"
   },
   "currentMilestone": "IMPLEMENTATION_CONTINUES_WITH_DATABASE_VERIFICATION_BLOCKED",
-  "nextTask": "T36",
+  "nextTask": "T37",
   "recommendedOrder": [
     "T00",
     "T01",
@@ -1455,14 +1455,28 @@
         "B10"
       ],
       "ownerRole": "Agente técnico + titular Mercado Pago + QA",
-      "status": "pending",
-      "currentStep": null,
+      "status": "blocked_external",
+      "currentStep": 1,
       "completedSteps": [],
-      "evidence": [],
+      "evidence": [
+        "docs/release/staging-acceptance.md",
+        "docs/release/provider-acceptance.md",
+        "docs/release/staging-identity.example.json",
+        "scripts/test-e2e-staging.mjs",
+        "tests/tooling/staging-acceptance.test.mjs"
+      ],
       "commit": null,
-      "blockedBy": [],
-      "nextAction": "Desplegar el release candidate en staging identificado usando autorizaciones existentes. Si falta destino/acceso, preparar configuración y solicitar sólo ese dato; nunca adivinar ni usar producción de staging.",
-      "deviations": []
+      "blockedBy": [
+        "D04 has no designated staging provider, project, domain or accountable owner",
+        "D11 has no identified Mercado Pago application and official test accounts",
+        "D06/D10 sender, scheduler and alert destinations are not approved",
+        "T32/T34/T35 require remote execution evidence"
+      ],
+      "nextAction": "Once D04/D11 identify staging and provider owners, deploy this exact candidate with isolated secrets, run migrations, smoke, T34/T35, restore and MP01-MP12, then collect named acceptance; continue T37 preparation without enabling production.",
+      "deviations": [
+        "The historical Vercel demo was not treated as staging or production.",
+        "No remote environment, email, payment, refund or OAuth account was modified."
+      ]
     },
     {
       "id": "T37",

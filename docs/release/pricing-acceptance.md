@@ -18,6 +18,8 @@ Las fuentes y políticas se guardan en tablas privadas versionadas; una escritur
 
 D01/D02/D03/D05 deben aportar la política efectiva y casos firmados por finanzas: mano de obra, traslado, materiales, recargo, comisión, costo real del proveedor de cobro, neto profesional y fechas de vigencia. Las referencias iniciales CAIM y los fixtures de integración no sustituyen esta aprobación. No se cargó una política de producción en esta etapa.
 
+Antes de staging, registrar además quién vende y factura, tarifa observada de Mercado Pago por medio/plazo, redondeo, impuestos, neto mínimo profesional y al menos un caso reconciliado. La matriz MP01–MP12 vive en `docs/release/provider-acceptance.md`.
+
 ## Contratos implementados
 
 | Operación | Autoridad y datos relevantes |

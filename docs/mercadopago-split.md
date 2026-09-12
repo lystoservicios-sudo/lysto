@@ -78,6 +78,8 @@ Los tests de ledger con PostgreSQL se ejecutan con `LYSTO_TEST_DATABASE_URL` apu
 
 La validación local no sustituye la aceptación en la cuenta de Mercado Pago. Esta entrega no creó pagos reales, no obtuvo consentimientos de técnicos y no aplicó migraciones a una base remota.
 
+La ejecución remota MP01–MP12 y sus campos de evidencia se registran en `docs/release/provider-acceptance.md`. Ninguna fila pendiente puede habilitar Mercado Pago live por inferencia.
+
 ## Referencias oficiales consultadas
 
 - [Configuración del split y descuento de cargos](https://www.mercadopago.com.ar/developers/es/docs/split-payments/split-1-1/integration-configuration/integrate-marketplace)
