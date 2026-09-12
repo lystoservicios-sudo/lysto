@@ -31,6 +31,9 @@ try {
   const target = assertTestEnvironment(env, readTestIdentity(env))
   // A local test invocation must not inherit usable provider/remote credentials.
   for (const key of Object.keys(env)) if (key.startsWith('MERCADOPAGO_') && key !== 'MERCADOPAGO_MODE') delete env[key]
+  for (const key of ['RESEND_API_KEY','NOTIFICATIONS_EMAIL_FROM','OUTBOX_WORKER_SECRET','GOOGLE_MAPS_SERVER_API_KEY']) delete env[key]
+  env.NOTIFICATIONS_EMAIL_ENABLED='false'
+  env.OUTBOX_WORKER_ENABLED='false'
   Object.assign(env, { NEXT_PUBLIC_SUPABASE_URL: target.apiUrl, NEXT_PUBLIC_SUPABASE_ANON_KEY: env.LYSTO_TEST_ANON_KEY, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: env.LYSTO_TEST_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY: env.LYSTO_TEST_SERVICE_ROLE_KEY, APP_ENV: 'test' })
   if (args.some(arg => arg.startsWith('-'))) throw new Error('Only test-name filters are accepted; runner safety settings cannot be overridden')
   const output = resolve('output', 'integration', randomUUID())

@@ -35,7 +35,10 @@ export function isEligible(candidate: ProfessionalCandidate, input: MatchInput):
   return true
 }
 
-export function scoreProfessional(candidate: ProfessionalCandidate, input: MatchInput): ScoredCandidate | null {
+export function scoreProfessional(
+  candidate: ProfessionalCandidate,
+  input: MatchInput
+): ScoredCandidate | null {
   if (!isEligible(candidate, input)) return null
   const reasons: string[] = []
   let score = 25
@@ -53,9 +56,12 @@ export function scoreProfessional(candidate: ProfessionalCandidate, input: Match
   return { ...candidate, score: Math.max(0, Number(score.toFixed(2))), reasons }
 }
 
-export function rankProfessionals(candidates: ProfessionalCandidate[], input: MatchInput): ScoredCandidate[] {
+export function rankProfessionals(
+  candidates: ProfessionalCandidate[],
+  input: MatchInput
+): ScoredCandidate[] {
   return candidates
     .map((candidate) => scoreProfessional(candidate, input))
     .filter((candidate): candidate is ScoredCandidate => candidate !== null)
-    .sort((a, b) => b.score - a.score)
+    .sort((a, b) => b.score - a.score || a.id.localeCompare(b.id))
 }

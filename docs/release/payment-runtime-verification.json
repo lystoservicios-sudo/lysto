@@ -1,0 +1,27 @@
+{
+  "task": "T17",
+  "status": "implementation_in_progress_database_and_provider_verification_pending",
+  "updatedAt": "2026-09-12T11:15:00-03:00",
+  "migration": null,
+  "migrationDecision": "No schema difference was required; existing immutable checkout and canonical observation schema remains authoritative.",
+  "implemented": [
+    "immutable seller, currency, mode, amount and fee snapshots",
+    "persist-before-provider idempotent preference creation",
+    "canonical signed webhook reconciliation with ordered observations",
+    "strict test/live OAuth token separation and bound state",
+    "bounded payment pool and transaction timeouts",
+    "two-phase preference renewal with no provider calls inside database transactions",
+    "uncertain renewal quarantined for review instead of creating a second payable intent"
+  ],
+  "verified": {
+    "focusedUnit": 40,
+    "typecheck": "passed",
+    "targetedLint": "passed"
+  },
+  "pending": [
+    "Docker Desktop engine must be available for payment-concurrency, storage, ledger and pgTAP execution",
+    "T36: real Mercado Pago sandbox OAuth, signed webhook and controlled payment acceptance",
+    "D11: approved application, accounts, environments and limits"
+  ],
+  "realPaymentCreated": false
+}

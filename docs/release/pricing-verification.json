@@ -1,8 +1,8 @@
 {
   "task": "T14",
-  "status": "implemented_build_pending",
+  "status": "locally_verified_commercial_approval_pending",
   "releaseReady": false,
-  "checkedAt": "2026-09-12T05:05:30.822Z",
+  "checkedAt": "2026-09-12T05:07:47.002Z",
   "checks": {
     "unit": {
       "passed": 452,
@@ -87,6 +87,16 @@
       "warnings": 42,
       "errors": 0,
       "addedSinceBaseline": 0
+    },
+    "build": {
+      "commit": "1f7eb5c40e4bd88b21fe4c3c78a4d3eaf6488403",
+      "environment": "isolated-local-production-build",
+      "checkout": "E:/Proyectos/GitHub/Lysto-production-build-check",
+      "dependencies": "junction to verified frozen lock installation, including direct Sharp 0.35.4",
+      "status": "passed",
+      "startedAt": "2026-09-12T05:05:47.900Z",
+      "exitCode": 0,
+      "completedAt": "2026-09-12T05:06:53.607Z"
     }
   },
   "review": {
@@ -94,12 +104,12 @@
     "independentFinalReview": false
   },
   "pending": [
-    "isolated production build",
     "D05: actual signed financial reference cases and commercial approval"
   ],
   "externalDependencies": [
     "D01/D02/D03/D05: actual labor, material, routing, provider cost, fee and professional-net policy",
     "T36: actual environment acceptance"
   ],
-  "originalIndexSha256": "85c6b16dcb04891642c46370bfd9c5342a21e79dea59eff11cc4fac915c84f67"
+  "originalIndexSha256": "85c6b16dcb04891642c46370bfd9c5342a21e79dea59eff11cc4fac915c84f67",
+  "codeCommit": "1f7eb5c40e4bd88b21fe4c3c78a4d3eaf6488403"
 }

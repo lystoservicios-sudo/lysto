@@ -9,6 +9,45 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      assignment_offers: {
+        Row: {
+          created_at: string
+          created_by: string
+          expires_at: string
+          id: string
+          job_id: string
+          professional_id: string
+          rejection_reason: string | null
+          responded_at: string | null
+          status: string
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          expires_at: string
+          id?: string
+          job_id: string
+          professional_id: string
+          rejection_reason?: string | null
+          responded_at?: string | null
+          status?: string
+          version: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          expires_at?: string
+          id?: string
+          job_id?: string
+          professional_id?: string
+          rejection_reason?: string | null
+          responded_at?: string | null
+          status?: string
+          version?: number
+        }
+        Relationships: []
+      }
       admin_audit_logs: {
         Row: {
           action: string
@@ -837,6 +876,7 @@ export type Database = {
       jobs: {
         Row: {
           accepted_at: string | null
+          assignment_version: number
           arrived_at: string | null
           cancelled_at: string | null
           completed_at: string | null
@@ -846,6 +886,7 @@ export type Database = {
           id: string
           professional_id: string | null
           request_id: string
+          schedule_version: number
           scheduled_date: string | null
           scheduled_time_window: string | null
           started_at: string | null
@@ -856,6 +897,7 @@ export type Database = {
         }
         Insert: {
           accepted_at?: string | null
+          assignment_version?: number
           arrived_at?: string | null
           cancelled_at?: string | null
           completed_at?: string | null
@@ -865,6 +907,7 @@ export type Database = {
           id?: string
           professional_id?: string | null
           request_id: string
+          schedule_version?: number
           scheduled_date?: string | null
           scheduled_time_window?: string | null
           started_at?: string | null
@@ -875,6 +918,7 @@ export type Database = {
         }
         Update: {
           accepted_at?: string | null
+          assignment_version?: number
           arrived_at?: string | null
           cancelled_at?: string | null
           completed_at?: string | null
@@ -884,6 +928,7 @@ export type Database = {
           id?: string
           professional_id?: string | null
           request_id?: string
+          schedule_version?: number
           scheduled_date?: string | null
           scheduled_time_window?: string | null
           started_at?: string | null
@@ -1877,6 +1922,7 @@ export type Database = {
           mobility_type: string | null
           profile_id: string
           rating_avg: number | null
+          schedule_settings_version: number
           status: Database["public"]["Enums"]["professional_status"]
           updated_at: string
           version: number
@@ -1902,6 +1948,7 @@ export type Database = {
           mobility_type?: string | null
           profile_id: string
           rating_avg?: number | null
+          schedule_settings_version?: number
           status?: Database["public"]["Enums"]["professional_status"]
           updated_at?: string
           version?: number
@@ -1927,6 +1974,7 @@ export type Database = {
           mobility_type?: string | null
           profile_id?: string
           rating_avg?: number | null
+          schedule_settings_version?: number
           status?: Database["public"]["Enums"]["professional_status"]
           updated_at?: string
           version?: number
@@ -3051,6 +3099,7 @@ export type Database = {
         Args: { p_token: string }
         Returns: Json
       }
+      expire_schedule_holds: { Args: never; Returns: number }
       ack_outbox_event: {
         Args: {
           p_claim_token: string
@@ -3096,6 +3145,18 @@ export type Database = {
           p_expected_version: number
           p_permissions: Database["public"]["Enums"]["admin_permission"][]
           p_reason: string
+        }
+        Returns: Json
+      }
+      create_assignment_offer: {
+        Args: {
+          p_job_id: string
+          p_professional_id: string
+          p_starts_at: string
+          p_duration_minutes: number
+          p_travel_buffer_minutes: number
+          p_expires_at: string
+          p_expected_version: number
         }
         Returns: Json
       }
@@ -3353,6 +3414,23 @@ export type Database = {
         }
         Returns: Json
       }
+      list_outbox_deliveries: {
+        Args: { p_cursor_at: string | null; p_cursor_id: string | null; p_limit: number }
+        Returns: Json
+      }
+      list_assignment_candidates: {
+        Args: {
+          p_job_id: string
+          p_starts_at: string
+          p_duration_minutes: number
+          p_travel_buffer_minutes: number
+        }
+        Returns: Json
+      }
+      get_schedule_availability: {
+        Args: { p_professional_id: string; p_from: string; p_to: string }
+        Returns: Json
+      }
       list_professional_workflow: {
         Args: {
           p_before_created_at?: string
@@ -3381,6 +3459,55 @@ export type Database = {
           warranty_days: number
           work_done: string
         }[]
+      }
+      retry_outbox_delivery: {
+        Args: { p_event_id: string; p_expected_revision: number; p_reason: string }
+        Returns: Json
+      }
+      request_job_reschedule: {
+        Args: {
+          p_job_id: string
+          p_starts_at: string
+          p_duration_minutes: number
+          p_travel_buffer_minutes: number
+          p_reason: string
+          p_expected_version: number
+        }
+        Returns: Json
+      }
+      reserve_job_schedule: {
+        Args: {
+          p_job_id: string
+          p_starts_at: string
+          p_duration_minutes: number
+          p_travel_buffer_minutes: number
+          p_state: string
+          p_hold_minutes: number
+          p_expected_version: number
+        }
+        Returns: Json
+      }
+      respond_job_reschedule: {
+        Args: { p_request_id: string; p_decision: string; p_expected_version: number }
+        Returns: Json
+      }
+      respond_assignment_offer: {
+        Args: {
+          p_offer_id: string
+          p_response: string
+          p_reason: string | null
+          p_expected_version: number
+        }
+        Returns: Json
+      }
+      replace_professional_schedule_settings: {
+        Args: {
+          p_professional_id: string
+          p_windows: Json
+          p_absences: Json
+          p_expected_version: number
+        }
+        Returns: Json
       }
       persist_calculated_quote: {
         Args: {
@@ -3784,4 +3911,3 @@ export const Constants = {
     },
   },
 } as const
-

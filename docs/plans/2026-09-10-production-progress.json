@@ -13,8 +13,8 @@
     "snapshotHash": "78e4627223acba17868dd509b2833c950f563bd5",
     "environment": "isolated-local-worktree"
   },
-  "currentMilestone": "BASELINE_CAPTURED",
-  "nextTask": "T14",
+  "currentMilestone": "IMPLEMENTATION_CONTINUES_WITH_DATABASE_VERIFICATION_BLOCKED",
+  "nextTask": "T19",
   "recommendedOrder": [
     "T00",
     "T01",
@@ -565,11 +565,11 @@
         "docs/release/pricing-acceptance.md",
         "docs/release/pricing-verification.json"
       ],
-      "commit": null,
+      "commit": "1f7eb5c40e4bd88b21fe4c3c78a4d3eaf6488403",
       "blockedBy": [
         "D05: aprobación de casos financieros reales"
       ],
-      "nextAction": "Build aislado; continuar T24 manteniendo pendiente la aprobación comercial.",
+      "nextAction": "Código y pruebas locales completos. Recibir D05 con casos financieros reales aprobados; continuar T24.",
       "deviations": []
     },
     {
@@ -585,14 +585,29 @@
         "B04"
       ],
       "ownerRole": "Agente backend + operaciones",
-      "status": "pending",
-      "currentStep": null,
-      "completedSteps": [],
-      "evidence": [],
+      "status": "in_progress",
+      "currentStep": 6,
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "evidence": [
+        "docs/plans/2026-09-12-t15-scheduling-capacity-design.md",
+        "docs/release/scheduling-verification.json"
+      ],
       "commit": null,
-      "blockedBy": [],
-      "nextAction": "Definir diferencia entre franja preferida del cliente y visita confirmada. No prometer reserva de técnico antes de verificar capacidad.",
-      "deviations": []
+      "blockedBy": [
+        "Docker Desktop cannot remove its stale dockerInference runtime socket; migration/integration/pgTAP pending",
+        "D06: approved reschedule, cancellation and no-show policy"
+      ],
+      "nextAction": "Apply migration 20260912134057 and run scheduling-capacity integration plus pgTAP when Docker recovers; continue T16 meanwhile.",
+      "deviations": [
+        "A preferred customer window remains on the service request; only job_schedule_reservations consumes professional capacity.",
+        "Two-party rescheduling records both approvals and never changes quote, scope or payment fields."
+      ]
     },
     {
       "id": "T16",
@@ -608,14 +623,30 @@
         "B06"
       ],
       "ownerRole": "Agente backend + operaciones",
-      "status": "pending",
-      "currentStep": null,
-      "completedSteps": [],
-      "evidence": [],
+      "status": "in_progress",
+      "currentStep": 6,
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "evidence": [
+        "docs/plans/2026-09-12-t16-assignment-offer-design.md",
+        "docs/release/assignment-offer-verification.json"
+      ],
       "commit": null,
-      "blockedBy": [],
-      "nextAction": "Probar asignación a técnico no aprobado, sin especialidad/zona/herramientas, doble operador, rechazo, vencimiento y aceptación tardía.",
-      "deviations": []
+      "blockedBy": [
+        "Docker Desktop stale dockerInference runtime socket blocks migration/integration/pgTAP",
+        "D06: approved offer duration and operational exception policy",
+        "T18: active checkout reconciliation before reassignment"
+      ],
+      "nextAction": "Apply T15/T16 migrations and run assignment-lifecycle plus pgTAP when Docker recovers; continue T17 meanwhile.",
+      "deviations": [
+        "Ranking is advisory; create_assignment_offer repeats all eligibility and capacity checks inside the write transaction.",
+        "Offer expiry defaults in the UI to 30 minutes and is bounded by the database to 5–120 minutes pending D06."
+      ]
     },
     {
       "id": "T17",
@@ -631,14 +662,29 @@
         "B07"
       ],
       "ownerRole": "Agente backend",
-      "status": "pending",
-      "currentStep": null,
-      "completedSteps": [],
-      "evidence": [],
+      "status": "in_progress",
+      "currentStep": 6,
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "evidence": [
+        "docs/architecture/payment-invariants.md",
+        "docs/release/payment-runtime-verification.json"
+      ],
       "commit": null,
-      "blockedBy": [],
-      "nextAction": "Conservar los controles ya probados. Añadir casos negativos de cuenta/moneda/ambiente/importe/comisión diferentes, misma idempotency key con otro payload y cambio de destinatario.",
-      "deviations": []
+      "blockedBy": [
+        "Docker Desktop stale dockerInference runtime socket blocks database-backed payment tests",
+        "D11/T36: real Mercado Pago sandbox ownership and acceptance evidence"
+      ],
+      "nextAction": "Run payment-concurrency, marketplace storage/ledger and pgTAP when Docker recovers; continue T18 meanwhile.",
+      "deviations": [
+        "No payment_reconciliation_guards migration was generated because review found no missing schema invariant; runtime renewal was refactored instead.",
+        "No real provider call, OAuth connection or payment was made during local implementation."
+      ]
     },
     {
       "id": "T18",
@@ -653,14 +699,32 @@
         "B08"
       ],
       "ownerRole": "Agente + finanzas/operaciones",
-      "status": "pending",
-      "currentStep": null,
-      "completedSteps": [],
-      "evidence": [],
+      "status": "in_progress",
+      "currentStep": 6,
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "evidence": [
+        "docs/plans/2026-09-12-t18-financial-exceptions-design.md",
+        "docs/runbooks/refunds-and-reassignment.md",
+        "docs/release/financial-exceptions-verification.json"
+      ],
       "commit": null,
-      "blockedBy": [],
-      "nextAction": "Probar devolución parcial/completa, dos solicitudes concurrentes sobre el mismo saldo, contracargo, pago de estado incierto y cancelación con preferencia aún pagable.",
-      "deviations": []
+      "blockedBy": [
+        "Docker Desktop stale dockerInference runtime socket blocks migration/integration/pgTAP",
+        "D06: approved cancellation, no-show, refund and warranty economics",
+        "T36: authorized Mercado Pago test refund and canonical reconciliation"
+      ],
+      "nextAction": "Apply migration 20260912142037 and run financial-exceptions integration plus pgTAP when Docker recovers; continue T19 meanwhile.",
+      "deviations": [
+        "Ambiguous provider outcomes retain the same refund idempotency key and remain processing; no local success is inferred from an operator action.",
+        "Replacement creates a linked service and preserves the original checkout beneficiary and money snapshots.",
+        "No cancellation fee or automatic silence-based completion is implemented while D06 is pending."
+      ]
     },
     {
       "id": "T19",
@@ -787,14 +851,30 @@
         "B10"
       ],
       "ownerRole": "Agente backend",
-      "status": "pending",
-      "currentStep": null,
-      "completedSteps": [],
-      "evidence": [],
+      "status": "in_progress",
+      "currentStep": 6,
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "evidence": [
+        "docs/plans/2026-09-12-t24-notification-delivery-design.md",
+        "docs/release/notification-delivery-verification.json",
+        "docs/runbooks/notification-delivery.md",
+        "47 targeted unit tests, 5 test-environment checks, typecheck and targeted lint passed"
+      ],
       "commit": null,
-      "blockedBy": [],
-      "nextAction": "Escribir tests de dos workers simultáneos, entrega fallida, lease vencido, crash tras envío antes de ack, reintento y dead-letter.",
-      "deviations": []
+      "blockedBy": [
+        "Docker Desktop 4.59 cannot start because its local dockerInference socket is inaccessible; PostgreSQL integration, pgTAP and migration protocol are pending",
+        "D06/T36: approved sender, DNS, sandbox reception and durable scheduler evidence"
+      ],
+      "nextAction": "Al recuperar Docker, aplicar migraciones 42-44 y ejecutar outbox-worker, pgTAP y protocolo fresh/upgrade; mientras tanto continuar T15.",
+      "deviations": [
+        "T24 remains in progress: code checks passed, but database acceptance is not inferred from unit tests."
+      ]
     },
     {
       "id": "T25",
@@ -1637,13 +1717,15 @@
     "updateRequiredAfterImplementation": true
   },
   "checkpoint": {
-    "updatedAt": "2026-09-12T05:05:30.826Z",
+    "updatedAt": "2026-09-12T14:14:35.73Z",
     "branch": "codex/production-readiness",
-    "commit": "4613ae78f79b4b48bc5dacc3486b878be4c6efd5",
+    "commit": "1f7eb5c40e4bd88b21fe4c3c78a4d3eaf6488403",
     "filesChanged": [],
-    "lastVerification": "T14: 452 unit, 171 domain, 8 tooling, 216 integration sin omisiones; 511 SQL fresh/upgrade y 41 migraciones, dos presupuestos históricos conservados; tipos/lint y cero nuevos advisors. Build aislado pendiente.",
-    "unresolvedFailures": [],
-    "nextCommand": "Build isolated T14 candidate."
+    "lastVerification": "T17 local non-database checks: 40 focused payment tests, typecheck and targeted lint passed; provider traffic is proven outside renewal transactions.",
+    "unresolvedFailures": [
+      "T24, T15, T16 and T17 database verification pending because Docker Desktop cannot access its dockerInference runtime socket."
+    ],
+    "nextCommand": "Continue T18 financial operations; retry disposable migration and payment protocols when Docker Desktop recovers."
   },
   "events": [
     {
@@ -1661,7 +1743,7 @@
         "T02",
         "T03"
       ],
-      "at": "2026-09-11T03:47:31.620Z",
+      "at": "2026-09-11T03:47:31.62Z",
       "note": "Aceptación local y evidencias registradas. Ningún gate de lanzamiento promovido."
     },
     {

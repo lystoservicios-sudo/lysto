@@ -6,12 +6,13 @@ const REDACTED = '[REDACTED]' as const
 
 const requiredValue = (name: string) => z.string().trim().min(1, `${name} is required`)
 const optionalValue = z.string().trim().optional()
-const explicitBoolean = (name: string) => z
-  .enum(['true', 'false'], {
-    errorMap: () => ({ message: `${name} must be "true" or "false"` })
-  })
-  .default('false')
-  .transform((value) => value === 'true')
+const explicitBoolean = (name: string) =>
+  z
+    .enum(['true', 'false'], {
+      errorMap: () => ({ message: `${name} must be "true" or "false"` })
+    })
+    .default('false')
+    .transform((value) => value === 'true')
 
 const publicEnvShape = {
   NEXT_PUBLIC_APP_URL: z.string().trim().url('NEXT_PUBLIC_APP_URL must be a valid URL'),
@@ -43,14 +44,14 @@ export const publicEnvSchema = z
     appUrl: env.NEXT_PUBLIC_APP_URL,
     supabaseUrl: env.NEXT_PUBLIC_SUPABASE_URL,
     supabasePublishableKey:
-      env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string
+      env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || (env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string)
   }))
 
 const serverEnvShape = {
   ...publicEnvShape,
   SUPABASE_SERVICE_ROLE_KEY: requiredValue('SUPABASE_SERVICE_ROLE_KEY'),
   PAYMENTS_PROVIDER: z.enum(['mock', 'mercadopago', 'mercadopago_split']).default('mock'),
-  MERCADOPAGO_MODE: z.enum(['test','live']).optional(),
+  MERCADOPAGO_MODE: z.enum(['test', 'live']).optional(),
   MERCADOPAGO_DATABASE_URL: optionalValue,
   MERCADOPAGO_ENCRYPTION_KEY: optionalValue,
   MERCADOPAGO_PUBLIC_KEY: optionalValue,
@@ -60,6 +61,11 @@ const serverEnvShape = {
   MERCADOPAGO_MARKETPLACE_CLIENT_SECRET: optionalValue,
   NOTIFICATIONS_EMAIL_ENABLED: explicitBoolean('NOTIFICATIONS_EMAIL_ENABLED'),
   RESEND_API_KEY: optionalValue,
+  NOTIFICATIONS_EMAIL_FROM: optionalValue,
+  OUTBOX_WORKER_ENABLED: explicitBoolean('OUTBOX_WORKER_ENABLED'),
+  OUTBOX_WORKER_SECRET: optionalValue,
+  REFUND_WORKER_ENABLED: explicitBoolean('REFUND_WORKER_ENABLED'),
+  REFUND_WORKER_SECRET: optionalValue,
   WHATSAPP_ENABLED: explicitBoolean('WHATSAPP_ENABLED'),
   WHATSAPP_API_TOKEN: optionalValue,
   WHATSAPP_PHONE_NUMBER_ID: optionalValue,
@@ -94,8 +100,12 @@ export const serverEnvSchema = z
   .superRefine((env, context) => {
     requirePublicSupabaseKey(env, context)
     requireWhenEnabled(env, context, env.PAYMENTS_PROVIDER === 'mercadopago_split', [
-      'MERCADOPAGO_MODE','MERCADOPAGO_DATABASE_URL','MERCADOPAGO_ENCRYPTION_KEY',
-      'MERCADOPAGO_WEBHOOK_SECRET','MERCADOPAGO_MARKETPLACE_CLIENT_ID','MERCADOPAGO_MARKETPLACE_CLIENT_SECRET'
+      'MERCADOPAGO_MODE',
+      'MERCADOPAGO_DATABASE_URL',
+      'MERCADOPAGO_ENCRYPTION_KEY',
+      'MERCADOPAGO_WEBHOOK_SECRET',
+      'MERCADOPAGO_MARKETPLACE_CLIENT_ID',
+      'MERCADOPAGO_MARKETPLACE_CLIENT_SECRET'
     ])
     requireWhenEnabled(env, context, env.PAYMENTS_PROVIDER === 'mercadopago', [
       'MERCADOPAGO_PUBLIC_KEY',
@@ -104,7 +114,32 @@ export const serverEnvSchema = z
       'MERCADOPAGO_MARKETPLACE_CLIENT_ID',
       'MERCADOPAGO_MARKETPLACE_CLIENT_SECRET'
     ])
-    requireWhenEnabled(env, context, env.NOTIFICATIONS_EMAIL_ENABLED, ['RESEND_API_KEY'])
+    requireWhenEnabled(env, context, env.NOTIFICATIONS_EMAIL_ENABLED, [
+      'RESEND_API_KEY',
+      'NOTIFICATIONS_EMAIL_FROM'
+    ])
+    requireWhenEnabled(env, context, env.OUTBOX_WORKER_ENABLED, ['OUTBOX_WORKER_SECRET'])
+    if (
+      env.OUTBOX_WORKER_ENABLED &&
+      !/^[A-Za-z0-9_-]{32,128}$/.test(env.OUTBOX_WORKER_SECRET ?? '')
+    ) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'OUTBOX_WORKER_SECRET must contain 32 to 128 safe characters',
+        path: ['OUTBOX_WORKER_SECRET']
+      })
+    }
+    requireWhenEnabled(env, context, env.REFUND_WORKER_ENABLED, ['REFUND_WORKER_SECRET'])
+    if (
+      env.REFUND_WORKER_ENABLED &&
+      !/^[A-Za-z0-9_-]{32,128}$/.test(env.REFUND_WORKER_SECRET ?? '')
+    ) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'REFUND_WORKER_SECRET must contain 32 to 128 safe characters',
+        path: ['REFUND_WORKER_SECRET']
+      })
+    }
     requireWhenEnabled(env, context, env.WHATSAPP_ENABLED, [
       'WHATSAPP_API_TOKEN',
       'WHATSAPP_PHONE_NUMBER_ID'
@@ -123,27 +158,44 @@ export const serverEnvSchema = z
       appUrl: env.NEXT_PUBLIC_APP_URL,
       supabaseUrl: env.NEXT_PUBLIC_SUPABASE_URL,
       supabasePublishableKey:
-        env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string
+        env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || (env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string)
     },
     supabase: {
       serviceRoleKey: env.SUPABASE_SERVICE_ROLE_KEY
     },
-    payments: env.PAYMENTS_PROVIDER === 'mercadopago'
-      ? {
-          provider: 'mercadopago' as const,
-          publicKey: env.MERCADOPAGO_PUBLIC_KEY as string,
-          accessToken: env.MERCADOPAGO_ACCESS_TOKEN as string,
-          webhookSecret: env.MERCADOPAGO_WEBHOOK_SECRET as string,
-          marketplaceClientId: env.MERCADOPAGO_MARKETPLACE_CLIENT_ID as string,
-          marketplaceClientSecret: env.MERCADOPAGO_MARKETPLACE_CLIENT_SECRET as string
-        }
-      : env.PAYMENTS_PROVIDER === 'mercadopago_split' ? {
-          provider:'mercadopago_split' as const,mode:env.MERCADOPAGO_MODE as 'test'|'live',
-          databaseUrl:env.MERCADOPAGO_DATABASE_URL as string,encryptionKey:env.MERCADOPAGO_ENCRYPTION_KEY as string,
-          webhookSecret:env.MERCADOPAGO_WEBHOOK_SECRET as string,marketplaceClientId:env.MERCADOPAGO_MARKETPLACE_CLIENT_ID as string,marketplaceClientSecret:env.MERCADOPAGO_MARKETPLACE_CLIENT_SECRET as string
-        } : { provider: 'mock' as const },
+    payments:
+      env.PAYMENTS_PROVIDER === 'mercadopago'
+        ? {
+            provider: 'mercadopago' as const,
+            publicKey: env.MERCADOPAGO_PUBLIC_KEY as string,
+            accessToken: env.MERCADOPAGO_ACCESS_TOKEN as string,
+            webhookSecret: env.MERCADOPAGO_WEBHOOK_SECRET as string,
+            marketplaceClientId: env.MERCADOPAGO_MARKETPLACE_CLIENT_ID as string,
+            marketplaceClientSecret: env.MERCADOPAGO_MARKETPLACE_CLIENT_SECRET as string
+          }
+        : env.PAYMENTS_PROVIDER === 'mercadopago_split'
+          ? {
+              provider: 'mercadopago_split' as const,
+              mode: env.MERCADOPAGO_MODE as 'test' | 'live',
+              databaseUrl: env.MERCADOPAGO_DATABASE_URL as string,
+              encryptionKey: env.MERCADOPAGO_ENCRYPTION_KEY as string,
+              webhookSecret: env.MERCADOPAGO_WEBHOOK_SECRET as string,
+              marketplaceClientId: env.MERCADOPAGO_MARKETPLACE_CLIENT_ID as string,
+              marketplaceClientSecret: env.MERCADOPAGO_MARKETPLACE_CLIENT_SECRET as string
+            }
+          : { provider: 'mock' as const },
     email: env.NOTIFICATIONS_EMAIL_ENABLED
-      ? { enabled: true as const, resendApiKey: env.RESEND_API_KEY as string }
+      ? {
+          enabled: true as const,
+          resendApiKey: env.RESEND_API_KEY as string,
+          from: env.NOTIFICATIONS_EMAIL_FROM as string
+        }
+      : { enabled: false as const },
+    outboxWorker: env.OUTBOX_WORKER_ENABLED
+      ? { enabled: true as const, secret: env.OUTBOX_WORKER_SECRET as string }
+      : { enabled: false as const },
+    refundWorker: env.REFUND_WORKER_ENABLED
+      ? { enabled: true as const, secret: env.REFUND_WORKER_SECRET as string }
       : { enabled: false as const },
     whatsapp: env.WHATSAPP_ENABLED
       ? {
@@ -182,18 +234,25 @@ export function redactEnvForLogs(env: ServerEnv) {
     supabase: {
       serviceRoleKey: REDACTED
     },
-    payments: env.payments.provider === 'mercadopago'
-      ? {
-          provider: env.payments.provider,
-          publicKey: REDACTED,
-          accessToken: REDACTED,
-          webhookSecret: REDACTED,
-          marketplaceClientId: REDACTED,
-          marketplaceClientSecret: REDACTED
-        }
-      : { provider: env.payments.provider },
+    payments:
+      env.payments.provider === 'mercadopago'
+        ? {
+            provider: env.payments.provider,
+            publicKey: REDACTED,
+            accessToken: REDACTED,
+            webhookSecret: REDACTED,
+            marketplaceClientId: REDACTED,
+            marketplaceClientSecret: REDACTED
+          }
+        : { provider: env.payments.provider },
     email: env.email.enabled
-      ? { enabled: true, resendApiKey: REDACTED }
+      ? { enabled: true, resendApiKey: REDACTED, from: env.email.from }
+      : { enabled: false },
+    outboxWorker: env.outboxWorker.enabled
+      ? { enabled: true, secret: REDACTED }
+      : { enabled: false },
+    refundWorker: env.refundWorker.enabled
+      ? { enabled: true, secret: REDACTED }
       : { enabled: false },
     whatsapp: env.whatsapp.enabled
       ? { enabled: true, apiToken: REDACTED, phoneNumberId: REDACTED }

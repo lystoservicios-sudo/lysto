@@ -42,6 +42,7 @@ export function AdminWorkspace({ children }: { children: ReactNode }) {
     pathname === '/admin/calculadora' ||
     pathname === '/admin/configuracion' ||
     pathname === '/admin/auditoria' ||
+    pathname === '/admin/notificaciones' ||
     pathname === '/admin/profesionales' ||
     pathname.startsWith('/admin/profesionales/')
   useEffect(() => {

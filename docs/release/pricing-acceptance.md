@@ -1,6 +1,6 @@
 # T14 — Aceptación de presupuestos
 
-Estado: implementación local en verificación final. La aprobación comercial de D05 permanece pendiente.
+Estado: implementación verificada localmente. La aprobación comercial de D05 permanece pendiente.
 
 ## Contrato de operación
 
@@ -34,7 +34,7 @@ Todas las mutaciones HTTP usan verificación de origen y límite de cuerpo. La e
 
 ## Verificación local
 
-Se incorporan regresiones para procedencia manual, política no aprobada, revisión concurrente, aislamiento de cliente, expiración, aceptación repetida y redondeo decimal equivalente a PostgreSQL NUMERIC. El reporte final se incorporará después de pruebas, migraciones fresh/upgrade y build del checkpoint.
+Se incorporan regresiones para procedencia manual, política no aprobada, revisión concurrente, aislamiento de cliente, expiración, aceptación repetida y redondeo decimal equivalente a PostgreSQL NUMERIC. La evidencia está en `pricing-verification.json`: 452 pruebas unitarias, 171 de dominio, 8 de tooling, 216 de integración, 511 SQL fresh/upgrade y build aislado completados; 41 migraciones y dos presupuestos históricos conservados.
 
 ## Recuperación
 

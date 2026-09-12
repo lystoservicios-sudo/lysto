@@ -54,3 +54,16 @@ test('quote integration cannot inherit a billable routing credential', () => {
     assert.equal(actual.GOOGLE_MAPS_SERVER_API_KEY, undefined)
   } finally { fixture.cleanup() }
 })
+
+test('notification tests cannot inherit real sender credentials or enable real email', () => {
+  const fixture = setup()
+  try {
+    const actual = environment.createTestServerEnvironment({ ...fixture.env, RESEND_API_KEY: 'real-provider-secret', NOTIFICATIONS_EMAIL_ENABLED: 'true', NOTIFICATIONS_EMAIL_FROM: 'real@example.com', OUTBOX_WORKER_SECRET: 'real-worker-secret', REFUND_WORKER_ENABLED:'true',REFUND_WORKER_SECRET:'real-refund-worker-secret' }, fixture.cwd)
+    assert.equal(actual.RESEND_API_KEY, undefined)
+    assert.equal(actual.NOTIFICATIONS_EMAIL_ENABLED, 'false')
+    assert.equal(actual.NOTIFICATIONS_EMAIL_FROM, undefined)
+    assert.equal(actual.OUTBOX_WORKER_SECRET, undefined)
+    assert.equal(actual.REFUND_WORKER_SECRET, undefined)
+    assert.equal(actual.REFUND_WORKER_ENABLED, 'false')
+  } finally { fixture.cleanup() }
+})

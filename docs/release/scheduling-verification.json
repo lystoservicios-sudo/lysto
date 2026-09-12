@@ -1,0 +1,25 @@
+{
+  "task": "T15",
+  "status": "implementation_in_progress_database_verification_pending",
+  "updatedAt": "2026-09-12T10:55:00-03:00",
+  "migration": "20260912134057_scheduling_capacity_and_reschedule.sql",
+  "implemented": [
+    "explicit distinction between preferred windows and confirmed reservations",
+    "UTC visit instants with explicit Buenos Aires local date",
+    "database exclusion constraint with travel buffers and professional transaction lock",
+    "weekly availability, absences, holds and automatic capacity release",
+    "versioned two-party reschedule approval preserving job economic fields",
+    "bounded authenticated availability and reschedule APIs",
+    "professional agenda backed by current reservations"
+  ],
+  "verified": {
+    "unit": 11,
+    "domain": 171,
+    "typecheck": "passed",
+    "targetedLint": "passed"
+  },
+  "pending": [
+    "Docker Desktop engine must be available to apply migration and run PostgreSQL integration/pgTAP",
+    "D06: operations and finance approval of reschedule, cancellation and no-show policy"
+  ]
+}

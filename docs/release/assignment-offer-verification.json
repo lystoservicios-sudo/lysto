@@ -1,0 +1,25 @@
+{
+  "task": "T16",
+  "status": "implementation_in_progress_database_verification_pending",
+  "updatedAt": "2026-09-12T11:09:00-03:00",
+  "migration": "20260912135703_assignment_offer_lifecycle.sql",
+  "implemented": [
+    "database revalidation of clearance, specialty, zone, tools and capacity",
+    "versioned offers with one pending offer per job",
+    "transactional schedule hold on assignment and confirmation on acceptance",
+    "idempotent repeated acceptance, reasoned rejection and bounded expiry worker",
+    "automatic queue recovery and participant notifications",
+    "payment-account and payment readiness surfaced after acceptance",
+    "authenticated admin and professional workflow without caller actor identifiers"
+  ],
+  "verified": {
+    "unit": 8,
+    "typecheck": "passed",
+    "targetedLint": "passed"
+  },
+  "pending": [
+    "Docker Desktop engine must be available to apply T15/T16 migrations and run PostgreSQL integration/pgTAP",
+    "T18: reconcile or refund any active checkout before changing the professional",
+    "D06: approved offer duration and operational exception policy"
+  ]
+}
