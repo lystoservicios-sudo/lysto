@@ -4,6 +4,7 @@ import { ZodError } from 'zod'
 const errors = {
   unauthorized: { status: 401, message: 'Iniciá sesión para continuar.' },
   forbidden: { status: 403, message: 'Tu cuenta no tiene permiso para esta operación.' },
+  mfa_required: { status: 403, message: 'Verificá tu autenticador en Seguridad para continuar.' },
   not_found: { status: 404, message: 'No encontramos un recurso disponible para tu cuenta.' },
   invalid_input: { status: 400, message: 'Revisá los datos de la operación.' },
   upload_expired: { status: 410, message: 'La subida venció. Volvé a guardar la foto para iniciar un nuevo intento.' },

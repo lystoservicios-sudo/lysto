@@ -14,7 +14,7 @@
     "environment": "isolated-local-worktree"
   },
   "currentMilestone": "BASELINE_CAPTURED",
-  "nextTask": "T08",
+  "nextTask": "T13",
   "recommendedOrder": [
     "T00",
     "T01",
@@ -351,13 +351,25 @@
         "B10"
       ],
       "ownerRole": "Agente de backend + titular de cuentas",
-      "status": "pending",
-      "currentStep": null,
-      "completedSteps": [],
-      "evidence": [],
+      "status": "implemented",
+      "currentStep": 5,
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4,
+        6
+      ],
+      "evidence": [
+        "docs/release/session-assurance.md",
+        "docs/release/session-assurance-verification.json",
+        "docs/runbooks/account-recovery.md"
+      ],
       "commit": null,
-      "blockedBy": [],
-      "nextAction": "Agregar pruebas de admin con aal1, admin aal2, rol retirado con JWT antiguo y profesional suspendido con sesión aún vigente.",
+      "blockedBy": [
+        "Acta de responsables/custodia y ensayo de recuperación del entorno real"
+      ],
+      "nextAction": "Verificar build aislado; conservar pendiente el acta externa y continuar T13.",
       "deviations": []
     },
     {
@@ -453,7 +465,7 @@
         "B06"
       ],
       "ownerRole": "Agente full stack",
-      "status": "implemented",
+      "status": "verified",
       "currentStep": 6,
       "completedSteps": [
         1,
@@ -469,7 +481,7 @@
       ],
       "commit": null,
       "blockedBy": [],
-      "nextAction": "Verificar compilación aislada del checkpoint y continuar T08.",
+      "nextAction": "Consultas y modelos puros verificados en a6c279f. Conectar los consumidores en T27–T29 según la hoja de ruta.",
       "deviations": []
     },
     {
@@ -1577,13 +1589,13 @@
     "updateRequiredAfterImplementation": true
   },
   "checkpoint": {
-    "updatedAt": "2026-09-11T23:59:51.983Z",
+    "updatedAt": "2026-09-12T00:52:38.163Z",
     "branch": "codex/production-readiness",
     "commit": "62ed2c19eb4b84e6f13817d21b2bc0e6eceac743",
     "filesChanged": [],
-    "lastVerification": "T12: 423 unit tests, 171 domain, full integration 128 (zero skipped), final read-model 13; fresh and upgrade each 452 SQL, schema/policies/history/types equal. Lint/types passed. Build pending.",
+    "lastVerification": "T08: 432 unit, latest QR 4, 171 domain, 7 tooling, full integration 140 zero skipped; fresh/upgrade each 461 SQL, schema/policies/history/types match; lint/typecheck pass. Build pending.",
     "unresolvedFailures": [],
-    "nextCommand": "Build T12 candidate; implement T08 MFA and effective session revocation."
+    "nextCommand": "Build T08 candidate; implement T13 customer assets."
   },
   "events": [
     {

@@ -16,7 +16,7 @@ export async function middleware(request: NextRequest) {
     response.headers.set('X-Robots-Tag', 'noindex, nofollow')
     return response
   }
-  const privatePage = requiredRoleForPath(pathname) !== null
+  const privatePage = requiredRoleForPath(pathname) !== null || pathname === '/seguridad'
   const api = pathname.startsWith('/api/')
   if (!privatePage && !api) return NextResponse.next()
   let response = privateResponse(NextResponse.next({ request }))

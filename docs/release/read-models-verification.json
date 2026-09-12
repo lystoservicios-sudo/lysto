@@ -1,5 +1,5 @@
 {
-  "status": "local_checks_passed_build_pending",
+  "status": "locally_verified",
   "checkedAt": "2026-09-11T23:59:51.977Z",
   "task": "T12",
   "checks": {
@@ -53,16 +53,24 @@
       "checkedAt": "2026-09-11T23:52:41.766Z"
     },
     "types": "output/production-readiness/t12-final-types.log",
-    "lint": "output/production-readiness/t12-final-lint.log"
+    "lint": "output/production-readiness/t12-final-lint.log",
+    "productionBuild": {
+      "commit": "a6c279fd11e659baac2d84ad7653571edbb6cd9b",
+      "environment": "isolated-local-production-build",
+      "checkout": "E:/Proyectos/GitHub/Lysto-production-build-check",
+      "dependencies": "junction to verified frozen lock installation, including direct Sharp 0.35.4",
+      "status": "passed",
+      "startedAt": "2026-09-12T00:00:11.414Z",
+      "exitCode": 0,
+      "completedAt": "2026-09-12T00:01:09.495Z"
+    }
   },
   "scope": "Session-bound repositories and pure DTO view models. Legacy screen connection remains in T27–T29.",
   "review": {
     "method": "local source, permission matrix, raw schema and regression review",
     "independentFinalReview": false
   },
-  "pending": [
-    "isolated production build"
-  ],
+  "pending": [],
   "releaseReady": false,
   "plans": [
     {
@@ -73,5 +81,6 @@
       "path": "output/production-readiness/t12-explain-indexed.json",
       "sha256": "8044d05143e2e5f9aa1406a97690af510189778d756dcc190b6b7f9b4c7c2cd0"
     }
-  ]
+  ],
+  "codeCommit": "a6c279fd11e659baac2d84ad7653571edbb6cd9b"
 }

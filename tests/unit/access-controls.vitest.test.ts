@@ -16,6 +16,7 @@ function request(path: string, body: unknown = {}) {
 }
 function actor(role = 'admin', permissions = ['operations']) {
   const ctx = { profile_id: '00000000-0000-4000-8000-000000000002', role,
+    session_id: '00000000-0000-4000-8000-000000000001', session_active: true, aal: 'aal2',
     admin_profile_id: role === 'admin' ? '00000000-0000-4000-8000-000000000003' : null,
     customer_id: role === 'customer' ? '00000000-0000-4000-8000-000000000004' : null,
     professional_id: role === 'professional' ? '00000000-0000-4000-8000-000000000005' : null,

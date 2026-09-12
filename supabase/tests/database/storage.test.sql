@@ -1,4 +1,7 @@
 begin;
+
+\ir ../fixtures/session.sql.inc
+
 select no_plan();
 -- Self-contained fixtures: the CLI mounts test SQL files individually.
 insert into auth.users (
@@ -129,14 +132,14 @@ select is((select count(*)::int from pg_policies where schemaname='storage' and 
 select ok(not has_function_privilege(r,'public.finalize_storage_upload(text,text,uuid,public.media_type,text,text)','execute'),r||' cannot use the uninspected legacy finalizer') from unnest(array['anon','authenticated','service_role']) r;
 select ok(not has_table_privilege(r,'public.'||t,'insert') and not has_column_privilege(r,'public.'||t,'storage_path','insert'),r||' cannot insert arbitrary evidence in '||t) from unnest(array['anon','authenticated','service_role']) r cross join unnest(array['request_media','professional_documents','job_media']) t;
 select ok(not has_function_privilege('authenticated','public.finalize_verified_upload(uuid,uuid,text,bigint,text,bigint,text)','execute'),'client cannot certify its own inspection');
-select ok(has_function_privilege('service_role','public.finalize_verified_upload(uuid,uuid,text,bigint,text,bigint,text)','execute'),'server can finalize inspected bytes');
+select ok(has_function_privilege('service_role','public.finalize_verified_upload(uuid,uuid,text,bigint,text,bigint,text,uuid)','execute'),'server can finalize inspected bytes');
 select ok(not pg_has_role('authenticated','service_role','member') and not pg_has_role('anon','service_role','member'),'clients cannot inherit service authority');
 select ok(not has_schema_privilege('anon','private','usage'),'anonymous private-schema boundary stays closed');
 select ok(not has_table_privilege('authenticated','private.upload_intents','select'),'intent rows require authorized RPCs');
 insert into storage.objects(bucket_id,name,owner_id) values('request-media','10000000-0000-0000-0000-000000000001/50000000-0000-0000-0000-000000000001/photo/80000000-0000-0000-0000-000000000001.jpg','10000000-0000-0000-0000-000000000001');
-create function pg_temp.actor(p_user uuid,p_role text) returns void language sql as $$ select set_config('request.jwt.claims',jsonb_build_object('sub',p_user,'role','authenticated','app_metadata',jsonb_build_object('app_role',p_role))::text,true)::text; $$;
+create function pg_temp.actor(p_user uuid,p_role text) returns void language sql as $$ select pg_temp.fixture_set_config('request.jwt.claims',jsonb_build_object('sub',p_user,'role','authenticated','app_metadata',jsonb_build_object('app_role',p_role))::text,true)::text; $$;
 select pg_temp.actor('10000000-0000-0000-0000-000000000001','customer');
-select set_config('storage.operation','storage.object.sign',true);
+select pg_temp.fixture_set_config('storage.operation','storage.object.sign',true);
 set local role authenticated;
 select is((select count(*)::int from storage.objects),0,'owner cannot sign uninspected legacy photo');
 reset role;
@@ -145,16 +148,16 @@ set local role authenticated;
 select is((select count(*)::int from storage.objects),0,'owner administrator cannot sign uninspected evidence');
 reset role;
 select pg_temp.actor('10000000-0000-0000-0000-000000000001','customer');
-select set_config('storage.operation','storage.object.sign_upload_url',true);
+select pg_temp.fixture_set_config('storage.operation','storage.object.sign_upload_url',true);
 set local role authenticated;
 select throws_ok($$insert into storage.objects(bucket_id,name,owner_id) values('request-media','10000000-0000-0000-0000-000000000001/50000000-0000-0000-0000-000000000001/photo/80000000-0000-0000-0000-000000000003.jpg','10000000-0000-0000-0000-000000000001')$$,'42501','new row violates row-level security policy for table "objects"','old private upload bypass denied');
 select throws_ok($$insert into storage.objects(bucket_id,name,owner_id) values('upload-quarantine','11000000-0000-0000-0000-000000000001/80000000-0000-0000-0000-000000000003','10000000-0000-0000-0000-000000000001')$$,'42501','new row violates row-level security policy for table "objects"','quarantine requires matching intent');
 select lives_ok($$insert into storage.objects(bucket_id,name,owner_id) values('public-avatars','10000000-0000-0000-0000-000000000001/80000000-0000-0000-0000-000000000004.png','10000000-0000-0000-0000-000000000001')$$,'avatar reservation remains available');
 select throws_ok($$insert into storage.objects(bucket_id,name,owner_id) values('public-avatars','10000000-0000-0000-0000-000000000002/80000000-0000-0000-0000-000000000004.png','10000000-0000-0000-0000-000000000001')$$,'42501','new row violates row-level security policy for table "objects"','avatar cannot impersonate owner');
 select throws_ok($$insert into storage.objects(bucket_id,name,owner_id) values('public-avatars','10000000-0000-0000-0000-000000000001/../80000000-0000-0000-0000-000000000004.png','10000000-0000-0000-0000-000000000001')$$,'42501','new row violates row-level security policy for table "objects"','avatar path traversal denied');
-select set_config('storage.operation','storage.object.upload',true);
+select pg_temp.fixture_set_config('storage.operation','storage.object.upload',true);
 select throws_ok($$insert into storage.objects(bucket_id,name,owner_id) values('public-avatars','10000000-0000-0000-0000-000000000001/80000000-0000-0000-0000-000000000005.png','10000000-0000-0000-0000-000000000001')$$,'42501','new row violates row-level security policy for table "objects"','direct avatar writes denied');
-select set_config('storage.operation','storage.object.list',true);
+select pg_temp.fixture_set_config('storage.operation','storage.object.list',true);
 select is((select count(*)::int from storage.objects),0,'listing exposes no private objects');
 reset role;
 select * from finish();

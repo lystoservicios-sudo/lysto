@@ -1,12 +1,15 @@
 begin;
 
+\ir ../fixtures/session.sql.inc
+
+
 select plan(29);
 
 create function pg_temp.set_jwt(p_uid uuid, p_app_role text, p_user_metadata jsonb default '{}'::jsonb)
 returns void
 language sql
 as $$
-  select set_config(
+  select pg_temp.fixture_set_config(
     'request.jwt.claims',
     jsonb_build_object(
       'sub', p_uid::text,
@@ -287,7 +290,7 @@ select throws_ok(
 );
 
 reset role;
-select set_config('request.jwt.claims', '{}'::text, true);
+select pg_temp.fixture_set_config('request.jwt.claims', '{}'::text, true);
 set local role anon;
 
 select throws_ok(

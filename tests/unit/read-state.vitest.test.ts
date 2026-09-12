@@ -62,7 +62,7 @@ describe('read errors and presentation boundaries', () => {
           professional_id: null,
           professional_status: null,
           role: 'customer',
-          permissions: []
+          permissions: [], session_active: true, aal: 'aal1'
         },
         error: null
       }),

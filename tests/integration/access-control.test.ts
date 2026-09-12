@@ -17,7 +17,7 @@ export const privateHttpMethods = [
   ['GET', '/api/mercadopago/account'], ['DELETE', '/api/mercadopago/account'],
   ['GET', '/api/mercadopago/checkouts'], ['POST', '/api/mercadopago/checkouts'],
   ['POST', '/api/mercadopago/create-preference'], ['POST', '/api/mercadopago/oauth/authorize'], ['GET', '/api/mercadopago/oauth/callback'],
-  ['POST', '/api/admin/approve-professional'], ['POST', '/api/admin/invite-professional'], ['POST', '/api/admin/pricing/update'], ['POST', '/api/admin/professionals/approve'],
+  ['POST', '/api/admin/approve-professional'], ['POST', '/api/admin/invite-professional'], ['POST', '/api/admin/pricing/update'], ['POST', '/api/admin/professionals/approve'], ['POST', '/api/admin/professionals/suspend'],
   ['POST', '/api/equipment/register'], ['POST', '/api/jobs/final-report'], ['POST', '/api/maintenance/schedule'], ['POST', '/api/notifications/emit'],
   ['POST', '/api/pro/jobs/action'], ['POST', '/api/pro/onboarding/evaluate'], ['POST', '/api/professional/onboarding'], ['POST', '/api/professional/respond-request'],
   ['POST', '/api/quality/open-case'], ['POST', '/api/reviews/submit'], ['POST', '/api/uploads/sign'], ['POST', '/api/uploads/finalize'], ['POST', '/api/uploads/read'], ['POST', '/api/warranty/claim'], ['POST', '/api/diagnosis/generate']

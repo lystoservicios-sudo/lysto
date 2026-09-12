@@ -3128,18 +3128,32 @@ export type Database = {
         }
         Returns: string
       }
-      finalize_verified_upload: {
-        Args: {
-          p_actor_auth_user_id: string
-          p_actual_mime_type: string
-          p_actual_sha256: string
-          p_actual_size_bytes: number
-          p_intent_id: string
-          p_output_sha256: string
-          p_output_size_bytes: number
-        }
-        Returns: Json
-      }
+      finalize_verified_upload:
+        | {
+            Args: {
+              p_actor_auth_user_id: string
+              p_actual_mime_type: string
+              p_actual_sha256: string
+              p_actual_size_bytes: number
+              p_intent_id: string
+              p_output_sha256: string
+              p_output_size_bytes: number
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_actor_auth_user_id: string
+              p_actor_session_id: string
+              p_actual_mime_type: string
+              p_actual_sha256: string
+              p_actual_size_bytes: number
+              p_intent_id: string
+              p_output_sha256: string
+              p_output_size_bytes: number
+            }
+            Returns: Json
+          }
       get_quote_policy: { Args: never; Returns: Json }
       get_registration_policy: { Args: never; Returns: Json }
       get_session_context: { Args: never; Returns: Json }
@@ -3229,6 +3243,10 @@ export type Database = {
         Returns: Json
       }
       submit_service_quote: { Args: { p_quote_id: string }; Returns: Json }
+      suspend_professional: {
+        Args: { p_professional_id: string; p_reason: string }
+        Returns: Json
+      }
       update_quote_policy: { Args: { p_policy: Json }; Returns: Json }
     }
     Enums: {

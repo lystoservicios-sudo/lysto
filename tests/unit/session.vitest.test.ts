@@ -11,7 +11,8 @@ type Role = 'customer' | 'professional' | 'admin'
 function context(role: Role = 'customer') {
   return { profile_id: ids.profile, role, customer_id: role === 'customer' ? ids.entity : null,
     professional_id: role === 'professional' ? ids.entity : null, professional_status: role === 'professional' ? 'approved' : null,
-    admin_profile_id: role === 'admin' ? ids.entity : null, permissions: role === 'admin' ? ['operations'] : [] }
+    admin_profile_id: role === 'admin' ? ids.entity : null, permissions: role === 'admin' ? ['operations'] : [],
+    session_id: ids.user, session_active: true, aal: role === 'admin' ? 'aal2' : 'aal1' }
 }
 function arrange(role: Role = 'customer', overrides: Record<string, unknown> = {}) {
   mocks.getUser.mockResolvedValue({ data: { user: { id: ids.user, app_metadata: { app_role: role }, user_metadata: { app_role: 'owner' } } }, error: null })
@@ -23,6 +24,14 @@ function arrange(role: Role = 'customer', overrides: Record<string, unknown> = {
 beforeEach(() => { vi.clearAllMocks(); arrange() })
 
 describe('current server session', () => {
+  it('requires administrative assurance even when the password session has permissions', async () => {
+    arrange('admin', { aal: 'aal1' })
+    await expect(getPricingSession()).rejects.toMatchObject({ status: 403, code: 'mfa_required' })
+  })
+  it('rejects a revoked session reported by the trusted database context', async () => {
+    arrange('customer', { session_active: false })
+    await expect(getPricingSession()).rejects.toMatchObject({ status: 403 })
+  })
   it('returns identities resolved by the database instead of metadata or request data', async () => {
     expect(await getPricingSession()).toMatchObject({ userId: ids.user, profileId: ids.profile, customerId: ids.entity, role: 'customer', permissions: [] })
     expect(mocks.rpc).toHaveBeenCalledWith('get_session_context')

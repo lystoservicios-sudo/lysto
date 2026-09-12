@@ -1,4 +1,7 @@
 begin;
+
+\ir ../fixtures/session.sql.inc
+
 select no_plan();
 select has_function('public','get_registration_policy',array[]::text[],'public can discover current registration policy');
 select has_function('public','bootstrap_customer_account',array[]::text[],'bootstrap cannot accept another identity');
@@ -34,7 +37,7 @@ update auth.users set raw_user_meta_data='{"first_name":"Tampered","terms_versio
 select is((select terms_version from private.customer_registration_acceptances where auth_user_id='74000000-0000-4000-8000-000000000001'),'test-only-terms-t07','later user metadata cannot rewrite original acceptance');
 select throws_ok($$update private.customer_registration_acceptances set terms_version='arbitrary' where auth_user_id='74000000-0000-4000-8000-000000000001'$$,'P0001','Registration acceptance is immutable','acceptance cannot be silently edited');
 
-select set_config('request.jwt.claims','{"sub":"74000000-0000-4000-8000-000000000001","role":"authenticated","app_metadata":{"app_role":"customer"},"user_metadata":{"app_role":"admin"}}',true);
+select pg_temp.fixture_set_config('request.jwt.claims','{"sub":"74000000-0000-4000-8000-000000000001","role":"authenticated","app_metadata":{"app_role":"customer"},"user_metadata":{"app_role":"admin"}}',true);
 set local role authenticated;
 select is(public.bootstrap_customer_account()->>'status','ready','confirmed customer can bootstrap own profile');
 select is(public.bootstrap_customer_account()->>'profile_id',public.get_session_context()->>'profile_id','replay returns the original profile');
@@ -49,7 +52,7 @@ reset role;
 select is((select id from public.profiles where auth_user_id='74000000-0000-4000-8000-000000000001'),(select id from t07_original_ids),'repair preserves the original profile id');
 select is((select count(*)::int from public.profiles where auth_user_id='74000000-0000-4000-8000-000000000001'),1,'repeated bootstrap never duplicates profiles');
 
-select set_config('request.jwt.claims','{"sub":"74000000-0000-4000-8000-000000000002","role":"authenticated","app_metadata":{"app_role":"customer"}}',true);
+select pg_temp.fixture_set_config('request.jwt.claims','{"sub":"74000000-0000-4000-8000-000000000002","role":"authenticated","app_metadata":{"app_role":"customer"}}',true);
 set local role authenticated;
 select is(public.bootstrap_customer_account()->>'status','incomplete','legacy Auth account can complete its missing acceptance');
 select throws_ok($$select public.complete_customer_registration('Legacy','Customer','12345678','arbitrary','test-only-privacy-t07',true)$$,'P0001','Current legal acceptance is required','completion rejects arbitrary versions');
@@ -57,19 +60,19 @@ select is(public.complete_customer_registration('Legacy','Customer','12345678','
 reset role;
 select is((select auth_user_id from public.profiles where email='existing-customer@lysto.test'),'74000000-0000-4000-8000-000000000002'::uuid,'completion keeps the same Auth id');
 
-select set_config('request.jwt.claims','{"sub":"74000000-0000-4000-8000-000000000003","role":"authenticated","app_metadata":{"app_role":"admin"}}',true);
+select pg_temp.fixture_set_config('request.jwt.claims','{"sub":"74000000-0000-4000-8000-000000000003","role":"authenticated","app_metadata":{"app_role":"admin"}}',true);
 set local role authenticated;
 select throws_ok($$select public.bootstrap_customer_account()$$,'42501','Confirmed customer session required','admin cannot become a customer through bootstrap');
 reset role;
-select set_config('request.jwt.claims','{"sub":"74000000-0000-4000-8000-000000000004","role":"authenticated","app_metadata":{"app_role":"professional"}}',true);
+select pg_temp.fixture_set_config('request.jwt.claims','{"sub":"74000000-0000-4000-8000-000000000004","role":"authenticated","app_metadata":{"app_role":"professional"}}',true);
 set local role authenticated;
 select throws_ok($$select public.complete_customer_registration('Pro','Test','12345678','test-only-terms-t07','test-only-privacy-t07',true)$$,'42501','Confirmed customer session required','professional cannot use customer completion');
 reset role;
-select set_config('request.jwt.claims','{"sub":"74000000-0000-4000-8000-000000000005","role":"authenticated","app_metadata":{"app_role":"customer"}}',true);
+select pg_temp.fixture_set_config('request.jwt.claims','{"sub":"74000000-0000-4000-8000-000000000005","role":"authenticated","app_metadata":{"app_role":"customer"}}',true);
 set local role authenticated;
 select throws_ok($$select public.bootstrap_customer_account()$$,'42501','Confirmed customer session required','unconfirmed email cannot bootstrap');
 reset role;
-select set_config('request.jwt.claims','{"sub":"74000000-0000-4000-8000-000000000001","role":"authenticated","app_metadata":{"app_role":"customer"}}',true);
+select pg_temp.fixture_set_config('request.jwt.claims','{"sub":"74000000-0000-4000-8000-000000000001","role":"authenticated","app_metadata":{"app_role":"customer"}}',true);
 update auth.users set raw_app_meta_data='{"app_role":"admin"}' where id='74000000-0000-4000-8000-000000000001';
 set local role authenticated;
 select throws_ok($$select public.bootstrap_customer_account()$$,'42501','Confirmed customer session required','current Auth role overrides an old JWT claim');

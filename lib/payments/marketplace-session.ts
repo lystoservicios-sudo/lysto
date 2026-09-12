@@ -1,6 +1,7 @@
 import { getPricingSession, type PricingSession } from '@/lib/pricing/server'
 import { requireAdminPermission } from '@/lib/auth/session'
 import { ApiError } from '@/lib/http/api-error'
+import { assertFinancialAssurance } from '@/lib/auth/admin-assurance'
 import { paymentDatabase, type CheckoutRow } from './marketplace-db'
 
 export async function approvedProfessional(session: PricingSession) {
@@ -11,6 +12,7 @@ export async function approvedProfessional(session: PricingSession) {
 }
 export async function paymentActor() {
   const session = await getPricingSession()
+  assertFinancialAssurance(session)
   let professionalId: string | undefined
   if (session.role === 'professional') professionalId = await approvedProfessional(session)
   if (session.role === 'admin') {

@@ -1,4 +1,7 @@
 begin;
+
+\ir ../fixtures/session.sql.inc
+
 set search_path=public,extensions;
 select no_plan();
 \ir ../fixtures/marketplace.sql.inc
@@ -21,16 +24,16 @@ select lives_ok($$update mp_split_connected_accounts set encrypted_access_token=
 update marketplace_checkouts set status='rejected' where customer_id='85000000-0000-0000-0000-000000000001';
 select throws_ok($$update jobs set professional_id=null where customer_id='85000000-0000-0000-0000-000000000001'$$,'P0001','A checkout pins its professional: close this service before creating a replacement','Rejected card does not release the payee');
 set local role authenticated;
-select set_config('request.jwt.claims','{"sub":"85000000-0000-0000-0000-000000000002","app_metadata":{"app_role":"customer"}}',true);
+select pg_temp.fixture_set_config('request.jwt.claims','{"sub":"85000000-0000-0000-0000-000000000002","app_metadata":{"app_role":"customer"}}',true);
 select is((select count(*) from marketplace_checkouts),0::bigint,'Other customers cannot read checkout amounts');
-select set_config('request.jwt.claims','{"sub":"85000000-0000-0000-0000-000000000001","app_metadata":{"app_role":"customer"}}',true);
+select pg_temp.fixture_set_config('request.jwt.claims','{"sub":"85000000-0000-0000-0000-000000000001","app_metadata":{"app_role":"customer"}}',true);
 select is((select count(*) from marketplace_checkouts),1::bigint,'Owner can read their checkout');
 reset role;
 update marketplace_checkouts set status='approved' where customer_id='85000000-0000-0000-0000-000000000001';
 update jobs set status='onsite_diagnosis' where customer_id='85000000-0000-0000-0000-000000000001';
-select set_config('request.jwt.claims','{"sub":"85000000-0000-0000-0000-000000000003","app_metadata":{"app_role":"professional"}}',true);
+select pg_temp.fixture_set_config('request.jwt.claims','{"sub":"85000000-0000-0000-0000-000000000003","app_metadata":{"app_role":"professional"}}',true);
 select public.propose_job_extra((select id from jobs where customer_id='85000000-0000-0000-0000-000000000001'),'Otra falla detectada','Reparación adicional aceptada por separado',50000,'87000000-0000-0000-0000-000000000001');
-select set_config('request.jwt.claims','{"sub":"85000000-0000-0000-0000-000000000001","app_metadata":{"app_role":"customer"}}',true);
+select pg_temp.fixture_set_config('request.jwt.claims','{"sub":"85000000-0000-0000-0000-000000000001","app_metadata":{"app_role":"customer"}}',true);
 select public.decide_job_extra((select id from job_extras where idempotency_key='87000000-0000-0000-0000-000000000001'),'accepted');
 select private.prepare_marketplace_checkout('85000000-0000-0000-0000-000000000001',(select id from jobs where customer_id='85000000-0000-0000-0000-000000000001'),(select id from job_extras where idempotency_key='87000000-0000-0000-0000-000000000001'),false);
 select is((select marketplace_fee from marketplace_checkouts where extra_id=(select id from job_extras where idempotency_key='87000000-0000-0000-0000-000000000001')),0::numeric,'Extra payment has no Lysto commission');

@@ -7,7 +7,7 @@ import { paymentActor, visibleCheckout, type PaymentActor } from '@/lib/payments
 
 beforeEach(() => { vi.clearAllMocks() })
 function actor(role: 'customer' | 'professional' | 'admin', permissions: string[] = []) {
-  return { role, userId: 'trusted-user', profileId: 'trusted-profile', permissions,
+  return { role, userId: 'trusted-user', profileId: 'trusted-profile', permissions, sessionId: 'trusted-session', assuranceLevel: 'aal2',
     customerId: role === 'customer' ? 'customer-a' : undefined,
     professionalId: role === 'professional' ? 'professional-a' : undefined } as PaymentActor
 }
@@ -19,6 +19,11 @@ it('denies operations administrators before accessing the payment database', asy
 it.each(['finance', 'owner'])('accepts current %s authority for administrative payments', async permission => {
   mocks.session.mockResolvedValue(actor('admin', [permission]))
   await expect(paymentActor()).resolves.toMatchObject({ role: 'admin', permissions: [permission] })
+})
+it.each(['admin', 'professional'] as const)('requires MFA before %s payment operations', async role => {
+  mocks.session.mockResolvedValue({ ...actor(role, ['finance']), assuranceLevel: 'aal1' })
+  await expect(paymentActor()).rejects.toMatchObject({ status: 403, code: 'mfa_required' })
+  expect(mocks.query).not.toHaveBeenCalled()
 })
 it.each(['customer', 'professional'] as const)('allows a %s to read their own checkout only', async role => {
   const own = { id: 'checkout', customer_id: 'customer-a', professional_id: 'professional-a' }

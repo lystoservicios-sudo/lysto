@@ -1,12 +1,15 @@
 begin;
 
+\ir ../fixtures/session.sql.inc
+
+
 select plan(55);
 
 create function pg_temp.set_jwt(p_uid uuid, p_user_metadata jsonb default '{}'::jsonb)
 returns void
 language sql
 as $$
-  select set_config(
+  select pg_temp.fixture_set_config(
     'request.jwt.claims',
     jsonb_build_object(
       'sub', p_uid::text,
@@ -294,7 +297,7 @@ select throws_ok(
   'finance cannot refund without a canonical provider payment id'
 );
 
-select set_config(
+select pg_temp.fixture_set_config(
   'test.refund_request',
   public.request_payment_refund(
     '39000000-0000-0000-0000-000000000001',
@@ -331,7 +334,7 @@ select ok(
   'repeating the same refund idempotency key returns the original request'
 );
 
-select set_config(
+select pg_temp.fixture_set_config(
   'test.refund_request_two',
   public.request_payment_refund(
     '39000000-0000-0000-0000-000000000001',
@@ -439,7 +442,7 @@ values
   ('39000000-0000-0000-0000-000000000004', 100, 'Provider fixture', 'worker-ineligible-provider', '31000000-0000-0000-0000-000000000002'),
   ('39000000-0000-0000-0000-000000000005', 100, 'Provider id fixture', 'worker-ineligible-provider-id', '31000000-0000-0000-0000-000000000002');
 
-select set_config('request.jwt.claims', '{"role":"service_role"}', true);
+select pg_temp.fixture_set_config('request.jwt.claims', '{"role":"service_role"}', true);
 set local role service_role;
 
 select throws_ok(
@@ -449,7 +452,7 @@ select throws_ok(
   'service_role cannot mutate the private refund queue directly'
 );
 
-select set_config(
+select pg_temp.fixture_set_config(
   'test.refund_claim_one',
   (
     select to_jsonb(claimed)::text
@@ -472,7 +475,7 @@ reset role;
 update public.payments
 set status = 'rejected'
 where id = '39000000-0000-0000-0000-000000000001';
-select set_config('request.jwt.claims', '{"role":"service_role"}', true);
+select pg_temp.fixture_set_config('request.jwt.claims', '{"role":"service_role"}', true);
 set local role service_role;
 
 select throws_ok(
@@ -490,7 +493,7 @@ reset role;
 update public.payments
 set status = 'approved'
 where id = '39000000-0000-0000-0000-000000000001';
-select set_config('request.jwt.claims', '{"role":"service_role"}', true);
+select pg_temp.fixture_set_config('request.jwt.claims', '{"role":"service_role"}', true);
 set local role service_role;
 
 select throws_ok(
@@ -504,7 +507,7 @@ select throws_ok(
   'worker cannot mark a refund succeeded without a provider reference'
 );
 
-select set_config(
+select pg_temp.fixture_set_config(
   'test.refund_finalized',
   public.finalize_payment_refund_request(
     (current_setting('test.refund_claim_one', true)::jsonb ->> 'request_id')::uuid,
@@ -520,7 +523,7 @@ select ok(
   'first provider-confirmed refund finalization reports a non-replay success'
 );
 
-select set_config(
+select pg_temp.fixture_set_config(
   'test.refund_finalize_replay',
   public.finalize_payment_refund_request(
     (current_setting('test.refund_claim_one', true)::jsonb ->> 'request_id')::uuid,
@@ -562,7 +565,7 @@ select throws_ok(
   'a finalized claim token cannot overwrite a terminal outcome'
 );
 
-select set_config(
+select pg_temp.fixture_set_config(
   'test.refund_claim_two',
   (
     select to_jsonb(claimed)::text
@@ -606,7 +609,7 @@ select throws_ok(
   'claim fencing rejects a different worker token'
 );
 
-select set_config(
+select pg_temp.fixture_set_config(
   'test.refund_ambiguous',
   public.fail_payment_refund_request(
     (current_setting('test.refund_claim_two', true)::jsonb ->> 'request_id')::uuid,
@@ -645,7 +648,7 @@ select ok(
   'ambiguous failure invalidates the worker token and keeps the refund amount reserved'
 );
 
-select set_config('request.jwt.claims', '{"role":"service_role"}', true);
+select pg_temp.fixture_set_config('request.jwt.claims', '{"role":"service_role"}', true);
 set local role service_role;
 
 select throws_ok(
@@ -659,7 +662,7 @@ select throws_ok(
   'ambiguous failure fences the previous worker token immediately'
 );
 
-select set_config(
+select pg_temp.fixture_set_config(
   'test.refund_claim_two_retry',
   (
     select to_jsonb(claimed)::text
@@ -679,7 +682,7 @@ select ok(
   'expired lease reclaim rotates the fencing token but preserves provider idempotency'
 );
 
-select set_config(
+select pg_temp.fixture_set_config(
   'test.refund_failed',
   public.fail_payment_refund_request(
     (current_setting('test.refund_claim_two_retry', true)::jsonb ->> 'request_id')::uuid,

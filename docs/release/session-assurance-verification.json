@@ -1,0 +1,87 @@
+{
+  "task": "T08",
+  "status": "local_checks_passed_build_pending",
+  "checkedAt": "2026-09-12T00:52:38.161Z",
+  "checks": {
+    "unit": {
+      "passed": 432,
+      "files": 53,
+      "log": "output/production-readiness/t08-unit-final.log",
+      "latestQrRegression": "output/production-readiness/t08-qr-green.log"
+    },
+    "domain": {
+      "passed": 171,
+      "log": "output/production-readiness/t08-domain.log"
+    },
+    "tooling": {
+      "passed": 7,
+      "log": "output/production-readiness/t08-tooling.log"
+    },
+    "integration": {
+      "passed": 140,
+      "files": 10,
+      "zeroSkipped": true,
+      "report": "E:/Proyectos/GitHub/Lysto-production-readiness/output/integration/f60d4e49-b211-4587-ba41-982cdbe68b22/result.json"
+    },
+    "database": {
+      "passed": 461,
+      "freshAndUpgrade": true,
+      "status": "passed",
+      "projectId": "lysto_production_check",
+      "baseline": "20260911234506",
+      "versions": [
+        "202608190001",
+        "202608190002",
+        "202608190003",
+        "202608190004",
+        "202608190005",
+        "202608190006",
+        "202608190007",
+        "20260910195050",
+        "20260910204604",
+        "20260910220000",
+        "20260911042254",
+        "20260911051612",
+        "20260911053515",
+        "20260911224417",
+        "20260911231948",
+        "20260911234506",
+        "20260912000828",
+        "20260912002838",
+        "20260912003701"
+      ],
+      "witnessPreserved": true,
+      "schemaSha256": "64ae0d3dd7f335f996094a5145eeb4433cacb523c9f4a1cc1745ee898db4183d",
+      "storagePoliciesMatch": true,
+      "typesMatch": true,
+      "checkedAt": "2026-09-12T00:52:19.288Z"
+    },
+    "static": {
+      "types": 0,
+      "lint": 0,
+      "tooling": 0,
+      "checkedAt": "2026-09-12T00:50:09.191Z"
+    },
+    "browser": {
+      "actualChromium": true,
+      "actualAuthTotp": true,
+      "qrLoaded": true,
+      "reloadPreservedAuthority": true
+    }
+  },
+  "redEvidence": [
+    "output/production-readiness/t08-session-revocation-red.log",
+    "output/production-readiness/t08-suspension-red.log",
+    "output/production-readiness/t08-profile-red.log",
+    "output/production-readiness/t08-qr-red.log"
+  ],
+  "review": {
+    "method": "local source review, raw RLS policies, installed Auth SDK, HTTP/SQL/browser regression cases",
+    "independentFinalReview": false
+  },
+  "pending": [
+    "isolated production build",
+    "Acta de dos responsables de infraestructura y custodia/ensayo de recuperación del entorno real"
+  ],
+  "releaseReady": false
+}

@@ -5,12 +5,13 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { Client } from 'pg'
 import { assertTestEnvironment, readTestIdentity } from '../../scripts/lib/test-environment.mjs'
 import { boundedFixtureOperation, runFixtureCleanup } from './fixture-lifecycle.mjs'
+import { enrollFixtureMfa } from './mfa'
 
 export const accountNames = ['customerA', 'customerB', 'professionalApproved', 'professionalSuspended', 'operations', 'finance', 'quality', 'owner'] as const
 export type AccountName = typeof accountNames[number]
 export type FixtureAccount = { authId: string; profileId: string; entityId: string; email: string; password: string; accessToken: string; refreshToken: string; client: SupabaseClient }
 
-export function createFixtureAccounts() {
+export function createFixtureAccounts({ mfa = true }: { mfa?: boolean } = {}) {
   const env = process.env
   const target = assertTestEnvironment(env, readTestIdentity(env))
   const authOptions = { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
@@ -56,6 +57,17 @@ export function createFixtureAccounts() {
     cleanupPending = (async () => {
       // End first: rolls back any cancelled transaction before Auth cascades.
       const steps: Array<{ label: string; run: () => Promise<unknown> }> = [{ label: 'close database', run: () => database.end() }]
+      steps.push({ label: 'remove scoped operational records', run: async () => {
+        const cleanupDatabase = new Client({ connectionString: target.databaseUrl, connectionTimeoutMillis: 4_000, query_timeout: 4_000, statement_timeout: 4_000, lock_timeout: 2_000 })
+        cleanupDatabase.on('error', () => {})
+        try {
+          await cleanupDatabase.connect()
+          const profiles = Object.values(accounts).map(account => account.profileId)
+          const entities = Object.values(accounts).map(account => account.entityId)
+          await cleanupDatabase.query('delete from private.outbox_events where recipient_profile_id=any($1::uuid[]) or aggregate_id=any($2::uuid[])', [profiles, entities])
+          await cleanupDatabase.query('delete from public.admin_audit_logs where actor_profile_id=any($1::uuid[]) or entity_id=any($2::uuid[])', [profiles, entities])
+        } finally { await cleanupDatabase.end() }
+      } })
       for (const authId of [...created].reverse()) {
         const account = Object.values(accounts).find(a => a.authId === authId)
         if (account) steps.push({ label: `signout ${authId}`, run: async () => {
@@ -119,6 +131,9 @@ export function createFixtureAccounts() {
       const { data: login, error: loginError } = await step('fixture Auth sign in', () => client.auth.signInWithPassword({ email, password }))
       if (loginError || !login.session) throw new Error(`Unable to sign in synthetic account ${name}`)
       accounts[name] = { authId: data.user.id, profileId, entityId, email, password, accessToken: login.session.access_token, refreshToken: login.session.refresh_token, client }
+      if (mfa && (role === 'admin' || name === 'professionalApproved')) {
+        await step('fixture MFA verification', () => enrollFixtureMfa(accounts[name]))
+      }
     }
     clearTimeout(setupTimer)
     record('ready')

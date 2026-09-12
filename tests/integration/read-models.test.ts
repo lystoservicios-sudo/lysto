@@ -257,6 +257,8 @@ describe('session-bound read models', () => {
         JSON.stringify({
           sub: a.authId,
           role: 'authenticated',
+          session_id: JSON.parse(Buffer.from(a.accessToken.split('.')[1], 'base64url').toString()).session_id,
+          aal: 'aal1',
           app_metadata: { app_role: 'customer' }
         })
       ])
@@ -268,6 +270,7 @@ describe('session-bound read models', () => {
           [a.entityId]
         )
         plans[table] = result.rows[0]['QUERY PLAN']
+        expect(result.rows[0]['QUERY PLAN'][0].Plan['Actual Rows']).toBe(51)
       }
       mkdirSync('output/production-readiness', { recursive: true })
       const indexes = await database.query(

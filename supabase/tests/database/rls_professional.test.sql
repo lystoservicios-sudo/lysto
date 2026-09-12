@@ -1,12 +1,15 @@
 begin;
 
+\ir ../fixtures/session.sql.inc
+
+
 select plan(21);
 
 create function pg_temp.set_jwt(p_uid uuid, p_app_role text)
 returns void
 language sql
 as $$
-  select set_config(
+  select pg_temp.fixture_set_config(
     'request.jwt.claims',
     jsonb_build_object(
       'sub', p_uid::text,

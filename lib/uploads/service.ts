@@ -107,7 +107,7 @@ export async function finalizeUpload(session: Session, body: unknown) {
   const verified = await rpc(service, 'finalize_verified_upload', {
     p_intent_id: intent.id, p_actor_auth_user_id: session.userId, p_actual_mime_type: intent.expectedMimeType,
     p_actual_size_bytes: intent.expectedSizeBytes, p_actual_sha256: intent.expectedSha256,
-    p_output_size_bytes: inspected.bytes.length, p_output_sha256: inspected.sha256
+    p_output_size_bytes: inspected.bytes.length, p_output_sha256: inspected.sha256, p_actor_session_id:session.sessionId
   })
   return receipt(verified)
 }

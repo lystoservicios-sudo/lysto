@@ -1,11 +1,14 @@
 begin;
+
+\ir ../fixtures/session.sql.inc
+
 select no_plan();
 
-insert into auth.users (instance_id,id,aud,role,email,raw_app_meta_data,raw_user_meta_data,created_at,updated_at)
+insert into auth.users (instance_id,id,aud,role,email,raw_app_meta_data,raw_user_meta_data,created_at,updated_at,email_confirmed_at)
 values
-('00000000-0000-0000-0000-000000000000','71000000-0000-4000-8000-000000000001','authenticated','authenticated','session-customer@lysto.test','{"app_role":"customer"}','{}',now(),now()),
-('00000000-0000-0000-0000-000000000000','71000000-0000-4000-8000-000000000002','authenticated','authenticated','session-admin@lysto.test','{"app_role":"admin"}','{}',now(),now()),
-('00000000-0000-0000-0000-000000000000','71000000-0000-4000-8000-000000000003','authenticated','authenticated','session-professional@lysto.test','{"app_role":"professional"}','{}',now(),now());
+('00000000-0000-0000-0000-000000000000','71000000-0000-4000-8000-000000000001','authenticated','authenticated','session-customer@lysto.test','{"app_role":"customer"}','{}',now(),now(),now()),
+('00000000-0000-0000-0000-000000000000','71000000-0000-4000-8000-000000000002','authenticated','authenticated','session-admin@lysto.test','{"app_role":"admin"}','{}',now(),now(),now()),
+('00000000-0000-0000-0000-000000000000','71000000-0000-4000-8000-000000000003','authenticated','authenticated','session-professional@lysto.test','{"app_role":"professional"}','{}',now(),now(),now());
 insert into public.profiles (id,auth_user_id,role,first_name,last_name,email)
 values
 ('72000000-0000-4000-8000-000000000001','71000000-0000-4000-8000-000000000001','customer','Session','Customer','session-customer@lysto.test'),
@@ -23,7 +26,7 @@ select ok(not (select prosecdef from pg_proc where oid='public.get_session_conte
 select ok((select prosecdef from pg_proc where oid='private.get_session_context()'::regprocedure),'privileged lookup stays private');
 select ok(not has_table_privilege('authenticated','private.admin_profile_permissions','select'),'context does not expose private permission table');
 
-select set_config('request.jwt.claims','{"sub":"71000000-0000-4000-8000-000000000001","role":"authenticated","app_metadata":{"app_role":"customer"},"user_metadata":{"app_role":"admin","permissions":["owner"]}}',true);
+select pg_temp.fixture_set_config('request.jwt.claims','{"sub":"71000000-0000-4000-8000-000000000001","role":"authenticated","app_metadata":{"app_role":"customer"},"user_metadata":{"app_role":"admin","permissions":["owner"]}}',true);
 set local role authenticated;
 select is(public.get_session_context()->>'profile_id','72000000-0000-4000-8000-000000000001','returns current profile only');
 select is(public.get_session_context()->>'customer_id','73000000-0000-4000-8000-000000000001','returns current customer entity');
@@ -31,7 +34,7 @@ select is(public.get_session_context()->>'admin_profile_id',null::text,'metadata
 select is(public.get_session_context()->'permissions','[]'::jsonb,'metadata cannot grant permissions');
 reset role;
 
-select set_config('request.jwt.claims','{"sub":"71000000-0000-4000-8000-000000000002","role":"authenticated","app_metadata":{"app_role":"admin"}}',true);
+select pg_temp.fixture_set_config('request.jwt.claims','{"sub":"71000000-0000-4000-8000-000000000002","role":"authenticated","app_metadata":{"app_role":"admin"}}',true);
 set local role authenticated;
 select is(public.get_session_context()->'permissions','["operations"]'::jsonb,'returns current database grants');
 reset role;
@@ -40,7 +43,7 @@ set local role authenticated;
 select is(public.get_session_context()->'permissions','[]'::jsonb,'permission removal is visible with the same JWT');
 reset role;
 
-select set_config('request.jwt.claims','{"sub":"71000000-0000-4000-8000-000000000003","role":"authenticated","app_metadata":{"app_role":"professional"}}',true);
+select pg_temp.fixture_set_config('request.jwt.claims','{"sub":"71000000-0000-4000-8000-000000000003","role":"authenticated","app_metadata":{"app_role":"professional"}}',true);
 set local role authenticated;
 select is(public.get_session_context()->>'professional_status','approved','returns current professional approval');
 reset role;
@@ -49,13 +52,37 @@ set local role authenticated;
 select is(public.get_session_context()->>'professional_status','suspended','suspension is visible with the same JWT');
 reset role;
 
-select set_config('request.jwt.claims','{"sub":"71000000-0000-4000-8000-000000000001","role":"authenticated","app_metadata":{"app_role":"admin"}}',true);
+select pg_temp.fixture_set_config('request.jwt.claims','{"sub":"71000000-0000-4000-8000-000000000001","role":"authenticated","app_metadata":{"app_role":"admin"}}',true);
 set local role authenticated;
 select is(public.get_session_context(),null::jsonb,'mismatched trusted claim cannot resolve a context');
 reset role;
-select set_config('request.jwt.claims','{"sub":"71000000-0000-4000-8000-000000000001","role":"authenticated","user_metadata":{"app_role":"customer"}}',true);
+select pg_temp.fixture_set_config('request.jwt.claims','{"sub":"71000000-0000-4000-8000-000000000001","role":"authenticated","user_metadata":{"app_role":"customer"}}',true);
 set local role authenticated;
 select is(public.get_session_context(),null::jsonb,'editable metadata cannot replace the trusted claim');
 reset role;
+select pg_temp.fixture_set_config('request.jwt.claims','{"sub":"71000000-0000-4000-8000-000000000002","role":"authenticated","aal":"aal1","app_metadata":{"app_role":"admin"}}',true);
+set local role authenticated;
+select is(private.current_profile_id(),null::uuid,'aal1 admin has no domain profile authority');
+select is(public.get_session_context()->>'aal','aal1','own security context permits enrollment at aal1');
+reset role;
+select pg_temp.fixture_set_config('request.jwt.claims','{"sub":"71000000-0000-4000-8000-000000000001","session_id":"71000000-0000-4000-8000-000000000003","role":"authenticated","app_metadata":{"app_role":"customer"}}',true);
+set local role authenticated;
+select is(public.get_session_context(),null::jsonb,'another user session cannot authenticate the subject');
+reset role;
+select pg_temp.fixture_set_config('request.jwt.claims','{"sub":"71000000-0000-4000-8000-000000000001","session_id":"invalid","role":"authenticated","app_metadata":{"app_role":"customer"}}',true);
+set local role authenticated;
+select is(public.get_session_context(),null::jsonb,'malformed session id fails closed without cast error');
+reset role;
+select pg_temp.fixture_set_config('request.jwt.claims','{"sub":"71000000-0000-4000-8000-000000000001","role":"authenticated","app_metadata":{"app_role":"customer"}}',true);
+update auth.sessions set not_after=now()-interval '1 minute' where id='71000000-0000-4000-8000-000000000001';
+set local role authenticated;
+select is(public.get_session_context(),null::jsonb,'expired server session is rejected independently of JWT expiry');
+reset role;
+delete from auth.sessions where id='71000000-0000-4000-8000-000000000001';
+set local role authenticated;
+select is(public.get_session_context(),null::jsonb,'removed server session cannot be reconstructed from its JWT');
+reset role;
+select ok(not has_function_privilege('service_role','public.finalize_verified_upload(uuid,uuid,text,bigint,text,bigint,text)','execute'),'old sessionless finalizer is not executable by server role');
+select ok(not has_function_privilege('authenticated','private.session_is_active(uuid,uuid)','execute'),'clients cannot probe arbitrary Auth sessions');
 select * from finish();
 rollback;

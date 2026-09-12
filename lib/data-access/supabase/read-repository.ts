@@ -123,7 +123,8 @@ const contextSchema = z.object({
   customer_id: uuid.nullable(),
   professional_id: uuid.nullable(),
   professional_status: nullableString,
-  permissions: z.array(z.enum(['operations', 'finance', 'quality', 'owner']))
+  permissions: z.array(z.enum(['operations', 'finance', 'quality', 'owner'])),
+  session_active:z.literal(true), aal:z.enum(['aal1','aal2'])
 })
 const optionsSchema = z
   .object({
@@ -174,7 +175,7 @@ async function resolveReader(client: SupabaseClient<Database>, role: ReadRole): 
     (!parsed.data.professional_id || parsed.data.professional_status !== 'approved')
   )
     throw new ReadModelError('forbidden')
-  if (role === 'admin' && parsed.data.permissions.length === 0)
+  if (role === 'admin' && (parsed.data.permissions.length === 0 || parsed.data.aal!=='aal2'))
     throw new ReadModelError('forbidden')
   return parsed.data
 }

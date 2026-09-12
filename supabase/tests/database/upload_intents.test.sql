@@ -1,4 +1,7 @@
 begin;
+
+\ir ../fixtures/session.sql.inc
+
 select no_plan();
 -- Self-contained fixtures: the CLI mounts test SQL files individually.
 insert into auth.users (
@@ -126,7 +129,7 @@ select has_table('private', 'upload_intents', 'upload intents are persisted priv
 select has_table('private', 'request_upload_drafts', 'pre-request uploads have owned persistent drafts');
 select has_function('public', 'create_upload_intent', array['text','text','bigint','text','uuid','uuid','text','text'], 'intent creation derives the actor from Auth');
 select has_function('public', 'get_upload_intent', array['uuid'], 'intent reads use current entity access');
-select has_function('public', 'finalize_verified_upload', array['uuid','uuid','text','bigint','text','bigint','text'], 'verified finalization has an explicit trusted server actor');
+select has_function('public', 'finalize_verified_upload', array['uuid','uuid','text','bigint','text','bigint','text','uuid'], 'verified finalization has an explicit trusted server actor');
 select has_function('public', 'claim_expired_upload_intents', array['integer'], 'cleanup leases expired unverified intents');
 select has_function('public', 'complete_upload_cleanup', array['uuid','uuid'], 'cleanup is confirmed after Storage removal');
 select ok(exists(select 1 from storage.buckets where id='upload-quarantine' and not public), 'raw bytes remain in a private quarantine bucket');
@@ -135,7 +138,7 @@ select ok(not coalesce(has_function_privilege('service_role', to_regprocedure('p
 
 create temp table t10_uploads(label text primary key, data jsonb not null);
 grant select,insert,update on t10_uploads to authenticated,service_role;
-create function pg_temp.actor(p_user uuid,p_role text) returns void language sql as $$ select set_config('request.jwt.claims',jsonb_build_object('sub',p_user,'role','authenticated','app_metadata',jsonb_build_object('app_role',p_role))::text,true)::text; $$;
+create function pg_temp.actor(p_user uuid,p_role text) returns void language sql as $$ select pg_temp.fixture_set_config('request.jwt.claims',jsonb_build_object('sub',p_user,'role','authenticated','app_metadata',jsonb_build_object('app_role',p_role))::text,true)::text; $$;
 select pg_temp.actor('10000000-0000-0000-0000-000000000001','customer');
 set local role authenticated;
 insert into t10_uploads values('draft',public.create_upload_intent('request-photo','image/png',102,repeat('a',64),null,null,null,null));
@@ -149,7 +152,7 @@ select throws_ok($$select public.create_upload_intent('request-video','video/mp4
 select throws_ok($$select public.create_upload_intent('request-photo','application/pdf',100,repeat('a',64),null,null,null,null)$$,'22023','Invalid upload declaration','uninspected PDF rejected');
 select throws_ok($$select public.create_upload_intent('request-photo','image/png',100,'../bad-hash',null,null,null,null)$$,'22023','Invalid upload declaration','malformed digest rejected');
 select throws_ok($$select public.create_upload_intent('request-photo','image/png',100,repeat('a',64),'50000000-0000-0000-0000-000000000002',null,null,null)$$,'42501','Upload access denied','foreign customer request rejected');
-select set_config('storage.operation','storage.object.sign_upload_url',true);
+select pg_temp.fixture_set_config('storage.operation','storage.object.sign_upload_url',true);
 select ok(private.can_sign_upload_quarantine((select data->>'quarantinePath' from t10_uploads where label='draft'),'10000000-0000-0000-0000-000000000001'),'owner can sign the exact quarantine path');
 select ok(not private.can_sign_upload_quarantine((select data->>'quarantinePath'||'/../other' from t10_uploads where label='draft'),'10000000-0000-0000-0000-000000000001'),'quarantine path traversal rejected');
 select ok(not private.can_sign_upload_quarantine((select data->>'quarantinePath' from t10_uploads where label='draft'),'10000000-0000-0000-0000-000000000002'),'forged Storage owner rejected');
@@ -168,12 +171,13 @@ select 'upload-quarantine',data->>'quarantinePath','10000000-0000-0000-0000-0000
 insert into storage.objects(bucket_id,name,metadata)
 select data->>'outputBucket',data->>'outputPath','{"mimetype":"image/webp","size":80}'::jsonb from t10_uploads where label='draft';
 set local role service_role;
-select throws_ok($$select public.finalize_verified_upload((select (data->>'id')::uuid from t10_uploads where label='draft'),'10000000-0000-0000-0000-000000000002','image/png',102,repeat('a',64),80,repeat('b',64))$$,'42501','Upload access denied','finalizer rechecks ownership');
-select throws_ok($$select public.finalize_verified_upload((select (data->>'id')::uuid from t10_uploads where label='draft'),'10000000-0000-0000-0000-000000000001','image/jpeg',102,repeat('a',64),80,repeat('b',64))$$,'22023','Upload inspection does not match declaration','MIME mismatch rejected');
-select throws_ok($$select public.finalize_verified_upload((select (data->>'id')::uuid from t10_uploads where label='draft'),'10000000-0000-0000-0000-000000000001','image/png',102,repeat('c',64),80,repeat('b',64))$$,'22023','Upload inspection does not match declaration','hash mismatch rejected');
-select is(public.finalize_verified_upload((select (data->>'id')::uuid from t10_uploads where label='draft'),'10000000-0000-0000-0000-000000000001','image/png',102,repeat('a',64),80,repeat('b',64))->>'status','verified','inspected stored object becomes evidence');
-select is(public.finalize_verified_upload((select (data->>'id')::uuid from t10_uploads where label='draft'),'10000000-0000-0000-0000-000000000001','image/png',102,repeat('a',64),80,repeat('b',64))->>'attachmentId',(select data->>'id' from t10_uploads where label='draft'),'retry returns the same attachment');
-select throws_ok($$select public.finalize_verified_upload((select (data->>'id')::uuid from t10_uploads where label='draft'),'10000000-0000-0000-0000-000000000001','image/png',102,repeat('a',64),80,repeat('c',64))$$,'22023','Upload already finalized with different inspection','replay cannot replace evidence');
+select throws_ok($$select public.finalize_verified_upload((select (data->>'id')::uuid from t10_uploads where label='draft'),'10000000-0000-0000-0000-000000000001','image/png',102,repeat('a',64),80,repeat('b',64),'10000000-0000-0000-0000-000000000002')$$,'42501','Upload session is no longer active','server finalizer cannot substitute another user session');
+select throws_ok($$select public.finalize_verified_upload((select (data->>'id')::uuid from t10_uploads where label='draft'),'10000000-0000-0000-0000-000000000002','image/png',102,repeat('a',64),80,repeat('b',64),'10000000-0000-0000-0000-000000000002')$$,'42501','Upload access denied','finalizer rechecks ownership');
+select throws_ok($$select public.finalize_verified_upload((select (data->>'id')::uuid from t10_uploads where label='draft'),'10000000-0000-0000-0000-000000000001','image/jpeg',102,repeat('a',64),80,repeat('b',64),'10000000-0000-0000-0000-000000000001')$$,'22023','Upload inspection does not match declaration','MIME mismatch rejected');
+select throws_ok($$select public.finalize_verified_upload((select (data->>'id')::uuid from t10_uploads where label='draft'),'10000000-0000-0000-0000-000000000001','image/png',102,repeat('c',64),80,repeat('b',64),'10000000-0000-0000-0000-000000000001')$$,'22023','Upload inspection does not match declaration','hash mismatch rejected');
+select is(public.finalize_verified_upload((select (data->>'id')::uuid from t10_uploads where label='draft'),'10000000-0000-0000-0000-000000000001','image/png',102,repeat('a',64),80,repeat('b',64),'10000000-0000-0000-0000-000000000001')->>'status','verified','inspected stored object becomes evidence');
+select is(public.finalize_verified_upload((select (data->>'id')::uuid from t10_uploads where label='draft'),'10000000-0000-0000-0000-000000000001','image/png',102,repeat('a',64),80,repeat('b',64),'10000000-0000-0000-0000-000000000001')->>'attachmentId',(select data->>'id' from t10_uploads where label='draft'),'retry returns the same attachment');
+select throws_ok($$select public.finalize_verified_upload((select (data->>'id')::uuid from t10_uploads where label='draft'),'10000000-0000-0000-0000-000000000001','image/png',102,repeat('a',64),80,repeat('c',64),'10000000-0000-0000-0000-000000000001')$$,'22023','Upload already finalized with different inspection','replay cannot replace evidence');
 reset role;
 select throws_ok($$select private.attach_verified_draft((select (data->>'draftId')::uuid from t10_uploads where label='draft'),'50000000-0000-0000-0000-000000000002')$$,'42501','Upload draft access denied','draft cannot be linked to another customer');
 select lives_ok($$select private.attach_verified_draft((select (data->>'draftId')::uuid from t10_uploads where label='draft'),'50000000-0000-0000-0000-000000000001')$$,'verified draft links transactionally to the own request');
@@ -192,7 +196,7 @@ select throws_ok($$select public.get_upload_intent((select (data->>'id')::uuid f
 select ok(not private.can_sign_upload_quarantine((select data->>'quarantinePath' from t10_uploads where label='job'),'20000000-0000-0000-0000-000000000001'),'suspension revokes new upload signatures');
 reset role;
 set local role service_role;
-select throws_ok($$select public.finalize_verified_upload((select (data->>'id')::uuid from t10_uploads where label='job'),'20000000-0000-0000-0000-000000000001','image/png',102,repeat('a',64),80,repeat('b',64))$$,'42501','Upload access denied','suspension is checked again during finalization');
+select throws_ok($$select public.finalize_verified_upload((select (data->>'id')::uuid from t10_uploads where label='job'),'20000000-0000-0000-0000-000000000001','image/png',102,repeat('a',64),80,repeat('b',64),'20000000-0000-0000-0000-000000000001')$$,'42501','Upload access denied','suspension is checked again during finalization');
 reset role;
 
 select pg_temp.actor('10000000-0000-0000-0000-000000000001','customer');
@@ -201,7 +205,7 @@ insert into t10_uploads values('expired',public.create_upload_intent('request-ph
 reset role;
 update private.upload_intents set expires_at=now()-interval '1 minute' where id=(select (data->>'id')::uuid from t10_uploads where label='expired');
 set local role service_role;
-select throws_ok($$select public.finalize_verified_upload((select (data->>'id')::uuid from t10_uploads where label='expired'),'10000000-0000-0000-0000-000000000001','image/png',102,repeat('a',64),80,repeat('b',64))$$,'22023','Upload intent expired or unavailable','expired upload cannot become evidence');
+select throws_ok($$select public.finalize_verified_upload((select (data->>'id')::uuid from t10_uploads where label='expired'),'10000000-0000-0000-0000-000000000001','image/png',102,repeat('a',64),80,repeat('b',64),'10000000-0000-0000-0000-000000000001')$$,'22023','Upload intent expired or unavailable','expired upload cannot become evidence');
 select is(public.claim_expired_upload_intents(100),'[]'::jsonb,'cleanup waits beyond the signed-upload lifetime');
 reset role;
 update private.upload_intents set expires_at=now()-interval '1 minute',cleanup_after=now()-interval '1 minute' where id in (select (data->>'id')::uuid from t10_uploads where label in ('expired','draft'));
