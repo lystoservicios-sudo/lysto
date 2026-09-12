@@ -1,69 +1,79 @@
 'use client'
 
-import { useState, type ReactNode } from 'react'
-import { Check, Mail, Save, Snowflake } from 'lucide-react'
-import { AIR_CONDITIONING_ISSUES } from '@/lib/domain/constants'
-import { diagnosisRules, money, professionals } from '@/lib/mock/lysto-data'
-import { calculateSplit, zones } from './admin-model'
-import { ActionLink, Badge, Bars, Button, DataTable, Facts, Field, Header, Metrics, Notice, Panel, useAdminDraft } from './admin-ui'
+import { useState } from 'react'
+import { Header, Panel } from './admin-ui'
 
-type SettingField = { key: string; label: string; value: string; type?: 'number' | 'textarea' | 'email'; options?: string[]; hint?: string; min?: number; max?: number; step?: number }
-export function SettingsForm({ storageKey, fields, children, onValues }: { storageKey: string; fields: SettingField[]; children?: ReactNode; onValues?: (values: Record<string, string>) => void }) {
-  const { draft, save } = useAdminDraft(storageKey)
-  const initial = Object.fromEntries(fields.map(field => [field.key, field.value]))
-  const [values, setValues] = useState<Record<string, string>>(draft ?? initial)
-  const [saved, setSaved] = useState(false)
-  function change(key: string, value: string) { const next = { ...values, [key]: value }; setValues(next); setSaved(false); onValues?.(next) }
-  return <form onSubmit={event => { event.preventDefault(); save(values); setSaved(true) }}><div className="adm-form-grid">{fields.map(field => <Field key={field.key} label={field.label} hint={field.hint}>{field.options ? <select value={values[field.key]} onChange={event => change(field.key, event.target.value)}>{field.options.map(option => <option key={option}>{option}</option>)}</select> : field.type === 'textarea' ? <textarea required value={values[field.key]} onChange={event => change(field.key, event.target.value)} /> : <input required type={field.type ?? 'text'} min={field.min ?? 0} max={field.max} step={field.step ?? 1} value={values[field.key]} onChange={event => change(field.key, event.target.value)} />}</Field>)}</div>{children}<div className="adm-save-bar"><p>{saved ? 'Borrador guardado en esta sesión.' : 'Cambios de prueba. No se publicarán en el sistema.'}</p><div className="adm-inline"><Button onClick={() => { setValues(draft ?? initial); onValues?.(draft ?? initial); setSaved(false) }}>Restablecer</Button><Button variant="primary" type="submit"><Save size={16} /> Guardar borrador</Button></div></div>{saved && <div style={{ marginTop: 16 }}><Notice success>Borrador guardado. Se conserva al navegar dentro de Administración; se pierde al recargar.</Notice></div>}</form>
+type Field = {
+  key: string
+  label: string
+  value: string
+  type?: string
+  min?: number
+  max?: number
+  step?: number
+  hint?: string
 }
-export function InvitationsPage() {
-  const { draft, save } = useAdminDraft('invitation')
-  const [created, setCreated] = useState(Boolean(draft))
-  return <><Header title="Invitaciones profesionales" description="Prepará una invitación clara y acompañá el alta de nuevos profesionales." section="Red de profesionales" back={{ label: 'Profesionales', href: '/admin/profesionales' }} /><div className="adm-two-col"><Panel title="Preparar invitación" description="El envío por email no está habilitado en este entorno."><form onSubmit={event => { event.preventDefault(); const data = new FormData(event.currentTarget); save({ name: String(data.get('name')), email: String(data.get('email')), zone: String(data.get('zone')), message: String(data.get('message')) }); setCreated(true) }}><div className="adm-stack"><div className="adm-form-grid"><Field label="Nombre y apellido"><input name="name" required defaultValue={draft?.name} placeholder="Nombre del profesional" /></Field><Field label="Email"><input name="email" type="email" required defaultValue={draft?.email} placeholder="nombre@ejemplo.com" /></Field><Field label="Zona de cobertura"><select name="zone" defaultValue={draft?.zone}>{zones.map(zone => <option key={zone}>{zone}</option>)}</select></Field><Field label="Especialidad"><select><option>Aire acondicionado</option></select></Field></div><Field label="Mensaje de bienvenida"><textarea name="message" required defaultValue={draft?.message ?? "Hola, te invitamos a conocer Lysto y sumarte a nuestra red de profesionales de aire acondicionado."} /></Field><Button variant="primary" type="submit"><Mail size={16} /> Preparar borrador</Button>{created && <Notice success>Borrador preparado. No se generó un enlace de alta ni se envió un email.</Notice>}</div></form></Panel><Panel title="Un alta, paso a paso"><div className="adm-timeline">{['Invitación y datos de contacto', 'Documentación y herramientas', 'Revisión del equipo Lysto', 'Conexión con Mercado Pago'].map((step, i) => <div key={step}><strong>{i + 1}. {step}</strong><p>{i === 0 ? 'Primer contacto con el profesional.' : 'Se completa durante el proceso de incorporación.'}</p></div>)}</div></Panel></div><Panel title="Borradores de esta sesión">{draft ? <div className="adm-list-item"><div><strong>{draft.name}</strong><p>{draft.email} · {draft.zone}</p></div><Badge value="No enviada" /></div> : <Notice>Todavía no preparaste invitaciones. Completá el formulario para comenzar.</Notice>}</Panel></>
+export function SettingsForm({
+  fields,
+  onValues = () => undefined
+}: {
+  storageKey?: string
+  fields: Field[]
+  onValues?: (values: Record<string, string>) => void
+}) {
+  const initial = Object.fromEntries(fields.map((field) => [field.key, field.value])),
+    [values, setValues] = useState(initial)
+  return (
+    <form onSubmit={(event) => event.preventDefault()}>
+      {fields.map((field) => (
+        <label key={field.key} className="adm-field">
+          {field.label}
+          <input
+            type={field.type ?? 'text'}
+            value={values[field.key]}
+            min={field.min}
+            max={field.max}
+            step={field.step}
+            onChange={(event) => {
+              const next = { ...values, [field.key]: event.target.value }
+              setValues(next)
+              onValues(next)
+            }}
+          />
+          {field.hint ? <small>{field.hint}</small> : null}
+        </label>
+      ))}
+    </form>
+  )
+}
+function Placeholder({ title }: { title: string }) {
+  return (
+    <>
+      <Header
+        title={title}
+        description="Esta ruta productiva usa configuración versionada y permisos administrativos."
+      />
+      <Panel title="Configuración">
+        <p>Consultá la ruta autenticada para ver los valores vigentes.</p>
+      </Panel>
+    </>
+  )
 }
 export function PricesPage() {
-  const { draft } = useAdminDraft('prices')
-  const [values, setValues] = useState(draft ?? { base: '35000', installation: '20000', height: '10000', priority: '1.25' })
-  const [service, setService] = useState('Diagnóstico')
-  const [priority, setPriority] = useState(false)
-  const [height, setHeight] = useState(false)
-  const amount = (Number(values.base) + (service === 'Instalación' ? Number(values.installation) : 0) + (height ? Number(values.height) : 0)) * (priority ? Number(values.priority) : 1)
-  return <><Header title="Precios" description="Una matriz clara para presupuestar con consistencia y entender cada adicional." section="Configuración comercial" /><div className="adm-two-col"><Panel title="Matriz de precios" description="Importes en pesos argentinos. Configuración demostrativa."><SettingsForm storageKey="prices" onValues={setValues} fields={[{ key: 'base', label: 'Visita de diagnóstico · ARS', value: '35000', type: 'number' }, { key: 'installation', label: 'Adicional de instalación · ARS', value: '20000', type: 'number' }, { key: 'height', label: 'Adicional por altura · ARS', value: '10000', type: 'number' }, { key: 'priority', label: 'Multiplicador de prioridad', value: '1.25', type: 'number', min: 1, max: 5, step: 0.05, hint: '1,25 equivale a un 25% adicional.' }]} /></Panel><Panel title="Simulador de precio" description="Vista previa calculada con los valores de la matriz."><div className="adm-stack"><Field label="Tipo de servicio"><select value={service} onChange={event => setService(event.target.value)}><option>Diagnóstico</option><option>Instalación</option></select></Field><div className="adm-checklist"><label><input type="checkbox" checked={priority} onChange={event => setPriority(event.target.checked)} />Atención prioritaria</label><label><input type="checkbox" checked={height} onChange={event => setHeight(event.target.checked)} />Acceso en altura</label></div><Facts items={[["Base", money(Number(values.base))], ["Modalidad", priority ? `× ${values.priority}` : 'Flexible']]} /><div><small>Precio estimado</small><div className="adm-money" aria-live="polite">{money(amount)}</div></div><Notice>No incluye materiales ni adicionales sin validar.</Notice></div></Panel></div><Panel title="Reglas de aplicación"><Facts items={[["Base de cálculo", 'Visita + adicionales'], ["Prioridad", 'Se aplica sobre el subtotal'], ["Comisión", <ActionLink key="market" href="/admin/marketplace">Ver marketplace</ActionLink>]]} /></Panel></>
+  return <Placeholder title="Precios" />
+}
+export function NotificationsPage() {
+  return <Placeholder title="Notificaciones" />
 }
 export function ServicesPage() {
-  const [slug, setSlug] = useState(AIR_CONDITIONING_ISSUES[0].slug)
-  const service = AIR_CONDITIONING_ISSUES.find(item => item.slug === slug)!
-  return <><Header title="Servicios" description="Un catálogo simple para que el cliente encuentre el problema que necesita resolver." section="Catálogo" /><div className="adm-two-col"><Panel title="Problemas de aire acondicionado" description={`${AIR_CONDITIONING_ISSUES.length} opciones disponibles`}><div className="adm-catalog">{AIR_CONDITIONING_ISSUES.map(item => <button key={item.slug} aria-pressed={slug === item.slug} onClick={() => setSlug(item.slug)}><span className="adm-inline"><Snowflake size={18} /><strong>{item.title}</strong></span><small>{item.description}</small></button>)}</div></Panel><ServiceEditor key={slug} service={service} /></div></>
-}
-function ServiceEditor({ service }: { service: typeof AIR_CONDITIONING_ISSUES[number] }) {
-  const { draft } = useAdminDraft(`service-${service.slug}`)
-  const [preview, setPreview] = useState(draft ?? { title: service.title, description: service.description })
-  return <div className="adm-stack"><Panel title="Editar servicio"><SettingsForm storageKey={`service-${service.slug}`} onValues={setPreview} fields={[{ key: 'title', label: 'Nombre visible', value: service.title }, { key: 'status', label: 'Estado del catálogo', value: 'Activo', options: ['Activo', 'Pausado'] }, { key: 'description', label: 'Descripción para el cliente', type: 'textarea', value: service.description }]} /></Panel><Panel title="Vista previa · Cliente"><div className="adm-service-preview"><Snowflake size={28} color="#0066ff" /><h2>{preview.title}</h2><p>{preview.description}</p><small>Así se presenta la opción en el catálogo.</small></div></Panel></div>
-}
-export function DiagnosisPage() {
-  const [index, setIndex] = useState(0)
-  const rule = diagnosisRules[index]
-  return <><Header title="Diagnóstico" description="Reglas orientativas para convertir un síntoma en una visita mejor preparada." section="Base técnica" /><div className="adm-two-col"><Panel title="Reglas por síntoma"><div className="adm-catalog">{diagnosisRules.map((item, i) => <button aria-pressed={i === index} key={item.issue} onClick={() => setIndex(i)}><strong>{item.issue}</strong><small>{item.topCause}</small></button>)}</div></Panel><div className="adm-stack"><Panel title={`Regla · ${rule.issue}`}><SettingsForm key={rule.issue} storageKey={`diagnosis-${rule.issue}`} fields={[{ key: 'cause', label: 'Causa probable', value: rule.topCause }, { key: 'level', label: 'Nivel de confianza orientativo', value: rule.level, options: ['Alto', 'Medio', 'Bajo'] }, { key: 'checklist', label: 'Verificaciones sugeridas', value: rule.checklist, type: 'textarea' }]} /></Panel><Notice>El diagnóstico remoto es orientativo. La causa debe ser validada por un profesional durante la visita.</Notice></div></div></>
-}
-export function ConfigurationPage() {
-  return <><Header title="Configuración" description="Definí los criterios operativos que mantienen al equipo trabajando de la misma manera." section="Administración" /><div className="adm-two-col"><Panel title="Parámetros operativos" description="Prepará cambios sin afectar las solicitudes existentes."><SettingsForm storageKey="configuration" fields={[{ key: 'zone', label: 'Zona operativa inicial', value: 'CABA', options: ['CABA', 'CABA y AMBA'] }, { key: 'assignment', label: 'Modo de asignación', value: 'Revisión manual', options: ['Revisión manual', 'Sugerencia con aprobación'] }, { key: 'sla', label: 'SLA de asignación · minutos', value: '30', type: 'number', min: 1, max: 1440 }, { key: 'warranty', label: 'Garantía de servicio · días', value: '30', type: 'number', min: 1, max: 365 }, { key: 'start', label: 'Inicio de atención', value: '08:00', options: ['08:00', '09:00', '10:00'] }, { key: 'end', label: 'Fin de atención', value: '20:00', options: ['18:00', '19:00', '20:00'] }]} /></Panel><div className="adm-stack"><Panel title="Antes de publicar"><div className="adm-timeline"><div><strong>Validar cobertura</strong><p>Confirmar disponibilidad por zona.</p></div><div><strong>Revisar impacto</strong><p>Precio, prioridad y plazos deben ser consistentes.</p></div><div><strong>Comunicar al equipo</strong><p>Las reglas requieren una publicación real antes de aplicarse.</p></div></div></Panel><ActionLink href="/admin/auditoria">Consultar auditoría</ActionLink></div></div></>
+  return <Placeholder title="Servicios" />
 }
 export function ZonesPage() {
-  const [zone, setZone] = useState(zones[0])
-  return <><Header title="Zonas de cobertura" description="Conectá la cobertura comercial con la capacidad real de tu red." section="Operaciones" /><Metrics items={[{ label: 'Zonas', value: zones.length, detail: 'CABA y AMBA' }, { label: 'Con profesionales', value: 4, detail: 'Incluye perfiles no aprobados' }, { label: 'Con red aprobada', value: 2, detail: 'CABA Norte y CABA Sur' }, { label: 'Por desarrollar', value: 2, detail: 'Sin perfiles en la muestra' }]} /><div className="adm-two-col"><Panel title="Capacidad por zona" description="Seleccioná una zona para preparar su configuración."><div className="adm-catalog">{zones.map(item => <button key={item} aria-pressed={zone === item} onClick={() => setZone(item)}><strong>{item}</strong><small>{professionals.filter(p => p.zone === item && p.status === 'approved').length} profesionales aprobados · {professionals.filter(p => p.zone === item).length} registrados</small></button>)}</div></Panel><div className="adm-stack"><Panel title={zone}><SettingsForm key={zone} storageKey={`zone-${zone}`} fields={[{ key: 'status', label: 'Estado de cobertura', value: 'En evaluación', options: ['En evaluación', 'Activa', 'Pausada'] }, { key: 'multiplier', label: 'Factor de precio', value: '1', type: 'number', min: 0.5, max: 3, step: 0.05 }, { key: 'capacity', label: 'Cupo diario de visitas', value: '8', type: 'number', max: 1000 }, { key: 'notes', label: 'Condiciones de acceso', value: 'Confirmar dirección y disponibilidad antes de asignar.', type: 'textarea' }]} /></Panel><Notice>No se presenta un mapa sin límites geográficos verificados. La cobertura se organiza por las zonas registradas.</Notice></div></div></>
+  return <Placeholder title="Zonas" />
+}
+export function DiagnosisPage() {
+  return <Placeholder title="Diagnóstico" />
 }
 export function MarketplacePage() {
-  const { draft } = useAdminDraft('marketplace')
-  const [commission, setCommission] = useState(Number(draft?.commission ?? 18))
-  const [amount, setAmount] = useState(35000)
-  const split = calculateSplit(amount, commission)
-  return <><Header title="Marketplace" description="Reglas claras para distribuir ingresos y gestionar el ciclo del dinero." section="Finanzas" action={<ActionLink href="/admin/pagos">Consultar pagos</ActionLink>} /><div className="adm-two-col"><div className="adm-stack"><Panel title="Comisión y liquidación"><SettingsForm storageKey="marketplace" onValues={values => setCommission(Number(values.commission))} fields={[{ key: 'commission', label: 'Comisión Lysto · %', value: '18', type: 'number', max: 100, step: 0.5 }, { key: 'settlement', label: 'Condición de liquidación', value: 'Servicio confirmado por el cliente', options: ['Servicio confirmado por el cliente', 'Revisión administrativa'] }, { key: 'refund', label: 'Devoluciones', value: 'Requieren revisión manual', options: ['Requieren revisión manual'] }, { key: 'warranty', label: 'Garantías', value: 'Revisión del caso y evidencia', options: ['Revisión del caso y evidencia'] }]} /></Panel><Notice>Guardar un borrador no cambia comisiones reales ni mueve dinero. Las condiciones efectivas dependen de la integración de pagos.</Notice></div><Panel title="Simulador de distribución"><div className="adm-stack"><Field label="Importe del servicio · ARS"><input type="number" min={0} value={amount} onChange={event => setAmount(Math.max(0, Number(event.target.value)))} /></Field><Bars items={[{ label: `Lysto · ${commission}%`, value: split.fee, detail: money(split.fee) }, { label: 'Profesional', value: split.professional, detail: money(split.professional) }]} /><Facts items={[["Total", money(amount)], ["Comisión", money(split.fee)], ["Profesional", money(split.professional)]]} /><small>Distribución bruta; no incluye costos del proveedor ni impuestos.</small></div></Panel></div></>
-}
-const notificationEvents = ['Solicitud creada', 'Pago aprobado', 'Profesional asignado', 'Técnico en camino', 'Trabajo finalizado', 'Garantía abierta']
-export function NotificationsPage() {
-  const { draft, save } = useAdminDraft('notifications')
-  const [channels, setChannels] = useState<Record<string, string>>(draft ?? {})
-  const [selected, setSelected] = useState(notificationEvents[0])
-  const [saved, setSaved] = useState(false)
-  return <><Header title="Notificaciones" description="El mensaje correcto, por el canal adecuado, en cada momento del servicio." section="Comunicación" /><DataTable title="Eventos de notificación" rows={notificationEvents.map((name, index) => ({ id: String(index), name }))} search={r => [r.name]} columns={[{ key: 'event', label: 'Evento', render: r => <strong>{r.name}</strong> }, ...['Email', 'WhatsApp', 'Interna'].map(channel => ({ key: channel, label: channel, render: (r: { id: string; name: string }) => <label className="adm-inline" style={{ minHeight: 44 }}><input aria-label={`${channel}: ${r.name}`} type="checkbox" checked={channels[`${r.id}-${channel}`] === 'on'} onChange={event => { setChannels({ ...channels, [`${r.id}-${channel}`]: event.target.checked ? 'on' : 'off' }); setSaved(false) }} /><span>{channels[`${r.id}-${channel}`] === 'on' ? 'Activada' : 'Desactivada'}</span></label> })), { key: 'action', label: 'Plantilla', render: r => <Button onClick={() => setSelected(r.name)}>Ver mensaje</Button> }]} /><div className="adm-two-col"><Panel title={`Vista previa · ${selected}`}><div className="adm-service-preview"><Mail color="#0066ff" size={24} /><strong>{selected}</strong><p>Hola, {'{nombre}'}. Tenemos una actualización sobre tu servicio {'{identificador}'}. Ingresá a Lysto para ver los detalles y próximos pasos.</p><small>Plantilla de ejemplo. No contiene enlaces de envío.</small></div></Panel><Panel title="Preferencias de canales"><div className="adm-stack"><Notice>Las reglas se guardan como borrador. Email y WhatsApp no están conectados; no se enviarán notificaciones.</Notice><Button variant="primary" onClick={() => { save(channels); setSaved(true) }}><Check size={16} /> Guardar preferencias</Button>{saved && <Notice success>Preferencias guardadas durante esta sesión.</Notice>}</div></Panel></div></>
+  return <Placeholder title="Marketplace" />
 }

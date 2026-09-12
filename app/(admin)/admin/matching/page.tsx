@@ -1,3 +1,5 @@
-import { MatchingPage } from '@/components/admin/admin-details'
+import { ServiceOffers } from '@/components/pricing/service-offers'
 
-export default function Page() { return <MatchingPage /> }
+export default function Page() {
+  return <ServiceOffers />
+}

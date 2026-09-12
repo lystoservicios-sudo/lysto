@@ -1,0 +1,14 @@
+begin;
+create extension if not exists pgtap with schema extensions;
+set search_path=public,extensions;
+select plan(8);
+select has_table('public','operator_queue_configuration','Operator queue SLA configuration is durable');
+select has_column('public','operator_queue_configuration','priority_sla_minutes','Priority SLA is explicit');
+select has_column('public','operator_queue_configuration','standard_sla_minutes','Standard SLA is explicit');
+select has_column('public','operator_queue_configuration','version','Configuration is versioned');
+select has_function('public','list_operator_queue',array['integer','timestamp with time zone','uuid'],'Queue function exists');
+select ok(has_function_privilege('authenticated','public.list_operator_queue(integer,timestamp with time zone,uuid)','execute'),'Authenticated operators may enter guarded queue function');
+select ok(not has_function_privilege('anon','public.list_operator_queue(integer,timestamp with time zone,uuid)','execute'),'Anonymous callers cannot enter queue function');
+select ok(not has_table_privilege('authenticated','public.operator_queue_configuration','update'),'Browser cannot mutate SLA configuration directly');
+select * from finish();
+rollback;

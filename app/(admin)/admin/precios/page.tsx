@@ -1,4 +1,13 @@
-import { PricesPage } from '@/components/admin/admin-settings'
+import { PricingCalculator } from '@/components/pricing/pricing-calculator'
 import { ButtonLink } from '@/components/ui/button'
 
-export default function Page() { return <><div className="mb-5"><ButtonLink href="/admin/calculadora">Abrir calculadora de servicios</ButtonLink></div><PricesPage /></> }
+export default function Page() {
+  return (
+    <>
+      <div className="mb-5">
+        <ButtonLink href="/admin/calculadora">Abrir calculadora de servicios</ButtonLink>
+      </div>
+      <PricingCalculator />
+    </>
+  )
+}

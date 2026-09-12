@@ -14,7 +14,7 @@
     "environment": "isolated-local-worktree"
   },
   "currentMilestone": "IMPLEMENTATION_CONTINUES_WITH_DATABASE_VERIFICATION_BLOCKED",
-  "nextTask": "T29",
+  "nextTask": "T31",
   "recommendedOrder": [
     "T00",
     "T01",
@@ -1154,14 +1154,33 @@
         "B09"
       ],
       "ownerRole": "Agente full stack + operadores",
-      "status": "pending",
-      "currentStep": null,
-      "completedSteps": [],
-      "evidence": [],
+      "status": "in_progress",
+      "currentStep": 6,
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "evidence": [
+        "docs/release/admin-action-inventory.md",
+        "docs/release/admin-operations-verification.json",
+        "docs/runbooks/daily-operations.md",
+        "tests/admin-ui.vitest.test.tsx"
+      ],
       "commit": null,
-      "blockedBy": [],
-      "nextAction": "Aplicar inventario admin completo; listar todas las acciones visibles y qué permiso/servicio las respalda. Pruebas de datasets vacíos, más de 100 filas y usuario sin finance.",
-      "deviations": []
+      "blockedBy": [
+        "Docker Desktop stale dockerInference runtime socket blocks migration/integration/pgTAP",
+        "D02: approved staffing, SLA and escalation policy",
+        "D03: approved launch catalog",
+        "Human UAT with two operators, finance and quality"
+      ],
+      "nextAction": "Apply migration 20260912163000 and execute admin-operations integration plus pgTAP when Docker recovers; run the documented shift-handoff UAT after D02/D03 approval; continue T31 meanwhile.",
+      "deviations": [
+        "Operational reports currently expose live queue totals and page-scoped urgency/SLA measures; commercial period/zone KPIs remain gated by D01/D03/D05.",
+        "No administrative mutation bypass or production configuration change was introduced."
+      ]
     },
     {
       "id": "T30",

@@ -7,5 +7,9 @@ import { readAccountIdentity } from '@/lib/auth/account-identity'
 export const dynamic = 'force-dynamic'
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   const session = await requirePageSession('admin')
-  return <AppShell role="Admin" identity={await readAccountIdentity(session)}><AdminWorkspace>{children}</AdminWorkspace></AppShell>
+  return (
+    <AppShell role="Admin" identity={await readAccountIdentity(session)}>
+      <AdminWorkspace permissions={session.permissions}>{children}</AdminWorkspace>
+    </AppShell>
+  )
 }

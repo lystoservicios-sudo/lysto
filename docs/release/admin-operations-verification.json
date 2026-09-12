@@ -1,0 +1,27 @@
+{
+  "task": "T29",
+  "status": "implemented_pending_environment_and_uat",
+  "implemented": [
+    "session-bound operational queue with priority, SLA, owner, status and next action",
+    "permission-scoped administration navigation",
+    "real request, job, customer, equipment and catalog reads",
+    "cursor pagination for operational lists beyond 100 records",
+    "shared canonical payment, pricing, matching, quality and audit modules",
+    "daily operation and shift handoff runbook"
+  ],
+  "localVerification": {
+    "typecheck": "passed",
+    "lint": "passed",
+    "adminUi": "11 tests passed"
+  },
+  "preparedVerification": [
+    "tests/integration/admin-operations.test.ts",
+    "supabase/tests/database/operator_queue.test.sql"
+  ],
+  "pending": [
+    "apply migration and execute integration plus pgTAP after Docker recovery",
+    "two-operator, finance and quality shift-handoff UAT",
+    "D02 SLA and staffing approval",
+    "D03 catalog approval"
+  ]
+}

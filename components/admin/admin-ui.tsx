@@ -22,7 +22,7 @@ import {
   SlidersHorizontal,
   X
 } from 'lucide-react'
-import { adminLabel, adminModules, matchesSearch } from './admin-model'
+import { adminLabel, adminModules, canAccessAdminModule, matchesSearch } from './admin-model'
 
 type Drafts = Record<string, Record<string, string>>
 const DraftContext = createContext<{
@@ -33,18 +33,17 @@ export function useAdminDraft(key: string) {
   const { drafts, save } = useContext(DraftContext)
   return { draft: drafts[key], save: (values: Record<string, string>) => save(key, values) }
 }
-export function AdminWorkspace({ children }: { children: ReactNode }) {
+export function AdminWorkspace({
+  children,
+  permissions = ['owner']
+}: {
+  children: ReactNode
+  permissions?: readonly string[]
+}) {
   const [drafts, setDrafts] = useState<Drafts>({})
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const pathname = usePathname()
-  const connected =
-    pathname === '/admin/calculadora' ||
-    pathname === '/admin/configuracion' ||
-    pathname === '/admin/auditoria' ||
-    pathname === '/admin/notificaciones' ||
-    pathname === '/admin/profesionales' ||
-    pathname.startsWith('/admin/profesionales/')
   useEffect(() => {
     setOpen(false)
     setQuery('')
@@ -59,8 +58,7 @@ export function AdminWorkspace({ children }: { children: ReactNode }) {
       <div className="admin-workspace">
         <div className="adm-workspace-bar">
           <span>
-            <span className="adm-live-dot" />{' '}
-            {connected ? 'Administración de la cuenta' : 'Entorno de demostración'}
+            <span className="adm-live-dot" /> Consola operativa
           </span>
           <button
             className="adm-button adm-button-quiet"
@@ -107,6 +105,7 @@ export function AdminWorkspace({ children }: { children: ReactNode }) {
                 <section key={group.group}>
                   <h3>{group.group}</h3>
                   {group.items
+                    .filter(([, route]) => canAccessAdminModule(route, permissions))
                     .filter(([label]) => matchesSearch(query, [label]))
                     .map(([label, route]) => (
                       <Link
@@ -122,17 +121,14 @@ export function AdminWorkspace({ children }: { children: ReactNode }) {
               ))}
             </div>
             {adminModules.every((group) =>
-              group.items.every(([label]) => !matchesSearch(query, [label]))
+              group.items.every(
+                ([label, route]) =>
+                  !canAccessAdminModule(route, permissions) || !matchesSearch(query, [label])
+              )
             ) && <p>No encontramos herramientas con ese nombre.</p>}
           </nav>
         )}
         {children}
-        {!connected && (
-          <p className="adm-demo-footnote">
-            <CircleHelp size={15} /> Datos demostrativos. Los borradores duran esta sesión; no se
-            envían mensajes ni se realizan cobros.
-          </p>
-        )}
       </div>
     </DraftContext.Provider>
   )
@@ -457,7 +453,7 @@ export function DataTable<T extends { id: string }>({
         </div>
       )}
       <div className="adm-table-footer">
-        Mostrando {filtered.length} de {rows.length} registros <span>Datos de demostración</span>
+        Mostrando {filtered.length} de {rows.length} registros cargados
       </div>
     </section>
   )

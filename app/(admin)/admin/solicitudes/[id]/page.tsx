@@ -1,10 +1,9 @@
 import { notFound } from 'next/navigation'
-import { requests } from '@/lib/mock/lysto-data'
-import { RequestDetailPage } from '@/components/admin/admin-details'
+import { JobQuotePanel } from '@/components/pricing/job-quote-panel'
+import { z } from 'zod'
 
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const record = requests.find(item => item.id === id)
-  if (!record) notFound()
-  return <RequestDetailPage request={record} />
+  if (!z.string().uuid().safeParse(id).success) notFound()
+  return <JobQuotePanel requestId={id} />
 }
