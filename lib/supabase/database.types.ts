@@ -126,40 +126,73 @@ export type Database = {
       }
       complaints: {
         Row: {
+          assigned_to: string | null
+          category: string
           created_at: string
           customer_id: string | null
           description: string
+          due_at: string | null
+          evidence_ids: string[]
           id: string
           job_id: string | null
+          last_communication_failed_at: string | null
+          opened_by: string | null
+          policy_snapshot: Json
           professional_id: string | null
+          public_resolution: string | null
           resolution: string | null
+          resolved_at: string | null
           severity: string
+          source: string
           status: string
           updated_at: string
+          version: number
         }
         Insert: {
+          assigned_to?: string | null
+          category?: string
           created_at?: string
           customer_id?: string | null
           description: string
+          due_at?: string | null
+          evidence_ids?: string[]
           id?: string
           job_id?: string | null
+          last_communication_failed_at?: string | null
+          opened_by?: string | null
+          policy_snapshot?: Json
           professional_id?: string | null
+          public_resolution?: string | null
           resolution?: string | null
+          resolved_at?: string | null
           severity?: string
+          source?: string
           status?: string
           updated_at?: string
+          version?: number
         }
         Update: {
+          assigned_to?: string | null
+          category?: string
           created_at?: string
           customer_id?: string | null
           description?: string
+          due_at?: string | null
+          evidence_ids?: string[]
           id?: string
           job_id?: string | null
+          last_communication_failed_at?: string | null
+          opened_by?: string | null
+          policy_snapshot?: Json
           professional_id?: string | null
+          public_resolution?: string | null
           resolution?: string | null
+          resolved_at?: string | null
           severity?: string
+          source?: string
           status?: string
           updated_at?: string
+          version?: number
         }
         Relationships: [
           {
@@ -887,6 +920,7 @@ export type Database = {
           accepted_at: string | null
           assignment_version: number
           arrived_at: string | null
+          billing_policy: string | null
           cancelled_at: string | null
           completed_at: string | null
           created_at: string
@@ -903,11 +937,13 @@ export type Database = {
           technician_on_way_at: string | null
           updated_at: string
           warranty_until: string | null
+          warranty_revisit_of_job_id: string | null
         }
         Insert: {
           accepted_at?: string | null
           assignment_version?: number
           arrived_at?: string | null
+          billing_policy?: string | null
           cancelled_at?: string | null
           completed_at?: string | null
           created_at?: string
@@ -924,11 +960,13 @@ export type Database = {
           technician_on_way_at?: string | null
           updated_at?: string
           warranty_until?: string | null
+          warranty_revisit_of_job_id?: string | null
         }
         Update: {
           accepted_at?: string | null
           assignment_version?: number
           arrived_at?: string | null
+          billing_policy?: string | null
           cancelled_at?: string | null
           completed_at?: string | null
           created_at?: string
@@ -945,6 +983,7 @@ export type Database = {
           technician_on_way_at?: string | null
           updated_at?: string
           warranty_until?: string | null
+          warranty_revisit_of_job_id?: string | null
         }
         Relationships: [
           {
@@ -3075,38 +3114,132 @@ export type Database = {
         }
         Relationships: []
       }
-      warranty_claims: {
+      support_case_events: {
         Row: {
+          actor_profile_id: string
+          case_id: string
           created_at: string
-          customer_id: string
-          description: string
+          event_type: string
+          evidence_ids: string[]
+          from_status: string | null
           id: string
-          job_id: string
-          resolution: string | null
-          status: string
-          updated_at: string
+          internal_note: string | null
+          metadata: Json
+          public_message: string | null
+          to_status: string | null
         }
         Insert: {
+          actor_profile_id: string
+          case_id: string
           created_at?: string
-          customer_id: string
-          description: string
+          event_type: string
+          evidence_ids?: string[]
+          from_status?: string | null
           id?: string
-          job_id: string
-          resolution?: string | null
-          status?: string
-          updated_at?: string
+          internal_note?: string | null
+          metadata?: Json
+          public_message?: string | null
+          to_status?: string | null
         }
         Update: {
+          actor_profile_id?: string
+          case_id?: string
           created_at?: string
-          customer_id?: string
-          description?: string
+          event_type?: string
+          evidence_ids?: string[]
+          from_status?: string | null
           id?: string
-          job_id?: string
-          resolution?: string | null
-          status?: string
-          updated_at?: string
+          internal_note?: string | null
+          metadata?: Json
+          public_message?: string | null
+          to_status?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "support_case_events_actor_profile_id_fkey"
+            columns: ["actor_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_case_events_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "complaints"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      warranty_claims: {
+        Row: {
+          complaint_id: string | null
+          coverage_eligible: boolean
+          coverage_until: string | null
+          created_at: string
+          customer_id: string
+          decided_at: string | null
+          decision_reason: string | null
+          description: string
+          id: string
+          idempotency_key: string | null
+          job_id: string
+          revisit_job_id: string | null
+          resolution: string | null
+          same_problem: boolean
+          status: string
+          submission_fingerprint: string | null
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          complaint_id?: string | null
+          coverage_eligible?: boolean
+          coverage_until?: string | null
+          created_at?: string
+          customer_id: string
+          decided_at?: string | null
+          decision_reason?: string | null
+          description: string
+          id?: string
+          idempotency_key?: string | null
+          job_id: string
+          revisit_job_id?: string | null
+          resolution?: string | null
+          same_problem?: boolean
+          status?: string
+          submission_fingerprint?: string | null
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          complaint_id?: string | null
+          coverage_eligible?: boolean
+          coverage_until?: string | null
+          created_at?: string
+          customer_id?: string
+          decided_at?: string | null
+          decision_reason?: string | null
+          description?: string
+          id?: string
+          idempotency_key?: string | null
+          job_id?: string
+          revisit_job_id?: string | null
+          resolution?: string | null
+          same_problem?: boolean
+          status?: string
+          submission_fingerprint?: string | null
+          updated_at?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "warranty_claims_complaint_id_fkey"
+            columns: ["complaint_id"]
+            isOneToOne: true
+            referencedRelation: "complaints"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "warranty_claims_customer_id_fkey"
             columns: ["customer_id"]
@@ -3118,6 +3251,13 @@ export type Database = {
             foreignKeyName: "warranty_claims_job_id_fkey"
             columns: ["job_id"]
             isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "warranty_claims_revisit_job_id_fkey"
+            columns: ["revisit_job_id"]
+            isOneToOne: true
             referencedRelation: "jobs"
             referencedColumns: ["id"]
           },
@@ -3307,6 +3447,15 @@ export type Database = {
         }
         Returns: Json
       }
+      decide_warranty_claim: {
+        Args: {
+          p_claim_id: string
+          p_decision: string
+          p_expected_version: number
+          p_reason: string
+        }
+        Returns: Json
+      }
       complete_customer_registration: {
         Args: {
           p_accepted: boolean
@@ -3371,6 +3520,30 @@ export type Database = {
       current_user_role: {
         Args: never
         Returns: Database["public"]["Enums"]["user_role"]
+      }
+      list_support_cases: { Args: { p_limit?: number }; Returns: Json }
+      open_support_case: {
+        Args: {
+          p_category: string
+          p_customer_waiting: boolean
+          p_description: string
+          p_evidence_ids: string[]
+          p_has_safety_risk: boolean
+          p_idempotency_key: string
+          p_job_id: string | null
+          p_payment_blocked: boolean
+        }
+        Returns: Json
+      }
+      open_warranty_claim: {
+        Args: {
+          p_description: string
+          p_evidence_ids: string[]
+          p_idempotency_key: string
+          p_job_id: string
+          p_same_problem: boolean
+        }
+        Returns: Json
       }
       decide_job_extra: {
         Args: { p_decision: string; p_extra_id: string }
@@ -3684,6 +3857,20 @@ export type Database = {
           p_professional_rating: number
           p_service_rating: number
           p_would_hire_again: boolean
+        }
+        Returns: Json
+      }
+      update_support_case: {
+        Args: {
+          p_action: string
+          p_assigned_to: string | null
+          p_case_id: string
+          p_communication_failed: boolean
+          p_evidence_ids: string[]
+          p_expected_version: number
+          p_internal_note: string | null
+          p_public_message: string | null
+          p_resolution_reason: string | null
         }
         Returns: Json
       }

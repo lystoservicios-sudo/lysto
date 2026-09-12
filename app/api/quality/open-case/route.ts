@@ -1,4 +1,10 @@
-import { unavailableRoute } from '@/lib/http/route-handler'
+import { privateJson } from '@/lib/http/api-error'
+import { readPrivateJsonBody } from '@/lib/http/private-json-body'
+import { privateRoute } from '@/lib/http/route-handler'
+import { openSupportCase } from '@/lib/support/service'
 
-// Closed until the authorized, persistent implementation replaces this contract.
-export const POST = unavailableRoute({ roles: ['admin'], permission: 'quality' })
+export const POST = privateRoute(
+  { roles: ['admin'], permission: 'quality' },
+  async (request, session) =>
+    privateJson({ case: await openSupportCase(session, await readPrivateJsonBody(request, 8192)) })
+)

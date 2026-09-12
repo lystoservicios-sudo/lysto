@@ -1,3 +1,5 @@
-import { CasesPage } from '@/components/admin/admin-quality'
+import { ConnectedSupportCases } from '@/components/admin/connected-support-cases'
 
-export default function Page() { return <CasesPage warranty /> }
+export default function Page() {
+  return <ConnectedSupportCases warranty />
+}

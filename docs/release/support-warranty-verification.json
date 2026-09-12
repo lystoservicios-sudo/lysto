@@ -1,0 +1,23 @@
+{
+  "task": "T23",
+  "status": "implemented_database_verification_pending",
+  "migration": "supabase/migrations/20260912152441_support_case_operations.sql",
+  "implemented": [
+    "canonical-support-case",
+    "derived-participants",
+    "configurable-severity-deadlines",
+    "verified-evidence-references",
+    "public-private-timeline",
+    "versioned-state-transitions",
+    "database-derived-warranty-coverage",
+    "no-charge-linked-revisit",
+    "customer-professional-admin-interfaces"
+  ],
+  "localChecks": ["domain-173", "support-and-customer-unit-10", "typecheck", "lint", "diff-check"],
+  "pending": [
+    "integration-support-warranty-disposable-supabase",
+    "pgtap-disposable-supabase",
+    "D02/D06 support hours and SLA ratification",
+    "staging role-and-communication-failure walkthrough"
+  ]
+}
