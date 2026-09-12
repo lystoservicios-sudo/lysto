@@ -14,7 +14,7 @@
     "environment": "isolated-local-worktree"
   },
   "currentMilestone": "IMPLEMENTATION_CONTINUES_WITH_DATABASE_VERIFICATION_BLOCKED",
-  "nextTask": "T37",
+  "nextTask": "T39",
   "recommendedOrder": [
     "T00",
     "T01",
@@ -1544,14 +1544,27 @@
         "B10"
       ],
       "ownerRole": "Operaciones + finanzas + técnica",
-      "status": "pending",
-      "currentStep": null,
+      "status": "blocked_external",
+      "currentStep": 1,
       "completedSteps": [],
-      "evidence": [],
+      "evidence": [
+        "docs/release/pilot-report.md",
+        "docs/release/pilot-defects.md",
+        "docs/operations/operator-handbook.md",
+        "docs/runbooks/daily-operations.md",
+        "tests/tooling/pilot-readiness.test.mjs"
+      ],
       "commit": null,
-      "blockedBy": [],
-      "nextAction": "Aplicar cupo/zonas/horarios D01–D03 con clientes y profesionales autorizados. Referencia inicial: 20 servicios completos y dos semanas; cambiar sólo con decisión registrada.",
-      "deviations": []
+      "blockedBy": [
+        "T37 cannot enable the pilot until G01-G15 and signed GO are complete",
+        "D01-D03 have no approved real participants, zone, schedule, capacity or support owners",
+        "A real pilot requires elapsed operating days and traceable customer services",
+        "G16 requires observed results, reconciled money and authenticated human acceptance"
+      ],
+      "nextAction": "After PILOT_ENABLED, run the approved sample for the real elapsed period, complete daily reconciliations, stop on S0 criteria, verify all corrected defects and collect G16 acceptance; do not infer results from templates.",
+      "deviations": [
+        "Prepared the report, defect register, daily controls and stop rules without simulating customers, services or elapsed days."
+      ]
     },
     {
       "id": "T39",

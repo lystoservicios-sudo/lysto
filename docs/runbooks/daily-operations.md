@@ -39,3 +39,7 @@ El operador saliente revisa todos los casos propios abiertos y registra próximo
 ## Ejercicio de aceptación
 
 Con datos sintéticos, operador A toma una solicitud y deja el próximo paso; operador B la retoma; finanzas concilia una excepción; calidad asigna y resuelve un reclamo. Cada participante debe comprobar que no ve herramientas ajenas, que la auditoría identifica al actor y que ninguna acción exige intervención de desarrollo. Registrar fecha, participantes, IDs sintéticos, resultado y defectos.
+
+## Control diario del piloto
+
+Mientras el piloto esté activo, el cierre agrega versión desplegada, estado de ambos interruptores, servicios iniciados/completos, pagos y devoluciones conciliados, diferencia monetaria, notificaciones fallidas, incidentes y capacidad del día. Finanzas firma la conciliación; operaciones firma la entrega y el suplente confirma recepción. Si aparece un criterio S0, cerrar entradas nuevas y activar el runbook de incidente sin interrumpir webhooks ni la atención de servicios existentes.

@@ -22,3 +22,7 @@ Ingresar con cuenta personal y MFA, comprobar salud y alertas, leer la entrega a
 ## Certificación interna propuesta
 
 La persona completa UAT-01 a UAT-08 con datos sintéticos, demuestra que retoma una entrega de turno y que distingue cobro, devolución, cierre, reseña y garantía. El acta registra persona, rol, fecha, versión del manual, casos ejecutados, defectos y aprobador. Leer el manual no acredita capacitación.
+
+## Piloto supervisado
+
+Durante el piloto, el operador registra cada revisión diaria en `docs/release/pilot-report.md` y cada defecto reproducible en `docs/release/pilot-defects.md`. Ante acceso indebido, doble cobro, evidencia perdida o estado monetario desconocido, cierra solicitudes y checkouts nuevos y declara incidente. Sigue atendiendo servicios existentes y no bloquea la recepción de webhooks. El operador no amplía cupo o zonas: esa decisión requiere resultados observados y autorización de dirección.
