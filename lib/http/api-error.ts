@@ -7,10 +7,23 @@ const errors = {
   mfa_required: { status: 403, message: 'Verificá tu autenticador en Seguridad para continuar.' },
   not_found: { status: 404, message: 'No encontramos un recurso disponible para tu cuenta.' },
   invalid_input: { status: 400, message: 'Revisá los datos de la operación.' },
-  upload_expired: { status: 410, message: 'La subida venció. Volvé a guardar la foto para iniciar un nuevo intento.' },
+  conflict: {
+    status: 409,
+    message: 'Los datos cambiaron. Recargá la información antes de volver a guardar.'
+  },
+  upload_expired: {
+    status: 410,
+    message: 'La subida venció. Volvé a guardar la foto para iniciar un nuevo intento.'
+  },
   feature_unavailable: { status: 503, message: 'Esta operación todavía no está habilitada.' },
-  session_unavailable: { status: 503, message: 'No pudimos verificar tu acceso. Intentá nuevamente.' },
-  service_unavailable: { status: 503, message: 'No pudimos completar la operación. Intentá nuevamente.' }
+  session_unavailable: {
+    status: 503,
+    message: 'No pudimos verificar tu acceso. Intentá nuevamente.'
+  },
+  service_unavailable: {
+    status: 503,
+    message: 'No pudimos completar la operación. Intentá nuevamente.'
+  }
 } as const
 
 export type ApiErrorCode = keyof typeof errors
@@ -33,6 +46,16 @@ export function privateJson<T>(body: T, init?: ResponseInit) {
 }
 
 export function apiErrorResponse(error: unknown) {
-  const known = error instanceof ApiError ? error : new ApiError(error instanceof ZodError || error instanceof SyntaxError ? 'invalid_input' : 'service_unavailable')
-  return privateJson({ error: errors[known.code].message, code: known.code }, { status: known.status })
+  const known =
+    error instanceof ApiError
+      ? error
+      : new ApiError(
+          error instanceof ZodError || error instanceof SyntaxError
+            ? 'invalid_input'
+            : 'service_unavailable'
+        )
+  return privateJson(
+    { error: errors[known.code].message, code: known.code },
+    { status: known.status }
+  )
 }

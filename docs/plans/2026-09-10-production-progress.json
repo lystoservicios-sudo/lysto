@@ -365,11 +365,11 @@
         "docs/release/session-assurance-verification.json",
         "docs/runbooks/account-recovery.md"
       ],
-      "commit": null,
+      "commit": "b35c4adb03461357db9eb70170102d490caa747d",
       "blockedBy": [
         "Acta de responsables/custodia y ensayo de recuperación del entorno real"
       ],
-      "nextAction": "Verificar build aislado; conservar pendiente el acta externa y continuar T13.",
+      "nextAction": "Código, migraciones y build verificados. Conservar acta externa de recuperación pendiente; continuar T13.",
       "deviations": []
     },
     {
@@ -497,14 +497,27 @@
         "B06"
       ],
       "ownerRole": "Agente full stack",
-      "status": "pending",
-      "currentStep": null,
-      "completedSteps": [],
-      "evidence": [],
+      "status": "implemented",
+      "currentStep": 6,
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "evidence": [
+        "docs/release/customer-assets.md",
+        "docs/release/customer-assets-verification.json"
+      ],
       "commit": null,
       "blockedBy": [],
-      "nextAction": "Probar edición por dueño, cambio de rol prohibido, dirección histórica de presupuesto inmutable y equipo ajeno rechazado.",
-      "deviations": []
+      "nextAction": "Build aislado del checkpoint; luego T09.",
+      "deviations": [
+        "Servicios y contratos agrupados en lib/customer-assets para compartir validaciones, paginación y control de versión entre perfil, direcciones y equipos.",
+        "Correcciones aditivas: compatibilidad office, correo Auth confirmado, fotos verificadas, archivado de dirección cotizada y vínculo a ubicación del servicio."
+      ]
     },
     {
       "id": "T14",
@@ -1589,13 +1602,13 @@
     "updateRequiredAfterImplementation": true
   },
   "checkpoint": {
-    "updatedAt": "2026-09-12T00:52:38.163Z",
+    "updatedAt": "2026-09-12T01:53:47.877Z",
     "branch": "codex/production-readiness",
     "commit": "62ed2c19eb4b84e6f13817d21b2bc0e6eceac743",
     "filesChanged": [],
-    "lastVerification": "T08: 432 unit, latest QR 4, 171 domain, 7 tooling, full integration 140 zero skipped; fresh/upgrade each 461 SQL, schema/policies/history/types match; lint/typecheck pass. Build pending.",
+    "lastVerification": "T13: 438 unit, 171 domain, 7 tooling, 154 integration, 465 SQL fresh/upgrade, tipos/lint passed; cero hallazgos nuevos de advisors. Build aislado pendiente.",
     "unresolvedFailures": [],
-    "nextCommand": "Build T08 candidate; implement T13 customer assets."
+    "nextCommand": "Build isolated T13 candidate."
   },
   "events": [
     {

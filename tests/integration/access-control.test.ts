@@ -200,13 +200,18 @@ describe('HTTP access control with real Auth sessions', () => {
 
   it.each([
     ['operations', '/api/admin/professionals/approve'],
-    ['customerA', '/api/equipment/register'],
     ['professionalApproved', '/api/jobs/final-report']
   ] as const)('does not simulate completion for authorized %s on %s', async (account, path) => {
     const response = await request('POST', path, account, { adminProfileId: 'forged', ownerId: 'forged' })
     expect(response.status).toBe(503)
     expect(await response.json()).toMatchObject({ code: 'feature_unavailable' })
   }, 240_000)
+
+  it('rejects forged ownership fields on the implemented equipment registration endpoint', async () => {
+    const response = await request('POST', '/api/equipment/register', 'customerA', { adminProfileId: 'forged', ownerId: 'forged' })
+    expect(response.status).toBe(400)
+    expect(await response.json()).toMatchObject({ code: 'invalid_input' })
+  })
 
   it('leaves the provider webhook anonymous but rejects an invalid signature', async () => {
     const response = await request('POST', '/api/mercadopago/webhook', undefined, {})

@@ -153,6 +153,7 @@ export type Database = {
       customer_addresses: {
         Row: {
           apartment: string | null
+          archived_at: string | null
           city: string
           created_at: string
           customer_id: string
@@ -162,6 +163,7 @@ export type Database = {
           has_parking: boolean | null
           id: string
           is_default: boolean
+          label: string | null
           number: string
           outdoor_unit_at_height: boolean | null
           outdoor_unit_on_balcony: boolean | null
@@ -172,9 +174,11 @@ export type Database = {
           stairs_required: boolean | null
           street: string
           updated_at: string
+          version: number
         }
         Insert: {
           apartment?: string | null
+          archived_at?: string | null
           city?: string
           created_at?: string
           customer_id: string
@@ -184,6 +188,7 @@ export type Database = {
           has_parking?: boolean | null
           id?: string
           is_default?: boolean
+          label?: string | null
           number: string
           outdoor_unit_at_height?: boolean | null
           outdoor_unit_on_balcony?: boolean | null
@@ -194,9 +199,11 @@ export type Database = {
           stairs_required?: boolean | null
           street: string
           updated_at?: string
+          version?: number
         }
         Update: {
           apartment?: string | null
+          archived_at?: string | null
           city?: string
           created_at?: string
           customer_id?: string
@@ -206,6 +213,7 @@ export type Database = {
           has_parking?: boolean | null
           id?: string
           is_default?: boolean
+          label?: string | null
           number?: string
           outdoor_unit_at_height?: boolean | null
           outdoor_unit_on_balcony?: boolean | null
@@ -216,6 +224,7 @@ export type Database = {
           stairs_required?: boolean | null
           street?: string
           updated_at?: string
+          version?: number
         }
         Relationships: [
           {
@@ -230,6 +239,7 @@ export type Database = {
       customer_equipment: {
         Row: {
           address_id: string | null
+          archived_at: string | null
           brand: string | null
           category_id: string | null
           created_at: string
@@ -243,9 +253,11 @@ export type Database = {
           photo_url: string | null
           serial_number: string | null
           updated_at: string
+          version: number
         }
         Insert: {
           address_id?: string | null
+          archived_at?: string | null
           brand?: string | null
           category_id?: string | null
           created_at?: string
@@ -259,9 +271,11 @@ export type Database = {
           photo_url?: string | null
           serial_number?: string | null
           updated_at?: string
+          version?: number
         }
         Update: {
           address_id?: string | null
+          archived_at?: string | null
           brand?: string | null
           category_id?: string | null
           created_at?: string
@@ -275,6 +289,7 @@ export type Database = {
           photo_url?: string | null
           serial_number?: string | null
           updated_at?: string
+          version?: number
         }
         Relationships: [
           {
@@ -439,6 +454,48 @@ export type Database = {
             columns: ["issue_type_id"]
             isOneToOne: false
             referencedRelation: "service_issue_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      equipment_media: {
+        Row: {
+          created_at: string
+          equipment_id: string
+          id: string
+          storage_bucket: string
+          storage_path: string
+          uploaded_by: string
+        }
+        Insert: {
+          created_at?: string
+          equipment_id: string
+          id: string
+          storage_bucket: string
+          storage_path: string
+          uploaded_by: string
+        }
+        Update: {
+          created_at?: string
+          equipment_id?: string
+          id?: string
+          storage_bucket?: string
+          storage_path?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_media_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "customer_equipment"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_media_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -2061,9 +2118,11 @@ export type Database = {
           first_name: string
           id: string
           last_name: string
+          notification_preference: string
           phone: string | null
           role: Database["public"]["Enums"]["user_role"]
           updated_at: string
+          version: number
         }
         Insert: {
           auth_user_id?: string | null
@@ -2073,9 +2132,11 @@ export type Database = {
           first_name?: string
           id?: string
           last_name?: string
+          notification_preference?: string
           phone?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
+          version?: number
         }
         Update: {
           auth_user_id?: string | null
@@ -2085,9 +2146,11 @@ export type Database = {
           first_name?: string
           id?: string
           last_name?: string
+          notification_preference?: string
           phone?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
+          version?: number
         }
         Relationships: []
       }
@@ -3248,6 +3311,16 @@ export type Database = {
         Returns: Json
       }
       update_quote_policy: { Args: { p_policy: Json }; Returns: Json }
+      write_customer_asset: {
+        Args: {
+          p_archive?: boolean
+          p_data: Json
+          p_expected_version: number
+          p_id: string
+          p_kind: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       admin_permission: "operations" | "finance" | "quality" | "owner"

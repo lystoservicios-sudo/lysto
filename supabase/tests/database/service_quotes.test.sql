@@ -4,7 +4,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 set search_path = public, extensions;
-select plan(27);
+select plan(31);
 select has_table('public', 'service_quotes', 'Immutable service quote snapshots exist');
 select has_table('public', 'job_extras', 'Additional faults are stored separately');
 select has_function('public', 'submit_service_quote', array['uuid'], 'Customer accepts a saved quote without sending an amount');
@@ -37,8 +37,12 @@ select pg_temp.fixture_set_config('request.jwt.claims','{"sub":"91000000-0000-00
 select lives_ok($$select public.submit_service_quote('92000000-0000-0000-0000-000000000001')$$,'Owner accepts saved quote');
 select is((public.submit_service_quote('92000000-0000-0000-0000-000000000001')->>'duplicate')::boolean,true,'Duplicate acceptance creates no second job');
 select is((select count(*) from public.jobs where customer_id='91000000-0000-0000-0000-000000000001'),1::bigint,'Exactly one job was created');
-select throws_ok($$update public.customer_addresses set city='Mar del Plata' where customer_id='91000000-0000-0000-0000-000000000001'$$,'P0001','Accepted quote address is immutable: request a new quote','Quoted address cannot change after acceptance');
+select throws_ok($$update public.customer_addresses set city='Mar del Plata' where customer_id='91000000-0000-0000-0000-000000000001'$$,'42501',null,'Direct customer writes cannot bypass the versioned address workflow');
+select lives_ok($$select public.write_customer_asset('address',a.id,a.version,'{"label":"Oficina nueva","street":"Otra calle","number":"222","city":"CABA","province":"Buenos Aires","propertyType":"office","access":{},"isDefault":true}'::jsonb,false) from public.customer_addresses a join public.service_requests r on r.address_id=a.id where r.customer_id='91000000-0000-0000-0000-000000000001'$$,'Editing a quoted address creates a replacement without changing the accepted location');
+select is((select a.street from public.customer_addresses a join public.service_requests r on r.address_id=a.id where r.customer_id='91000000-0000-0000-0000-000000000001'),'Corrientes','Accepted service retains the original street');
+select ok((select a.archived_at is not null from public.customer_addresses a join public.service_requests r on r.address_id=a.id where r.customer_id='91000000-0000-0000-0000-000000000001'),'Archived historical address remains linked and readable');
 reset role;
+select throws_ok($$update public.customer_addresses set city='Mar del Plata' where id=(select address_id from public.service_requests where customer_id='91000000-0000-0000-0000-000000000001')$$,'P0001','Accepted quote address is immutable: request a new quote','Even a privileged writer cannot change the quoted location');
 select throws_ok($$update public.service_quotes set quote=jsonb_set(quote,'{total}','1') where id='92000000-0000-0000-0000-000000000001'$$,'P0001','Quote snapshot is immutable','Accepted monetary snapshot cannot be overwritten even by a privileged writer');
 select throws_ok($$update public.service_quotes set status='ready' where id='92000000-0000-0000-0000-000000000001'$$,'P0001','Quote snapshot is immutable','Accepted quote cannot return to editable decision state');
 update public.jobs set professional_id='91000000-0000-0000-0000-000000000003',status='confirmed' where customer_id='91000000-0000-0000-0000-000000000001';

@@ -1,6 +1,6 @@
 # T08 — Aseguramiento y revocación de sesiones
 
-Implementación local en curso. Sin habilitación de producción.
+Implementación verificada localmente. Pendiente el acta de recuperación y la configuración/aceptación del entorno real. Sin habilitación de producción.
 
 ## Límites de autoridad
 

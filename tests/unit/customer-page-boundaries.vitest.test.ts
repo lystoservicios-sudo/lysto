@@ -81,10 +81,12 @@ describe('customer page layout boundary', () => {
 
     expect(batchFourSources).toHaveLength(3)
     expect(batchFourSources.every((source) => !source.includes('@/lib/mock/lysto-data'))).toBe(true)
-    expect(batchFourSources[1]).toContain('findCustomerRecordById')
+    expect(batchFourSources[1]).toContain('customerEquipmentHistory(session, id')
+    expect(batchFourSources[1]).toContain("requirePageSession('customer')")
+    expect(batchFourSources[1]).not.toContain('customerDemoFixtures')
     expect(batchFourSources[1]).toMatch(/params/)
     expect(batchFourSources[1]).toContain('notFound()')
-    expect(batchFourSources[1]).toMatch(/const warranty = .*\.find\(\(item\) => item\.equipmentId === equipment\.id\)/)
+    expect(batchFourSources[1]).toContain('equipment.archived_at')
   })
 
   it('keeps the batch five warranty page independent from global mocks', () => {

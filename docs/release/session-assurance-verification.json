@@ -1,7 +1,7 @@
 {
   "task": "T08",
-  "status": "local_checks_passed_build_pending",
-  "checkedAt": "2026-09-12T00:52:38.161Z",
+  "status": "locally_verified_external_acceptance_pending",
+  "checkedAt": "2026-09-12T00:54:03.109Z",
   "checks": {
     "unit": {
       "passed": 432,
@@ -67,6 +67,16 @@
       "actualAuthTotp": true,
       "qrLoaded": true,
       "reloadPreservedAuthority": true
+    },
+    "build": {
+      "commit": "b35c4adb03461357db9eb70170102d490caa747d",
+      "environment": "isolated-local-production-build",
+      "checkout": "E:/Proyectos/GitHub/Lysto-production-build-check",
+      "dependencies": "junction to verified frozen lock installation, including direct Sharp 0.35.4",
+      "status": "passed",
+      "startedAt": "2026-09-12T00:52:42.951Z",
+      "exitCode": 0,
+      "completedAt": "2026-09-12T00:53:44.564Z"
     }
   },
   "redEvidence": [
@@ -80,8 +90,8 @@
     "independentFinalReview": false
   },
   "pending": [
-    "isolated production build",
     "Acta de dos responsables de infraestructura y custodia/ensayo de recuperación del entorno real"
   ],
-  "releaseReady": false
+  "releaseReady": false,
+  "codeCommit": "b35c4adb03461357db9eb70170102d490caa747d"
 }

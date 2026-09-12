@@ -206,9 +206,9 @@ select throws_ok(
     '14000000-0000-0000-0000-000000000001',
     'Equipo con dirección ajena'
   )$$,
-  '23503',
+  '42501',
   null,
-  'customer equipment cannot reference another customer address'
+  'direct equipment inserts cannot bypass the ownership-checked workflow'
 );
 
 select throws_ok(
