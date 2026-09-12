@@ -25,7 +25,7 @@ describe('public entry links', () => {
   it('routes the service page CTA through login', () => {
     render(<AirConditioningServicePage />)
 
-    expect(screen.getByRole('link', { name: 'Solicitar técnico' }).getAttribute('href'))
+    expect(screen.getByRole('link', { name: 'Consultar disponibilidad' }).getAttribute('href'))
       .toBe('/login')
   })
 })
