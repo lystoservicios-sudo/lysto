@@ -14,7 +14,7 @@
     "environment": "isolated-local-worktree"
   },
   "currentMilestone": "IMPLEMENTATION_CONTINUES_WITH_DATABASE_VERIFICATION_BLOCKED",
-  "nextTask": "T35",
+  "nextTask": "T34",
   "recommendedOrder": [
     "T00",
     "T01",
@@ -1391,16 +1391,31 @@
         "B10"
       ],
       "ownerRole": "Agente técnico + dirección",
-      "status": "pending",
-      "currentStep": null,
-      "completedSteps": [],
+      "status": "in_progress",
+      "currentStep": 3,
+      "completedSteps": [
+        1,
+        2,
+        6
+      ],
       "evidence": [
-        "output/production-readiness/t13-advisors-summary.json"
+        "output/production-readiness/t13-advisors-summary.json",
+        "tests/load/service-platform.js",
+        "docs/release/performance-and-cost.md",
+        "docs/release/performance-verification.json"
       ],
       "commit": null,
-      "blockedBy": [],
-      "nextAction": "Definir carga esperada y presupuesto con D01/D10: usuarios concurrentes, solicitudes, checkouts, fotos y pico de operadores. Si faltan datos, usar hipótesis explícita que no habilita escala ilimitada. Medir las 40 advertencias heredadas de políticas RLS permisivas múltiples antes de consolidar políticas.",
-      "deviations": []
+      "blockedBy": [
+        "D01 expected capacity and D10 SLO/budget approvals",
+        "D04 designated non-production staging target",
+        "Docker Desktop stale dockerInference runtime socket blocks local database load",
+        "Official k6 Windows installer did not complete within the bounded execution window"
+      ],
+      "nextAction": "Execute smoke, peak, 2x, burst and 60-minute profiles against designated staging; capture application/database metrics and recovery, reconcile provider and human costs, then obtain D10 approval; continue T34 meanwhile.",
+      "deviations": [
+        "The documented base/2x/5x volumes are explicit planning hypotheses, not approved capacity.",
+        "Current official list prices were recorded with source URLs; Mercado Pago, maps, monitoring, taxes and human operation remain variable rather than being treated as zero."
+      ]
     },
     {
       "id": "T36",

@@ -1,0 +1,22 @@
+{
+  "task": "T35",
+  "status": "prepared_pending_staging_measurement_and_budget_approval",
+  "candidateCommit": null,
+  "target": null,
+  "profiles": {
+    "smoke": null,
+    "peak": null,
+    "double_peak": null,
+    "burst": null,
+    "sustained_60m": null,
+    "recovery": null
+  },
+  "thresholdsProposed": {
+    "readP95Ms": 1000,
+    "mutationP95Ms": 2000,
+    "failedRateMax": 0.01,
+    "integrityErrors": 0
+  },
+  "costApproval": null,
+  "pending": ["D01 capacity approval", "D10 SLO and budget approval", "designated staging target"]
+}

@@ -52,3 +52,7 @@ En el .env.local original se detectó configuración pública de Supabase y meta
 El verificador y los runbooks T32 están implementados. D04 debe designar un proyecto aislado de restore y D09 debe aprobar RPO/RTO, titulares, suplentes, retención real del plan y ubicación de copias independientes de Storage. Ningún entorno existente se presume apto para el ensayo.
 
 Los marcadores de dominio no son URLs configuradas. Antes de cualquier migración remota, registrar project ref, historial, backup, responsable y autorización aplicable.
+
+## Capacidad y gasto
+
+El perfil de carga seguro y las hipótesis base/2×/5× están en `docs/release/performance-and-cost.md`. Staging debe registrar CPU, memoria, conexiones, locks, egress, colas y latencias propias por candidato. Configurar avisos de gasto al 50%, 75% y 90% del presupuesto D10 y conservar el límite de conexiones del pool de pagos por instancia. Ninguna estimación local habilita aumento de cupo comercial.
