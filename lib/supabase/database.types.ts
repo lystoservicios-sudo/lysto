@@ -698,6 +698,7 @@ export type Database = {
       }
       job_final_reports: {
         Row: {
+          after_photo_ids: string[]
           created_at: string
           equipment_id: string | null
           final_state: string
@@ -709,10 +710,13 @@ export type Database = {
           parts_used: string | null
           public_token: string
           real_diagnosis: string
+          submission_fingerprint: string | null
+          version: number
           warranty_days: number
           work_done: string
         }
         Insert: {
+          after_photo_ids?: string[]
           created_at?: string
           equipment_id?: string | null
           final_state: string
@@ -724,10 +728,13 @@ export type Database = {
           parts_used?: string | null
           public_token?: string
           real_diagnosis: string
+          submission_fingerprint?: string | null
+          version?: number
           warranty_days?: number
           work_done: string
         }
         Update: {
+          after_photo_ids?: string[]
           created_at?: string
           equipment_id?: string | null
           final_state?: string
@@ -739,6 +746,8 @@ export type Database = {
           parts_used?: string | null
           public_token?: string
           real_diagnosis?: string
+          submission_fingerprint?: string | null
+          version?: number
           warranty_days?: number
           work_done?: string
         }
@@ -3283,13 +3292,15 @@ export type Database = {
       }
       close_job_with_final_report: {
         Args: {
+          p_after_photo_ids: string[]
           p_equipment_id: string
           p_final_state: string
-          p_internal_notes?: string
+          p_idempotency_key: string
+          p_internal_notes: string | null
           p_job_id: string
           p_maintenance_option: Database["public"]["Enums"]["maintenance_option"]
-          p_next_maintenance_date: string
-          p_parts_used: string
+          p_next_maintenance_date: string | null
+          p_parts_used: string | null
           p_real_diagnosis: string
           p_warranty_days: number
           p_work_done: string

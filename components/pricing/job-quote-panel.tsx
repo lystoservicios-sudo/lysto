@@ -10,6 +10,7 @@ import type { ServiceQuote } from '@/lib/pricing/service-quote'
 import { acknowledgeCommand, recoverCommand } from '@/lib/jobs/recoverable-command'
 import { QuoteBreakdown } from './quote-breakdown'
 import { PaymentPanel } from '@/components/payments/payment-panel'
+import { JobCloseoutForm } from '@/components/pro/job-closeout-form'
 
 type Extra = { id: string; fault: string; description: string; amount: number; status: string }
 type Diagnosis = {
@@ -26,6 +27,17 @@ type JobData = {
   job: { id: string; status: string }
   equipmentId: string | null
   onsiteDiagnosis: Diagnosis | null
+  finalReport: {
+    id: string
+    real_diagnosis: string
+    work_done: string
+    parts_used: string | null
+    final_state: string
+    maintenance_option: string
+    after_photo_ids: string[]
+    version: number
+    created_at: string
+  } | null
   savedQuote: {
     status: string
     quote: ServiceQuote
@@ -201,6 +213,29 @@ export function JobQuotePanel({ jobId, requestId }: { jobId?: string; requestId?
             role={data.role}
             extras={data.extras}
           />
+          {data.role === 'professional' && data.job.status === 'in_progress' && data.equipmentId ? (
+            <JobCloseoutForm
+              jobId={data.job.id}
+              equipmentId={data.equipmentId}
+              initialDiagnosis={data.onsiteDiagnosis?.actual_diagnosis}
+              onCompleted={() => setRevision((value) => value + 1)}
+            />
+          ) : null}
+          {data.finalReport ? (
+            <Card className="space-y-2 p-5">
+              <h2 className="text-xl font-bold">Informe técnico confirmado</h2>
+              <p>
+                <strong>Diagnóstico:</strong> {data.finalReport.real_diagnosis}
+              </p>
+              <p>
+                <strong>Trabajo:</strong> {data.finalReport.work_done}
+              </p>
+              <p className="text-sm text-slate-600">
+                Resultado: {data.finalReport.final_state} · Evidencias:{' '}
+                {data.finalReport.after_photo_ids.length} · Versión {data.finalReport.version}
+              </p>
+            </Card>
+          ) : null}
           {data.role === 'professional' &&
           ['confirmed', 'technician_on_way', 'arrived'].includes(data.job.status) ? (
             <Button

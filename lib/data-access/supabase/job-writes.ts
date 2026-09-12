@@ -95,6 +95,8 @@ export async function closeJobTransaction(
     nextMaintenanceDate?: string
     warrantyDays: number
     internalNotes?: string
+    afterPhotoIds: string[]
+    idempotencyKey: string
   }
 ) {
   const { data, error } = await supabase.rpc('close_job_with_final_report', {
@@ -107,7 +109,9 @@ export async function closeJobTransaction(
     p_maintenance_option: input.maintenanceOption,
     p_next_maintenance_date: input.nextMaintenanceDate ?? null,
     p_warranty_days: input.warrantyDays,
-    p_internal_notes: input.internalNotes ?? null
+    p_internal_notes: input.internalNotes ?? null,
+    p_after_photo_ids: input.afterPhotoIds,
+    p_idempotency_key: input.idempotencyKey
   })
   if (error) throw new Error(`closeJobTransaction:${error.message}`)
   return data

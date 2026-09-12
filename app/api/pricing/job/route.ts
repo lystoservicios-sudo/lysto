@@ -41,11 +41,19 @@ export async function GET(request: Request) {
       .select('*')
       .eq('job_id', job.id)
       .maybeSingle()
+    const finalReport = await s.client
+      .from('job_final_reports')
+      .select(
+        'id,job_id,equipment_id,real_diagnosis,work_done,parts_used,final_state,maintenance_option,next_maintenance_date,warranty_days,after_photo_ids,version,created_at'
+      )
+      .eq('job_id', job.id)
+      .maybeSingle()
     return privateJson({
       job,
       savedQuote,
       extras: extras ?? [],
       onsiteDiagnosis: onsite.data ?? null,
+      finalReport: finalReport.data ?? null,
       equipmentId: serviceRequest?.equipment_id ?? null,
       role: s.role
     })
