@@ -262,7 +262,9 @@ describe('durable notification delivery boundary', () => {
       ])
     }
 
-    await db.query(`update auth.users set email=null where id=$1`, [
+    // Auth-to-profile synchronization deliberately preserves the public profile
+    // NOT NULL invariant. An empty Auth email is the reachable unavailable state.
+    await db.query(`update auth.users set email='' where id=$1`, [
       fixture.accounts.customerA.authId
     ])
     try {
