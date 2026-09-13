@@ -1,6 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { boundedFixtureOperation, runFixtureCleanup } from '../integration/fixture-lifecycle.mjs'
+import { readFileSync } from 'node:fs'
 
 test('a hung operation times out and aborts its transport', async () => {
   let transportSignal
@@ -36,4 +37,10 @@ test('already cancelled operations cannot start later setup mutations', async ()
   let started = false
   await assert.rejects(boundedFixtureOperation('late insert', async () => { started = true }, { signal: controller.signal, timeoutMs: 20 }), /cancelled/)
   assert.equal(started, false)
+})
+
+test('fixture account cleanup relies on exact user deletion without a fallible signout gate', () => {
+  const source = readFileSync('tests/integration/fixtures.ts', 'utf8')
+  assert.doesNotMatch(source, /cleanupAdmin\.auth\.admin\.signOut/)
+  assert.match(source, /cleanupAdmin\.auth\.admin\.deleteUser\(authId\)/)
 })

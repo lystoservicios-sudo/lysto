@@ -12,7 +12,7 @@ describe('customer page layout boundary', () => {
     )
 
     expect(shellSource).toContain('<AppShellProvider')
-    expect(shellSource).toContain('<AppSidebar role={role} />')
+    expect(shellSource).toContain('<AppSidebar role={role} adminPermissions={adminPermissions} />')
     expect(shellSource).toContain('<AppTopbar role={role} identity={identity} />')
     expect(shellSource).not.toContain('<AppNavigation')
   })

@@ -8,7 +8,11 @@ export const dynamic = 'force-dynamic'
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   const session = await requirePageSession('admin')
   return (
-    <AppShell role="Admin" identity={await readAccountIdentity(session)}>
+    <AppShell
+      role="Admin"
+      identity={await readAccountIdentity(session)}
+      adminPermissions={session.permissions}
+    >
       <AdminWorkspace permissions={session.permissions}>{children}</AdminWorkspace>
     </AppShell>
   )

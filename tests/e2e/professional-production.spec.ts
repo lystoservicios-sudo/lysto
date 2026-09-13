@@ -5,7 +5,7 @@ test('approved professional completes MFA and reloads the live workspace', async
   accounts
 }) => {
   await loginAs(page, accounts.accounts.professionalApproved, 'professionalApproved')
-  await expect(page.getByRole('heading', { name: /Hola, ProfessionalApproved/ })).toBeVisible()
+  await expect(page.getByRole('heading', { name: /Hola, professionalApproved/i })).toBeVisible()
   await page.goto('/pro/trabajos')
   await expect(page.getByRole('heading', { name: 'Mis trabajos' })).toBeVisible()
   await page.reload()

@@ -31,11 +31,13 @@ export function PublicShell({ children }: { children: ReactNode }) {
 export async function AppShell({
   children,
   role,
-  identity
+  identity,
+  adminPermissions
 }: {
   children: ReactNode
   role: AppRole
   identity?: AccountIdentity
+  adminPermissions?: readonly string[]
 }) {
   const cookieStore = await cookies()
   const defaultOpen = cookieStore.get('sidebar_state')?.value !== 'false'
@@ -52,7 +54,7 @@ export async function AppShell({
         >
           Saltar al contenido
         </a>
-        <AppSidebar role={role} />
+        <AppSidebar role={role} adminPermissions={adminPermissions} />
         <div className="flex min-w-0 flex-1 flex-col">
           <AppTopbar role={role} identity={identity} />
           <main

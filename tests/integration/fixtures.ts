@@ -144,15 +144,6 @@ export function createFixtureAccounts({ mfa = true }: { mfa?: boolean } = {}) {
         }
       })
       for (const authId of [...created].reverse()) {
-        const account = Object.values(accounts).find((a) => a.authId === authId)
-        if (account)
-          steps.push({
-            label: `signout ${authId}`,
-            run: async () => {
-              const { error } = await cleanupAdmin.auth.admin.signOut(account.accessToken, 'global')
-              if (error) throw new Error('fixture signout failed')
-            }
-          })
         steps.push({
           label: `delete ${authId}`,
           run: async () => {

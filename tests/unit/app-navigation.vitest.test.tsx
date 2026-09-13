@@ -14,10 +14,10 @@ function setViewport(width: number) {
   window.dispatchEvent(new Event('resize'))
 }
 
-function renderShell(defaultOpen = true) {
+function renderShell(defaultOpen = true, adminPermissions?: readonly string[]) {
   return render(
     <AppShellProvider defaultOpen={defaultOpen}>
-      <AppSidebar role="Admin" />
+      <AppSidebar role="Admin" adminPermissions={adminPermissions} />
       <AppTopbar role="Admin" />
     </AppShellProvider>
   )
@@ -45,6 +45,15 @@ describe('authenticated app navigation', () => {
     expect(within(sidebar).queryByText('Productos')).toBeNull()
     expect(within(sidebar).queryByText('Pedidos')).toBeNull()
     expect(within(sidebar).queryByText('Ver tienda')).toBeNull()
+  })
+
+  it('hides admin destinations outside the active operator permissions', () => {
+    renderShell(true, ['operations'])
+
+    const sidebar = screen.getByRole('complementary', { name: 'Navegación de Administración' })
+    expect(within(sidebar).getByRole('link', { name: 'Solicitudes' })).toBeTruthy()
+    expect(within(sidebar).queryByRole('link', { name: 'Pagos' })).toBeNull()
+    expect(within(sidebar).queryByRole('link', { name: 'Calidad' })).toBeNull()
   })
 
   it('collapses and expands the desktop sidebar from the topbar', () => {

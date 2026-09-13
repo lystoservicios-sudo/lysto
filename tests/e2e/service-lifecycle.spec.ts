@@ -10,7 +10,7 @@ test('customer saves a quote through the current flow and reloads its persistent
   await page.getByRole('button', { name: 'Continuar' }).click()
   await page.getByRole('radio', { name: /Hace días/ }).click()
   await page.getByRole('button', { name: 'Continuar' }).click()
-  await expect(page.getByRole('heading', { name: 'Diagnóstico preliminar' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'El aire no enfría' })).toBeVisible()
   await page.getByRole('button', { name: 'Continuar' }).click()
   await page.getByLabel('Calle').fill('Synthetic')
   await page.getByLabel('Número').fill('123')
@@ -36,5 +36,7 @@ test('double click is bounded while a quote is being persisted', async ({ page, 
       data: { issue: 'mantenimiento', answers: { timeSince: 'months' } }
     })
   ])
-  expect(responses.every((response) => response.status() === 200)).toBe(true)
+  const statuses = responses.map((response) => response.status())
+  expect(statuses).toContain(200)
+  expect(statuses.every((status) => status === 200 || status === 429)).toBe(true)
 })

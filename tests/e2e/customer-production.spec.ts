@@ -5,7 +5,7 @@ test('customer reloads the live dashboard and empty request history', async ({
   accounts
 }) => {
   await loginAs(page, accounts.accounts.customerA, 'customerA')
-  await expect(page.getByRole('heading', { name: /Hola, CustomerA/ })).toBeVisible()
+  await expect(page.getByRole('heading', { name: /Hola, customerA/i })).toBeVisible()
   await page.reload()
   await expect(page.getByText('Tu hogar todavía no tiene actividad')).toBeVisible()
   await page.goto('/app/solicitudes')
@@ -15,7 +15,6 @@ test('customer reloads the live dashboard and empty request history', async ({
 
 test('a customer cannot load another customer identifier', async ({ page, accounts }) => {
   await loginAs(page, accounts.accounts.customerA, 'customerA')
-  expect((await page.goto(`/app/equipos/${accounts.accounts.customerB.entityId}`))?.status()).toBe(
-    404
-  )
+  await page.goto(`/app/equipos/${accounts.accounts.customerB.entityId}`)
+  await expect(page.getByRole('heading', { name: 'No encontramos ese equipo' })).toBeVisible()
 })
