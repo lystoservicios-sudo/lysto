@@ -31,7 +31,7 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
   ],
   accounts: [
     async ({}, use) => {
-      const pending = createFixtureAccounts()
+      const pending = createFixtureAccounts({ directSqlAuth: process.env.APP_ENV === 'staging' })
       const fixture = await pending
       try {
         await use(fixture)

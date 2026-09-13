@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto'
+import { randomBytes, randomUUID } from 'node:crypto'
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
@@ -31,9 +31,13 @@ export type FixtureAccount = {
   mfaSecret?: string
 }
 
-export function createFixtureAccounts({ mfa = true }: { mfa?: boolean } = {}) {
+export function createFixtureAccounts(
+  { mfa = true, directSqlAuth = false }: { mfa?: boolean; directSqlAuth?: boolean } = {}
+) {
   const env = process.env
   const target = assertTestEnvironment(env, readTestIdentity(env))
+  if (directSqlAuth && env.LYSTO_TEST_ENVIRONMENT !== 'staging')
+    throw new Error('Direct SQL Auth fixtures are restricted to approved staging')
   const authOptions = { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
   const setupController = new AbortController()
   const fetchFor =
@@ -142,12 +146,16 @@ export function createFixtureAccounts({ mfa = true }: { mfa?: boolean } = {}) {
               'delete from public.admin_audit_logs where actor_profile_id=any($1::uuid[]) or entity_id=any($2::uuid[])',
               [profiles, entities]
             )
+            if (directSqlAuth && created.length) {
+              await cleanupDatabase.query('delete from auth.users where id=any($1::uuid[])', [created])
+              uncertainCreations.clear()
+            }
           } finally {
             await cleanupDatabase.end()
           }
         }
       })
-      for (const authId of [...created].reverse()) {
+      for (const authId of directSqlAuth ? [] : [...created].reverse()) {
         steps.push({
           label: `delete ${authId}`,
           run: async () => {
@@ -190,24 +198,49 @@ export function createFixtureAccounts({ mfa = true }: { mfa?: boolean } = {}) {
         created.push(authId)
         uncertainCreations.add(authId)
         record('creating')
-        const { data, error } = await step('fixture Auth creation', () =>
-          admin.auth.admin.createUser({
-            id: authId,
-            email,
-            password,
-            email_confirm: true,
-            app_metadata: { app_role: role },
-            user_metadata: { fixture_run: runId }
-          })
-        )
-        if (error || !data.user)
-          throw new Error(
-            `Unable to create synthetic Auth account ${name} (${error?.code ?? 'no-user'}, HTTP ${error?.status ?? 'unknown'})`
+        let createdAuthId: string = authId
+        if (directSqlAuth) {
+          await query(
+            `insert into auth.users(instance_id,id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at,confirmation_token,recovery_token,email_change_token_new,email_change)
+             values('00000000-0000-0000-0000-000000000000',$1,'authenticated','authenticated',$2,extensions.crypt($3,extensions.gen_salt('bf')),clock_timestamp(),$4::jsonb,$5::jsonb,clock_timestamp(),clock_timestamp(),'','','','')`,
+            [
+              authId,
+              email,
+              password,
+              JSON.stringify({ provider: 'email', providers: ['email'], app_role: role }),
+              JSON.stringify({ fixture_run: runId })
+            ]
           )
-        if (data.user.id !== authId) {
-          created.push(data.user.id)
-          record('creating')
-          throw new Error('Auth did not preserve the pre-registered synthetic user ID')
+          await query(
+            `insert into auth.identities(provider_id,user_id,identity_data,provider,last_sign_in_at,created_at,updated_at)
+             values($1,$2,$3::jsonb,'email',clock_timestamp(),clock_timestamp(),clock_timestamp())`,
+            [
+              authId,
+              authId,
+              JSON.stringify({ sub: authId, email, email_verified: true, phone_verified: false })
+            ]
+          )
+        } else {
+          const { data, error } = await step('fixture Auth creation', () =>
+            admin.auth.admin.createUser({
+              id: authId,
+              email,
+              password,
+              email_confirm: true,
+              app_metadata: { app_role: role },
+              user_metadata: { fixture_run: runId }
+            })
+          )
+          if (error || !data.user)
+            throw new Error(
+              `Unable to create synthetic Auth account ${name} (${error?.code ?? 'no-user'}, HTTP ${error?.status ?? 'unknown'})`
+            )
+          createdAuthId = data.user.id
+          if (createdAuthId !== authId) {
+            created.push(createdAuthId)
+            record('creating')
+            throw new Error('Auth did not preserve the pre-registered synthetic user ID')
+          }
         }
         uncertainCreations.delete(authId)
         record('creating')
@@ -217,7 +250,7 @@ export function createFixtureAccounts({ mfa = true }: { mfa?: boolean } = {}) {
         try {
           await query(
             'insert into public.profiles (id,auth_user_id,role,first_name,last_name,email) values ($1,$2,$3,$4,$5,$6)',
-            [profileId, data.user.id, role, name, 'Synthetic', email]
+            [profileId, createdAuthId, role, name, 'Synthetic', email]
           )
           if (role === 'customer') {
             await query('insert into public.customer_profiles (id,profile_id) values ($1,$2)', [
@@ -254,25 +287,41 @@ export function createFixtureAccounts({ mfa = true }: { mfa?: boolean } = {}) {
           throw error
         }
         const client = createClient(target.apiUrl, env.LYSTO_TEST_ANON_KEY!, options)
-        const { data: login, error: loginError } = await step('fixture Auth sign in', () =>
-          client.auth.signInWithPassword({ email, password })
-        )
-        if (loginError || !login.session)
-          throw new Error(`Unable to sign in synthetic account ${name}`)
+        let accessToken = '',
+          refreshToken = ''
+        if (!directSqlAuth) {
+          const { data: login, error: loginError } = await step('fixture Auth sign in', () =>
+            client.auth.signInWithPassword({ email, password })
+          )
+          if (loginError || !login.session)
+            throw new Error(`Unable to sign in synthetic account ${name}`)
+          accessToken = login.session.access_token
+          refreshToken = login.session.refresh_token
+        }
         accounts[name] = {
-          authId: data.user.id,
+          authId: createdAuthId,
           profileId,
           entityId,
           email,
           password,
-          accessToken: login.session.access_token,
-          refreshToken: login.session.refresh_token,
+          accessToken,
+          refreshToken,
           client
         }
         if (mfa && (role === 'admin' || name === 'professionalApproved')) {
-          const enrolled = await step('fixture MFA verification', () =>
-            enrollFixtureMfa(accounts[name])
-          )
+          const enrolled = directSqlAuth
+            ? await (async () => {
+                const factorId = randomUUID(),
+                  alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567',
+                  secret = [...randomBytes(20)].map((byte) => alphabet[byte & 31]).join('')
+                await query(
+                  `insert into auth.mfa_factors(id,user_id,friendly_name,factor_type,status,created_at,updated_at,secret)
+                   values($1,$2,'Lysto staging test','totp','verified',clock_timestamp(),clock_timestamp(),$3)`,
+                  [factorId, createdAuthId, secret]
+                )
+                return { factorId, secret }
+              })()
+            : await step('fixture MFA verification', () => enrollFixtureMfa(accounts[name]))
           accounts[name].mfaFactorId = enrolled.factorId
           accounts[name].mfaSecret = enrolled.secret
         }
