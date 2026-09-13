@@ -174,12 +174,14 @@ describe('durable notification delivery boundary', () => {
         endsAt: '2030-09-18T15:00:00+00:00',
         timezone: 'America/Argentina/Buenos_Aires',
         serviceName: config.rows[0].category_name,
-        addressLabel: 'Av. Siempre Viva 742, Piso 3 Depto. B, Buenos Aires'
+        addressLabel: 'Av. Siempre Viva 742, Buenos Aires'
       },
       snapshot: null
     })
     expect(resolved.data.context.professionalName).toMatch(/^[^@]+\.$/)
     expect(JSON.stringify(resolved.data.context)).not.toContain('Dato privado de acceso')
+    expect(JSON.stringify(resolved.data.context)).not.toContain('Piso 3')
+    expect(JSON.stringify(resolved.data.context)).not.toContain('Depto. B')
     expect(JSON.stringify(resolved.data.context)).not.toContain(
       fixture.accounts.professionalApproved.email
     )

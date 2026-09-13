@@ -203,9 +203,7 @@ begin
       left(sc.name,160),
       left(coalesce(nullif(btrim(concat_ws(' ',nullif(btrim(pp.first_name),''),
         case when nullif(btrim(pp.last_name),'') is null then null else left(btrim(pp.last_name),1)||'.' end)),''),'Profesional Lysto'),160),
-      left(btrim(concat_ws(', ',btrim(concat_ws(' ',a.street,a.number)),
-        nullif(btrim(concat_ws(' ',case when a.floor is not null then 'Piso '||a.floor end,
-          case when a.apartment is not null then 'Depto. '||a.apartment end)),''),a.city)),500)
+      left(btrim(concat_ws(', ',btrim(concat_ws(' ',a.street,a.number)),a.city)),500)
       into v_customer,v_professional,v_schedule_version,v_starts_at,v_ends_at,v_timezone,
         v_service_name,v_professional_name,v_address_label
     from public.jobs j
