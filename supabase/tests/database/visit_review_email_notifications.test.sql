@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set search_path=public,extensions;
-select plan(13);
+select plan(14);
 
 select has_function('private','enqueue_visit_confirmation',array['uuid'],'visit confirmation enqueue helper exists');
 select has_function('private','enqueue_review_request',array[]::text[],'review reminder trigger function exists');
