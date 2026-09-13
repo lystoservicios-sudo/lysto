@@ -9,12 +9,12 @@ select has_function('public','decide_job_extra_v2',array['uuid','text','uuid'],'
 select function_privs_are('public','advance_service_job',array['uuid','text'],'authenticated',array[]::text[],'legacy transition is retired');
 select function_privs_are('public','decide_job_extra',array['uuid','text'],'authenticated',array[]::text[],'legacy non-command extra decision is retired');
 select function_privs_are('public','advance_service_job_v2',array['uuid','text','uuid'],'authenticated',array['EXECUTE'],'new transition is authenticated');
-select row_security_is('public','onsite_diagnoses',true,'onsite diagnosis RLS enabled');
-select has_policy('public','onsite_diagnoses','onsite_diagnosis_participant_read','participants can read the same diagnosis');
+select ok((select c.relrowsecurity from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relname='onsite_diagnoses'),'onsite diagnosis RLS enabled');
+select ok(exists(select 1 from pg_policies where schemaname='public' and tablename='onsite_diagnoses' and policyname='onsite_diagnosis_participant_read'),'participants can read the same diagnosis');
 select ok(not has_table_privilege('authenticated','private.onsite_commands','SELECT'),'command ledger is private');
-select like((select pg_get_functiondef(p.oid) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname='submit_onsite_diagnosis'),'%storage.objects%','diagnosis requires stored verified evidence');
-select like((select pg_get_functiondef(p.oid) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname='decide_onsite_scope'),'%accepted_extra_payment_required%','accepted extras require payment');
-select like((select pg_get_functiondef(p.oid) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname='advance_service_job_v2'),'%private.current_professional_id(true)%','transition rechecks current professional clearance');
-select like((select pg_get_functiondef(p.oid) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname='decide_onsite_scope'),'%private.current_customer_id()%','scope decision rechecks customer identity');
+select ok((select pg_get_functiondef(p.oid) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname='submit_onsite_diagnosis') like '%storage.objects%','diagnosis requires stored verified evidence');
+select ok((select pg_get_functiondef(p.oid) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname='decide_onsite_scope') like '%accepted_extra_payment_required%','accepted extras require payment');
+select ok((select pg_get_functiondef(p.oid) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname='advance_service_job_v2') like '%private.current_professional_id(true)%','transition rechecks current professional clearance');
+select ok((select pg_get_functiondef(p.oid) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname='decide_onsite_scope') like '%private.current_customer_id()%','scope decision rechecks customer identity');
 select * from finish();
 rollback;

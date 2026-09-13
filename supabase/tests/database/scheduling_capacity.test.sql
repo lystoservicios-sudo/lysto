@@ -18,17 +18,16 @@ select function_privs_are('public','request_job_reschedule',array['uuid','timest
 select function_privs_are('public','respond_job_reschedule',array['uuid','text','integer'],'authenticated',array['EXECUTE'],'only authenticated can respond');
 select function_privs_are('public','get_schedule_availability',array['uuid','date','date'],'authenticated',array['EXECUTE'],'only authenticated can read');
 select function_privs_are('public','replace_professional_schedule_settings',array['uuid','jsonb','jsonb','integer'],'authenticated',array['EXECUTE'],'only authenticated can replace settings');
-select row_security_is('public','job_schedule_reservations',true,'reservation RLS enabled');
-select row_security_is('public','job_reschedule_requests',true,'reschedule RLS enabled');
-select row_security_is('public','professional_absences',true,'absence RLS enabled');
+select ok((select c.relrowsecurity from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relname='job_schedule_reservations'),'reservation RLS enabled');
+select ok((select c.relrowsecurity from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relname='job_reschedule_requests'),'reschedule RLS enabled');
+select ok((select c.relrowsecurity from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relname='professional_absences'),'absence RLS enabled');
 select ok((select count(*)=1 from pg_constraint where conname='job_schedule_no_professional_overlap'),'database owns overlap arbitration');
-select like(
-  (select pg_get_constraintdef(oid) from pg_constraint where conname='job_schedule_no_professional_overlap'),
-  '%tsrange((timezone(''UTC''::text, starts_at)%timezone(''UTC''::text, ends_at)%',
+select ok(
+  (select pg_get_constraintdef(oid) from pg_constraint where conname='job_schedule_no_professional_overlap') like '%tsrange((timezone(''UTC''::text, starts_at)%timezone(''UTC''::text, ends_at)%',
   'overlap index normalizes timestamptz values to immutable UTC timestamps'
 );
 select has_trigger('public','jobs','job_schedule_release','job cancellation releases reservations');
-select unlike((select pg_get_functiondef(p.oid) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname='get_schedule_availability'),'% limit %','availability does not hide reservations behind a row limit');
+select ok((select pg_get_functiondef(p.oid) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname='get_schedule_availability') not like '% limit %','availability does not hide reservations behind a row limit');
 
 select * from finish();
 rollback;

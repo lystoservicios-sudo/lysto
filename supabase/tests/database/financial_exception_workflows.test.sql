@@ -16,7 +16,7 @@ select function_privs_are('public','clear_financial_exception',array['uuid','int
 select function_privs_are('public','get_payment_refund_execution_context',array['uuid','uuid'],'service_role',array['EXECUTE'],'only service worker receives refund context');
 select ok(not has_table_privilege('authenticated','private.financial_exception_cases','SELECT'),'private cases are not directly readable');
 select has_trigger('public','jobs','marketplace_assignment_guard','financial guard remains installed');
-select like((select pg_get_functiondef(p.oid) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname='clear_financial_exception'),'%checkout_is_financially_closed%','finance cannot clear an open checkout');
-select like((select pg_get_functiondef(p.oid) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname='resolve_financial_exception'),'%replacement_of_request_id%','replacement creates linked service instead of mutating beneficiary');
+select ok((select pg_get_functiondef(p.oid) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname='clear_financial_exception') like '%checkout_is_financially_closed%','finance cannot clear an open checkout');
+select ok((select pg_get_functiondef(p.oid) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname='resolve_financial_exception') like '%replacement_of_request_id%','replacement creates linked service instead of mutating beneficiary');
 select * from finish();
 rollback;
