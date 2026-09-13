@@ -1,7 +1,7 @@
 {
   "task": "T24",
   "status": "implemented_remote_database_verified_delivery_pending",
-  "updatedAt": "2026-09-12T13:35:00-03:00",
+  "updatedAt": "2026-09-13T13:42:00-03:00",
   "implemented": [
     "versioned templates with authorized URLs",
     "Resend adapter with stable idempotency key and bounded timeout",
@@ -9,12 +9,25 @@
     "internal authenticated bounded worker endpoint",
     "transactional producers for quote, request, assignment, payment and support",
     "MFA operations dashboard with sanitized retry workflow",
-    "test environment strips provider and worker credentials"
+    "test environment strips provider and worker credentials",
+    "confirmed visit and optional review transactional-v2 templates",
+    "deterministic 390px and 720px light/dark rendering with overflow and CTA checks"
   ],
   "verified": {
-    "unit": 47,
+    "unit": 57,
     "typecheck": "passed",
-    "targetedLint": "passed"
+    "targetedLint": "passed",
+    "emailPreview": {
+      "renderer": "Playwright Chromium",
+      "source": "tests/visual/notification-email-fixtures.ts",
+      "sanitizedOutput": "output/email-preview/2026-09-13-visit-review",
+      "widths": [390, 720],
+      "colorSchemes": ["light", "dark"],
+      "horizontalOverflow": false,
+      "imagesDisabledReadable": true,
+      "ctaLabelsVisible": true,
+      "plainTextComplete": true
+    }
   },
   "pending": [
     "remote migrations and pgTAP passed; sender and worker integration remains for isolated staging",
