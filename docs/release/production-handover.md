@@ -4,27 +4,28 @@ Fecha de preparación: 2026-09-12. Estado final demostrado: **PREPARACIÓN LOCAL
 
 ## Versión y destino
 
-La implementación está en la rama remota `codex/production-readiness`. El candidato runtime `ff9925959eab64dd40362e4aaff7bc6114a4ad6b` está desplegado en staging protegido; el alias productivo no fue modificado. El Supabase remoto `dqonlqcurvjnjgsczevu` fue identificado como `PRODUCTION` y staging usa el proyecto aislado `obksyzasmfwcbbksesqt`.
+La implementación está en la rama remota `codex/production-readiness`. El candidato runtime `67932c45e563849d5085abec5997bed220983186` está desplegado en staging protegido; el alias productivo no fue modificado. El Supabase remoto `dqonlqcurvjnjgsczevu` fue identificado como `PRODUCTION` y staging usa el proyecto aislado `obksyzasmfwcbbksesqt`.
 
-El registro canónico es `docs/plans/2026-09-10-production-progress.json`. Registra 11 tareas verificadas, 26 implementadas con aceptación externa pendiente y 3 bloqueadas por dependencias externas. Las 40 tareas fueron trabajadas; ese contador no equivale a release. Staging remoto pasó 36/36 casos automatizados sin omitidos y T35 aprobó todos los perfiles de carga.
+El registro canónico es `docs/plans/2026-09-10-production-progress.json`. Registra 11 tareas verificadas, 26 implementadas con aceptación externa pendiente y 3 bloqueadas por dependencias externas. Las 40 tareas fueron trabajadas; ese contador no equivale a release. Staging remoto pasó 39/39 casos automatizados sin omitidos y T35 aprobó todos los perfiles de carga.
 
 ## Gates y decisión
 
 G01–G16 permanecen `pending` porque no existe un manifest del candidato final con evidencia autenticada. D01–D12 también permanecen pendientes. Por lo tanto no se ha demostrado TECHNICALLY_READY, PILOT_ENABLED ni GENERAL_PRODUCTION_READY. El manifiesto se genera con `pnpm release:manifest` y debe validarse contra la confianza protegida; una evidencia local o este traspaso no firma gates.
 
-La CI del candidato aprobó Windows, lint, tipos, 174 pruebas de dominio, 509 pruebas unitarias, 698 pruebas SQL en 28 suites, 274 pruebas integrales y la compilación de 81 páginas. Playwright ejecutó y aprobó 36/36 casos en siete suites y tres proyectos contra staging remoto; la limpieza posterior dejó cero identidades sintéticas.
+La CI del runtime `67932c45` aprobó ambos jobs, incluidos Windows, lint, tipos, 174 pruebas de dominio, 526 pruebas unitarias, 698 pruebas SQL en 28 suites, 275 pruebas integrales y la compilación de 81 páginas. Playwright ejecutó y aprobó 39/39 casos en siete suites y tres proyectos contra staging remoto; la limpieza posterior dejó cero identidades sintéticas.
 
 ## Trabajo entregado
 
-- Arquitectura de aplicación, autorización, almacenamiento privado, workflows del servicio, dinero, soporte, mantenimiento, notificaciones, observabilidad y consola operativa implementados o preparados según el registro.
+- Arquitectura de aplicación, autorización, almacenamiento privado, workflows del servicio, dinero, soporte, mantenimiento, notificaciones, observabilidad y consola operativa implementados o preparados según el registro. La confirmación de visita, el recordatorio opcional de reseña a las dos horas y las acciones del cliente están activos en staging.
+- Supabase Cron invoca cada minuto al worker autenticado del preview; las últimas cinco ejecuciones terminaron con HTTP 200. Resend permanece deshabilitado hasta aprobar dominio remitente y buzón de prueba.
 - Suite E2E de siete recorridos descubierta en tres proyectos, perfil de carga seguro y matrices de staging/proveedor preparadas.
 - Runbooks de operación, incidente, recuperación, despliegue, piloto, privacidad y capacitación preparados.
 - Calendario y mapa de propiedad preparados sin inventar titulares nominales.
 
 ## Bloqueos para el piloto
 
-1. Pasar el Supabase productivo a un plan con backup restaurable y protección HIBP; demostrar una restauración completa en un proyecto aislado y promover 59/62 a 62/62. Staging ya está en 62/62, con 65/65 tablas públicas bajo RLS y 28 suites SQL aprobadas con rollback. No usar Supabase local ni Docker en este equipo.
-2. Designar responsables nominales de hosting/staging, remitente, scheduler y destinos de alertas; completar T32 y T36. T34 y la implementación técnica de T35 ya están ejecutadas.
+1. Pasar el Supabase productivo a un plan con backup restaurable y protección HIBP; demostrar una restauración completa en un proyecto aislado y promover 59/63 a 63/63. Staging ya está en 63/63, con 65/65 tablas públicas bajo RLS y la nueva suite de notificación aprobada 17/17 con rollback. No usar Supabase local ni Docker en este equipo.
+2. Designar responsables nominales de hosting/staging, remitente, scheduler y destinos de alertas; conectar un dominio y buzón Resend aprobados y completar T32/T36. T34, el scheduler de staging y la implementación técnica de T35 ya están ejecutados.
 3. Identificar la aplicación y cuentas Mercado Pago, completar MP01–MP12 y cualquier prueba financiera real expresamente autorizada.
 4. Resolver D01–D12, aprobar políticas, economía, soporte, RPO/RTO, capacidad y responsables/suplentes nominales.
 5. Construir el candidato exacto, completar G01–G15, firmar GO y abrir sólo el cupo autorizado con interruptores controlables.

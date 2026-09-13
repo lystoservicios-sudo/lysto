@@ -14,7 +14,7 @@ test('provider matrix contains every mandatory case and none is pre-approved', (
 
 test('staging checklist binds the candidate and rejects local equivalence', () => {
   const source = readFileSync('docs/release/staging-acceptance.md', 'utf8')
-  for (const term of ['Commit y deployment ID', 'Supabase project ref', 'MP01–MP12', '36 casos', 'RPO/RTO']) assert.match(source, new RegExp(term))
+  for (const term of ['Commit y deployment ID', 'Supabase project ref', 'MP01–MP12', '39 casos', 'RPO/RTO']) assert.match(source, new RegExp(term))
   assert.match(source, /test local.*no equivalen/i)
 })
 

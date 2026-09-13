@@ -1,7 +1,7 @@
 {
   "task": "T24",
-  "status": "implemented_local_verified_ci_and_staging_acceptance_pending",
-  "updatedAt": "2026-09-13T17:11:50.375255Z",
+  "status": "implemented_staging_accepted_provider_receipt_pending",
+  "updatedAt": "2026-09-13T18:09:25.1109516Z",
   "implemented": [
     "versioned templates with authorized URLs",
     "Resend adapter with stable idempotency key and bounded timeout",
@@ -15,7 +15,7 @@
     "confirmed visit context is derived live with street-number-city only in email",
     "authenticated customer visit card with schedule, directions, reschedule and Lysto contact actions",
     "two-hour review request with stale-state and existing-review suppression",
-    "Vercel Cron definition with an authenticated five-message worker batch"
+    "Supabase Cron every minute with an authenticated five-message worker batch"
   ],
   "verified": {
     "unit": 526,
@@ -42,15 +42,30 @@
     "tooling": 27,
     "productionBuildPages": 81,
     "ci": {
-      "status": "pending_exact_evidence_commit"
+      "status": "passed_runtime_candidate",
+      "commit": "67932c45e563849d5085abec5997bed220983186",
+      "runId": 34772256652,
+      "jobs": [
+        "Quality gates (Ubuntu)",
+        "Domain tests (Windows)"
+      ]
+    },
+    "staging": {
+      "projectRef": "obksyzasmfwcbbksesqt",
+      "deploymentId": "dpl_C6iWi3YnSW4i6NYLCpgMKKPe7Vv4",
+      "migrations": 63,
+      "pgTap": "PASS_17_OF_17_ROLLED_BACK",
+      "e2e": "PASS_39_OF_39_ZERO_OMITTED",
+      "scheduler": "ACTIVE_EVERY_MINUTE_LAST_FIVE_HTTP_200",
+      "syntheticAuthUsersRemaining": 0,
+      "syntheticProfilesRemaining": 0,
+      "emailProviderEnabled": false
     }
   },
   "pending": [
-    "require both jobs green for the exact evidence-bearing commit",
-    "promote migration 20260913161215 to isolated staging and repeat guarded SQL/browser acceptance",
     "configure an approved Resend account, sender domain/DNS and designated test inbox",
-    "prove provider acceptance, receipt and scheduled consecutive runs in staging; Vercel Preview does not activate project cron jobs",
-    "T30: production alert transport and monitoring evidence"
+    "prove EM01-EM03 provider acceptance and receipt in isolated staging",
+    "T30/D10: production alert transport, scheduler ownership and monitoring evidence"
   ],
   "productionEmailSent": false
 }

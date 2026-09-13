@@ -20,8 +20,8 @@
     "availability": "ACTIVE_HEALTHY",
     "appliedMigrations": 59,
     "lastMigration": "20260913003500",
-    "repositoryMigrations": 62,
-    "pendingMigrations": 3,
+    "repositoryMigrations": 63,
+    "pendingMigrations": 4,
     "publicTables": 65,
     "publicViews": 0,
     "publicTablesWithRls": 65,
@@ -52,15 +52,16 @@
     "production": false,
     "availability": "ACTIVE_HEALTHY",
     "origin": "https://lysto-staging-preview.vercel.app",
-    "candidateCommit": "ff9925959eab64dd40362e4aaff7bc6114a4ad6b",
-    "deploymentId": "dpl_BkgTPU5Nurei2dp8Q7DTMPvQEURN",
-    "appliedMigrations": 62,
-    "e2e": "PASS_36_OF_36_ZERO_OMITTED",
+    "candidateCommit": "67932c45e563849d5085abec5997bed220983186",
+    "deploymentId": "dpl_C6iWi3YnSW4i6NYLCpgMKKPe7Vv4",
+    "appliedMigrations": 63,
+    "e2e": "PASS_39_OF_39_ZERO_OMITTED",
     "syntheticAuthUsersRemaining": 0,
     "evidence": "docs/release/staging-acceptance.md",
-    "load": "PASS_SMOKE_PEAK_DOUBLE_PEAK_BURST_SUSTAINED_RECOVERY"
+    "load": "PASS_SMOKE_PEAK_DOUBLE_PEAK_BURST_SUSTAINED_RECOVERY",
+    "scheduler": "SUPABASE_CRON_ACTIVE_ONE_MINUTE_LAST_FIVE_HTTP_200"
   },
-  "currentMilestone": "VISIT_REVIEW_NOTIFICATION_CANDIDATE_CI_IN_PROGRESS_STAGING_PENDING",
+  "currentMilestone": "VISIT_REVIEW_NOTIFICATION_STAGING_ACCEPTED_PROVIDER_PENDING",
   "nextTask": "T37",
   "recommendedOrder": [
     "T00",
@@ -995,18 +996,19 @@
         "supabase/migrations/20260913161215_visit_confirmation_and_review_reminders.sql",
         "tests/integration/outbox-worker.test.ts",
         "tests/e2e/customer-production.spec.ts",
-        "vercel.json",
-        "174 domain, 526 unit and 27 tooling checks plus typecheck, lint and 81-page production build passed locally"
+        "174 domain, 526 unit and 27 tooling checks plus typecheck, lint and 81-page production build passed locally",
+        "Supabase Cron job lysto-outbox-every-minute active in isolated staging; five consecutive runs succeeded with HTTP 200",
+        "Staging migration 20260913161215 applied; remote pgTAP passed 17/17 with rollback",
+        "39/39 guarded staging E2E passed across desktop and mobile browser projects; zero synthetic identities remained"
       ],
-      "commit": "2035cd7eb8a26280bc9b0429bade38b641a037e4",
+      "commit": "67932c45e563849d5085abec5997bed220983186",
       "blockedBy": [
-        "Disposable CI and isolated-staging migration/runtime acceptance for the exact candidate",
         "D06/T36: approved Resend account, sender domain/DNS, designated inbox and provider receipt",
-        "Vercel Preview does not activate project cron jobs; demonstrate periodic execution in an approved production target or separate staging project"
+        "T30/D10: production alert transport, destinations and scheduler ownership approval"
       ],
-      "nextAction": "Finish exact-candidate CI, promote the single new migration and runtime to isolated staging, then configure the approved Resend sender and prove receipt, timing, suppression and consecutive worker runs.",
+      "nextAction": "Configure the approved Resend sender and designated test inbox, then prove provider receipt, timing and suppression before production promotion.",
       "deviations": [
-        "T24 implementation is complete; staging sender and scheduler acceptance remains external."
+        "Implementation, migration, UI and the one-minute staging scheduler are accepted; external email-provider receipt remains pending."
       ]
     },
     {
@@ -1442,15 +1444,16 @@
         "tests/e2e/financial-exceptions.spec.ts",
         "tests/e2e/accessibility.spec.ts",
         "tests/qa/manual-release-checklist.md",
-        "docs/release/e2e-verification.json"
+        "docs/release/e2e-verification.json",
+        "39/39 guarded remote E2E passed after adding the visit/review journey"
       ],
       "commit": null,
       "blockedBy": [
         "Physical phone and named customer/professional/operator/finance/quality UAT"
       ],
-      "nextAction": "Complete physical-phone and named participant UAT; automated remote acceptance already passed 36/36 with zero omitted.",
+      "nextAction": "Complete physical-phone and named participant UAT; automated remote acceptance passed 39/39 with zero omitted.",
       "deviations": [
-        "All seven mandatory files passed remotely across Chromium desktop/mobile and WebKit mobile; emulation does not replace physical-phone UAT.",
+        "All seven mandatory files and 39 cases passed remotely across Chromium desktop/mobile and WebKit mobile; emulation does not replace physical-phone UAT.",
         "Failure artifacts use screenshots/video with MFA visually masked; traces are disabled to avoid recording credentials."
       ]
     },
@@ -1538,13 +1541,13 @@
       "blockedBy": [
         "D04 accountable technical owner and alternate remain unnamed",
         "D11 has no identified Mercado Pago application and official test accounts",
-        "D06/D10 approved Resend sender, recipient, production scheduler target and alert destinations remain absent",
-        "T32 restore evidence and physical UAT remain incomplete",
-        "Exact notification candidate still needs isolated-staging migration, deployment and acceptance"
+        "D06/D10 approved Resend sender, recipient, production alert destinations and scheduler owner remain absent",
+        "T32 restore evidence and physical UAT remain incomplete"
       ],
-      "nextAction": "Promote and verify the exact notification candidate in isolated staging; then complete restore, approved Resend sender/receipt, periodic scheduler/alerts, physical UAT and MP01-MP12.",
+      "nextAction": "Complete the approved Resend sender/receipt, restore evidence, alert ownership, physical UAT and MP01-MP12; the notification candidate and minute scheduler are already accepted in isolated staging.",
       "deviations": [
-        "Preview was isolated onto Supabase staging and passed health plus 36/36 automated E2E.",
+        "Preview is isolated on Supabase staging, migrated to 63 versions and passed health plus 39/39 automated E2E.",
+        "Supabase Cron is active every minute and its last five HTTP calls returned 200; email sending remains disabled without an approved Resend sender.",
         "No email, payment, refund or OAuth provider action was executed."
       ]
     },
@@ -2106,21 +2109,22 @@
     "updateRequiredAfterImplementation": true
   },
   "checkpoint": {
-    "updatedAt": "2026-09-13T17:11:50.378347Z",
+    "updatedAt": "2026-09-13T18:09:25.1109516Z",
     "branch": "codex/production-readiness",
-    "commit": "2035cd7eb8a26280bc9b0429bade38b641a037e4",
+    "commit": "fb3afcde780bd2c9c6214bf540bc2b365b564c01",
     "filesChanged": [
       "visit confirmation and delayed optional review email",
       "authenticated customer visit actions",
       "live eligibility and privacy suppression",
       "email quota monitoring",
-      "Vercel authenticated cron definition"
+      "Supabase authenticated minute scheduler",
+      "staging session and MFA test stability"
     ],
-    "lastVerification": "Local final source gates passed: 174 domain, 526 unit total after focused cron/env verification, 27 tooling, typecheck, lint and 81-page production build. The exact evidence-bearing commit still requires disposable CI.",
+    "lastVerification": "Runtime commit 67932c45 passed both CI jobs. Staging migration and 17/17 pgTAP passed, 39/39 browser cases passed with zero omitted, the last five scheduler calls returned HTTP 200 and cleanup left zero synthetic users/profiles.",
     "unresolvedFailures": [
-      "Exact-candidate CI and isolated staging acceptance remain in progress. Resend account/sender/DNS/inbox, production scheduler target, restore, payments provider and named approvals remain external. Production is untouched."
+      "Approved Resend account/sender/DNS/inbox, provider receipt, production scheduler/alerts, restore, payments provider, physical UAT and named approvals remain external. Production is untouched."
     ],
-    "nextCommand": "Require CI green, then apply only migration 20260913161215 to Supabase staging, deploy the preview candidate and execute guarded staging acceptance."
+    "nextCommand": "Obtain an approved Resend sender and test inbox, enable email only in staging, and record EM01-EM03 provider receipt without touching production."
   },
   "events": [
     {
@@ -2226,6 +2230,16 @@
         "T36"
       ],
       "note": "Visit-confirmation and two-hour optional-review flows, live suppression, authenticated customer actions, quota warnings and a Vercel cron definition are implemented. Local source gates passed. CI and isolated staging/provider acceptance remain pending; production and real email delivery stay disabled."
+    },
+    {
+      "type": "visit_review_notification_staging_accepted",
+      "at": "2026-09-13T18:09:25.1109516Z",
+      "tasks": [
+        "T24",
+        "T34",
+        "T36"
+      ],
+      "note": "Migration 20260913161215 and 17/17 pgTAP passed on isolated Supabase staging. The protected preview ran 39/39 browser cases with zero omitted and zero synthetic identities remaining. Supabase Cron runs every minute and the last five calls returned HTTP 200. Resend remains disabled pending an approved sender and designated inbox; production was untouched."
     }
   ],
   "executionWorktree": "E:/Proyectos/GitHub/Lysto-production-readiness"

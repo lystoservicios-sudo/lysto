@@ -21,4 +21,15 @@ Para cada fila guardar fecha, ejecutor, cuenta/aplicación saneada, ID interno, 
 
 También verificar buzones de prueba, firma del webhook, renovación OAuth, scheduler, alertas y capacidad de detener checkouts nuevos sin detener webhooks, conciliación, devoluciones o reclamos. Un caso que el sandbox no permite queda `pending_provider`; se adjunta la prueba local relacionada sin convertirla en evidencia remota.
 
+## Email transaccional
+
+| ID | Caso | Evidencia esperada | Estado |
+| --- | --- | --- | --- |
+| EM01 | Confirmación de visita | una entrega por versión de agenda, fecha/dirección mínima y enlaces autorizados | pendiente de remitente Resend |
+| EM02 | Solicitud de reseña | recepción no antes de dos horas después de confirmar el servicio y un solo CTA | pendiente de remitente Resend |
+| EM03 | Supresión | no enviar con agenda vieja, email ausente, disputa, reseña existente o estado inelegible | lógica/SQL aprobada; proveedor pendiente |
+| EM04 | Ejecución periódica | cron cada minuto, secreto en Vault, worker acotado y respuestas consecutivas | staging técnico aprobado: cinco HTTP 200; alertas pendientes |
+
+El proveedor de email continúa apagado en staging. Para cerrar EM01–EM03 se necesita un dominio remitente verificado, una API key guardada como secreto y un buzón de prueba designado; registrar ID saneado del mensaje, hora de recepción y resultado observado sin guardar contenido sensible.
+
 No ejecutar un cobro o devolución live sin autorización explícita sobre importe y destinatarios. No registrar access tokens, client secrets, clave de cifrado, firma completa, cookies ni datos de tarjeta.
