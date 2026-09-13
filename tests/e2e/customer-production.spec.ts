@@ -139,7 +139,8 @@ test('customer follows visit links, sees reprogramming and submits one review', 
     await page.reload()
     await expect(page.getByText('Ya calificaste este servicio')).toBeVisible()
 
-    await page.context().clearCookies()
+    await page.getByRole('button', { name: 'Cerrar sesión' }).click()
+    await expect(page).toHaveURL(/\/login\?logout=success/)
     await loginAs(page, accounts.accounts.customerB, 'customerB')
     await page.goto(`/app/trabajos/${jobId}`)
     await expect(page.getByText('No encontramos un trabajo disponible para tu cuenta.')).toBeVisible()

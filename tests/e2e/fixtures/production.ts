@@ -62,11 +62,27 @@ export async function loginAs(page: Page, account: FixtureAccount, name: Account
   await page.getByLabel('Contraseña').fill(account.password)
   await page.getByRole('button', { name: 'Ingresar' }).click()
   if (account.mfaSecret) {
-    await expect(page).toHaveURL(/\/seguridad/)
+    await expect(page).toHaveURL(/\/seguridad/, { timeout: 15_000 })
     const code = page.getByLabel('Código del autenticador')
     await code.evaluate((element) => element.setAttribute('type', 'password'))
-    await code.fill(fixtureTotp(account.mfaSecret))
-    await page.getByRole('button', { name: 'Verificar y continuar' }).click()
+    let verified = false
+    for (const offset of [0, -30_000, 30_000]) {
+      const response = page.waitForResponse(
+        (candidate) =>
+          candidate.request().method() === 'POST' &&
+          /\/auth\/v1\/factors\/[^/]+\/verify$/.test(new URL(candidate.url()).pathname),
+        { timeout: 15_000 }
+      )
+      await code.fill(fixtureTotp(account.mfaSecret, Date.now() + offset))
+      await page.getByRole('button', { name: 'Verificar y continuar' }).click()
+      if ((await response).ok()) {
+        verified = true
+        break
+      }
+    }
+    if (!verified) throw new Error('MFA verification failed for the disposable test account')
   }
-  await expect(page).toHaveURL(new RegExp(destinations[name].replaceAll('/', '\\/')))
+  await expect(page).toHaveURL(new RegExp(destinations[name].replaceAll('/', '\\/')), {
+    timeout: 15_000
+  })
 }
