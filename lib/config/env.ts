@@ -68,6 +68,7 @@ const serverEnvShape = {
   NOTIFICATIONS_EMAIL_FROM: optionalValue,
   OUTBOX_WORKER_ENABLED: explicitBoolean('OUTBOX_WORKER_ENABLED'),
   OUTBOX_WORKER_SECRET: optionalValue,
+  CRON_SECRET: optionalValue,
   REFUND_WORKER_ENABLED: explicitBoolean('REFUND_WORKER_ENABLED'),
   REFUND_WORKER_SECRET: optionalValue,
   WHATSAPP_ENABLED: explicitBoolean('WHATSAPP_ENABLED'),
@@ -160,6 +161,16 @@ export const serverEnvSchema = z
         message: 'OUTBOX_WORKER_SECRET must contain 32 to 128 safe characters',
         path: ['OUTBOX_WORKER_SECRET']
       })
+    }
+    if (env.APP_ENV === 'production' && env.OUTBOX_WORKER_ENABLED) {
+      requireWhenEnabled(env, context, true, ['CRON_SECRET'])
+      if (!/^[A-Za-z0-9_-]{32,128}$/.test(env.CRON_SECRET ?? '')) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'CRON_SECRET must contain 32 to 128 safe characters',
+          path: ['CRON_SECRET']
+        })
+      }
     }
     requireWhenEnabled(env, context, env.REFUND_WORKER_ENABLED, ['REFUND_WORKER_SECRET'])
     if (

@@ -217,6 +217,37 @@ describe('parseServerEnv', () => {
     expect(refund.refundWorker.enabled).toBe(true)
     expect(JSON.stringify(redactEnvForLogs(refund))).not.toContain('r'.repeat(48))
   })
+
+  it('requires the Vercel cron credential before enabling the production worker', () => {
+    const productionWorkerEnv = {
+      ...serverEnv,
+      APP_ENV: 'production' as const,
+      LYSTO_ACCEPT_NEW_REQUESTS: 'false' as const,
+      LYSTO_ALLOW_NEW_CHECKOUTS: 'false' as const,
+      RATE_LIMIT_HASH_KEY: 'r'.repeat(48),
+      PAYMENTS_PROVIDER: 'mercadopago_split' as const,
+      MERCADOPAGO_MODE: 'live' as const,
+      MERCADOPAGO_DATABASE_URL: 'postgres://private-db',
+      MERCADOPAGO_ENCRYPTION_KEY: 'private-cipher-key',
+      MERCADOPAGO_WEBHOOK_SECRET: 'private-hook',
+      MERCADOPAGO_MARKETPLACE_CLIENT_ID: '123',
+      MERCADOPAGO_MARKETPLACE_CLIENT_SECRET: 'private-client-secret',
+      OUTBOX_WORKER_ENABLED: 'true' as const,
+      OUTBOX_WORKER_SECRET: 's'.repeat(48)
+    }
+    expect(() =>
+      parseServerEnv(productionWorkerEnv)
+    ).toThrow(/CRON_SECRET/)
+    expect(() =>
+      parseServerEnv({
+        ...productionWorkerEnv,
+        CRON_SECRET: 'short'
+      })
+    ).toThrow(/CRON_SECRET/)
+    expect(
+      parseServerEnv({ ...productionWorkerEnv, CRON_SECRET: 'c'.repeat(48) }).outboxWorker.enabled
+    ).toBe(true)
+  })
 })
 
 describe('redactEnvForLogs', () => {
