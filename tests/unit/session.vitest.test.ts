@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const mocks = vi.hoisted(() => ({ createClient: vi.fn(), getUser: vi.fn(), rpc: vi.fn() }))
+const mocks = vi.hoisted(() => ({ createClient: vi.fn(), getClaims: vi.fn(), rpc: vi.fn() }))
 vi.mock('@/lib/supabase/server', () => ({ createServerSupabaseClient: mocks.createClient }))
 import { getPricingSession, pricingError } from '@/lib/pricing/server'
 import { requireAdminPermission, requireRole } from '@/lib/auth/session'
@@ -28,9 +28,9 @@ function context(role: Role = 'customer') {
   }
 }
 function arrange(role: Role = 'customer', overrides: Record<string, unknown> = {}) {
-  mocks.getUser.mockResolvedValue({
+  mocks.getClaims.mockResolvedValue({
     data: {
-      user: { id: ids.user, app_metadata: { app_role: role }, user_metadata: { app_role: 'owner' } }
+      claims: { sub: ids.user, app_metadata: { app_role: role }, user_metadata: { app_role: 'owner' } }
     },
     error: null
   })
@@ -42,7 +42,7 @@ function arrange(role: Role = 'customer', overrides: Record<string, unknown> = {
     single: vi.fn().mockResolvedValue({ data: { id: ids.profile, role }, error: null })
   }
   mocks.createClient.mockResolvedValue({
-    auth: { getUser: mocks.getUser },
+    auth: { getClaims: mocks.getClaims },
     rpc: mocks.rpc,
     from: vi.fn(() => query)
   })
@@ -91,13 +91,13 @@ describe('current server session', () => {
     }
   )
   it('returns 401 for expired or absent identity before reading database context', async () => {
-    mocks.getUser.mockResolvedValue({ data: { user: null }, error: { code: 'bad_jwt' } })
+    mocks.getClaims.mockResolvedValue({ data: { claims: null }, error: { code: 'bad_jwt' } })
     await expect(getPricingSession()).rejects.toMatchObject({ status: 401, code: 'unauthorized' })
     expect(mocks.rpc).not.toHaveBeenCalled()
   })
   it('distinguishes an unavailable Auth server from an expired login', async () => {
-    mocks.getUser.mockResolvedValue({
-      data: { user: null },
+    mocks.getClaims.mockResolvedValue({
+      data: { claims: null },
       error: { name: 'AuthRetryableFetchError', status: 503 }
     })
     await expect(getPricingSession()).rejects.toMatchObject({
@@ -106,8 +106,8 @@ describe('current server session', () => {
     })
   })
   it('does not elevate user-editable metadata', async () => {
-    mocks.getUser.mockResolvedValue({
-      data: { user: { id: ids.user, app_metadata: {}, user_metadata: { app_role: 'customer' } } },
+    mocks.getClaims.mockResolvedValue({
+      data: { claims: { sub: ids.user, app_metadata: {}, user_metadata: { app_role: 'customer' } } },
       error: null
     })
     await expect(getPricingSession()).rejects.toMatchObject({ status: 403, code: 'forbidden' })

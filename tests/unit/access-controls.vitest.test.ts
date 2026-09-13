@@ -40,9 +40,9 @@ function actor(role = 'admin', permissions = ['operations']) {
   const rpc = vi.fn().mockResolvedValue({ data: ctx, error: null })
   mocks.client.mockResolvedValue({
     auth: {
-      getUser: vi.fn().mockResolvedValue({
+      getClaims: vi.fn().mockResolvedValue({
         data: {
-          user: { id: '00000000-0000-4000-8000-000000000001', app_metadata: { app_role: role } }
+          claims: { sub: '00000000-0000-4000-8000-000000000001', app_metadata: { app_role: role } }
         },
         error: null
       })
@@ -77,7 +77,7 @@ describe('authorization before parsing input or side effects', () => {
     ['/api/uploads/sign', upload]
   ] as const)('rejects anonymous %s before evaluating attacker input', async (path, handler) => {
     mocks.client.mockResolvedValue({
-      auth: { getUser: vi.fn().mockResolvedValue({ data: { user: null }, error: null }) }
+      auth: { getClaims: vi.fn().mockResolvedValue({ data: { claims: null }, error: null }) }
     })
     const response = await handler(request(path, { adminProfileId: 'forged', ownerId: 'forged' }))
     expect(response.status).toBe(401)

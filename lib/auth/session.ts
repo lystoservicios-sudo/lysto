@@ -10,6 +10,10 @@ import { readTrustedRole } from './session-routing'
 import { assertAdminAssurance } from './admin-assurance'
 
 const permissionSchema = z.enum(['operations', 'finance', 'quality', 'owner'])
+const identityClaimsSchema = z.object({
+  sub: z.string().uuid(),
+  app_metadata: z.unknown()
+})
 export type AdminPermission = z.infer<typeof permissionSchema>
 const contextSchema = z.object({
   profile_id: z.string().uuid(),
@@ -47,20 +51,18 @@ async function loadSession(forEnrollment = false): Promise<Session> {
   } catch {
     throw new ApiError('session_unavailable')
   }
-  let identity: Awaited<ReturnType<typeof client.auth.getUser>>
+  let identity: Awaited<ReturnType<typeof client.auth.getClaims>>
   try {
-    identity = await client.auth.getUser()
+    identity = await client.auth.getClaims()
   } catch {
     throw new ApiError('session_unavailable')
   }
-  const {
-    data: { user },
-    error
-  } = identity
+  const { data, error } = identity
   if (error && (error.name === 'AuthRetryableFetchError' || (error.status ?? 0) >= 500))
     throw new ApiError('session_unavailable')
-  if (error || !user) throw new ApiError('unauthorized')
-  const trustedRole = readTrustedRole(user.app_metadata)
+  const claims = identityClaimsSchema.safeParse(data?.claims)
+  if (error || !claims.success) throw new ApiError('unauthorized')
+  const trustedRole = readTrustedRole(claims.data.app_metadata)
   if (!trustedRole) throw new ApiError('forbidden')
   const context = await client.rpc('get_session_context').then(
     (result) => result,
@@ -85,7 +87,7 @@ async function loadSession(forEnrollment = false): Promise<Session> {
   if (!forEnrollment) assertAdminAssurance({ role: current.role, assuranceLevel: current.aal })
   return {
     client,
-    userId: user.id,
+    userId: claims.data.sub,
     profileId: current.profile_id,
     role: current.role,
     customerId: current.customer_id ?? undefined,

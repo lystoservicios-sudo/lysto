@@ -10,9 +10,12 @@ const authCookie = __ENV.LYSTO_LOAD_TEST_AUTH_COOKIE || ''
 const productionHost = __ENV.PRODUCTION_HOST || ''
 
 if (!baseUrl || !['local', 'staging'].includes(targetEnv)) fail('BASE_URL and TARGET_ENV=local|staging are required')
-const target = new URL(baseUrl)
-if (!['localhost', '127.0.0.1', '[::1]'].includes(target.hostname) && target.protocol !== 'https:') fail('Remote load targets require HTTPS')
-if (targetEnv === 'production' || (productionHost && target.hostname === productionHost)) fail('Production load testing is forbidden')
+const target = baseUrl.match(/^(https?):\/\/([^/:?#]+|\[[^\]]+\])(?::\d+)?$/)
+if (!target) fail('BASE_URL must be an origin without path, query or fragment')
+const protocol = `${target[1]}:`
+const hostname = target[2]
+if (!['localhost', '127.0.0.1', '[::1]'].includes(hostname) && protocol !== 'https:') fail('Remote load targets require HTTPS')
+if (targetEnv === 'production' || (productionHost && hostname === productionHost)) fail('Production load testing is forbidden')
 if (!authCookie) fail('A designated synthetic customer session cookie is required')
 
 const profiles = {
