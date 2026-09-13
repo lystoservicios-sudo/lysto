@@ -131,6 +131,10 @@ export function createFixtureAccounts({ mfa = true }: { mfa?: boolean } = {}) {
             const profiles = Object.values(accounts).map((account) => account.profileId)
             const entities = Object.values(accounts).map((account) => account.entityId)
             await cleanupDatabase.query(
+              'delete from public.service_quotes where created_by=any($1::uuid[]) and request_id is null',
+              [profiles]
+            )
+            await cleanupDatabase.query(
               'delete from private.outbox_events where recipient_profile_id=any($1::uuid[]) or aggregate_id=any($2::uuid[])',
               [profiles, entities]
             )
@@ -147,9 +151,13 @@ export function createFixtureAccounts({ mfa = true }: { mfa?: boolean } = {}) {
         steps.push({
           label: `delete ${authId}`,
           run: async () => {
-            const { error } = await cleanupAdmin.auth.admin.deleteUser(authId)
-            if (error && error.status !== 404 && error.code !== 'user_not_found')
-              throw new Error('fixture delete failed')
+            for (let attempt = 0; attempt < 3; attempt += 1) {
+              const { error } = await cleanupAdmin.auth.admin.deleteUser(authId)
+              if (!error || error.status === 404 || error.code === 'user_not_found') return
+              if (attempt < 2)
+                await new Promise((resolve) => setTimeout(resolve, 200 * (attempt + 1)))
+            }
+            throw new Error('fixture delete failed')
           }
         })
       }

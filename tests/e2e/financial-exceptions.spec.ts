@@ -11,6 +11,6 @@ test('finance lands on the canonical payment module without operations access', 
   await expect(page.getByText(/Cargando excepciones|No hay/).first()).toBeVisible()
   const queue = await page.request.get('/admin/dashboard')
   expect(queue.status()).toBe(200)
-  expect(await queue.text()).toContain('Pagos con Mercado Pago')
+  expect(await queue.text()).toContain('url=/admin/pagos')
   expect((await page.request.get('/api/admin/professionals')).status()).toBe(403)
 })

@@ -43,4 +43,6 @@ test('fixture account cleanup relies on exact user deletion without a fallible s
   const source = readFileSync('tests/integration/fixtures.ts', 'utf8')
   assert.doesNotMatch(source, /cleanupAdmin\.auth\.admin\.signOut/)
   assert.match(source, /cleanupAdmin\.auth\.admin\.deleteUser\(authId\)/)
+  assert.match(source, /attempt < 3/)
+  assert.match(source, /delete from public\.service_quotes where created_by=any/)
 })

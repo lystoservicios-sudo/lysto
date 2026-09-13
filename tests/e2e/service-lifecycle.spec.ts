@@ -30,9 +30,11 @@ test('double click is bounded while a quote is being persisted', async ({ page, 
   await loginAs(page, accounts.accounts.customerB, 'customerB')
   const responses = await Promise.all([
     page.request.post('/api/diagnosis/generate', {
+      headers: { origin: new URL(page.url()).origin },
       data: { issue: 'mantenimiento', answers: { timeSince: 'months' } }
     }),
     page.request.post('/api/diagnosis/generate', {
+      headers: { origin: new URL(page.url()).origin },
       data: { issue: 'mantenimiento', answers: { timeSince: 'months' } }
     })
   ])
