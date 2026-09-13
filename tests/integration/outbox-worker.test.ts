@@ -33,6 +33,9 @@ describe('durable notification delivery boundary', () => {
         await db.query('delete from public.service_requests where id=any($1::uuid[])', [
           businessIds
         ])
+        await db.query('delete from public.customer_addresses where id=any($1::uuid[])', [
+          businessIds
+        ])
       }
     } finally {
       await db.end()
@@ -97,6 +100,112 @@ describe('durable notification delivery boundary', () => {
       where table_schema='private' and table_name='outbox_delivery_snapshots'
         and grantee in ('PUBLIC','anon','authenticated','service_role')`)
     expect(grants.rows).toEqual([])
+  })
+  it('derives the confirmed visit from live records and rejects a superseded schedule', async () => {
+    const addressId = randomUUID(),
+      requestId = randomUUID(),
+      jobId = randomUUID(),
+      firstScheduleId = randomUUID(),
+      secondScheduleId = randomUUID()
+    businessIds.push(addressId, requestId, jobId, firstScheduleId, secondScheduleId)
+    const config = await db.query(
+      `select c.id category_id,c.name category_name,i.id issue_id
+       from public.service_categories c
+       join public.service_issue_types i on i.category_id=c.id
+       where c.active and i.active order by c.id,i.sort_order limit 1`
+    )
+    await db.query(
+      `insert into public.customer_addresses(id,customer_id,street,number,floor,apartment,city,province,reference)
+       values($1,$2,'Av. Siempre Viva','742','3','B','Buenos Aires','Buenos Aires','Dato privado de acceso')`,
+      [addressId, fixture.accounts.customerA.entityId]
+    )
+    await db.query(
+      `insert into public.service_requests(id,customer_id,category_id,issue_type_id,status,address_id)
+       values($1,$2,$3,$4,'pending_professional_acceptance',$5)`,
+      [
+        requestId,
+        fixture.accounts.customerA.entityId,
+        config.rows[0].category_id,
+        config.rows[0].issue_id,
+        addressId
+      ]
+    )
+    await db.query(
+      `insert into public.jobs(id,request_id,customer_id,professional_id,status,schedule_version)
+       values($1,$2,$3,$4,'confirmed',1)`,
+      [
+        jobId,
+        requestId,
+        fixture.accounts.customerA.entityId,
+        fixture.accounts.professionalApproved.entityId
+      ]
+    )
+    await db.query(
+      `insert into public.job_schedule_reservations(id,job_id,professional_id,version,starts_at,ends_at,local_visit_date,timezone,duration_minutes,travel_buffer_minutes,state,created_by)
+       values($1,$2,$3,1,'2030-09-18 13:00:00+00','2030-09-18 15:00:00+00','2030-09-18','America/Argentina/Buenos_Aires',120,30,'confirmed',$4)`,
+      [
+        firstScheduleId,
+        jobId,
+        fixture.accounts.professionalApproved.entityId,
+        fixture.accounts.professionalApproved.profileId
+      ]
+    )
+    const claimed = await db.query(
+      `select * from public.claim_outbox_events($1,100,120,array['email'])`,
+      [`${fixture.runId}-visit`]
+    )
+    const event = claimed.rows.find(
+      (row) => row.aggregate_id === jobId && row.event_type === 'visit.confirmed'
+    )
+    expect(event).toBeTruthy()
+    const resolved = await service.rpc('resolve_outbox_delivery', {
+      p_event_id: event.id,
+      p_claim_token: event.claim_token
+    })
+    expect(resolved.error).toBeNull()
+    expect(resolved.data).toMatchObject({
+      recipientEmail: fixture.accounts.customerA.email,
+      context: {
+        eventType: 'visit.confirmed',
+        aggregateId: jobId,
+        audience: 'customer',
+        scheduleVersion: 1,
+        startsAt: '2030-09-18T13:00:00+00:00',
+        endsAt: '2030-09-18T15:00:00+00:00',
+        timezone: 'America/Argentina/Buenos_Aires',
+        serviceName: config.rows[0].category_name,
+        addressLabel: 'Av. Siempre Viva 742, Piso 3 Depto. B, Buenos Aires'
+      },
+      snapshot: null
+    })
+    expect(resolved.data.context.professionalName).toMatch(/^[^@]+\.$/)
+    expect(JSON.stringify(resolved.data.context)).not.toContain('Dato privado de acceso')
+    expect(JSON.stringify(resolved.data.context)).not.toContain(
+      fixture.accounts.professionalApproved.email
+    )
+
+    await db.query(
+      `update public.job_schedule_reservations
+       set state='released',released_at=clock_timestamp(),released_reason='integration reschedule'
+       where id=$1`,
+      [firstScheduleId]
+    )
+    await db.query(`update public.jobs set schedule_version=2 where id=$1`, [jobId])
+    await db.query(
+      `insert into public.job_schedule_reservations(id,job_id,professional_id,version,starts_at,ends_at,local_visit_date,timezone,duration_minutes,travel_buffer_minutes,state,created_by)
+       values($1,$2,$3,2,'2030-09-19 15:00:00+00','2030-09-19 17:00:00+00','2030-09-19','America/Argentina/Buenos_Aires',120,30,'confirmed',$4)`,
+      [
+        secondScheduleId,
+        jobId,
+        fixture.accounts.professionalApproved.entityId,
+        fixture.accounts.professionalApproved.profileId
+      ]
+    )
+    const stale = await service.rpc('resolve_outbox_delivery', {
+      p_event_id: event.id,
+      p_claim_token: event.claim_token
+    })
+    expect(stale.error?.code).toBe('22023')
   })
   it('persists customer, assignment, payment and support events in their business transactions', async () => {
     const requestId = randomUUID(),

@@ -116,3 +116,36 @@ it('does not start network delivery with an expired lease', async () => {
   expect((await runOutboxBatch(db, { ...options, sendEmail: send })).lostClaims).toBe(1)
   expect(send).not.toHaveBeenCalled()
 })
+it('suppresses an email that becomes stale immediately before provider delivery', async () => {
+  let resolutions = 0
+  const db = {
+    rpc: vi.fn(async (name: string) => {
+      if (name === 'claim_outbox_events') return { data: [event], error: null }
+      if (name === 'resolve_outbox_delivery') {
+        resolutions++
+        if (resolutions === 2) return { data: null, error: { code: '22023' } }
+        return {
+          data: { recipientEmail: snapshot.content.to, context, snapshot },
+          error: null
+        }
+      }
+      return { data: true, error: null }
+    })
+  }
+  const send = vi.fn()
+  expect(await runOutboxBatch(db, { ...options, sendEmail: send })).toMatchObject({
+    accepted: 0,
+    suppressed: 1,
+    failed: 0
+  })
+  expect(send).not.toHaveBeenCalled()
+  expect(db.rpc.mock.calls.at(-1)).toEqual([
+    'stop_outbox_delivery',
+    {
+      p_event_id: id,
+      p_claim_token: token,
+      p_code: 'recipient_unavailable',
+      p_suppressed: true
+    }
+  ])
+})

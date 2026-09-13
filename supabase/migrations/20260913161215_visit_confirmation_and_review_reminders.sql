@@ -27,7 +27,7 @@ begin
   ) values(
     'visit.confirmed','job',p_job_id,'email',v_profile_id,lower(v_email),
     'visit-confirmed:'||p_job_id::text||':'||v_schedule_version::text,
-    jsonb_build_object('scheduleVersion',v_schedule_version)
+    '{}'::jsonb
   ) on conflict(channel,recipient_key,dedupe_key) do nothing;
 end;
 $$;
@@ -124,7 +124,8 @@ declare
   v_email text; v_role text; v_audience text; v_permission public.admin_permission;
   v_inv public.professional_invitations%rowtype; v_customer uuid; v_professional uuid;
   v_context jsonb; v_allowed boolean=false;
-  v_schedule_version integer; v_starts_at timestamptz; v_ends_at timestamptz;
+  v_schedule_version integer; v_expected_schedule_version integer;
+  v_starts_at timestamptz; v_ends_at timestamptz;
   v_timezone text; v_service_name text; v_professional_name text; v_address_label text;
 begin
   if p_event.event_type='professional.invited' then
@@ -149,9 +150,10 @@ begin
   if not found then raise exception using errcode='22023',message='recipient_unavailable'; end if;
 
   if p_event.aggregate_type='job' and p_event.event_type='visit.confirmed' then
-    if p_event.channel<>'email' or p_event.payload->>'scheduleVersion' is null
-      or (p_event.payload->>'scheduleVersion')!~'^[1-9][0-9]*$' then
+    if p_event.channel<>'email' or p_event.dedupe_key
+      !~ ('^visit-confirmed:'||p_event.aggregate_id::text||':[1-9][0-9]*$') then
       raise exception using errcode='22023',message='recipient_unavailable'; end if;
+    v_expected_schedule_version=split_part(p_event.dedupe_key,':',3)::integer;
     select j.customer_id,j.professional_id,s.version,s.starts_at,s.ends_at,s.timezone,
       left(sc.name,160),
       left(coalesce(nullif(btrim(concat_ws(' ',nullif(btrim(pp.first_name),''),
@@ -169,7 +171,7 @@ begin
     join public.professional_profiles pro on pro.id=j.professional_id
     join public.profiles pp on pp.id=pro.profile_id
     where j.id=p_event.aggregate_id and j.status='confirmed'
-      and s.version=(p_event.payload->>'scheduleVersion')::integer;
+      and s.version=v_expected_schedule_version;
     v_allowed=found and v_role='customer' and exists(
       select 1 from public.customer_profiles cp
       where cp.id=v_customer and cp.profile_id=p_event.recipient_profile_id);
