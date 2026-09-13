@@ -1,0 +1,11 @@
+begin;
+select plan(7);
+select has_table('public', 'contact_inquiries', 'contact inquiries have persistent storage');
+select has_function('public', 'submit_marketing_inquiry', array['jsonb'], 'submission is atomic');
+select ok(not has_table_privilege('anon', 'public.contact_inquiries', 'SELECT'), 'anonymous users cannot read inquiries');
+select ok(not has_function_privilege('anon', 'public.submit_marketing_inquiry(jsonb)', 'EXECUTE'), 'anonymous users cannot bypass server validation');
+select ok(not has_function_privilege('authenticated', 'public.submit_marketing_inquiry(jsonb)', 'EXECUTE'), 'authenticated users cannot bypass server validation');
+select ok(has_function_privilege('service_role', 'public.submit_marketing_inquiry(jsonb)', 'EXECUTE'), 'server can submit inquiries');
+select ok((select relrowsecurity from pg_class where oid = 'public.contact_inquiries'::regclass), 'row security is enabled');
+select * from finish();
+rollback;

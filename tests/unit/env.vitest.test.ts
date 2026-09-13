@@ -55,6 +55,10 @@ describe('parsePublicEnv', () => {
 })
 
 describe('parseServerEnv', () => {
+  it('accepts split configuration without requiring a platform access token and keeps its secrets redacted',()=>{
+    const parsed=parseServerEnv({...serverEnv,PAYMENTS_PROVIDER:'mercadopago_split',MERCADOPAGO_MODE:'test',MERCADOPAGO_DATABASE_URL:'postgres://private-db',MERCADOPAGO_ENCRYPTION_KEY:'private-cipher-key',MERCADOPAGO_WEBHOOK_SECRET:'private-hook',MERCADOPAGO_MARKETPLACE_CLIENT_ID:'123',MERCADOPAGO_MARKETPLACE_CLIENT_SECRET:'private-client-secret'})
+    expect(parsed.payments.provider).toBe('mercadopago_split');expect(JSON.stringify(redactEnvForLogs(parsed))).not.toContain('private-')
+  })
   it('requires the Supabase service role key', () => {
     expect(() => parseServerEnv(publicEnv)).toThrow(/SUPABASE_SERVICE_ROLE_KEY/)
   })

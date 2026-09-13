@@ -31,10 +31,12 @@
     "allowImportingTsExtensions": true
   },
   "include": [
-    "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    ".next/types/**/*.ts"
+    ".next-site-dev/types/**/*.ts",
+    ".next/types/**/*.ts",
+    "next-env.d.ts",
+    ".next-site-build/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"

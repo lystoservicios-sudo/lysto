@@ -49,7 +49,10 @@ export const publicEnvSchema = z
 const serverEnvShape = {
   ...publicEnvShape,
   SUPABASE_SERVICE_ROLE_KEY: requiredValue('SUPABASE_SERVICE_ROLE_KEY'),
-  PAYMENTS_PROVIDER: z.enum(['mock', 'mercadopago']).default('mock'),
+  PAYMENTS_PROVIDER: z.enum(['mock', 'mercadopago', 'mercadopago_split']).default('mock'),
+  MERCADOPAGO_MODE: z.enum(['test','live']).optional(),
+  MERCADOPAGO_DATABASE_URL: optionalValue,
+  MERCADOPAGO_ENCRYPTION_KEY: optionalValue,
   MERCADOPAGO_PUBLIC_KEY: optionalValue,
   MERCADOPAGO_ACCESS_TOKEN: optionalValue,
   MERCADOPAGO_WEBHOOK_SECRET: optionalValue,
@@ -90,6 +93,10 @@ export const serverEnvSchema = z
   .object(serverEnvShape)
   .superRefine((env, context) => {
     requirePublicSupabaseKey(env, context)
+    requireWhenEnabled(env, context, env.PAYMENTS_PROVIDER === 'mercadopago_split', [
+      'MERCADOPAGO_MODE','MERCADOPAGO_DATABASE_URL','MERCADOPAGO_ENCRYPTION_KEY',
+      'MERCADOPAGO_WEBHOOK_SECRET','MERCADOPAGO_MARKETPLACE_CLIENT_ID','MERCADOPAGO_MARKETPLACE_CLIENT_SECRET'
+    ])
     requireWhenEnabled(env, context, env.PAYMENTS_PROVIDER === 'mercadopago', [
       'MERCADOPAGO_PUBLIC_KEY',
       'MERCADOPAGO_ACCESS_TOKEN',
@@ -130,7 +137,11 @@ export const serverEnvSchema = z
           marketplaceClientId: env.MERCADOPAGO_MARKETPLACE_CLIENT_ID as string,
           marketplaceClientSecret: env.MERCADOPAGO_MARKETPLACE_CLIENT_SECRET as string
         }
-      : { provider: 'mock' as const },
+      : env.PAYMENTS_PROVIDER === 'mercadopago_split' ? {
+          provider:'mercadopago_split' as const,mode:env.MERCADOPAGO_MODE as 'test'|'live',
+          databaseUrl:env.MERCADOPAGO_DATABASE_URL as string,encryptionKey:env.MERCADOPAGO_ENCRYPTION_KEY as string,
+          webhookSecret:env.MERCADOPAGO_WEBHOOK_SECRET as string,marketplaceClientId:env.MERCADOPAGO_MARKETPLACE_CLIENT_ID as string,marketplaceClientSecret:env.MERCADOPAGO_MARKETPLACE_CLIENT_SECRET as string
+        } : { provider: 'mock' as const },
     email: env.NOTIFICATIONS_EMAIL_ENABLED
       ? { enabled: true as const, resendApiKey: env.RESEND_API_KEY as string }
       : { enabled: false as const },

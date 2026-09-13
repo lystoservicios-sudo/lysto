@@ -372,6 +372,8 @@ values
   ('public-avatars', 'public-avatars', true)
 on conflict (id) do nothing;
 
+-- Keep deterministic legacy fixture IDs; signup itself has a dedicated regression suite.
+alter table auth.users disable trigger lysto_signup_customer_profile;
 insert into auth.users (
   instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
   raw_app_meta_data, raw_user_meta_data, created_at, updated_at
@@ -388,6 +390,8 @@ values
   ('00000000-0000-0000-0000-000000000000', '30000000-0000-0000-0000-000000000003', 'authenticated', 'authenticated', 'storage-finance@lysto.test', '', now(), '{}', '{}', now(), now()),
   ('00000000-0000-0000-0000-000000000000', '30000000-0000-0000-0000-000000000004', 'authenticated', 'authenticated', 'storage-owner@lysto.test', '', now(), '{}', '{}', now(), now()),
   ('00000000-0000-0000-0000-000000000000', '90000000-0000-0000-0000-000000000001', 'authenticated', 'authenticated', 'storage-no-profile@lysto.test', '', now(), '{}', '{}', now(), now());
+
+alter table auth.users enable trigger lysto_signup_customer_profile;
 
 insert into public.profiles (id, auth_user_id, role, first_name, last_name, email)
 values
@@ -1480,3 +1484,4 @@ reset role;
 
 select * from finish();
 rollback;
+

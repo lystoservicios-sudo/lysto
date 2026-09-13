@@ -28,7 +28,7 @@ describe('mobile login form', () => {
     const email = screen.getByLabelText('Email') as HTMLInputElement
     const password = screen.getByLabelText('Contraseña') as HTMLInputElement
     const submit = screen.getByRole('button', { name: 'Ingresar' }) as HTMLButtonElement
-    const register = screen.getByRole('link', { name: 'Crear cuenta cliente' })
+    const register = screen.getByRole('link', { name: 'Crear cuenta' })
 
     expect(email.name).toBe('email')
     expect(email.type).toBe('email')

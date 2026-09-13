@@ -1,0 +1,107 @@
+.m-home-trust {
+  --trust-copy: #4a6151;
+  --trust-accent: #426b50;
+  --trust-line: #d2deca;
+  padding-block: 92px 58px;
+  color: var(--m-navy);
+  background: #eef5e8;
+}
+
+.m-home-trust-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: start;
+  gap: clamp(48px, 7vw, 108px);
+}
+
+.m-home-trust-copy { max-width: 500px; }
+.m-home-trust-label { display: flex; align-items: center; gap: 10px; margin-bottom: 24px; color: var(--trust-copy); font-size: 14px; }
+.m-home-trust-label svg { flex-shrink: 0; color: var(--m-blue); }
+.m-home-trust h2 { font-size: clamp(2.8rem, 4.4vw, 4rem); line-height: 1.08; letter-spacing: -.035em; }
+.m-home-trust h2 span { color: var(--trust-accent); }
+.m-home-trust-copy > p { max-width: 450px; color: var(--trust-copy); font-size: 17px; line-height: 1.75; text-wrap: pretty; }
+.m-home-trust-copy > p:first-of-type { margin-top: 27px; }
+.m-home-trust-copy > p + p { margin-top: 14px; }
+.m-home-trust-copy .m-text-link { margin-top: 21px; color: var(--m-blue); }
+.m-home-trust-copy .m-text-link:hover { color: var(--m-navy); }
+.m-home-trust :focus-visible { outline-color: var(--m-blue); }
+
+.m-home-trust-steps { margin: 0; padding: 0; list-style: none; }
+.m-home-trust-steps li { display: grid; grid-template-columns: 35px 1fr; align-items: start; gap: 20px; padding-block: 26px; border-top: 1px solid var(--trust-line); }
+.m-home-trust-steps li:first-child { padding-top: 6px; border-top: 0; }
+.m-home-trust-steps li:last-child { padding-bottom: 0; }
+.m-home-trust-number { padding-top: 2px; color: var(--trust-accent); font-size: 17px; font-weight: 600; line-height: 1.45; font-variant-numeric: tabular-nums; }
+.m-home-trust-steps h3 { font-size: 22px; line-height: 1.25; letter-spacing: -.025em; }
+.m-home-trust-steps p { margin-top: 10px; max-width: 445px; color: var(--trust-copy); font-size: 15px; line-height: 1.75; text-wrap: pretty; }
+
+.m-home-trust-feedback { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(48px, 7vw, 108px); align-items: center; border-top: 1px solid var(--trust-line); margin-top: 54px; padding-top: 35px; }
+.m-home-trust-feedback-title { display: flex; align-items: center; gap: 23px; }
+.m-home-trust-feedback-title svg { flex-shrink: 0; color: var(--m-blue); }
+.m-home-trust-feedback h3 { font-size: 23px; line-height: 1.3; letter-spacing: -.025em; }
+.m-home-trust-feedback > p { color: var(--trust-copy); font-size: 14px; line-height: 1.8; text-wrap: pretty; }
+
+.m-home-care { display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: clamp(48px, 7vw, 108px); padding-block: 105px; }
+.m-home-care-copy { max-width: 520px; }
+.m-home-care h2 { font-size: clamp(2.4rem, 3.7vw, 3.4rem); line-height: 1.1; letter-spacing: -.035em; }
+.m-home-care h2 span { color: var(--m-blue); }
+.m-home-care-copy > p { max-width: 475px; color: var(--m-muted); font-size: 17px; line-height: 1.8; text-wrap: pretty; }
+.m-home-care-copy > p:first-of-type { margin-top: 25px; }
+.m-home-care-copy > p + p { margin-top: 14px; }
+.m-home-care-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px 22px; margin-top: 28px; }
+.m-home-care-plan { background: #edf7dd; border-radius: 16px; padding: clamp(30px, 3.5vw, 48px); }
+.m-home-care-plan-label { display: block; margin-bottom: 11px; font-size: 13px; font-weight: 550; color: #4a623c; }
+.m-home-care-plan > h3 { font-size: 31px; line-height: 1.2; letter-spacing: -.035em; }
+.m-home-care-plan ul { margin: 27px 0 0; padding: 0; list-style: none; }
+.m-home-care-plan li { display: grid; grid-template-columns: 23px 1fr; gap: 15px; margin-top: 21px; }
+.m-home-care-plan li:first-child { margin-top: 0; }
+.m-home-care-plan li > svg { margin-top: 2px; color: #4a623c; }
+.m-home-care-plan h4 { margin: 0; font-size: 16px; font-weight: 700; line-height: 1.45; letter-spacing: -.015em; }
+.m-home-care-plan li p { margin-top: 6px; font-size: 14px; line-height: 1.7; color: #4a623c; text-wrap: pretty; }
+
+@media (max-width: 1100px) {
+  .m-home-trust-grid, .m-home-trust-feedback, .m-home-care { gap: 42px; }
+  .m-home-trust-label { font-size: 12px; }
+  .m-home-trust-steps li { grid-template-columns: 27px 1fr; gap: 15px; }
+  .m-home-trust-steps h3 { font-size: 20px; }
+  .m-home-care-plan { padding: 30px; }
+}
+
+@media (max-width: 760px) {
+  .m-home-trust { padding-block: 62px 42px; }
+  .m-home-trust-grid { grid-template-columns: 1fr; gap: 35px; }
+  .m-home-trust-label { font-size: 12px; margin-bottom: 20px; gap: 8px; }
+  .m-home-trust h2 { font-size: clamp(2.6rem, 10.7vw, 3.25rem); max-width: 450px; }
+  .m-home-trust-copy > p { font-size: 15px; line-height: 1.8; max-width: none; }
+  .m-home-trust-copy > p:first-of-type { margin-top: 22px; }
+  .m-home-trust-copy .m-text-link { margin-top: 17px; font-size: 14px; }
+  .m-home-trust-steps li { padding-block: 23px; gap: 15px; grid-template-columns: 25px 1fr; }
+  .m-home-trust-steps li:first-child { padding-top: 23px; border-top: 1px solid var(--trust-line); }
+  .m-home-trust-number { font-size: 14px; }
+  .m-home-trust-steps h3 { font-size: 19px; }
+  .m-home-trust-steps p { font-size: 14px; line-height: 1.75; margin-top: 8px; }
+  .m-home-trust-feedback { grid-template-columns: 1fr; gap: 17px; margin-top: 32px; padding-top: 28px; }
+  .m-home-trust-feedback-title { gap: 16px; }
+  .m-home-trust-feedback-title svg { width: 25px; }
+  .m-home-trust-feedback h3 { font-size: 21px; }
+  .m-home-trust-feedback h3 br { display: none; }
+  .m-home-trust-feedback > p { font-size: 13px; line-height: 1.8; }
+  .m-home-care { grid-template-columns: 1fr; gap: 33px; padding-block: 65px; }
+  .m-home-care h2 { font-size: clamp(2.2rem, 9.3vw, 2.8rem); }
+  .m-home-care-copy > p { font-size: 15px; line-height: 1.8; }
+  .m-home-care-copy > p:first-of-type { margin-top: 21px; }
+  .m-home-care-actions { gap: 10px 17px; margin-top: 24px; }
+  .m-home-care-actions .m-button { font-size: 14px; min-height: 51px; padding-inline: 22px; gap: 18px; }
+  .m-home-care-actions .m-text-link { font-size: 13px; }
+  .m-home-care-plan { padding: 30px 25px; }
+  .m-home-care-plan > h3 { font-size: 28px; }
+  .m-home-care-plan li { gap: 13px; margin-top: 23px; }
+  .m-home-care-plan h4 { font-size: 15px; }
+  .m-home-care-plan li p { font-size: 13px; line-height: 1.75; }
+}
+
+@media (max-width: 360px) {
+  .m-home-trust-label { font-size: 11px; }
+  .m-home-trust h2 { font-size: 39px; }
+  .m-home-trust-steps h3 { font-size: 18px; }
+  .m-home-care-plan { padding-inline: 22px; }
+}

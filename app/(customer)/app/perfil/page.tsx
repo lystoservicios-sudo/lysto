@@ -1,15 +1,11 @@
+import { redirect } from 'next/navigation'
+import { readCustomerSession } from '@/lib/auth/customer-session'
 import { PageScaffold } from '@/components/layout/page-scaffold'
-import { CustomerProfileForm } from '@/components/customer/customer-profile-form'
-import { InfoNotice } from '@/components/customer/info-notice'
-import { customerDemoFixtures } from '@/features/customer/fixtures/customer-demo-fixtures'
+import { AccountProfileDetails } from '@/components/customer/account-details'
+import { ButtonLink } from '@/components/ui/button'
 
-export default function CustomerProfilePage() {
-  return (
-    <PageScaffold title="Tu perfil" eyebrow="Cliente · Demostración" description="Revisá tus datos de contacto y cómo querés recibir novedades sobre una visita.">
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_22rem] xl:items-start">
-        <CustomerProfileForm initialValue={customerDemoFixtures.profile} />
-        <InfoNotice tone="security" title="Tus datos son parte de la coordinación" description="Lysto usará esta información para identificarte y mantener el contacto dentro de cada servicio. En esta demostración, los cambios no se guardan." />
-      </div>
-    </PageScaffold>
-  )
+export default async function CustomerProfilePage() {
+  const session = await readCustomerSession()
+  if (session.kind !== 'customer') redirect('/login')
+  return <PageScaffold title="Tu perfil" eyebrow="Tu cuenta" description="Estos son los datos guardados para identificarte y coordinar tus servicios."><section className="max-w-2xl rounded-3xl border border-slate-200 bg-white p-6 sm:p-8"><AccountProfileDetails profile={session.profile} email={session.user.email}/><div className="mt-7 border-t border-slate-100 pt-6"><p className="mb-4 text-sm text-slate-600">Si necesitás corregir tus datos, contactanos para ayudarte.</p><ButtonLink variant="secondary" href="/contacto">Contactar a Lysto</ButtonLink></div></section></PageScaffold>
 }

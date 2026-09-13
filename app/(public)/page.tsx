@@ -1,39 +1,45 @@
-import { Badge } from '@/components/ui/badge'
-import { ButtonLink } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
+import type { Metadata } from 'next'
+import Link from 'next/link'
+import { AirVent, ArrowUpRight, MapPin, Sparkles, Wrench } from 'lucide-react'
 import { PublicShell } from '@/components/layout/page-shell'
+import { ClosingCta, FaqSection, RequestLink, TrustLine } from '@/components/marketing/shared'
+import { HomeScene } from '@/components/marketing/home-scene'
+import { AirStory } from '@/components/marketing/air-story'
+import { HomeTrust, HomeCare } from '@/components/marketing/home-trust'
+import { HomeMethod } from '@/components/marketing/home-method'
 
-const benefits = ['Técnicos verificados', 'Pago protegido', 'Seguimiento del servicio', 'Historial del equipo', 'Garantía Lysto', 'Control de calidad']
-const steps = ['Contás qué le pasa al equipo', 'Lysto genera diagnóstico preliminar', 'Elegís horario y presupuesto', 'Te asignamos un técnico validado', 'Seguís el trabajo y calificás']
+export const metadata: Metadata = {
+  title: 'Lysto | Tu casa, en buenas manos',
+  description: 'Mantenimiento del hogar con nuestro equipo de especialistas aprobados, precios claros y seguimiento. Reparación, mantenimiento e instalación de aire acondicionado en Buenos Aires.',
+  openGraph: { title: 'Lysto | Tu casa, en buenas manos', description: 'Cuidamos tu hogar con nuestro equipo aprobado. Precios claros, calificaciones y una empresa que te acompaña.', images: [{ url: '/images/lysto-home.webp', width: 1000, height: 1000, alt: 'Tu hogar, en buenas manos con Lysto' }], locale: 'es_AR', type: 'website' }
+}
 
 export default function HomePage() {
-  return (
-    <PublicShell>
-      <main>
-        <section className="mx-auto grid max-w-6xl gap-8 px-4 py-14 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:py-20">
-          <div className="space-y-7">
-            <Badge tone="green">MVP operativo · Aire acondicionado · Buenos Aires</Badge>
-            <div className="space-y-5">
-              <h1 className="text-5xl font-black tracking-tight text-slate-950 sm:text-6xl">No metas a cualquiera en tu casa.</h1>
-              <p className="max-w-2xl text-lg leading-8 text-slate-600">Lysto conecta hogares con técnicos de aire acondicionado verificados, con diagnóstico preliminar, pago protegido, seguimiento y respaldo de calidad.</p>
-            </div>
-            <div className="flex flex-col gap-3 sm:flex-row"><ButtonLink href="/login" size="lg">Solicitar técnico</ButtonLink><ButtonLink href="/servicios/aire-acondicionado" variant="secondary" size="lg">Ver servicio inicial</ButtonLink></div>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">{benefits.map((benefit) => <Card key={benefit} className="p-4 text-sm font-bold text-slate-700">{benefit}</Card>)}</div>
-          </div>
-          <Card className="relative overflow-hidden p-5 sm:p-7">
-            <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-blue-100 blur-3xl" />
-            <div className="relative space-y-5">
-              <Badge tone="blue">Solicitud en curso</Badge>
-              <h2 className="text-2xl font-black">Diagnóstico preliminar</h2>
-              <div className="rounded-3xl bg-slate-50 p-4">
-                <p className="font-bold">Posible causa: carga de gas baja o filtros obstruidos</p>
-                <p className="mt-2 text-sm leading-6 text-slate-600">El técnico confirmará el diagnóstico en el domicilio antes de avanzar.</p>
-              </div>
-              <div className="grid gap-3">{steps.map((step, index) => <div key={step} className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3"><span className="grid h-8 w-8 place-items-center rounded-full bg-lysto-blue text-sm font-black text-white">{index + 1}</span><span className="text-sm font-semibold text-slate-700">{step}</span></div>)}</div>
-            </div>
-          </Card>
-        </section>
-      </main>
-    </PublicShell>
-  )
+  return <PublicShell><main>
+    <section className="m-container m-hero">
+      <div className="m-hero-copy"><h1>Tu casa,<br className="m-hero-break"/> en<br className="m-hero-break"/> <span>buenas manos.</span></h1><p className="m-hero-intro">Nos ocupamos del mantenimiento de tu hogar con nuestro equipo de especialistas. Vos seguís con tu día.</p><div className="m-actions"><RequestLink/><Link href="/solucion#como-funciona" className="m-text-link">Conocé cómo funciona <ArrowUpRight size={16} aria-hidden="true"/></Link></div><TrustLine/></div>
+      <div className="m-hero-visual"><HomeScene/></div><div className="m-hero-note"><i aria-hidden="true"/> Aire acondicionado · Buenos Aires</div>
+    </section>
+    <div className="m-container m-service-strip" aria-label="Encontrá tu servicio">{[
+      { href: 'reparacion', label: 'Reparación', detail: 'Volvé a disfrutar tu comodidad.', icon: Wrench },
+      { href: 'mantenimiento', label: 'Mantenimiento', detail: 'Tu equipo, bien todo el año.', icon: Sparkles },
+      { href: 'instalacion', label: 'Instalación', detail: 'El clima ideal empieza acá.', icon: AirVent }
+    ].map(({href,label,detail,icon: Icon}) => <Link href={`/solucion#${href}`} key={href}><Icon strokeWidth={1.5} aria-hidden="true"/><div><strong>{label}</strong><small>{detail}</small></div><ArrowUpRight className="m-strip-arrow" aria-hidden="true"/></Link>)}</div>
+    <section className="m-container m-home-intro" aria-labelledby="home-value-title">
+      <div><span className="m-small-label">Tu tranquilidad es parte del servicio.</span><h2 id="home-value-title">Cuidamos tu casa.<br/><span>Y la confianza que nos das.</span></h2></div>
+      <div><p>Tu hogar es donde descansás, compartís y hacés tu vida. Cuando necesita un arreglo, también necesitás saber a quién le estás abriendo la puerta.</p><p>En Lysto elegimos y aprobamos a las personas que trabajan con nuestro equipo. Sumamos personal calificado, precios claros y seguimiento para que el mantenimiento de tu casa tenga un respaldo de principio a fin.</p><Link className="m-text-link" href="/nosotros">Conocé qué hay detrás de Lysto <ArrowUpRight size={18} aria-hidden="true"/></Link></div>
+    </section>
+    <HomeTrust/>
+    <AirStory/>
+    <HomeCare/>
+    <HomeMethod/>
+    <section className="m-container m-process" id="como-funciona"><h2>Un problema menos.<br className="m-only-mobile"/> <span>Así de simple.</span></h2><div className="m-process-grid">{[
+      ['Contanos qué necesitás', 'Elegí el servicio y contanos qué pasa. Te guiamos paso a paso, desde tu celular.'],
+      ['Coordinamos el servicio', 'Revisá la propuesta, elegí disponibilidad y conocé al profesional asignado.'],
+      ['Disfrutá tu hogar', 'Seguí cada avance y guardá el trabajo realizado. Lysto te acompaña también después.']
+    ].map(([title,text],index) => <article className="m-process-step" key={title}><span className="m-step-number">{index + 1}</span><div><h3>{title}</h3><p>{text}</p></div></article>)}</div></section>
+
+    <section className="m-container m-coverage"><div><span className="m-small-label">Cerca de tu casa.</span><h2>Empezamos<br/>en Buenos Aires.</h2><p>Contanos dónde necesitás el servicio. Confirmamos la cobertura y disponibilidad para tu domicilio al hacer la solicitud.</p><Link href="/contacto" className="m-text-link">Consultar por mi zona <ArrowUpRight size={17} aria-hidden="true"/></Link></div><div className="m-coverage-visual"><div className="m-coverage-rings" aria-hidden="true"/><div className="m-coverage-place"><MapPin strokeWidth={1.5} aria-hidden="true"/><div><strong>Buenos Aires</strong><span>Tu próximo servicio, más cerca.</span></div></div></div></section>
+    <FaqSection/><ClosingCta/>
+  </main></PublicShell>
 }

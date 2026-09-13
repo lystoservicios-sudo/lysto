@@ -5,9 +5,10 @@ import type { AppRole } from './app-navigation-config'
 import { AppShellProvider } from './app-shell-provider'
 import { AppTopbar } from './app-topbar'
 import { MarketingHeader } from './marketing-header'
+import { MarketingFooter } from '@/components/marketing/shared'
 
 export function PublicShell({ children }: { children: ReactNode }) {
-  return <div className="min-h-screen bg-white"><MarketingHeader />{children}</div>
+  return <div className="m-site"><a href="#contenido" className="m-skip-link">Saltar al contenido</a><MarketingHeader /><div id="contenido" tabIndex={-1}>{children}</div><MarketingFooter /></div>
 }
 
 export async function AppShell({ children, role }: { children: ReactNode; role: AppRole }) {

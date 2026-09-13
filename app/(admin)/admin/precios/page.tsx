@@ -1,6 +1,4 @@
-import { PageScaffold } from '@/components/layout/page-scaffold'
-import { PricingConfigFormMock } from '@/components/business/forms'
+import { PricesPage } from '@/components/admin/admin-settings'
+import { ButtonLink } from '@/components/ui/button'
 
-export default function AdminPricingPage() {
-  return <PageScaffold title="Precios" eyebrow="Admin" description="Matriz de precio base, ajustes, prioridad, zonas y comisión."><PricingConfigFormMock /></PageScaffold>
-}
+export default function Page() { return <><div className="mb-5"><ButtonLink href="/admin/calculadora">Abrir calculadora de servicios</ButtonLink></div><PricesPage /></> }

@@ -18,6 +18,8 @@ as $$
   )::text;
 $$;
 
+-- Keep deterministic legacy fixture IDs; signup itself has a dedicated regression suite.
+alter table auth.users disable trigger lysto_signup_customer_profile;
 insert into auth.users (
   instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
   raw_app_meta_data, raw_user_meta_data, created_at, updated_at
@@ -30,6 +32,8 @@ values
   ('00000000-0000-0000-0000-000000000000', '30000000-0000-0000-0000-000000000005', 'authenticated', 'authenticated', 'no-permission@lysto.test', '', now(), '{"app_role":"admin"}', '{"permissions":["owner"]}', now(), now()),
   ('00000000-0000-0000-0000-000000000000', '30000000-0000-0000-0000-000000000006', 'authenticated', 'authenticated', 'admin-professional@lysto.test', '', now(), '{"app_role":"professional"}', '{}', now(), now()),
   ('00000000-0000-0000-0000-000000000000', '30000000-0000-0000-0000-000000000007', 'authenticated', 'authenticated', 'admin-customer@lysto.test', '', now(), '{"app_role":"customer"}', '{}', now(), now());
+
+alter table auth.users enable trigger lysto_signup_customer_profile;
 
 insert into public.profiles (id, auth_user_id, role, first_name, last_name, email)
 values
@@ -828,3 +832,4 @@ select throws_ok(
 reset role;
 select * from finish();
 rollback;
+

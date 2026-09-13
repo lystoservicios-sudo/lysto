@@ -1,0 +1,2194 @@
+{
+  "schemaVersion": 1,
+  "planId": "lysto-production-completion-2026-09-10",
+  "status": "blocked_external",
+  "createdFor": "Plan de implementación solicitado; ninguna tarea ejecutada al crear este registro.",
+  "planPath": "E:/Proyectos/GitHub/Lysto-production-readiness/docs/plans/2026-09-10-production-completion.md",
+  "acceptancePath": "E:/Proyectos/GitHub/Lysto-production-readiness/docs/plans/2026-09-10-production-acceptance.md",
+  "auditPath": "E:/Proyectos/GitHub/Lysto-production-readiness/docs/audits/2026-09-10-cto-production-readiness.md",
+  "databaseExecutionPolicy": {
+    "mode": "remote_only",
+    "setBy": "user",
+    "setAt": "2026-09-12",
+    "rule": "Do not start or use local Supabase or Docker. The connected remote project is dqonlqcurvjnjgsczevu and is classified as PRODUCTION. Remote migrations and SQL verification use the permanent owner-authorized management PAT, explicit baseline guards and transactional rollback for fixtures.",
+    "supersedes": "Any task nextAction that says to wait for or use local Docker/Supabase."
+  },
+  "remoteSupabaseAudit": {
+    "checkedAt": "2026-09-12",
+    "projectRef": "dqonlqcurvjnjgsczevu",
+    "classification": "PRODUCTION",
+    "availability": "ACTIVE_HEALTHY",
+    "appliedMigrations": 59,
+    "lastMigration": "20260913003500",
+    "repositoryMigrations": 62,
+    "pendingMigrations": 3,
+    "publicTables": 65,
+    "publicViews": 0,
+    "publicTablesWithRls": 65,
+    "publicTablesWithoutRls": 0,
+    "publicPolicies": 159,
+    "privateTables": 4,
+    "authUsers": 3,
+    "storageObjects": 0,
+    "estimatedDomainRows": 0,
+    "backup": "UNAVAILABLE_FREE_PLAN",
+    "cliAccess": "PERMANENT_MANAGEMENT_PAT_ACTIVE",
+    "passwordMinLength": 12,
+    "databaseTestSuites": 28,
+    "databaseTestStatus": "PASS_REMOTE_ROLLED_BACK",
+    "securityAdvisorErrors": 0,
+    "evidence": "docs/release/remote-supabase-audit-2026-09-12.md"
+  },
+  "baseline": {
+    "auditReferenceCommit": "6bbabd3",
+    "includesUncommittedWork": true,
+    "executionCommit": "2d1936c7db150832b96b196c13f990501463c21f",
+    "snapshotHash": "78e4627223acba17868dd509b2833c950f563bd5",
+    "environment": "isolated-local-worktree"
+  },
+  "staging": {
+    "projectRef": "obksyzasmfwcbbksesqt",
+    "classification": "STAGING",
+    "production": false,
+    "availability": "ACTIVE_HEALTHY",
+    "origin": "https://lysto-staging-preview.vercel.app",
+    "candidateCommit": "ff9925959eab64dd40362e4aaff7bc6114a4ad6b",
+    "deploymentId": "dpl_BkgTPU5Nurei2dp8Q7DTMPvQEURN",
+    "appliedMigrations": 62,
+    "e2e": "PASS_36_OF_36_ZERO_OMITTED",
+    "syntheticAuthUsersRemaining": 0,
+    "evidence": "docs/release/staging-acceptance.md",
+    "load": "PASS_SMOKE_PEAK_DOUBLE_PEAK_BURST_SUSTAINED_RECOVERY"
+  },
+  "currentMilestone": "STAGING_AUTOMATED_ACCEPTANCE_AND_LOAD_COMPLETE_EXTERNAL_GATES_PENDING",
+  "nextTask": "T37",
+  "recommendedOrder": [
+    "T00",
+    "T01",
+    "T02",
+    "T03",
+    "T04",
+    "T05",
+    "T06",
+    "T33",
+    "T07",
+    "T10",
+    "T12",
+    "T08",
+    "T13",
+    "T09",
+    "T11",
+    "T14",
+    "T24",
+    "T15",
+    "T16",
+    "T17",
+    "T18",
+    "T19",
+    "T30",
+    "T20",
+    "T32",
+    "T21",
+    "T22",
+    "T23",
+    "T25",
+    "T26",
+    "T27",
+    "T28",
+    "T29",
+    "T31",
+    "T35",
+    "T34",
+    "T36",
+    "T37",
+    "T38",
+    "T39"
+  ],
+  "statusDefinitions": {
+    "pending": "Sin ejecutar/verificar para este plan",
+    "in_progress": "Trabajo iniciado",
+    "implemented": "Código/artefacto creado; aceptación pendiente",
+    "verified": "Criterio y evidencia satisfechos",
+    "blocked_external": "Dependencia externa identificada; continuar otras tareas"
+  },
+  "tasks": [
+    {
+      "id": "T00",
+      "title": "Consolidar la línea base sin perder trabajo existente",
+      "dependencies": [],
+      "auditFindings": [
+        "B10"
+      ],
+      "ownerRole": "Agente técnico",
+      "status": "verified",
+      "currentStep": null,
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "evidence": [
+        "docs/release/baseline-manifest.json"
+      ],
+      "commit": null,
+      "blockedBy": [],
+      "nextAction": "Conservar snapshot; compilaciones de release verificadas en T02.",
+      "deviations": []
+    },
+    {
+      "id": "T01",
+      "title": "Registrar decisiones y dependencias externas del lanzamiento",
+      "dependencies": [
+        "T00"
+      ],
+      "auditFindings": [
+        "B02",
+        "B08",
+        "B09",
+        "B10"
+      ],
+      "ownerRole": "Agente + dirección/operaciones/finanzas",
+      "status": "verified",
+      "currentStep": null,
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "evidence": [
+        "docs/release/decision-register.md",
+        "docs/release/environment-register.md"
+      ],
+      "commit": null,
+      "blockedBy": [],
+      "nextAction": "Mantener decisiones pending hasta recibir evidencia; actualizar D04 con respuesta.",
+      "deviations": []
+    },
+    {
+      "id": "T02",
+      "title": "Actualizar dependencias y verificar cadena de suministro",
+      "dependencies": [
+        "T00"
+      ],
+      "auditFindings": [
+        "B07",
+        "B10"
+      ],
+      "ownerRole": "Agente técnico",
+      "status": "verified",
+      "currentStep": null,
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "evidence": [
+        "docs/release/vendor-provenance.json",
+        "docs/release/dependency-review.md",
+        "output/production-readiness/dependencies-final.json",
+        "output/production-readiness/updated-windows-checks.json",
+        "output/production-readiness/image-runtime-after.log",
+        "docs/release/dependency-verification.json"
+      ],
+      "commit": null,
+      "blockedBy": [],
+      "nextAction": "Aceptación local verificada. Continuar T04; no habilita lanzamiento.",
+      "deviations": []
+    },
+    {
+      "id": "T03",
+      "title": "Reproducir esquema completo y reconciliar migraciones",
+      "dependencies": [
+        "T00"
+      ],
+      "auditFindings": [
+        "B10"
+      ],
+      "ownerRole": "Agente de backend",
+      "status": "verified",
+      "currentStep": null,
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "evidence": [
+        "output/production-readiness/database-clean-tests.log",
+        "output/production-readiness/database-comparison.json",
+        "output/production-readiness/database-lint.json",
+        "docs/release/database-verification.json"
+      ],
+      "commit": null,
+      "blockedBy": [],
+      "nextAction": "Aceptación local verificada. Continuar T04; no habilita lanzamiento.",
+      "deviations": [
+        "Two independent fresh/upgrade runs reuse the same explicitly marked disposable local project; clean schema and history are captured before reset. No original/remote DB reset.",
+        "Generated public types are identical after LF normalization; existing file retained. No new migration justified by verified schema diff."
+      ]
+    },
+    {
+      "id": "T04",
+      "title": "Preparar pruebas integrales con identidades y datos aislados",
+      "dependencies": [
+        "T02",
+        "T03"
+      ],
+      "auditFindings": [
+        "B01",
+        "B08",
+        "B10"
+      ],
+      "ownerRole": "Agente + QA",
+      "status": "verified",
+      "currentStep": null,
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "evidence": [
+        "docs/release/test-environments.md",
+        "output/production-readiness/integration-guard-red.log",
+        "output/production-readiness/integration-guard-green.log",
+        "output/production-readiness/t04-integration-final.log",
+        "output/integration/98638ade-24c0-4580-85d2-997c263701bd/result.json",
+        "output/production-readiness/t04-playwright-list.log",
+        "docs/release/identity-and-lifecycle-verification.json",
+        "output/integration/c595fc10-443b-4b18-a563-bdab2a71ea17/result.json",
+        "output/production-readiness/t04-cleanup-integration.log",
+        "output/production-readiness/t04-public-key-green.log",
+        "output/production-readiness/t04-fixture-cleanup-green.log",
+        "output/production-readiness/t04-cleanup-types.log",
+        "output/production-readiness/t04-t06-lint-green.log"
+      ],
+      "commit": "62ed2c19eb4b84e6f13817d21b2bc0e6eceac743",
+      "blockedBy": [],
+      "nextAction": "Acceptance verified for the local checkpoint. Preserve controls and extend coverage through dependent tasks.",
+      "deviations": []
+    },
+    {
+      "id": "T05",
+      "title": "Definir un solo contrato de servicio y sus invariantes",
+      "dependencies": [
+        "T01",
+        "T03"
+      ],
+      "auditFindings": [
+        "B03",
+        "B04",
+        "B06",
+        "B08"
+      ],
+      "ownerRole": "Agente de backend + operaciones",
+      "status": "verified",
+      "currentStep": null,
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "evidence": [
+        "docs/architecture/service-lifecycle.md",
+        "docs/architecture/adr-001-service-lifecycle-authority.md",
+        "docs/release/identity-and-lifecycle-verification.json",
+        "output/production-readiness/t04-t06-t33-domain.log",
+        "output/production-readiness/t04-t06-t33-unit-retry.log",
+        "output/production-readiness/t06-http-concurrency-green.log"
+      ],
+      "commit": "62ed2c19eb4b84e6f13817d21b2bc0e6eceac743",
+      "blockedBy": [],
+      "nextAction": "Acceptance verified for the local checkpoint. Preserve controls and extend coverage through dependent tasks.",
+      "deviations": []
+    },
+    {
+      "id": "T06",
+      "title": "Centralizar sesión, roles y protección del servidor",
+      "dependencies": [
+        "T04",
+        "T05"
+      ],
+      "auditFindings": [
+        "B01",
+        "B06"
+      ],
+      "ownerRole": "Agente de backend",
+      "status": "verified",
+      "currentStep": null,
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "evidence": [
+        "docs/release/identity-and-lifecycle-verification.json",
+        "output/production-readiness/t04-t06-t33-domain.log",
+        "output/production-readiness/t04-t06-t33-unit-retry.log",
+        "output/production-readiness/t06-http-concurrency-green.log"
+      ],
+      "commit": "62ed2c19eb4b84e6f13817d21b2bc0e6eceac743",
+      "blockedBy": [],
+      "nextAction": "Acceptance verified for the local checkpoint. Preserve controls and extend coverage through dependent tasks.",
+      "deviations": []
+    },
+    {
+      "id": "T07",
+      "title": "Completar registro, verificación, recuperación y logout",
+      "dependencies": [
+        "T06"
+      ],
+      "auditFindings": [
+        "B02"
+      ],
+      "ownerRole": "Agente full stack",
+      "status": "implemented",
+      "currentStep": 6,
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "evidence": [
+        "docs/release/customer-account-lifecycle.md",
+        "output/production-readiness/t07-admin-and-customer-integration.log",
+        "output/production-readiness/t07-final-pgtap.log",
+        "output/production-readiness/t07-local-final-unit.log",
+        "docs/release/account-and-upload-verification.json"
+      ],
+      "commit": null,
+      "blockedBy": [
+        "SMTP de staging y D08: documentos legales aprobados pendientes"
+      ],
+      "nextAction": "Verificaciones locales y build del commit 1fcc1c7 pasaron. Mantener pendientes externos de SMTP/D08; continuar T12.",
+      "deviations": []
+    },
+    {
+      "id": "T08",
+      "title": "MFA administrativo y revocación efectiva de accesos",
+      "dependencies": [
+        "T06",
+        "T07"
+      ],
+      "auditFindings": [
+        "B01",
+        "B02",
+        "B10"
+      ],
+      "ownerRole": "Agente de backend + titular de cuentas",
+      "status": "implemented",
+      "currentStep": 5,
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4,
+        6
+      ],
+      "evidence": [
+        "docs/release/session-assurance.md",
+        "docs/release/session-assurance-verification.json",
+        "docs/runbooks/account-recovery.md"
+      ],
+      "commit": "b35c4adb03461357db9eb70170102d490caa747d",
+      "blockedBy": [
+        "Acta de responsables/custodia y ensayo de recuperación del entorno real"
+      ],
+      "nextAction": "Código, migraciones y build verificados. Conservar acta externa de recuperación pendiente; continuar T13.",
+      "deviations": []
+    },
+    {
+      "id": "T09",
+      "title": "Administrar permisos y dejar auditoría confiable",
+      "dependencies": [
+        "T06",
+        "T08"
+      ],
+      "auditFindings": [
+        "B01",
+        "B02",
+        "B06",
+        "B10"
+      ],
+      "ownerRole": "Agente de backend",
+      "status": "verified",
+      "currentStep": null,
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "evidence": [
+        "docs/release/admin-permissions.md",
+        "docs/release/admin-permissions-verification.json"
+      ],
+      "commit": "87c6e6db50ef1ebce071b13c33b76b7912b876e9",
+      "blockedBy": [],
+      "nextAction": "Conservar controles de autorización y auditoría en las mutaciones posteriores; continuar T11.",
+      "deviations": []
+    },
+    {
+      "id": "T10",
+      "title": "Subir, inspeccionar y consultar evidencia privada",
+      "dependencies": [
+        "T03",
+        "T04",
+        "T06"
+      ],
+      "auditFindings": [
+        "B09",
+        "B04"
+      ],
+      "ownerRole": "Agente full stack",
+      "status": "implemented",
+      "currentStep": 6,
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "evidence": [
+        "docs/release/private-uploads.md",
+        "output/production-readiness/t10-http-first.log",
+        "output/production-readiness/t10-pgtap-behavior-retry.log",
+        "output/production-readiness/t10-unit-first-green.log",
+        "docs/release/account-and-upload-verification.json"
+      ],
+      "commit": null,
+      "blockedBy": [
+        "D08: política de retención aprobada pendiente"
+      ],
+      "nextAction": "Verificaciones locales y build del commit 1fcc1c7 pasaron. Mantener pendientes externos de SMTP/D08; continuar T12.",
+      "deviations": []
+    },
+    {
+      "id": "T11",
+      "title": "Invitación, onboarding, aprobación y suspensión de profesionales",
+      "dependencies": [
+        "T07",
+        "T09",
+        "T10"
+      ],
+      "auditFindings": [
+        "B02",
+        "B09"
+      ],
+      "ownerRole": "Agente full stack + responsable de profesionales",
+      "status": "verified",
+      "currentStep": null,
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "evidence": [
+        "docs/release/professional-onboarding.md",
+        "docs/release/professional-onboarding-verification.json"
+      ],
+      "commit": "4613ae78f79b4b48bc5dacc3486b878be4c6efd5",
+      "blockedBy": [],
+      "nextAction": "Continuar T14; entrega de invitaciones en T24 y renovación documental en T28.",
+      "deviations": []
+    },
+    {
+      "id": "T12",
+      "title": "Repositorios y modelos de lectura sin datos ficticios",
+      "dependencies": [
+        "T05",
+        "T06"
+      ],
+      "auditFindings": [
+        "B03",
+        "B06"
+      ],
+      "ownerRole": "Agente full stack",
+      "status": "verified",
+      "currentStep": 6,
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "evidence": [
+        "docs/release/session-read-models.md",
+        "docs/release/read-models-verification.json"
+      ],
+      "commit": null,
+      "blockedBy": [],
+      "nextAction": "Consultas y modelos puros verificados en a6c279f. Conectar los consumidores en T27–T29 según la hoja de ruta.",
+      "deviations": []
+    },
+    {
+      "id": "T13",
+      "title": "Perfiles, direcciones y registro de equipos persistentes",
+      "dependencies": [
+        "T10",
+        "T12"
+      ],
+      "auditFindings": [
+        "B03",
+        "B04",
+        "B06"
+      ],
+      "ownerRole": "Agente full stack",
+      "status": "verified",
+      "currentStep": null,
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "evidence": [
+        "docs/release/customer-assets.md",
+        "docs/release/customer-assets-verification.json"
+      ],
+      "commit": "928676f05f6ff2b35865dc35fa46ab44a3e4b354",
+      "blockedBy": [],
+      "nextAction": "Conservar evidencia local; la aceptación del entorno real corresponde a T36. Continuar T09.",
+      "deviations": [
+        "Servicios y contratos agrupados en lib/customer-assets para compartir validaciones, paginación y control de versión entre perfil, direcciones y equipos.",
+        "Correcciones aditivas: compatibilidad office, correo Auth confirmado, fotos verificadas, archivado de dirección cotizada y vínculo a ubicación del servicio."
+      ]
+    },
+    {
+      "id": "T14",
+      "title": "Cerrar presupuestos, cobertura, tarifas y aceptación",
+      "dependencies": [
+        "T05",
+        "T09",
+        "T13"
+      ],
+      "auditFindings": [
+        "B03",
+        "B08"
+      ],
+      "ownerRole": "Agente de backend + finanzas",
+      "status": "implemented",
+      "currentStep": 6,
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "evidence": [
+        "docs/release/pricing-acceptance.md",
+        "docs/release/pricing-verification.json"
+      ],
+      "commit": "1f7eb5c40e4bd88b21fe4c3c78a4d3eaf6488403",
+      "blockedBy": [
+        "D05: aprobación de casos financieros reales"
+      ],
+      "nextAction": "Código y pruebas locales completos. Recibir D05 con casos financieros reales aprobados; continuar T24.",
+      "deviations": []
+    },
+    {
+      "id": "T15",
+      "title": "Agenda, capacidad y reprogramación verificables",
+      "dependencies": [
+        "T05",
+        "T12",
+        "T14"
+      ],
+      "auditFindings": [
+        "B03",
+        "B04"
+      ],
+      "ownerRole": "Agente backend + operaciones",
+      "status": "implemented",
+      "currentStep": 6,
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "evidence": [
+        "docs/plans/2026-09-12-t15-scheduling-capacity-design.md",
+        "docs/release/scheduling-verification.json"
+      ],
+      "commit": null,
+      "blockedBy": [
+        "Authenticated browser and HTTP acceptance requires isolated staging; 28 remote SQL suites already pass with rollback",
+        "D06: approved reschedule, cancellation and no-show policy"
+      ],
+      "nextAction": "Remote migration and SQL acceptance passed. Obtain D06 and execute the authenticated scheduling walkthrough in isolated staging.",
+      "deviations": [
+        "A preferred customer window remains on the service request; only job_schedule_reservations consumes professional capacity.",
+        "Two-party rescheduling records both approvals and never changes quote, scope or payment fields."
+      ]
+    },
+    {
+      "id": "T16",
+      "title": "Asignación, propuesta y aceptación con recuperación",
+      "dependencies": [
+        "T11",
+        "T14",
+        "T15"
+      ],
+      "auditFindings": [
+        "B03",
+        "B04",
+        "B06"
+      ],
+      "ownerRole": "Agente backend + operaciones",
+      "status": "implemented",
+      "currentStep": 6,
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "evidence": [
+        "docs/plans/2026-09-12-t16-assignment-offer-design.md",
+        "docs/release/assignment-offer-verification.json"
+      ],
+      "commit": null,
+      "blockedBy": [
+        "Authenticated assignment recovery walkthrough requires isolated staging; remote migration and SQL acceptance passed",
+        "D06: approved offer duration and operational exception policy",
+        "T18: active checkout reconciliation before reassignment"
+      ],
+      "nextAction": "Obtain D06, reconcile active checkout behavior with T18 and execute assignment recovery in isolated staging.",
+      "deviations": [
+        "Ranking is advisory; create_assignment_offer repeats all eligibility and capacity checks inside the write transaction.",
+        "Offer expiry defaults in the UI to 30 minutes and is bounded by the database to 5–120 minutes pending D06."
+      ]
+    },
+    {
+      "id": "T17",
+      "title": "Consolidar OAuth, checkout y ledger de pagos",
+      "dependencies": [
+        "T04",
+        "T08",
+        "T14",
+        "T16"
+      ],
+      "auditFindings": [
+        "B08",
+        "B07"
+      ],
+      "ownerRole": "Agente backend",
+      "status": "implemented",
+      "currentStep": 6,
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "evidence": [
+        "docs/architecture/payment-invariants.md",
+        "docs/release/payment-runtime-verification.json"
+      ],
+      "commit": null,
+      "blockedBy": [
+        "Provider-backed payment behavior requires the isolated Mercado Pago sandbox and staging identities",
+        "D11/T36: real Mercado Pago sandbox ownership and acceptance evidence"
+      ],
+      "nextAction": "Database migration and SQL controls pass remotely. Complete MP01–MP12 in isolated staging after D11 identifies the official accounts.",
+      "deviations": [
+        "No payment_reconciliation_guards migration was generated because review found no missing schema invariant; runtime renewal was refactored instead.",
+        "No real provider call, OAuth connection or payment was made during local implementation."
+      ]
+    },
+    {
+      "id": "T18",
+      "title": "Operación financiera, devoluciones y sustitución de técnico",
+      "dependencies": [
+        "T09",
+        "T16",
+        "T17"
+      ],
+      "auditFindings": [
+        "B04",
+        "B08"
+      ],
+      "ownerRole": "Agente + finanzas/operaciones",
+      "status": "implemented",
+      "currentStep": 6,
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "evidence": [
+        "docs/plans/2026-09-12-t18-financial-exceptions-design.md",
+        "docs/runbooks/refunds-and-reassignment.md",
+        "docs/release/financial-exceptions-verification.json"
+      ],
+      "commit": null,
+      "blockedBy": [
+        "Provider-backed refund and reconciliation tests require isolated staging and authorized Mercado Pago accounts",
+        "D06: approved cancellation, no-show, refund and warranty economics",
+        "T36: authorized Mercado Pago test refund and canonical reconciliation"
+      ],
+      "nextAction": "Remote migration and SQL acceptance passed. Obtain D06 and execute authorized refund/reconciliation scenarios in staging.",
+      "deviations": [
+        "Ambiguous provider outcomes retain the same refund idempotency key and remain processing; no local success is inferred from an operator action.",
+        "Replacement creates a linked service and preserves the original checkout beneficiary and money snapshots.",
+        "No cancellation fee or automatic silence-based completion is implemented while D06 is pending."
+      ]
+    },
+    {
+      "id": "T19",
+      "title": "Trabajo en domicilio, diagnóstico y adicionales",
+      "dependencies": [
+        "T10",
+        "T13",
+        "T16",
+        "T17"
+      ],
+      "auditFindings": [
+        "B04",
+        "B08",
+        "B09"
+      ],
+      "ownerRole": "Agente full stack",
+      "status": "implemented",
+      "currentStep": 6,
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "evidence": [
+        "docs/plans/2026-09-12-t19-onsite-workflow-design.md",
+        "docs/release/onsite-workflow-verification.json"
+      ],
+      "commit": null,
+      "blockedBy": [
+        "Authenticated onsite workflow acceptance requires isolated staging; remote migration and SQL acceptance passed",
+        "D06: approved additional-work payment timing"
+      ],
+      "nextAction": "Obtain D06 and execute the onsite and additional-work walkthrough with isolated staging identities.",
+      "deviations": [
+        "Customer scope acceptance, rather than a professional-only button, moves the job into in_progress.",
+        "Accepted extras require canonical approved payment until D06 approves another rule."
+      ]
+    },
+    {
+      "id": "T20",
+      "title": "Cerrar técnicamente con informe, evidencia e historial",
+      "dependencies": [
+        "T05",
+        "T10",
+        "T13",
+        "T19"
+      ],
+      "auditFindings": [
+        "B04",
+        "B06",
+        "B09"
+      ],
+      "ownerRole": "Agente full stack",
+      "status": "implemented",
+      "currentStep": 6,
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "evidence": [
+        "docs/plans/2026-09-12-t20-job-closeout-design.md",
+        "docs/release/job-closeout-verification.json"
+      ],
+      "commit": null,
+      "blockedBy": [
+        "Browser timeout and interrupted-upload evidence requires isolated staging; remote migration and SQL acceptance passed",
+        "Staging browser timeout/reload evidence requires deployed staging"
+      ],
+      "nextAction": "Execute closeout, timeout and interrupted-upload recovery in isolated staging; the remote RPC boundary repair and SQL suite pass.",
+      "deviations": [
+        "Existing legacy reports are retained without fabricated evidence; the new photo constraint is NOT VALID for historical rows but enforced for every new closeout.",
+        "Corrections require a future audited amendment instead of mutating an accepted report."
+      ]
+    },
+    {
+      "id": "T21",
+      "title": "Conformidad, disputa y reseña independientes",
+      "dependencies": [
+        "T20"
+      ],
+      "auditFindings": [
+        "B04",
+        "B06"
+      ],
+      "ownerRole": "Agente full stack",
+      "status": "implemented",
+      "currentStep": 6,
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "evidence": [
+        "docs/plans/2026-09-12-t21-customer-closeout-design.md",
+        "docs/release/customer-closeout-verification.json"
+      ],
+      "commit": null,
+      "blockedBy": [
+        "Two-tab and authenticated confirmation evidence requires isolated staging; remote migration and SQL acceptance passed",
+        "D06: approved no-response escalation policy",
+        "Staging two-tab browser evidence requires deployment"
+      ],
+      "nextAction": "Obtain D06 and validate confirmation, dispute, review and two-tab behavior in isolated staging.",
+      "deviations": [
+        "No automatic confirmation by silence was added.",
+        "Reviews never complete jobs or change payment state."
+      ]
+    },
+    {
+      "id": "T22",
+      "title": "Comprobante verificable y publicación mínima",
+      "dependencies": [
+        "T20",
+        "T21"
+      ],
+      "auditFindings": [
+        "B05"
+      ],
+      "ownerRole": "Agente full stack",
+      "status": "implemented",
+      "currentStep": 6,
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "evidence": [
+        "docs/plans/2026-09-12-t22-public-receipt-design.md",
+        "docs/release/public-receipt-verification.json"
+      ],
+      "commit": null,
+      "blockedBy": [
+        "Hosting access-log redaction requires the designated platform; remote migration and SQL acceptance passed",
+        "Hosting URL-log redaction requires designated staging/production platform",
+        "D05/D08: fiscal-document and privacy approval"
+      ],
+      "nextAction": "Verify receipt delivery and hosting access-log redaction in isolated staging, then obtain D05/D08 approval.",
+      "deviations": [
+        "The public service receipt is explicitly not presented as a fiscal invoice.",
+        "The broad legacy receipt view is removed; the server RPC returns an allowlisted projection."
+      ]
+    },
+    {
+      "id": "T23",
+      "title": "Reclamos, garantías, calidad y seguimiento de excepciones",
+      "dependencies": [
+        "T09",
+        "T13",
+        "T18",
+        "T21"
+      ],
+      "auditFindings": [
+        "B04",
+        "B06",
+        "B09"
+      ],
+      "ownerRole": "Agente full stack + soporte/calidad",
+      "status": "implemented",
+      "currentStep": 6,
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "evidence": [
+        "docs/plans/2026-09-12-t23-support-warranty-design.md",
+        "docs/release/support-warranty-verification.json"
+      ],
+      "commit": null,
+      "blockedBy": [
+        "Role and communication-failure walkthrough requires isolated staging; remote migration and SQL acceptance passed",
+        "D02/D06: support operating hours and SLA ratification",
+        "Staging role and communication-failure walkthrough requires designated environment"
+      ],
+      "nextAction": "Ratify D02/D06 and validate support roles, SLA timeline and communication failures in isolated staging.",
+      "deviations": [
+        "Expired or different-problem claims remain support cases without promising warranty.",
+        "Approved warranty revisits are linked to the original job with billing_policy=warranty_no_charge."
+      ]
+    },
+    {
+      "id": "T24",
+      "title": "Notificaciones y worker confiable de outbox",
+      "dependencies": [
+        "T03",
+        "T06",
+        "T09"
+      ],
+      "auditFindings": [
+        "B09",
+        "B10"
+      ],
+      "ownerRole": "Agente backend",
+      "status": "implemented",
+      "currentStep": 6,
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "evidence": [
+        "docs/plans/2026-09-12-t24-notification-delivery-design.md",
+        "docs/release/notification-delivery-verification.json",
+        "docs/runbooks/notification-delivery.md",
+        "47 targeted unit tests, 5 test-environment checks, typecheck and targeted lint passed"
+      ],
+      "commit": null,
+      "blockedBy": [
+        "Durable scheduler, sender and reception evidence requires the designated isolated staging environment",
+        "D06/T36: approved sender, DNS, sandbox reception and durable scheduler evidence"
+      ],
+      "nextAction": "Remote migrations and SQL acceptance passed. Configure the approved sender and scheduler in staging and demonstrate retry, suppression and dead-letter recovery.",
+      "deviations": [
+        "T24 implementation is complete; staging sender and scheduler acceptance remains external."
+      ]
+    },
+    {
+      "id": "T25",
+      "title": "Historial, mantenimientos y seguimiento técnico",
+      "dependencies": [
+        "T13",
+        "T20",
+        "T23",
+        "T24"
+      ],
+      "auditFindings": [
+        "B03",
+        "B06",
+        "B09"
+      ],
+      "ownerRole": "Agente full stack",
+      "status": "implemented",
+      "currentStep": 6,
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "evidence": [
+        "docs/plans/2026-09-12-t25-maintenance-history-design.md",
+        "docs/release/maintenance-history-verification.json"
+      ],
+      "commit": null,
+      "blockedBy": [
+        "Real reminder delivery requires the designated isolated staging environment",
+        "D12: automated commercial reminder decision",
+        "Staging reminder worker execution requires designated environment"
+      ],
+      "nextAction": "After D12, validate one real reminder delivery and recovery path in isolated staging; remote migration and SQL acceptance passed.",
+      "deviations": [
+        "Maintenance starts as a customer-confirmed draft and never creates a reservation or payment automatically.",
+        "Open quality or warranty cases suppress maintenance promotion and pending reminders."
+      ]
+    },
+    {
+      "id": "T26",
+      "title": "Consolidar y retirar todos los contratos API heredados",
+      "dependencies": [
+        "T06",
+        "T11",
+        "T14",
+        "T16",
+        "T18",
+        "T19",
+        "T20",
+        "T21",
+        "T23",
+        "T24",
+        "T25"
+      ],
+      "auditFindings": [
+        "B01",
+        "B06"
+      ],
+      "ownerRole": "Agente backend",
+      "status": "implemented",
+      "currentStep": 6,
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "evidence": [
+        "docs/architecture/api-inventory.md",
+        "docs/architecture/api-inventory.json",
+        "docs/release/api-inventory-verification.json"
+      ],
+      "commit": null,
+      "blockedBy": [
+        "The complete authenticated HTTP matrix requires isolated staging identities and lifecycle cleanup",
+        "Full 92-method HTTP matrix requires designated staging environment"
+      ],
+      "nextAction": "Execute the complete 92-method matrix in isolated staging and attach the sanitized run report.",
+      "deviations": [
+        "The original 36-route baseline grew to 92 exported methods; the AST-generated inventory is authoritative.",
+        "Ten legacy POST contracts return 410 with a canonical destination and never redirect request bodies.",
+        "Diagnosis remains an authenticated, rate-limited preliminary calculation with persisted=false."
+      ]
+    },
+    {
+      "id": "T27",
+      "title": "Conectar toda la experiencia del cliente",
+      "dependencies": [
+        "T07",
+        "T12",
+        "T13",
+        "T14",
+        "T18",
+        "T21",
+        "T22",
+        "T23",
+        "T25"
+      ],
+      "auditFindings": [
+        "B03",
+        "B04",
+        "B05"
+      ],
+      "ownerRole": "Agente full stack",
+      "status": "implemented",
+      "currentStep": 6,
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "evidence": [
+        "docs/release/customer-live-pages-verification.json",
+        "tests/integration/customer-pages.test.ts",
+        "28 focused customer unit tests, 174 domain tests, typecheck and lint passed"
+      ],
+      "commit": null,
+      "blockedBy": [
+        "Authenticated page and recovery walkthrough requires isolated staging",
+        "Complete mobile and reload walkthrough requires designated staging"
+      ],
+      "nextAction": "Complete the customer mobile, reload and interrupted-session walkthrough in isolated staging.",
+      "deviations": [
+        "Existing connected customer asset, payment, quote and maintenance surfaces were reviewed instead of duplicated.",
+        "Customer history uses cursor pages of 25; the dashboard uses a bounded recent summary."
+      ]
+    },
+    {
+      "id": "T28",
+      "title": "Conectar la experiencia móvil del profesional",
+      "dependencies": [
+        "T11",
+        "T12",
+        "T15",
+        "T16",
+        "T18",
+        "T19",
+        "T20",
+        "T23",
+        "T25"
+      ],
+      "auditFindings": [
+        "B02",
+        "B03",
+        "B04"
+      ],
+      "ownerRole": "Agente full stack",
+      "status": "implemented",
+      "currentStep": 6,
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "evidence": [
+        "docs/release/professional-live-pages-verification.json",
+        "tests/integration/professional-pages.test.ts",
+        "10 focused professional tests, typecheck and lint passed"
+      ],
+      "commit": null,
+      "blockedBy": [
+        "Authenticated page and interrupted-network walkthrough requires isolated staging",
+        "D07: approved documentary expiry, renewal and reactivation policy",
+        "Complete mobile and interrupted-network walkthrough requires designated staging"
+      ],
+      "nextAction": "Execute the professional mobile recovery walkthrough and the approved D07 renewal policy in isolated staging.",
+      "deviations": [
+        "Training remains non-persisted reference material and explicitly does not represent certification.",
+        "The professional interface consumes existing canonical workflow APIs rather than duplicating mutations in page components."
+      ]
+    },
+    {
+      "id": "T29",
+      "title": "Convertir administración en consola operativa completa",
+      "dependencies": [
+        "T09",
+        "T12",
+        "T14",
+        "T15",
+        "T16",
+        "T18",
+        "T23",
+        "T24",
+        "T27",
+        "T28"
+      ],
+      "auditFindings": [
+        "B03",
+        "B04",
+        "B08",
+        "B09"
+      ],
+      "ownerRole": "Agente full stack + operadores",
+      "status": "implemented",
+      "currentStep": 6,
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "evidence": [
+        "docs/release/admin-action-inventory.md",
+        "docs/release/admin-operations-verification.json",
+        "docs/runbooks/daily-operations.md",
+        "tests/admin-ui.vitest.test.tsx"
+      ],
+      "commit": null,
+      "blockedBy": [
+        "Human operator UAT requires isolated staging and named participants; remote migration and SQL acceptance passed",
+        "D02: approved staffing, SLA and escalation policy",
+        "D03: approved launch catalog",
+        "Human UAT with two operators, finance and quality"
+      ],
+      "nextAction": "After D02/D03 approval, execute the documented shift-handoff UAT with two operators, finance and quality in staging.",
+      "deviations": [
+        "Operational reports currently expose live queue totals and page-scoped urgency/SLA measures; commercial period/zone KPIs remain gated by D01/D03/D05.",
+        "No administrative mutation bypass or production configuration change was introduced."
+      ]
+    },
+    {
+      "id": "T30",
+      "title": "Observabilidad, límites de uso y controles de producción",
+      "dependencies": [
+        "T06",
+        "T09",
+        "T17",
+        "T24"
+      ],
+      "auditFindings": [
+        "B01",
+        "B07",
+        "B10"
+      ],
+      "ownerRole": "Agente técnico",
+      "status": "implemented",
+      "currentStep": 6,
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "evidence": [
+        "output/production-readiness/t13-advisors-summary.json",
+        "docs/plans/2026-09-12-t30-production-controls-design.md",
+        "docs/runbooks/alerts.md",
+        "docs/release/production-controls-verification.json"
+      ],
+      "commit": null,
+      "blockedBy": [
+        "Alert destinations and thresholds require the designated staging platform",
+        "Staging alert destinations and thresholds require deployment environment"
+      ],
+      "nextAction": "Remote migration and SQL controls pass. Wire approved alert destinations in staging and demonstrate one end-to-end alert.",
+      "deviations": [
+        "Receipt rate limiting is defined here and will be attached when the public receipt endpoint is implemented in T21.",
+        "No production environment or alert destination was modified."
+      ]
+    },
+    {
+      "id": "T31",
+      "title": "Condiciones comerciales, privacidad y formación de operadores",
+      "dependencies": [
+        "T01",
+        "T18",
+        "T23",
+        "T29"
+      ],
+      "auditFindings": [
+        "B08",
+        "B09",
+        "B10"
+      ],
+      "ownerRole": "Agente prepara; dirección/legal/contabilidad/operaciones validan",
+      "status": "implemented",
+      "currentStep": 6,
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "evidence": [
+        "docs/operations/service-policies.md",
+        "docs/operations/privacy-requests.md",
+        "docs/operations/operator-handbook.md",
+        "docs/release/policy-readiness-verification.json",
+        "tests/policy-pages.vitest.test.tsx"
+      ],
+      "commit": null,
+      "blockedBy": [
+        "Human policy approval and training require named participants; remote migration and SQL acceptance passed",
+        "D02/D05/D06/D08 human approvals are pending",
+        "Operator and finance training/UAT requires named participants"
+      ],
+      "nextAction": "Obtain named D02/D05/D06/D08 approvals and training evidence before enabling registration or publishing a definitive version.",
+      "deviations": [
+        "Public policy routes identify themselves as unapproved drafts and are noindex; registration remains gated by the existing approved-version configuration.",
+        "No legal compliance claim or human approval was inferred."
+      ]
+    },
+    {
+      "id": "T32",
+      "title": "Backups, custodia de claves y restauración ensayada",
+      "dependencies": [
+        "T03",
+        "T17",
+        "T24",
+        "T30"
+      ],
+      "auditFindings": [
+        "B08",
+        "B09",
+        "B10"
+      ],
+      "ownerRole": "Agente técnico + titular de infraestructura",
+      "status": "implemented",
+      "currentStep": 5,
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "evidence": [
+        "docs/runbooks/disaster-recovery.md",
+        "docs/runbooks/secret-rotation.md",
+        "docs/release/restore-manifest.example.json",
+        "docs/release/restore-verification.json"
+      ],
+      "commit": null,
+      "blockedBy": [
+        "D04: designated isolated restore project and provider inventory",
+        "D09: approved RPO/RTO, backup retention and accountable custodians",
+        "A real restore must run in a designated isolated project; production remains on a Free plan without backups"
+      ],
+      "nextAction": "Restore a real DB/Auth/Storage/config backup into the designated non-production target, run verify-restore with synthetic login and encryption canary, record measured RPO/RTO, then obtain D09 sign-off; continue T21 meanwhile.",
+      "deviations": [
+        "The disposable integration validates the verifier itself but is not represented as a restore drill.",
+        "No backup, secret, remote environment or source database was modified."
+      ]
+    },
+    {
+      "id": "T33",
+      "title": "CI completa y gates de release que fallen ante evidencia faltante",
+      "dependencies": [
+        "T02",
+        "T03",
+        "T04",
+        "T05"
+      ],
+      "auditFindings": [
+        "B07",
+        "B10"
+      ],
+      "ownerRole": "Agente técnico",
+      "status": "implemented",
+      "currentStep": 6,
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        7
+      ],
+      "evidence": [
+        "docs/release/release-policy.md",
+        "output/production-readiness/t04-t06-t33-domain.log",
+        "output/production-readiness/t04-t06-t33-unit-retry.log"
+      ],
+      "commit": null,
+      "blockedBy": [
+        "Actual GitHub run and branch protection evidence",
+        "Protected CI attestation signer and external trust policy",
+        "Approved staging identity"
+      ],
+      "nextAction": "Local implementation and reviews passed. Validate actual remote CI and protected promotion configuration when the release environment is identified.",
+      "deviations": []
+    },
+    {
+      "id": "T34",
+      "title": "E2E de tres roles, aislamiento y experiencia móvil",
+      "dependencies": [
+        "T26",
+        "T27",
+        "T28",
+        "T29",
+        "T30",
+        "T31",
+        "T33"
+      ],
+      "auditFindings": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B05",
+        "B06",
+        "B08",
+        "B09",
+        "B10"
+      ],
+      "ownerRole": "Agente + QA",
+      "status": "implemented",
+      "currentStep": 6,
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "evidence": [
+        "tests/e2e/auth-access.spec.ts",
+        "tests/e2e/customer-production.spec.ts",
+        "tests/e2e/professional-production.spec.ts",
+        "tests/e2e/admin-production.spec.ts",
+        "tests/e2e/service-lifecycle.spec.ts",
+        "tests/e2e/financial-exceptions.spec.ts",
+        "tests/e2e/accessibility.spec.ts",
+        "tests/qa/manual-release-checklist.md",
+        "docs/release/e2e-verification.json"
+      ],
+      "commit": null,
+      "blockedBy": [
+        "Physical phone and named customer/professional/operator/finance/quality UAT"
+      ],
+      "nextAction": "Complete physical-phone and named participant UAT; automated remote acceptance already passed 36/36 with zero omitted.",
+      "deviations": [
+        "All seven mandatory files passed remotely across Chromium desktop/mobile and WebKit mobile; emulation does not replace physical-phone UAT.",
+        "Failure artifacts use screenshots/video with MFA visually masked; traces are disabled to avoid recording credentials."
+      ]
+    },
+    {
+      "id": "T35",
+      "title": "Carga, latencia, capacidad y presupuesto operativo",
+      "dependencies": [
+        "T12",
+        "T29",
+        "T30",
+        "T33"
+      ],
+      "auditFindings": [
+        "B10"
+      ],
+      "ownerRole": "Agente técnico + dirección",
+      "status": "implemented",
+      "currentStep": 6,
+      "completedSteps": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "evidence": [
+        "output/production-readiness/t13-advisors-summary.json",
+        "tests/load/service-platform.js",
+        "docs/release/performance-and-cost.md",
+        "docs/release/performance-verification.json",
+        "output/load/2026-09-13T03-41-59.186Z/sustained.json",
+        "output/load/2026-09-13T06-04-05.026Z/burst.json",
+        "output/load/2026-09-13T06-07-01.149Z/double_peak.json",
+        "output/load/2026-09-13T06-07-01.149Z/database-after.json"
+      ],
+      "commit": "ff9925959eab64dd40362e4aaff7bc6114a4ad6b",
+      "blockedBy": [
+        "D01 expected capacity approval",
+        "D10 SLO and budget approval"
+      ],
+      "nextAction": "Obtain D01/D10 approval for the measured capacity envelope, SLO and monthly budget; technical staging profiles and recovery already pass.",
+      "deviations": [
+        "The documented base/2x/5x volumes are explicit planning hypotheses, not approved capacity.",
+        "Current official list prices were recorded with source URLs; Mercado Pago, maps, monitoring, taxes and human operation remain variable rather than being treated as zero.",
+        "The 60-minute profile ran on the immediately preceding staging release; the final runtime candidate removed duplicate API work and passed the more demanding double-peak, burst and recovery profiles."
+      ]
+    },
+    {
+      "id": "T36",
+      "title": "Staging completo y aceptación del proveedor",
+      "dependencies": [
+        "T01",
+        "T17",
+        "T18",
+        "T24",
+        "T30",
+        "T32",
+        "T34",
+        "T35"
+      ],
+      "auditFindings": [
+        "B08",
+        "B09",
+        "B10"
+      ],
+      "ownerRole": "Agente técnico + titular Mercado Pago + QA",
+      "status": "implemented",
+      "currentStep": 2,
+      "completedSteps": [
+        1,
+        3
+      ],
+      "evidence": [
+        "docs/release/staging-acceptance.md",
+        "docs/release/provider-acceptance.md",
+        "docs/release/staging-identity.example.json",
+        "docs/release/vercel-environment-audit-2026-09-12.md",
+        "scripts/test-e2e-staging.mjs",
+        "tests/tooling/staging-acceptance.test.mjs"
+      ],
+      "commit": null,
+      "blockedBy": [
+        "D04 accountable technical owner and alternate remain unnamed",
+        "D11 has no identified Mercado Pago application and official test accounts",
+        "D06/D10 sender, scheduler and alert destinations are not approved",
+        "T32 restore evidence and physical UAT remain incomplete"
+      ],
+      "nextAction": "Complete restore evidence, approved sender/scheduler/alerts and physical UAT; then execute MP01-MP12 with the official Mercado Pago owner and test accounts.",
+      "deviations": [
+        "Preview was isolated onto Supabase staging and passed health plus 36/36 automated E2E.",
+        "No email, payment, refund or OAuth provider action was executed."
+      ]
+    },
+    {
+      "id": "T37",
+      "title": "Preparar y ejecutar puesta en producción controlada",
+      "dependencies": [
+        "T31",
+        "T32",
+        "T33",
+        "T34",
+        "T35",
+        "T36"
+      ],
+      "auditFindings": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B05",
+        "B06",
+        "B07",
+        "B08",
+        "B09",
+        "B10"
+      ],
+      "ownerRole": "Agente técnico + dirección/titulares",
+      "status": "blocked_external",
+      "currentStep": 4,
+      "completedSteps": [
+        1,
+        2,
+        3
+      ],
+      "evidence": [
+        "docs/release/production-runbook.md",
+        "docs/release/go-no-go.md",
+        "docs/release/release-policy.md",
+        "docs/runbooks/disaster-recovery.md",
+        "scripts/create-release-manifest.mjs",
+        "tests/tooling/production-release-package.test.mjs"
+      ],
+      "commit": null,
+      "blockedBy": [
+        "G01-G15 do not yet have complete authenticated evidence for an exact production candidate",
+        "D01-D11 and the named GO/NO-GO signatories are pending",
+        "No approved production destination, deployment window or verified production backup exists",
+        "Any real financial test requires separate authorization with amount and recipients"
+      ],
+      "nextAction": "After T32-T36 external evidence and D01-D11 are complete, regenerate the manifest for the exact clean candidate, verify target pilot against protected trust, obtain signed GO, then execute steps 4-6 with both entry switches initially off.",
+      "deviations": [
+        "No deployment, migration, payment, refund, production switch or external account was changed.",
+        "The generated manifest is deliberately NO_GO until authenticated evidence is attached."
+      ]
+    },
+    {
+      "id": "T38",
+      "title": "Ejecutar piloto supervisado y cerrar defectos",
+      "dependencies": [
+        "T37"
+      ],
+      "auditFindings": [
+        "B03",
+        "B04",
+        "B08",
+        "B09",
+        "B10"
+      ],
+      "ownerRole": "Operaciones + finanzas + técnica",
+      "status": "blocked_external",
+      "currentStep": 1,
+      "completedSteps": [],
+      "evidence": [
+        "docs/release/pilot-report.md",
+        "docs/release/pilot-defects.md",
+        "docs/operations/operator-handbook.md",
+        "docs/runbooks/daily-operations.md",
+        "tests/tooling/pilot-readiness.test.mjs"
+      ],
+      "commit": null,
+      "blockedBy": [
+        "T37 cannot enable the pilot until G01-G15 and signed GO are complete",
+        "D01-D03 have no approved real participants, zone, schedule, capacity or support owners",
+        "A real pilot requires elapsed operating days and traceable customer services",
+        "G16 requires observed results, reconciled money and authenticated human acceptance"
+      ],
+      "nextAction": "After PILOT_ENABLED, run the approved sample for the real elapsed period, complete daily reconciliations, stop on S0 criteria, verify all corrected defects and collect G16 acceptance; do not infer results from templates.",
+      "deviations": [
+        "Prepared the report, defect register, daily controls and stop rules without simulating customers, services or elapsed days."
+      ]
+    },
+    {
+      "id": "T39",
+      "title": "Habilitar crecimiento y entregar mantenimiento sostenible",
+      "dependencies": [
+        "T38"
+      ],
+      "auditFindings": [
+        "B10"
+      ],
+      "ownerRole": "Dirección + técnica + operaciones",
+      "status": "blocked_external",
+      "currentStep": 3,
+      "completedSteps": [
+        1,
+        2,
+        4
+      ],
+      "evidence": [
+        "docs/operations/maintenance-calendar.md",
+        "docs/architecture/ownership-map.md",
+        "docs/release/production-handover.md",
+        "checks/HONEST_SYSTEM_STATUS.md",
+        "checks/IMPLEMENTATION_STATUS.md",
+        "checks/FINAL_SCOPE_MATRIX.md",
+        "checks/TEST_RESULTS.md",
+        "README.md",
+        "BLOCKERS.md",
+        "tests/tooling/maintenance-handover.test.mjs"
+      ],
+      "commit": null,
+      "blockedBy": [
+        "T38 and G16 require a completed real pilot before general production readiness",
+        "Code, database, infrastructure, payments, operations and privacy owners and backups are not named",
+        "D01-D12 and G01-G16 remain pending",
+        "Capacity growth cannot be approved without observed pilot results"
+      ],
+      "nextAction": "Complete staging/provider acceptance and the real pilot; assign named owners, prove backup/restore and verify the general target before signing the final handover.",
+      "deviations": [
+        "Reconciled all 40 tasks without converting external or unexecuted evidence into completion.",
+        "Prepared ownership, maintenance and handover artifacts with explicit pending assignees rather than invented names."
+      ]
+    }
+  ],
+  "decisions": [
+    {
+      "id": "D01",
+      "title": "Piloto y capacidad",
+      "ownerRole": "Dirección + operaciones",
+      "status": "pending",
+      "proposal": "Confirmar zona, fecha, cupo, profesionales activos y simultaneidad. Hipótesis inicial: 20 servicios completos, al menos 2 semanas, 3–5 profesionales y 1–2 operadores; son criterios propuestos, no compromisos aceptados.",
+      "value": null,
+      "approvedBy": null,
+      "approvedAt": null,
+      "evidence": []
+    },
+    {
+      "id": "D02",
+      "title": "Atención y responsables",
+      "ownerRole": "Operaciones",
+      "status": "pending",
+      "proposal": "Definir horarios, asignación de turno, SLA por severidad, canal de soporte, suplentes y escalamiento fuera de horario.",
+      "value": null,
+      "approvedBy": null,
+      "approvedAt": null,
+      "evidence": []
+    },
+    {
+      "id": "D03",
+      "title": "Oferta inicial",
+      "ownerRole": "Producto + operaciones",
+      "status": "pending",
+      "proposal": "Definir zonas, servicios incluidos, duración, equipamiento requerido, capacidad y restricciones. Publicar sólo combinaciones operables.",
+      "value": null,
+      "approvedBy": null,
+      "approvedAt": null,
+      "evidence": []
+    },
+    {
+      "id": "D04",
+      "title": "Entornos y hosting",
+      "ownerRole": "Responsable técnico",
+      "status": "pending",
+      "proposal": "Identificar proveedor real, proyectos separados de desarrollo/staging/producción, dominios, región, runtime, scheduler, accesos y facturación. No elegir por un archivo antiguo.",
+      "value": null,
+      "approvedBy": null,
+      "approvedAt": null,
+      "evidence": [
+        "docs/release/vercel-environment-audit-2026-09-12.md"
+      ]
+    },
+    {
+      "id": "D05",
+      "title": "Economía y facturación",
+      "ownerRole": "Dirección + finanzas",
+      "status": "pending",
+      "proposal": "Aprobar quién vende, quién factura, moneda, impuestos, comisiones, costo del proveedor, redondeo, promociones si existen y neto mínimo profesional. Los porcentajes actuales requieren validación comercial.",
+      "value": null,
+      "approvedBy": null,
+      "approvedAt": null,
+      "evidence": []
+    },
+    {
+      "id": "D06",
+      "title": "Excepciones del servicio",
+      "ownerRole": "Producto + operaciones + finanzas",
+      "status": "pending",
+      "proposal": "Aprobar cancelación por etapa, ausencia, rechazo, reprogramación, repuestos, adicionales y momento de pago, plazo de conformidad sin respuesta, garantías y revisitas. No completar automáticamente por silencio sin regla aprobada.",
+      "value": null,
+      "approvedBy": null,
+      "approvedAt": null,
+      "evidence": []
+    },
+    {
+      "id": "D07",
+      "title": "Habilitación profesional",
+      "ownerRole": "Operaciones + responsable legal",
+      "status": "pending",
+      "proposal": "Definir documentos, vencimientos, cualificación, acuerdo, formación obligatoria y suspensión. Responsable humano verifica lo que no puede validar el sistema.",
+      "value": null,
+      "approvedBy": null,
+      "approvedAt": null,
+      "evidence": []
+    },
+    {
+      "id": "D08",
+      "title": "Privacidad y políticas",
+      "ownerRole": "Dirección + responsable legal",
+      "status": "pending",
+      "proposal": "Aprobar términos, privacidad, retención por clase de dato, solicitudes de derechos, evidencias de servicio, tratamiento de fotos y proveedor de soporte. Registrar revisión de profesional competente.",
+      "value": null,
+      "approvedBy": null,
+      "approvedAt": null,
+      "evidence": []
+    },
+    {
+      "id": "D09",
+      "title": "Continuidad",
+      "ownerRole": "Técnica + dirección",
+      "status": "pending",
+      "proposal": "Aprobar pérdida máxima de datos y recuperación. Propuesta a demostrar: RPO ≤1 hora y RTO ≤4 horas. Incluir archivos, identidad, configuración y custodia de claves, además de DB.",
+      "value": null,
+      "approvedBy": null,
+      "approvedAt": null,
+      "evidence": []
+    },
+    {
+      "id": "D10",
+      "title": "Carga, observación y presupuesto",
+      "ownerRole": "Técnica + finanzas",
+      "status": "pending",
+      "proposal": "Aprobar volumen, SLO, alertas, cuotas y presupuesto mensual. Propuesta: p95 lectura ≤1 s, mutación ≤2 s y <1% 5xx en carga convenida, excluyendo duración del checkout externo que se mide separadamente.",
+      "value": null,
+      "approvedBy": null,
+      "approvedAt": null,
+      "evidence": []
+    },
+    {
+      "id": "D11",
+      "title": "Mercado Pago y aceptación",
+      "ownerRole": "Titular comercial + finanzas + técnica",
+      "status": "pending",
+      "proposal": "Identificar aplicación y cuentas; confirmar permisos comerciales, OAuth, ambientes y límites. Cobro/devolución real de prueba requiere autorización explícita con importe y destinatarios. Nunca pedir secretos en el registro.",
+      "value": null,
+      "approvedBy": null,
+      "approvedAt": null,
+      "evidence": []
+    },
+    {
+      "id": "D12",
+      "title": "Alcance opcional explícito",
+      "ownerRole": "Producto + dirección",
+      "status": "pending",
+      "proposal": "Aprobar sólo exclusiones justificadas: IA auxiliar, automatización avanzada de matching, nuevas zonas, recordatorios automáticos o formación no obligatoria. Mantener funciones nucleares, seguridad, dinero, historial y soporte. Una opción excluida se oculta coherentemente y se documenta; no devuelve éxito simulado.",
+      "value": null,
+      "approvedBy": null,
+      "approvedAt": null,
+      "evidence": []
+    }
+  ],
+  "releaseGates": [
+    {
+      "id": "G01",
+      "title": "Fuente reproducible",
+      "sourceTasks": [
+        "T00"
+      ],
+      "status": "pending",
+      "commit": null,
+      "environment": null,
+      "checkedAt": null,
+      "reviewer": null,
+      "evidence": []
+    },
+    {
+      "id": "G02",
+      "title": "Dependencias y secretos",
+      "sourceTasks": [
+        "T02"
+      ],
+      "status": "pending",
+      "commit": null,
+      "environment": null,
+      "checkedAt": null,
+      "reviewer": null,
+      "evidence": []
+    },
+    {
+      "id": "G03",
+      "title": "Base reproducible y permisos",
+      "sourceTasks": [
+        "T03",
+        "T04"
+      ],
+      "status": "pending",
+      "commit": null,
+      "environment": null,
+      "checkedAt": null,
+      "reviewer": null,
+      "evidence": []
+    },
+    {
+      "id": "G04",
+      "title": "Identidad y autorización",
+      "sourceTasks": [
+        "T06",
+        "T08",
+        "T09"
+      ],
+      "status": "pending",
+      "commit": null,
+      "environment": null,
+      "checkedAt": null,
+      "reviewer": null,
+      "evidence": []
+    },
+    {
+      "id": "G05",
+      "title": "Alta y cuentas",
+      "sourceTasks": [
+        "T07",
+        "T11"
+      ],
+      "status": "pending",
+      "commit": null,
+      "environment": null,
+      "checkedAt": null,
+      "reviewer": null,
+      "evidence": []
+    },
+    {
+      "id": "G06",
+      "title": "Solicitud hasta asignación",
+      "sourceTasks": [
+        "T05",
+        "T13",
+        "T14",
+        "T15",
+        "T16"
+      ],
+      "status": "pending",
+      "commit": null,
+      "environment": null,
+      "checkedAt": null,
+      "reviewer": null,
+      "evidence": []
+    },
+    {
+      "id": "G07",
+      "title": "Integridad financiera",
+      "sourceTasks": [
+        "T17",
+        "T18"
+      ],
+      "status": "pending",
+      "commit": null,
+      "environment": null,
+      "checkedAt": null,
+      "reviewer": null,
+      "evidence": []
+    },
+    {
+      "id": "G08",
+      "title": "Servicio y posventa",
+      "sourceTasks": [
+        "T10",
+        "T19",
+        "T20",
+        "T21",
+        "T22",
+        "T23",
+        "T25"
+      ],
+      "status": "pending",
+      "commit": null,
+      "environment": null,
+      "checkedAt": null,
+      "reviewer": null,
+      "evidence": []
+    },
+    {
+      "id": "G09",
+      "title": "Interfaces y APIs reales",
+      "sourceTasks": [
+        "T12",
+        "T26",
+        "T27",
+        "T28",
+        "T29"
+      ],
+      "status": "pending",
+      "commit": null,
+      "environment": null,
+      "checkedAt": null,
+      "reviewer": null,
+      "evidence": []
+    },
+    {
+      "id": "G10",
+      "title": "Calidad automatizada y móvil",
+      "sourceTasks": [
+        "T33",
+        "T34"
+      ],
+      "status": "pending",
+      "commit": null,
+      "environment": null,
+      "checkedAt": null,
+      "reviewer": null,
+      "evidence": []
+    },
+    {
+      "id": "G11",
+      "title": "Operación técnica",
+      "sourceTasks": [
+        "T24",
+        "T30"
+      ],
+      "status": "pending",
+      "commit": null,
+      "environment": null,
+      "checkedAt": null,
+      "reviewer": null,
+      "evidence": []
+    },
+    {
+      "id": "G12",
+      "title": "Capacidad y costo",
+      "sourceTasks": [
+        "T35"
+      ],
+      "status": "pending",
+      "commit": null,
+      "environment": null,
+      "checkedAt": null,
+      "reviewer": null,
+      "evidence": []
+    },
+    {
+      "id": "G13",
+      "title": "Restauración y claves",
+      "sourceTasks": [
+        "T32"
+      ],
+      "status": "pending",
+      "commit": null,
+      "environment": null,
+      "checkedAt": null,
+      "reviewer": null,
+      "evidence": []
+    },
+    {
+      "id": "G14",
+      "title": "Staging y proveedor",
+      "sourceTasks": [
+        "T36"
+      ],
+      "status": "pending",
+      "commit": null,
+      "environment": null,
+      "checkedAt": null,
+      "reviewer": null,
+      "evidence": []
+    },
+    {
+      "id": "G15",
+      "title": "Autorización y operación de lanzamiento",
+      "sourceTasks": [
+        "T31",
+        "T37"
+      ],
+      "status": "pending",
+      "commit": null,
+      "environment": null,
+      "checkedAt": null,
+      "reviewer": null,
+      "evidence": []
+    },
+    {
+      "id": "G16",
+      "title": "Resultados del piloto y mantenimiento",
+      "sourceTasks": [
+        "T38",
+        "T39"
+      ],
+      "status": "pending",
+      "commit": null,
+      "environment": null,
+      "checkedAt": null,
+      "reviewer": null,
+      "evidence": []
+    }
+  ],
+  "releaseTargets": {
+    "technical": [
+      "G01",
+      "G02",
+      "G03",
+      "G04",
+      "G05",
+      "G06",
+      "G07",
+      "G08",
+      "G09",
+      "G10",
+      "G11",
+      "G12",
+      "G13"
+    ],
+    "pilot": [
+      "G01",
+      "G02",
+      "G03",
+      "G04",
+      "G05",
+      "G06",
+      "G07",
+      "G08",
+      "G09",
+      "G10",
+      "G11",
+      "G12",
+      "G13",
+      "G14",
+      "G15"
+    ],
+    "general": [
+      "G01",
+      "G02",
+      "G03",
+      "G04",
+      "G05",
+      "G06",
+      "G07",
+      "G08",
+      "G09",
+      "G10",
+      "G11",
+      "G12",
+      "G13",
+      "G14",
+      "G15",
+      "G16"
+    ]
+  },
+  "inventoryBaseline": {
+    "pageFiles": 69,
+    "apiRouteFiles": 36,
+    "updateRequiredAfterImplementation": true
+  },
+  "checkpoint": {
+    "updatedAt": "2026-09-13T06:35:00.000Z",
+    "branch": "codex/production-readiness",
+    "commit": "7ebe393",
+    "filesChanged": [
+      "runtime candidate ff99259",
+      "staging SQL-only E2E fixture provisioning",
+      "T35 performance evidence",
+      "staging acceptance and handover records"
+    ],
+    "lastVerification": "CI run 34741236649 passed on runtime candidate ff99259. Protected staging at 62 migrations passed 36/36 E2E with zero omitted and zero synthetic identities remaining. T35 passed peak, double peak, burst, 60-minute sustained and recovery thresholds; post-recovery DB had zero waiting locks, long-running queries, deadlocks or conflicts.",
+    "unresolvedFailures": [
+      "Backup/restore, provider payment, physical-device UAT, branch protection and named human/operational/legal approvals remain pending. Production is 59/62 migrations and remains disabled."
+    ],
+    "nextCommand": "Finalize technical evidence CI, then obtain the external inputs for T37-T39 without enabling production traffic or real payments prematurely."
+  },
+  "events": [
+    {
+      "type": "plan_created",
+      "note": "Todas las tareas y gates se inicializan pendientes. Resultados anteriores pertenecen a la auditoría; no se imputan como ejecución del plan."
+    },
+    {
+      "type": "implementation_authorized",
+      "at": "2026-09-11T02:56:36.469Z",
+      "note": "Usuario autorizó implementación etapa por etapa. Snapshot local aislado; no autorización inferida para cobros reales."
+    },
+    {
+      "type": "tasks_verified",
+      "tasks": [
+        "T02",
+        "T03"
+      ],
+      "at": "2026-09-11T03:47:31.62Z",
+      "note": "Aceptación local y evidencias registradas. Ningún gate de lanzamiento promovido."
+    },
+    {
+      "type": "task_verified",
+      "task": "T04",
+      "at": "2026-09-11T05:07:20.414Z",
+      "note": "22 integration tests with real Auth and scoped cleanup, required report suites checked, guard red/green, types/lint and independent spec/quality reviews passed. No browser execution or launch gate credit."
+    },
+    {
+      "type": "roadmap_reconfirmed",
+      "at": "2026-09-11T05:07:20.416Z",
+      "note": "User explicitly kept the 40-task roadmap after discussing a smaller pilot and authorized continued implementation."
+    },
+    {
+      "type": "tasks_verified",
+      "tasks": [
+        "T05",
+        "T06"
+      ],
+      "at": "2026-09-11T05:25:48.929Z",
+      "note": "Specification and quality reviews passed; actual HTTP including concurrent refresh passed; isolated production build of commit 62ed2c1 passed. No launch gate promoted."
+    },
+    {
+      "type": "remote_supabase_audited",
+      "at": "2026-09-12",
+      "note": "Project dqonlqcurvjnjgsczevu was identified in the authenticated dashboard as PRODUCTION and active. Read-only SQL confirmed 7/56 migrations, 45/45 public tables with RLS, 149 public policies, 3 Auth users, 0 Storage objects and 0 estimated domain rows. The Free plan has no backups and the local CLI is authenticated to another account; no mutations were performed."
+    },
+    {
+      "type": "remote_supabase_reconciled",
+      "at": "2026-09-12T23:58:01.8909508Z",
+      "tasks": [
+        "T15",
+        "T16",
+        "T17",
+        "T18",
+        "T19",
+        "T20",
+        "T21",
+        "T22",
+        "T23",
+        "T24",
+        "T25",
+        "T26",
+        "T27",
+        "T28",
+        "T29",
+        "T30",
+        "T31"
+      ],
+      "note": "Permanent management access was configured outside the repository. Migrations advanced from 7/56 to 58/58, 28 remote SQL suites passed with forced rollback, RPC boundary defects were repaired, password minimum became 12 and no test fixture or pgTAP extension persisted. Tasks moved to implemented while staging, provider and human acceptance remain pending."
+    },
+    {
+      "type": "vercel_environment_audited",
+      "at": "2026-09-12",
+      "tasks": [
+        "T33",
+        "T34",
+        "T35",
+        "T36"
+      ],
+      "note": "Authenticated read-only inspection confirmed lysto-demo is reachable but its Preview environment points to production Supabase dqonlqcurvjnjgsczevu, uses Node 24.x and lacks the required operational variables. It is excluded from destructive staging tests until D04 provides isolated backend and secrets."
+    }
+  ],
+  "executionWorktree": "E:/Proyectos/GitHub/Lysto-production-readiness"
+}

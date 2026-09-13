@@ -1,97 +1,23 @@
 'use client'
-
 import Link from 'next/link'
 import { useActionState } from 'react'
-import { LockKeyhole, ShieldCheck } from 'lucide-react'
-
-import { Input } from '@/components/ui/input'
-import {
-  loginAction,
-  type LoginActionState
-} from './actions'
-
-const initialLoginState: LoginActionState = {
-  status: 'idle',
-  email: '',
-  message: ''
+import { ArrowRight } from 'lucide-react'
+import { AuthInput, AuthNotice, GoogleButton } from '@/components/auth/auth-fields'
+import { loginAction, type LoginActionState } from './actions'
+import { loginAction as staffLoginAction } from '../equipo/login/actions'
+const initialLoginState: LoginActionState = { status: 'idle', email: '', message: '' }
+export type LoginFormViewProps = { state: LoginActionState; pending: boolean; formAction: (payload: FormData) => void; next?: string; staff?: boolean }
+export function LoginFormView({ state, pending, formAction, next = '/app', staff = false }: LoginFormViewProps) {
+  return <form action={formAction} className="auth-form">
+    <input type="hidden" name="next" value={next} />
+    <AuthInput label="Email" name="email" type="email" autoComplete="email" placeholder="tu@email.com" defaultValue={state.email} disabled={pending} />
+    <AuthInput label="Contraseña" name="password" type="password" autoComplete="current-password" placeholder="Tu contraseña" disabled={pending}><Link href="/recuperar-contrasena" className="auth-link">¿La olvidaste?</Link></AuthInput>
+    <AuthNotice state={state} />
+    <button type="submit" className="auth-button" disabled={pending}>{pending ? 'Ingresando…' : 'Ingresar'}<ArrowRight size={16} aria-hidden="true" /></button>
+    {!staff && <p className="auth-form-bottom">¿Todavía no tenés cuenta? <Link className="auth-link" href={next === '/app' ? '/registro' : `/registro?next=${encodeURIComponent(next)}`}>Crear cuenta</Link></p>}
+  </form>
 }
-
-export type LoginFormViewProps = {
-  state: LoginActionState
-  pending: boolean
-  formAction: (payload: FormData) => void
-}
-
-export function LoginFormView({ state, pending, formAction }: LoginFormViewProps) {
-  return (
-    <form action={formAction} className="mt-7 space-y-5" noValidate={false}>
-      <div className="space-y-2">
-        <label htmlFor="login-email" className="block text-sm font-bold text-slate-800">
-          Email
-        </label>
-        <Input
-          id="login-email"
-          name="email"
-          type="email"
-          autoComplete="email"
-          inputMode="email"
-          defaultValue={state.email}
-          placeholder="tu@email.com"
-          required
-          disabled={pending}
-        />
-      </div>
-
-      <div className="space-y-2">
-        <label htmlFor="login-password" className="block text-sm font-bold text-slate-800">
-          Contraseña
-        </label>
-        <Input
-          id="login-password"
-          name="password"
-          type="password"
-          autoComplete="current-password"
-          placeholder="Ingresá tu contraseña"
-          required
-          disabled={pending}
-        />
-      </div>
-
-      {state.status === 'error' ? (
-        <div
-          role="alert"
-          aria-live="polite"
-          className="rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold leading-6 text-red-800"
-        >
-          {state.message}
-        </div>
-      ) : null}
-
-      <button
-        type="submit"
-        disabled={pending}
-        className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-lysto-blue px-5 text-base font-bold text-white shadow-sm transition hover:bg-lysto-blueDark focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-200 disabled:cursor-wait disabled:opacity-70"
-      >
-        <LockKeyhole aria-hidden="true" className="h-5 w-5" />
-        {pending ? 'Ingresando…' : 'Ingresar'}
-      </button>
-
-      <Link
-        href="/registro"
-        className="inline-flex h-12 w-full items-center justify-center rounded-xl border border-slate-300 bg-white px-5 text-base font-bold text-slate-900 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-100"
-      >
-        Crear cuenta cliente
-      </Link>
-
-      <p className="flex items-center justify-center gap-2 text-center text-sm font-medium text-slate-600 lg:hidden">
-        <ShieldCheck aria-hidden="true" className="h-4 w-4 text-emerald-600" />
-        Acceso seguro para clientes, técnicos y administración.
-      </p>
-    </form>
-  )
-}
-
-export function LoginForm() {
-  const [state, formAction, pending] = useActionState(loginAction, initialLoginState)
-  return <LoginFormView state={state} pending={pending} formAction={formAction} />
+export function LoginForm({ next = '/app', staff = false }: { next?: string; staff?: boolean }) {
+  const [state, formAction, pending] = useActionState(staff ? staffLoginAction : loginAction, initialLoginState)
+  return <>{!staff && <><GoogleButton next={next} /><div className="auth-divider">o ingresá con tu email</div></>}<LoginFormView state={state} pending={pending} formAction={formAction} next={next} staff={staff} /></>
 }

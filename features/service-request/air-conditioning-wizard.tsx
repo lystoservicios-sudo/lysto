@@ -1,25 +1,19 @@
 'use client'
 
 import {
-  AirVent,
   Building2,
   CalendarDays,
   Check,
-  Droplets,
-  Flame,
   House,
-  Power,
+  Store,
+  BriefcaseBusiness,
   ShieldCheck,
-  Sparkles,
-  Volume2,
-  Wrench,
   type LucideIcon
 } from 'lucide-react'
-import { useMemo, useState, type KeyboardEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 
 import { MediaUploader } from '@/components/customer/media-uploader'
-import { PaymentDeferredPanel } from '@/components/customer/payment-deferred-panel'
-import { PreliminaryDiagnosisPanel } from '@/components/customer/preliminary-diagnosis-panel'
+import { ServiceDiagnosisStep, serviceIssueVisuals } from '@/components/customer/service-diagnosis-step'
 import { Badge } from '@/components/ui/badge'
 import { Button, ButtonLink } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -28,21 +22,13 @@ import { ProgressStepper } from '@/components/wizard/progress-stepper'
 import { AIR_CONDITIONING_ISSUES, TIME_WINDOWS } from '@/lib/domain/constants'
 import type { AddressAccessDetails, PropertyType, ServiceIssueSlug, TimeSince, UrgencyLevel } from '@/lib/domain/types'
 import { generateDiagnosis } from '@/lib/diagnosis/rules'
-import { calculatePriceOptions, type PriceBreakdown } from '@/lib/pricing/calculate-price'
+import type { PriceBreakdown } from '@/lib/pricing/calculate-price'
+import { calculateServiceQuote, defaultQuotePolicy, quotePolicySchema, type ServiceQuote } from '@/lib/pricing/service-quote'
+import { QuoteBreakdown } from '@/components/pricing/quote-breakdown'
 import { validateRequestStep } from '@/lib/service-request/validation'
 import { cn } from '@/lib/utils/cn'
 
 const steps = ['Problema', 'Detalles', 'Diagnóstico', 'Dirección', 'Horario', 'Presupuesto', 'Pago']
-
-const issueIcons: Record<ServiceIssueSlug, LucideIcon> = {
-  no_enfria: AirVent,
-  pierde_agua: Droplets,
-  hace_ruido: Volume2,
-  no_enciende: Power,
-  no_funciona_calor: Flame,
-  instalacion: Wrench,
-  mantenimiento: Sparkles
-}
 
 const timeSinceOptions: Array<{ value: TimeSince; label: string; description: string }> = [
   { value: 'today', label: 'Hoy', description: 'Empezó hace pocas horas.' },
@@ -51,7 +37,7 @@ const timeSinceOptions: Array<{ value: TimeSince; label: string; description: st
   { value: 'months', label: 'Hace meses', description: 'Ya es un problema antiguo.' }
 ]
 
-type AddressDraft = {
+export type AddressDraft = {
   street: string
   number: string
   floor: string
@@ -59,6 +45,8 @@ type AddressDraft = {
   city: string
   province: string
   propertyType: PropertyType
+  reference?: string
+  postalCode?: string
 }
 
 function handleRadioGroupKeyDown(event: KeyboardEvent<HTMLDivElement>) {
@@ -81,41 +69,72 @@ function handleRadioGroupKeyDown(event: KeyboardEvent<HTMLDivElement>) {
   radios[nextIndex]?.click()
 }
 
-export function AirConditioningWizard() {
+export function AirConditioningWizard({ initialAddress, initialAccess }: { initialAddress?: Partial<AddressDraft>; initialAccess?: AddressAccessDetails } = {}) {
   const [step, setStep] = useState(0)
+  const stepStart = useRef<HTMLDivElement>(null)
+  const previousStep = useRef(step)
+  useEffect(() => {
+    if (previousStep.current === step) return
+    previousStep.current = step
+    stepStart.current?.focus({ preventScroll: true })
+    stepStart.current?.scrollIntoView?.({ block: 'start', behavior: 'instant' })
+  }, [step])
   const [issue, setIssue] = useState<ServiceIssueSlug | undefined>()
+  const isPlannedService = issue === 'instalacion' || issue === 'mantenimiento'
   const [timeSince, setTimeSince] = useState<TimeSince | undefined>()
   const [files, setFiles] = useState<File[]>([])
   const [address, setAddress] = useState<AddressDraft>({
-    street: 'Av. Corrientes',
-    number: '1240',
-    floor: '7',
-    apartment: 'B',
-    city: 'CABA',
-    province: 'Buenos Aires',
-    propertyType: 'apartment'
+    street: '',
+    number: '',
+    floor: '',
+    apartment: '',
+    city: '',
+    province: '',
+    propertyType: 'house',
+    ...initialAddress
   })
-  const [access, setAccess] = useState<AddressAccessDetails>({
-    hasElevator: true,
-    hasParking: false,
-    difficultAccess: false,
-    outdoorUnitAtHeight: false
-  })
+  const [access, setAccess] = useState<AddressAccessDetails>(initialAccess ?? {})
   const [selectedDay, setSelectedDay] = useState('Mañana')
   const [timeWindow, setTimeWindow] = useState<string>(TIME_WINDOWS[1])
   const [option, setOption] = useState<UrgencyLevel>('priority')
+  const [capacity, setCapacity] = useState<number | undefined>()
+  const [technology, setTechnology] = useState<'conventional' | 'inverter' | 'unknown'>('unknown')
+  const [customDate, setCustomDate] = useState('')
+  const [quoteBusy, setQuoteBusy] = useState(false)
+  const [quoteNotice, setQuoteNotice] = useState('')
+  const [serverQuote, setServerQuote] = useState<{ key: string; quote: ServiceQuote } | null>(null)
+  const [policy, setPolicy] = useState(defaultQuotePolicy)
+  useEffect(() => {
+    let active = true
+    fetch('/api/pricing/policy').then(async response => { if (!response.ok) return; const body = await response.json(); const parsed = quotePolicySchema.safeParse(body.policy); if (active && parsed.success) setPolicy(parsed.data) }).catch(() => {})
+    return () => { active = false }
+  }, [])
 
   const diagnosis = useMemo(
     () => issue && timeSince ? generateDiagnosis({ issue, timeSince, hasPhoto: files.some((file) => file.type.startsWith('image/')), hasVideo: files.some((file) => file.type.startsWith('video/')) }) : null,
     [files, issue, timeSince]
   )
-  const prices = useMemo(() => calculatePriceOptions({
-    issue: issue ?? 'no_enfria',
-    zone: 'caba',
-    propertyType: address.propertyType,
-    access
-  }), [access, address.propertyType, issue])
-  const selectedPrice = option === 'priority' ? prices.priority : prices.flexible
+  const prices = useMemo(() => {
+    const data = { issue: issue ?? 'no_enfria', timeSince: timeSince ?? 'days', propertyType: address.propertyType, access, equipment: { capacity, technology } }
+    return { flexible: calculateServiceQuote({ ...data, urgency: 'flexible' }, policy), priority: calculateServiceQuote({ ...data, urgency: 'priority' }, policy) }
+  }, [access, address.propertyType, issue, timeSince, capacity, technology, policy])
+  const quoteKey = JSON.stringify({ issue, timeSince, address, access, capacity, technology, selectedDay, customDate, timeWindow, option })
+  const selectedPrice = serverQuote?.key === quoteKey ? serverQuote.quote : option === 'priority' ? prices.priority : prices.flexible
+  async function saveQuote() {
+    if (quoteBusy) return
+    setQuoteBusy(true); setQuoteNotice('')
+    try {
+      const day = new Date(Date.now() + (selectedDay === 'Mañana' ? 86400000 : 0)).toLocaleDateString('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' })
+      const result = await fetch('/api/pricing/quote', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
+        issue, timeSince, urgency: option, propertyType: address.propertyType, access, equipment: { capacity, technology },
+        address: { street: address.street, number: address.number, city: address.city, province: address.province, floor: address.floor, apartment: address.apartment, reference: address.reference, postalCode: address.postalCode },
+        preferredDate: selectedDay === 'Otro día' ? customDate : day, timeWindow, save: true
+      }) })
+      const data = await result.json(); if (!result.ok) throw new Error(data.error)
+      setServerQuote({ key: quoteKey, quote: data.quote }); setQuoteNotice('Presupuesto guardado. Podés consultar su revisión en Mis presupuestos. No se realizó ningún cobro.')
+    } catch (error) { setQuoteNotice(error instanceof Error ? error.message : 'No se pudo guardar el presupuesto.') }
+    finally { setQuoteBusy(false) }
+  }
 
   const validationKey = step === 0
     ? 'issue'
@@ -136,52 +155,65 @@ export function AirConditioningWizard() {
     preferredTimeWindow: timeWindow,
     selectedOption: option
   }, validationKey) : []
+  if (step === 4 && selectedDay === 'Otro día' && !customDate) errors.push('Elegí una fecha para continuar.')
   const isFinalStep = step === steps.length - 1
+  function selectIssue(nextIssue: ServiceIssueSlug) {
+    const nextIsPlanned = nextIssue === 'instalacion' || nextIssue === 'mantenimiento'
+    if (nextIsPlanned !== isPlannedService) setTimeSince(undefined)
+    setIssue(nextIssue)
+  }
+  const brief = {
+    issueLabel: issue ? AIR_CONDITIONING_ISSUES.find((item) => item.slug === issue)?.title : undefined,
+    address: `${address.street} ${address.number}`,
+    selectedDay: selectedDay === 'Otro día' ? customDate || 'Fecha por elegir' : selectedDay,
+    timeWindow,
+    amount: step >= 5 ? selectedPrice.total : null,
+    fileCount: files.length
+  }
 
   return (
     <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_20rem] xl:items-start">
       <Card className="min-w-0 p-4 shadow-none sm:p-6">
-        <ProgressStepper steps={steps} current={step} />
-        <div className="mt-7 min-h-[32rem]">
-          {step === 0 ? <StepIssue issue={issue} setIssue={setIssue} /> : null}
-          {step === 1 ? <StepDetails timeSince={timeSince} setTimeSince={setTimeSince} files={files} setFiles={setFiles} /> : null}
-          {step === 2 && diagnosis ? <StepDiagnosis diagnosis={diagnosis} /> : null}
+        <div ref={stepStart} tabIndex={-1} role="group" aria-label={`Paso ${step + 1} de ${steps.length}: ${steps[step]}`} className="scroll-mt-24 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-4">
+          <ProgressStepper steps={steps} current={step} />
+        </div>
+        <div className="mt-6 min-h-80 sm:min-h-[32rem]">
+          {step === 0 ? <StepIssue issue={issue} setIssue={selectIssue} /> : null}
+          {step === 1 ? <><StepDetails planned={isPlannedService} timeSince={timeSince} setTimeSince={setTimeSince} files={files} setFiles={setFiles} /><div className="mt-5 grid gap-4 sm:grid-cols-2"><Field label="Capacidad del aire (frigorías/h)"><select aria-label="Capacidad del aire (frigorías/h)" className="w-full rounded-xl border border-slate-200 p-3" value={capacity ?? ''} onChange={e => setCapacity(Number(e.target.value) || undefined)}><option value="">No lo sé</option>{[2250,3000,4500,6000,8000,9000,18000].map(n => <option key={n}>{n}</option>)}</select></Field><Field label="Tecnología del equipo"><select aria-label="Tecnología del equipo" className="w-full rounded-xl border border-slate-200 p-3" value={technology} onChange={e => setTechnology(e.target.value as typeof technology)}><option value="unknown">No lo sé</option><option value="conventional">Convencional</option><option value="inverter">Inverter</option></select></Field></div></> : null}
+          {step === 2 && diagnosis ? <ServiceDiagnosisStep diagnosis={diagnosis} /> : null}
           {step === 3 ? <StepAddress address={address} setAddress={setAddress} access={access} setAccess={setAccess} /> : null}
-          {step === 4 ? <StepSchedule selectedDay={selectedDay} setSelectedDay={setSelectedDay} timeWindow={timeWindow} setTimeWindow={setTimeWindow} /> : null}
-          {step === 5 ? <StepPricing option={option} setOption={setOption} flexible={prices.flexible} priority={prices.priority} /> : null}
-          {step === 6 ? <PaymentDeferredPanel amount={selectedPrice.total} planLabel={option === 'priority' ? 'Prioridad' : 'Flexible'} /> : null}
+          {step === 4 ? <><StepSchedule selectedDay={selectedDay} setSelectedDay={setSelectedDay} timeWindow={timeWindow} setTimeWindow={setTimeWindow} />{selectedDay === 'Otro día' ? <div className="mt-4"><Field label="Fecha de visita"><Input aria-label="Fecha de visita" type="date" value={customDate} onChange={e => setCustomDate(e.target.value)} /></Field></div> : null}</> : null}
+          {step === 5 ? <div className="space-y-5"><StepPricing option={option} setOption={setOption} flexible={option === 'flexible' ? selectedPrice : prices.flexible} priority={option === 'priority' ? selectedPrice : prices.priority} /><QuoteBreakdown quote={selectedPrice} /><Button disabled={quoteBusy || (selectedDay === 'Otro día' && !customDate)} onClick={() => void saveQuote()}>{quoteBusy ? 'Calculando traslado y guardando…' : 'Calcular traslado y guardar presupuesto'}</Button>{quoteNotice ? <p role="status" className="text-sm text-blue-800">{quoteNotice}</p> : null}<ButtonLink href="/app/presupuestos" variant="secondary">Mis presupuestos</ButtonLink></div> : null}
+          {step === 6 ? <Card className="space-y-4 p-5"><h2 className="text-2xl font-bold">Confirmación y pago</h2><p>Primero revisamos el presupuesto y vos aceptás el alcance. Cuando un profesional acepte el trabajo, vas a poder pagar con Mercado Pago desde el detalle del servicio.</p><p className="text-sm text-slate-600">Guardar esta solicitud no genera un cobro. El presupuesto aceptado conserva su precio.</p><ButtonLink href="/app/presupuestos">Ver mis presupuestos</ButtonLink></Card> : null}
         </div>
 
-        {errors.length ? <p role="alert" className="mt-4 rounded-2xl bg-amber-50 p-3 text-sm font-semibold text-amber-950">{errors[0]}</p> : null}
+        {step >= 3 ? <details className="mt-6 rounded-2xl border border-slate-200 p-4 xl:hidden"><summary className="min-h-11 cursor-pointer content-center font-semibold text-blue-800">Ver resumen de la visita</summary><div className="pt-4"><BriefContents {...brief} /></div></details> : null}
 
-        <div className="mt-6 flex flex-col-reverse gap-3 border-t border-slate-200 pt-4 sm:flex-row">
-          <Button variant="secondary" disabled={step === 0} onClick={() => setStep((value) => Math.max(0, value - 1))}>Atrás</Button>
+        <div className="sticky bottom-0 z-10 -mx-4 -mb-4 mt-6 border-t border-slate-200 bg-white px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:static sm:mx-0 sm:mb-0 sm:px-0 sm:pb-0">
+          {errors.length ? <p role="status" className="mb-3 text-sm leading-5 text-slate-600">{step === 0 ? 'Elegí una opción para continuar.' : step === 1 && isPlannedService ? 'Indicá desde cuándo necesitás el servicio.' : errors[0]}</p> : null}
+          <div className="flex items-center gap-3">
+          <Button variant="secondary" size="lg" disabled={step === 0} onClick={() => setStep((value) => Math.max(0, value - 1))}>Atrás</Button>
           {isFinalStep ? (
-            <ButtonLink href="/app/solicitudes" variant="secondary" className="sm:ml-auto">Volver a mis solicitudes</ButtonLink>
+            <ButtonLink href="/app/solicitudes" variant="secondary" className="h-auto min-h-12 flex-1 py-2 text-center sm:ml-auto sm:flex-none">Volver a mis solicitudes</ButtonLink>
           ) : (
-            <Button className="sm:ml-auto sm:min-w-40" disabled={errors.length > 0} onClick={() => setStep((value) => Math.min(steps.length - 1, value + 1))}>Continuar</Button>
+            <Button size="lg" className="flex-1 shadow-none sm:ml-auto sm:min-w-40 sm:flex-none" disabled={errors.length > 0} onClick={() => setStep((value) => Math.min(steps.length - 1, value + 1))}>Continuar</Button>
           )}
+          </div>
         </div>
       </Card>
 
-      <RequestBrief
-        issueLabel={issue ? AIR_CONDITIONING_ISSUES.find((item) => item.slug === issue)?.title : undefined}
-        address={`${address.street} ${address.number}`}
-        selectedDay={selectedDay}
-        timeWindow={timeWindow}
-        amount={step >= 5 ? selectedPrice.total : null}
-        fileCount={files.length}
-      />
+      <RequestBrief {...brief} />
     </div>
   )
 }
 
-function ChoiceCard({ selected, title, description, icon: Icon, onClick }: {
+function ChoiceCard({ selected, title, description, icon: Icon, onClick, compact = false }: {
   selected: boolean
   title: string
   description?: string
   icon?: LucideIcon
   onClick: () => void
+  compact?: boolean
 }) {
   return (
     <button
@@ -190,15 +222,16 @@ function ChoiceCard({ selected, title, description, icon: Icon, onClick }: {
       aria-checked={selected}
       onClick={onClick}
       className={cn(
-        'flex min-h-24 w-full items-start gap-3 rounded-2xl border p-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2',
+        'flex min-h-14 w-full items-center gap-3 rounded-2xl border p-3 text-left transition-colors motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 sm:p-4',
         selected ? 'border-blue-500 bg-blue-50 text-blue-950' : 'border-slate-200 bg-white text-slate-700 hover:border-blue-300 hover:bg-slate-50'
       )}
     >
-      {Icon ? <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-white text-blue-700 ring-1 ring-slate-200"><Icon aria-hidden="true" className="h-5 w-5" /></span> : null}
-      <span className="min-w-0">
+      {Icon ? <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-blue-50 text-blue-700"><Icon aria-hidden="true" className="h-6 w-6" /></span> : null}
+      <span className="min-w-0 flex-1">
         <span className="block font-black text-slate-950">{title}</span>
-        {description ? <span className="mt-1 block text-sm leading-5 text-slate-600">{description}</span> : null}
+        {description ? <span className={cn('text-sm leading-5 text-slate-600', compact ? 'sr-only sm:not-sr-only sm:mt-1 sm:block' : 'mt-1 block')}>{description}</span> : null}
       </span>
+      {selected ? <Check aria-hidden="true" className="h-5 w-5 shrink-0 text-blue-700" /> : null}
     </button>
   )
 }
@@ -207,20 +240,20 @@ function StepIssue({ issue, setIssue }: { issue?: ServiceIssueSlug; setIssue: (i
   return (
     <div className="space-y-5">
       <div>
-        <Badge tone="blue">Inicio del parte</Badge>
-        <h2 className="mt-3 text-2xl font-black tracking-tight text-slate-950">¿Qué está pasando con el equipo?</h2>
-        <p className="mt-2 text-sm leading-6 text-slate-600">Elegí una opción para orientar el diagnóstico y preparar la visita.</p>
+        <h2 className="text-2xl font-black tracking-tight text-slate-950">¿Qué está pasando con tu aire?</h2>
+        <p className="mt-2 text-sm leading-6 text-slate-600">Elegí la opción que mejor describe lo que necesitás.</p>
       </div>
       <div role="radiogroup" aria-label="Problema del equipo" onKeyDown={handleRadioGroupKeyDown} className="grid gap-3 sm:grid-cols-2">
         {AIR_CONDITIONING_ISSUES.map((item) => (
-          <ChoiceCard key={item.slug} selected={issue === item.slug} icon={issueIcons[item.slug]} title={item.title} description={item.description} onClick={() => setIssue(item.slug)} />
+          <ChoiceCard key={item.slug} compact selected={issue === item.slug} icon={serviceIssueVisuals[item.slug].icon} title={item.slug === 'instalacion' ? 'Instalación o reinstalación' : item.title} description={item.description} onClick={() => setIssue(item.slug)} />
         ))}
       </div>
     </div>
   )
 }
 
-function StepDetails({ timeSince, setTimeSince, files, setFiles }: {
+function StepDetails({ timeSince, setTimeSince, files, setFiles, planned }: {
+  planned: boolean
   timeSince?: TimeSince
   setTimeSince: (value: TimeSince) => void
   files: readonly File[]
@@ -230,31 +263,12 @@ function StepDetails({ timeSince, setTimeSince, files, setFiles }: {
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-black tracking-tight text-slate-950">Contanos un poco más</h2>
-        <p className="mt-2 text-sm leading-6 text-slate-600">La antigüedad del problema y la evidencia ayudan a preparar herramientas y repuestos.</p>
+        <p className="mt-2 text-sm leading-6 text-slate-600">{planned ? '¿Desde cuándo necesitás este servicio? Podés agregar fotos del equipo o del lugar para preparar la visita.' : '¿Desde cuándo pasa? Las fotos o un video también pueden ayudar a preparar la visita.'}</p>
       </div>
-      <div role="radiogroup" aria-label="Antigüedad del problema" onKeyDown={handleRadioGroupKeyDown} className="grid gap-3 sm:grid-cols-2">
-        {timeSinceOptions.map((item) => <ChoiceCard key={item.value} selected={timeSince === item.value} title={item.label} description={item.description} onClick={() => setTimeSince(item.value)} />)}
+      <div role="radiogroup" aria-label={planned ? 'Desde cuándo necesitás el servicio' : 'Antigüedad del problema'} onKeyDown={handleRadioGroupKeyDown} className="grid gap-3 sm:grid-cols-2">
+        {timeSinceOptions.map((item) => <ChoiceCard key={item.value} selected={timeSince === item.value} title={item.label} description={planned ? undefined : item.description} onClick={() => setTimeSince(item.value)} />)}
       </div>
       <MediaUploader files={files} onFilesChange={setFiles} />
-    </div>
-  )
-}
-
-function StepDiagnosis({ diagnosis }: { diagnosis: ReturnType<typeof generateDiagnosis> }) {
-  return (
-    <div className="space-y-5">
-      <PreliminaryDiagnosisPanel summary={diagnosis.customerSummary} />
-      <div>
-        <h3 className="font-black text-slate-950">Posibles causas a revisar</h3>
-        <ul className="mt-3 grid gap-2">
-          {diagnosis.causes.map((cause, index) => (
-            <li key={cause.code} className="flex items-start gap-3 rounded-2xl bg-slate-50 p-3 text-sm leading-6 text-slate-700">
-              <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white text-xs font-black text-blue-700 ring-1 ring-slate-200">{index + 1}</span>
-              {cause.label}
-            </li>
-          ))}
-        </ul>
-      </div>
     </div>
   )
 }
@@ -282,12 +296,16 @@ function StepAddress({ address, setAddress, access, setAccess }: {
       <div role="radiogroup" aria-label="Tipo de propiedad" onKeyDown={handleRadioGroupKeyDown} className="grid gap-3 sm:grid-cols-2">
         <ChoiceCard selected={address.propertyType === 'apartment'} title="Departamento" description="Acceso mediante espacios comunes" icon={Building2} onClick={() => setAddress({ ...address, propertyType: 'apartment' })} />
         <ChoiceCard selected={address.propertyType === 'house'} title="Casa" description="Acceso directo desde la calle" icon={House} onClick={() => setAddress({ ...address, propertyType: 'house' })} />
+        <ChoiceCard selected={address.propertyType === 'commercial'} title="Local comercial" description="Atención en tu comercio" icon={Store} onClick={() => setAddress({ ...address, propertyType: 'commercial' })} />
+        <ChoiceCard selected={address.propertyType === 'office'} title="Oficina" description="Atención en tu espacio de trabajo" icon={BriefcaseBusiness} onClick={() => setAddress({ ...address, propertyType: 'office' })} />
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <AccessToggle label="Hay ascensor" checked={Boolean(access.hasElevator)} onChange={(checked) => setAccess({ ...access, hasElevator: checked })} />
         <AccessToggle label="Hay estacionamiento" checked={Boolean(access.hasParking)} onChange={(checked) => setAccess({ ...access, hasParking: checked })} />
         <AccessToggle label="El acceso es complicado" checked={Boolean(access.difficultAccess)} onChange={(checked) => setAccess({ ...access, difficultAccess: checked })} />
         <AccessToggle label="La unidad exterior está en altura" checked={Boolean(access.outdoorUnitAtHeight)} onChange={(checked) => setAccess({ ...access, outdoorUnitAtHeight: checked })} />
+        <AccessToggle label="Hay que subir por escalera" checked={Boolean(access.stairsRequired)} onChange={(checked) => setAccess({ ...access, stairsRequired: checked })} />
+        <AccessToggle label="La unidad exterior está en un balcón" checked={Boolean(access.outdoorUnitOnBalcony)} onChange={(checked) => setAccess({ ...access, outdoorUnitOnBalcony: checked })} />
       </div>
     </div>
   )
@@ -334,7 +352,7 @@ function StepPricing({ option, setOption, flexible, priority }: {
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-black tracking-tight text-slate-950">Elegí un presupuesto preliminar</h2>
-        <p className="mt-2 text-sm leading-6 text-slate-600">El importe puede cambiar únicamente si el profesional detecta un trabajo adicional y vos lo aprobás.</p>
+        <p className="mt-2 text-sm leading-6 text-slate-600">Esta referencia necesita confirmar el traslado, los materiales y el alcance. Guardala para revisión. Una vez aceptado el presupuesto, otra falla se registra como adicional y requiere tu aprobación.</p>
       </div>
       <div role="radiogroup" aria-label="Opción de presupuesto" onKeyDown={handleRadioGroupKeyDown} className="grid gap-3 sm:grid-cols-2">
         <PriceOption title="Flexible" amount={flexible.total} description="Franja más amplia y menor prioridad de asignación." selected={option === 'flexible'} onClick={() => setOption('flexible')} />
@@ -374,20 +392,30 @@ function IncludedServices() {
   )
 }
 
-function RequestBrief({ issueLabel, address, selectedDay, timeWindow, amount, fileCount }: {
+type RequestBriefProps = {
   issueLabel?: string
   address: string
   selectedDay: string
   timeWindow: string
   amount: number | null
   fileCount: number
-}) {
+}
+
+function RequestBrief(props: RequestBriefProps) {
   return (
     <Card className="sticky top-20 hidden space-y-4 shadow-none xl:block">
       <div>
         <p className="text-xs font-bold uppercase tracking-[0.12em] text-blue-700">Parte en preparación</p>
         <h2 className="mt-1 text-lg font-black text-slate-950">Resumen de la visita</h2>
       </div>
+      <BriefContents {...props} />
+    </Card>
+  )
+}
+
+function BriefContents({ issueLabel, address, selectedDay, timeWindow, amount, fileCount }: RequestBriefProps) {
+  return (
+    <div className="space-y-4">
       <dl className="space-y-3 text-sm">
         <BriefFact label="Problema" value={issueLabel ?? 'Sin elegir'} />
         <BriefFact label="Dirección" value={address} />
@@ -395,8 +423,8 @@ function RequestBrief({ issueLabel, address, selectedDay, timeWindow, amount, fi
         <BriefFact label="Evidencia" value={`${fileCount} ${fileCount === 1 ? 'archivo' : 'archivos'}`} />
         <BriefFact label="Presupuesto" value={amount === null ? 'Se calcula más adelante' : `$ ${amount.toLocaleString('es-AR')}`} />
       </dl>
-      <p className="rounded-2xl bg-slate-50 p-3 text-xs leading-5 text-slate-600">Nada se enviará ni cobrará mientras la persistencia y la pasarela estén pendientes.</p>
-    </Card>
+      <p className="rounded-2xl bg-slate-50 p-3 text-xs leading-5 text-slate-600">El botón de guardar registra el presupuesto para revisión. Las fotos seleccionadas todavía no se adjuntan al presupuesto. No se realiza ningún cobro.</p>
+    </div>
   )
 }
 

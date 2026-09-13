@@ -1,0 +1,91 @@
+.m-sol-art-work { border-radius: 26px; background: #f1f6ec; overflow: hidden; }
+.m-sol-art-work img { width: 100%; height: auto; mix-blend-mode: normal; }
+.m-sol-art-work .m-art-label { left: 20px; bottom: 20px; font-size: 12px; }
+.m-service-jump { display: flex; align-items: center; flex-wrap: wrap; gap: 12px 30px; padding-block: 22px 35px; scroll-margin-top: 120px; }
+.m-service-jump>span { color: var(--m-muted); font-size: 14px; margin-right: auto; }
+.m-service-jump a { display: inline-flex; align-items: center; gap: 12px; min-height: 44px; font-size: 14px; font-weight: 600; }
+.m-service-jump a:hover { color: var(--m-blue); }
+.m-symptoms { background: #f4f7fc; padding-block: 90px; }
+.m-symptoms-grid { display: grid; grid-template-columns: .9fr 1.1fr; gap: clamp(45px,7vw,110px); align-items: start; }
+.m-symptoms-intro h2 { font-size: clamp(2.2rem,3.5vw,3.3rem); }
+.m-symptoms-intro h2 span,.m-service-section-heading h2 span,.m-visit-preparation h2 span { color: var(--m-blue); }
+.m-symptoms-intro>p { margin-top: 23px; font-size: 17px; line-height: 1.8; color: var(--m-muted); max-width: 440px; }
+.m-symptoms-intro>p+p { margin-top: 13px; }
+.m-symptoms-intro .m-text-link { margin-top: 20px; }
+.m-symptom-list details { border-bottom: 1px solid #d8e1ee; }
+.m-symptom-list details:first-child { border-top: 1px solid #d8e1ee; }
+.m-symptom-list summary { display: grid; grid-template-columns: 26px 1fr 18px; gap: 15px; align-items: start; padding-block: 25px; list-style: none; cursor: pointer; font-size: 18px; font-weight: 650; line-height: 1.45; }
+.m-symptom-list summary::-webkit-details-marker { display: none; }
+.m-symptom-index { padding-top: 4px; color: var(--m-blue); font-size: 12px; font-variant-numeric: tabular-nums; }
+.m-symptom-toggle { font-size: 25px; line-height: 1; font-weight: 400; color: var(--m-blue); }
+.m-symptom-list details[open] .m-symptom-toggle { transform: rotate(45deg); }
+.m-symptom-answer { padding: 0 32px 27px 41px; }
+.m-symptom-answer p { font-size: 15px; line-height: 1.8; color: var(--m-muted); }
+.m-symptom-answer h3 { margin-block: 19px 8px; font-size: 14px; line-height: 1.5; letter-spacing: 0; }
+.m-symptom-note { margin-top: 23px; color: var(--m-muted); font-size: 13px; line-height: 1.75; }
+.m-service-method { padding-block: 100px; }
+.m-service-section-heading { display: grid; grid-template-columns: 1.1fr 1fr; gap: 70px; align-items: end; }
+.m-service-section-heading h2,.m-budget-section h2,.m-visit-preparation h2 { font-size: clamp(2.3rem,3.5vw,3.35rem); }
+.m-service-section-heading>p { color: var(--m-muted); font-size: 17px; line-height: 1.8; max-width: 465px; }
+.m-method-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 36px; padding: 0; margin: 49px 0 0; list-style: none; }
+.m-method-mark { display: flex; align-items: center; justify-content: space-between; color: var(--m-blue); border-bottom: 1px solid var(--m-line); padding-bottom: 22px; margin-bottom: 21px; }
+.m-method-mark>span { color: var(--m-muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.m-method-grid h3 { font-size: 22px; line-height: 1.3; }
+.m-method-grid p { font-size: 15px; line-height: 1.8; color: var(--m-muted); margin-top: 13px; }
+.m-method-bottom { display: flex; gap: 13px; align-items: flex-start; border-top: 1px solid var(--m-line); padding-top: 25px; margin-top: 38px; }
+.m-method-bottom svg { flex-shrink: 0; color: #426b50; margin-top: 3px; }
+.m-method-bottom p { color: var(--m-muted); font-size: 14px; line-height: 1.75; max-width: 760px; }
+.m-budget-section { padding-block: 85px; background: #eef5e8; }
+.m-budget-grid { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(45px,7vw,110px); align-items: center; }
+.m-budget-grid>div:first-child>p { color: #4a6151; font-size: 17px; line-height: 1.8; margin-top: 22px; max-width: 455px; }
+.m-budget-grid>div:first-child>p+p { margin-top: 13px; }
+.m-budget-grid .m-button { margin-top: 28px; }
+.m-budget-sheet { background: #fff; padding: 35px 38px 26px; border: 1px solid #d5e0cc; border-radius: 20px; }
+.m-budget-sheet-heading { display: flex; align-items: center; gap: 13px; border-bottom: 1px solid var(--m-line); padding-bottom: 23px; font-size: 15px; font-weight: 650; }
+.m-budget-sheet-heading svg { color: var(--m-blue); flex-shrink: 0; }
+.m-budget-sheet ol { list-style: none; margin: 25px 0; padding: 0; display: flex; flex-direction: column; gap: 23px; }
+.m-budget-sheet li { display: flex; gap: 15px; align-items: start; }
+.m-budget-sheet li>svg { color: #426b50; flex-shrink: 0; margin-top: 2px; }
+.m-budget-sheet h3 { font-size: 17px; line-height: 1.4; }
+.m-budget-sheet li p { font-size: 14px; line-height: 1.75; color: var(--m-muted); margin-top: 5px; }
+.m-budget-sheet-foot { border-top: 1px solid var(--m-line); padding-top: 19px; color: #426b50; font-size: 12px; }
+.m-visit-preparation { display: grid; grid-template-columns: 1fr 1fr; gap: 85px; padding-top: 100px; }
+.m-visit-preparation>div>p { font-size: 17px; color: var(--m-muted); line-height: 1.8; max-width: 430px; margin-top: 24px; }
+.m-visit-preparation .m-text-link { margin-top: 19px; }
+.m-visit-preparation ul { padding: 0; margin: 0; list-style: none; display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+.m-visit-preparation li { border-top: 1px solid var(--m-line); padding-top: 20px; }
+.m-visit-preparation h3 { font-size: 18px; line-height: 1.3; }
+.m-visit-preparation li p { font-size: 14px; line-height: 1.8; color: var(--m-muted); margin-top: 10px; }
+@media (max-width:1100px) { .m-service-jump { gap: 10px 20px; } .m-service-jump>span { width: 100%; } .m-symptoms-grid,.m-service-section-heading,.m-budget-grid,.m-visit-preparation { gap: 42px; } .m-method-grid { gap: 25px; } .m-budget-sheet { padding: 30px; } }
+@media (max-width:760px) {
+  .m-sol-art-work { width: 100%; max-width: 450px; border-radius: 21px; }
+  .m-sol-art-work .m-art-label { left: 14px; bottom: 14px; font-size: 11px; }
+  .m-service-jump { display: grid; grid-template-columns: 1fr; gap: 0; padding-block: 5px 30px; }
+  .m-service-jump>span { margin-bottom: 8px; font-size: 12px; }
+  .m-service-jump a { justify-content: space-between; min-height: 51px; border-bottom: 1px solid var(--m-line); font-size: 14px; }
+  .m-symptoms { padding-block: 58px; }
+  .m-symptoms-grid,.m-service-section-heading,.m-budget-grid,.m-visit-preparation { grid-template-columns: 1fr; gap: 32px; }
+  .m-symptoms-intro h2,.m-service-section-heading h2,.m-budget-section h2,.m-visit-preparation h2 { font-size: 35px; }
+  .m-symptoms-intro>p,.m-service-section-heading>p,.m-budget-grid>div:first-child>p,.m-visit-preparation>div>p { font-size: 15px; line-height: 1.8; }
+  .m-symptom-list summary { font-size: 16px; gap: 10px; grid-template-columns: 23px 1fr 17px; padding-block: 21px; }
+  .m-symptom-answer { padding: 0 12px 24px 33px; }
+  .m-symptom-answer p { font-size: 14px; }
+  .m-symptom-note { font-size: 12px; }
+  .m-service-method { padding-block: 65px; }
+  .m-method-grid { grid-template-columns: 1fr 1fr; gap: 30px 24px; margin-top: 35px; }
+  .m-method-mark { padding-bottom: 17px; margin-bottom: 17px; }
+  .m-method-grid h3 { font-size: 19px; }
+  .m-method-grid p { font-size: 14px; }
+  .m-method-bottom { margin-top: 30px; }
+  .m-method-bottom p { font-size: 13px; }
+  .m-budget-section { padding-block: 58px; }
+  .m-budget-sheet { padding: 27px 24px 24px; border-radius: 16px; }
+  .m-budget-sheet-heading { font-size: 14px; }
+  .m-budget-sheet h3 { font-size: 16px; }
+  .m-budget-sheet li p { font-size: 13px; }
+  .m-visit-preparation { padding-top: 65px; }
+  .m-visit-preparation ul { gap: 27px 22px; }
+  .m-visit-preparation h3 { font-size: 17px; }
+  .m-visit-preparation li p { font-size: 13px; }
+}
+@media (max-width:360px) { .m-method-grid,.m-visit-preparation ul { grid-template-columns: 1fr; } .m-method-grid li { display: grid; grid-template-columns: 42px 1fr; gap: 0 17px; } .m-method-mark { grid-row: span 2; flex-direction: column; justify-content: flex-start; gap: 14px; border: 0; margin: 0; padding: 3px 0 0; } .m-method-grid p { margin-top: 8px; } .m-sol-art-work .m-art-label { font-size: 10px; padding-inline: 10px; } }

@@ -1,17 +1,13 @@
 import { NextResponse } from 'next/server'
-import { prepareCustomerServiceRequest, type CustomerRequestCommand } from '@/lib/use-cases/customer-request'
+import { z } from 'zod'
+import { getPricingSession, pricingError } from '@/lib/pricing/server'
 
 export async function POST(request: Request) {
-  const body = await request.json().catch(() => null) as CustomerRequestCommand | null
-  if (!body) return NextResponse.json({ error: 'Invalid JSON payload' }, { status: 400 })
   try {
-    const prepared = prepareCustomerServiceRequest(body)
-    return NextResponse.json({
-      accepted: true,
-      request: prepared,
-      persistence: 'Persist service_requests, request_answers, request_media, diagnosis_reports and price_options in one transaction before payment.'
-    })
-  } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : 'Unknown error' }, { status: 400 })
-  }
+    const s = await getPricingSession({ requireCompleteCustomer: true })
+    const { quoteId } = z.object({ quoteId: z.string().uuid() }).strict().parse(await request.json())
+    const { data, error } = await s.client.rpc('submit_service_quote', { p_quote_id: quoteId })
+    if (error) throw new Error(['customer_profile_incomplete', 'customer_email_unverified'].includes(error.message) ? error.message : error.message.includes('expired') ? 'quote_expired' : 'quote_requires_review')
+    return NextResponse.json({ accepted: true, result: data })
+  } catch (error) { return pricingError(error) }
 }

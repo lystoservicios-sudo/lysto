@@ -1,0 +1,13 @@
+.m-photo-room { perspective: 1600px; }
+.m-room-composition,.m-photo-fallback { position: absolute; left: 0; top: 50%; width: 100%; aspect-ratio: 1; margin-top: -50%; }
+.m-room-composition { transform-origin: 50% 65%; }
+.m-photo-fallback { height: auto; object-fit: contain; }
+.m-room-plane { position: absolute; aspect-ratio: 1; pointer-events: none; }
+.m-room-plane img { width: 100%; height: 100%; display: block; object-fit: contain; user-select: none; }
+.m-room-architecture { inset: 0; width: 100%; }
+.m-room-sofa { width: 80%; left: 14%; top: 7.8%; }
+.m-room-plant { width: 56%; left: 1%; top: 17.5%; }
+.m-room-table { width: 52%; left: 23.5%; top: 31%; }
+@media (prefers-reduced-motion: reduce) {
+  .m-room-composition,.m-room-plane { transform: none!important; }
+}

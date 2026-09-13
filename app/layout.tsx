@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import './globals.css'
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'),
   title: 'Lysto | Servicios técnicos verificados',
   description: 'Técnicos verificados para resolver problemas de aire acondicionado en tu hogar.'
 }

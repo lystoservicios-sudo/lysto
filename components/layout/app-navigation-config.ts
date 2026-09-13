@@ -2,6 +2,7 @@ export const appNavigation = {
   Cliente: [
     { label: 'Panel', href: '/app', icon: 'home' },
     { label: 'Solicitar', href: '/app/solicitar/aire-acondicionado', icon: 'plus' },
+    { label: 'Presupuestos', href: '/app/presupuestos', icon: 'requests' },
     { label: 'Trabajos', href: '/app/trabajos', icon: 'work' },
     { label: 'Equipos', href: '/app/equipos', icon: 'equipment' },
     { label: 'Mantenimientos', href: '/app/mantenimientos', icon: 'calendar' },
@@ -11,11 +12,13 @@ export const appNavigation = {
   Profesional: [
     { label: 'Panel', href: '/pro/dashboard', icon: 'dashboard' },
     { label: 'Solicitudes', href: '/pro/solicitudes', icon: 'requests' },
+    { label: 'Propuestas', href: '/pro/presupuestos', icon: 'requests' },
     { label: 'Trabajos', href: '/pro/trabajos', icon: 'work' },
     { label: 'Agenda', href: '/pro/agenda', icon: 'calendar' },
     { label: 'Capacitación', href: '/pro/capacitacion', icon: 'training' },
     { label: 'Soporte', href: '/pro/soporte', icon: 'support' },
-    { label: 'Pagos', href: '/pro/pagos', icon: 'payments' }
+    { label: 'Pagos', href: '/pro/pagos', icon: 'payments' },
+    { label: 'Mi perfil', href: '/pro/perfil', icon: 'professionals' }
   ],
   Admin: [
     { label: 'Dashboard', href: '/admin/dashboard', icon: 'dashboard' },
