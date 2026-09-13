@@ -1,5 +1,6 @@
 import 'server-only'
 import { z } from 'zod'
+import { nullableRpcArgument } from '@/lib/supabase/rpc-arguments'
 import type { Session } from '@/lib/auth/session'
 import { ApiError } from '@/lib/http/api-error'
 
@@ -147,7 +148,7 @@ export async function mutateAssignment(session: Session, input: unknown) {
   const result = await session.client.rpc('respond_assignment_offer', {
     p_offer_id: value.offerId,
     p_response: value.response,
-    p_reason: value.reason ?? null,
+    p_reason: nullableRpcArgument(value.reason ?? null),
     p_expected_version: value.expectedVersion
   })
   if (result.error) databaseFailure(result.error.code)

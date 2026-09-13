@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import type { Session } from '@/lib/auth/session'
 import { ApiError } from '@/lib/http/api-error'
+import { nullableRpcArgument } from '@/lib/supabase/rpc-arguments'
 import { defaultWarrantyDays, validateJobFinalReport } from './final-report'
 
 const maintenance = z.enum([
@@ -67,12 +68,12 @@ export async function closeJob(session: Session, raw: unknown) {
     p_equipment_id: input.equipmentId,
     p_real_diagnosis: input.realDiagnosis,
     p_work_done: input.workDone,
-    p_parts_used: input.partsUsed.length ? input.partsUsed.join('\n') : null,
+    p_parts_used: nullableRpcArgument(input.partsUsed.length ? input.partsUsed.join('\n') : null),
     p_final_state: finalState,
     p_maintenance_option: input.maintenanceOption,
-    p_next_maintenance_date: input.nextMaintenanceDate ?? null,
+    p_next_maintenance_date: nullableRpcArgument(input.nextMaintenanceDate ?? null),
     p_warranty_days: input.warrantyDays ?? defaultWarrantyDays(input.resolutionStatus),
-    p_internal_notes: input.internalNotes ?? null,
+    p_internal_notes: nullableRpcArgument(input.internalNotes ?? null),
     p_after_photo_ids: input.afterPhotoIds,
     p_idempotency_key: input.idempotencyKey
   })

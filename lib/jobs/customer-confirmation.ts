@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import type { Session } from '@/lib/auth/session'
 import { ApiError } from '@/lib/http/api-error'
+import { nullableRpcArgument } from '@/lib/supabase/rpc-arguments'
 
 export const customerDecisionInput = z
   .object({
@@ -35,7 +36,7 @@ export async function confirmJobOutcome(session: Session, raw: unknown) {
   const result = await session.client.rpc('confirm_job_outcome', {
     p_job_id: input.jobId,
     p_decision: input.decision,
-    p_reason: input.reason ?? null,
+    p_reason: nullableRpcArgument(input.reason ?? null),
     p_idempotency_key: input.idempotencyKey
   })
   if (result.error) throw mapError(result.error)
