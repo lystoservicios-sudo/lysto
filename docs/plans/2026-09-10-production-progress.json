@@ -60,7 +60,7 @@
     "evidence": "docs/release/staging-acceptance.md",
     "load": "PASS_SMOKE_PEAK_DOUBLE_PEAK_BURST_SUSTAINED_RECOVERY"
   },
-  "currentMilestone": "STAGING_AUTOMATED_ACCEPTANCE_AND_LOAD_COMPLETE_EXTERNAL_GATES_PENDING",
+  "currentMilestone": "VISIT_REVIEW_NOTIFICATION_CANDIDATE_CI_IN_PROGRESS_STAGING_PENDING",
   "nextTask": "T37",
   "recommendedOrder": [
     "T00",
@@ -989,14 +989,22 @@
         "docs/plans/2026-09-12-t24-notification-delivery-design.md",
         "docs/release/notification-delivery-verification.json",
         "docs/runbooks/notification-delivery.md",
-        "47 targeted unit tests, 5 test-environment checks, typecheck and targeted lint passed"
+        "47 targeted unit tests, 5 test-environment checks, typecheck and targeted lint passed",
+        "docs/plans/2026-09-13-visit-confirmation-and-review-email-design.md",
+        "docs/plans/2026-09-13-visit-confirmation-and-review-email.md",
+        "supabase/migrations/20260913161215_visit_confirmation_and_review_reminders.sql",
+        "tests/integration/outbox-worker.test.ts",
+        "tests/e2e/customer-production.spec.ts",
+        "vercel.json",
+        "174 domain, 526 unit and 27 tooling checks plus typecheck, lint and 81-page production build passed locally"
       ],
-      "commit": null,
+      "commit": "2035cd7eb8a26280bc9b0429bade38b641a037e4",
       "blockedBy": [
-        "Durable scheduler, sender and reception evidence requires the designated isolated staging environment",
-        "D06/T36: approved sender, DNS, sandbox reception and durable scheduler evidence"
+        "Disposable CI and isolated-staging migration/runtime acceptance for the exact candidate",
+        "D06/T36: approved Resend account, sender domain/DNS, designated inbox and provider receipt",
+        "Vercel Preview does not activate project cron jobs; demonstrate periodic execution in an approved production target or separate staging project"
       ],
-      "nextAction": "Remote migrations and SQL acceptance passed. Configure the approved sender and scheduler in staging and demonstrate retry, suppression and dead-letter recovery.",
+      "nextAction": "Finish exact-candidate CI, promote the single new migration and runtime to isolated staging, then configure the approved Resend sender and prove receipt, timing, suppression and consecutive worker runs.",
       "deviations": [
         "T24 implementation is complete; staging sender and scheduler acceptance remains external."
       ]
@@ -1522,16 +1530,19 @@
         "docs/release/staging-identity.example.json",
         "docs/release/vercel-environment-audit-2026-09-12.md",
         "scripts/test-e2e-staging.mjs",
-        "tests/tooling/staging-acceptance.test.mjs"
+        "tests/tooling/staging-acceptance.test.mjs",
+        "docs/plans/2026-09-13-visit-confirmation-and-review-email.md",
+        "docs/release/notification-delivery-verification.json"
       ],
       "commit": null,
       "blockedBy": [
         "D04 accountable technical owner and alternate remain unnamed",
         "D11 has no identified Mercado Pago application and official test accounts",
-        "D06/D10 sender, scheduler and alert destinations are not approved",
-        "T32 restore evidence and physical UAT remain incomplete"
+        "D06/D10 approved Resend sender, recipient, production scheduler target and alert destinations remain absent",
+        "T32 restore evidence and physical UAT remain incomplete",
+        "Exact notification candidate still needs isolated-staging migration, deployment and acceptance"
       ],
-      "nextAction": "Complete restore evidence, approved sender/scheduler/alerts and physical UAT; then execute MP01-MP12 with the official Mercado Pago owner and test accounts.",
+      "nextAction": "Promote and verify the exact notification candidate in isolated staging; then complete restore, approved Resend sender/receipt, periodic scheduler/alerts, physical UAT and MP01-MP12.",
       "deviations": [
         "Preview was isolated onto Supabase staging and passed health plus 36/36 automated E2E.",
         "No email, payment, refund or OAuth provider action was executed."
@@ -2095,20 +2106,21 @@
     "updateRequiredAfterImplementation": true
   },
   "checkpoint": {
-    "updatedAt": "2026-09-13T06:35:00.000Z",
+    "updatedAt": "2026-09-13T17:11:50.378347Z",
     "branch": "codex/production-readiness",
-    "commit": "19129cf",
+    "commit": "2035cd7eb8a26280bc9b0429bade38b641a037e4",
     "filesChanged": [
-      "runtime candidate ff99259",
-      "staging SQL-only E2E fixture provisioning",
-      "T35 performance evidence",
-      "staging acceptance and handover records"
+      "visit confirmation and delayed optional review email",
+      "authenticated customer visit actions",
+      "live eligibility and privacy suppression",
+      "email quota monitoring",
+      "Vercel authenticated cron definition"
     ],
-    "lastVerification": "CI run 34741236649 passed on runtime candidate ff99259. Protected staging at 62 migrations passed 36/36 E2E with zero omitted and zero synthetic identities remaining. T35 passed peak, double peak, burst, 60-minute sustained and recovery thresholds; post-recovery DB had zero waiting locks, long-running queries, deadlocks or conflicts.",
+    "lastVerification": "Local final source gates passed: 174 domain, 526 unit total after focused cron/env verification, 27 tooling, typecheck, lint and 81-page production build. The exact evidence-bearing commit still requires disposable CI.",
     "unresolvedFailures": [
-      "Backup/restore, provider payment, physical-device UAT, branch protection and named human/operational/legal approvals remain pending. Production is 59/62 migrations and remains disabled."
+      "Exact-candidate CI and isolated staging acceptance remain in progress. Resend account/sender/DNS/inbox, production scheduler target, restore, payments provider and named approvals remain external. Production is untouched."
     ],
-    "nextCommand": "Finalize technical evidence commit and CI, then obtain the external inputs for T37-T39 without enabling production traffic or real payments prematurely."
+    "nextCommand": "Require CI green, then apply only migration 20260913161215 to Supabase staging, deploy the preview candidate and execute guarded staging acceptance."
   },
   "events": [
     {
@@ -2205,6 +2217,15 @@
         "T35"
       ],
       "note": "The final runtime candidate passed double peak, burst and recovery with zero HTTP failures and p95 under the proposed 1s/2s budgets. A 60-minute sustained run also passed. Database recovery showed zero waiting locks, long queries, deadlocks or conflicts; synthetic cleanup left zero Auth users and profiles. D01/D10 approvals remain external."
+    },
+    {
+      "type": "visit_review_notification_candidate_prepared",
+      "at": "2026-09-13T17:11:50.378362Z",
+      "tasks": [
+        "T24",
+        "T36"
+      ],
+      "note": "Visit-confirmation and two-hour optional-review flows, live suppression, authenticated customer actions, quota warnings and a Vercel cron definition are implemented. Local source gates passed. CI and isolated staging/provider acceptance remain pending; production and real email delivery stay disabled."
     }
   ],
   "executionWorktree": "E:/Proyectos/GitHub/Lysto-production-readiness"

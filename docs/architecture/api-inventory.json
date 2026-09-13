@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "generatedFrom": "app/api/**/route.ts",
-  "count": 92,
+  "count": 93,
   "entries": [
     {
       "route": "/api/admin/approve-professional",
@@ -257,6 +257,14 @@
       "status": "active",
       "authority": "Pública; sonda mínima",
       "canonicalDestination": "/api/health/ready",
+      "test": "tests/integration/api-inventory.test.ts"
+    },
+    {
+      "route": "/api/internal/outbox",
+      "method": "GET",
+      "status": "active",
+      "authority": "Servicio interno; secreto específico",
+      "canonicalDestination": "/api/internal/outbox",
       "test": "tests/integration/api-inventory.test.ts"
     },
     {

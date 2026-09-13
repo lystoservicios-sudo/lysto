@@ -1,6 +1,6 @@
 # Inventario de API
 
-Generado desde los métodos exportados en `app/api/**/route.ts`. Total: **92 métodos**. El control automático falla si aparece o desaparece un método sin regenerar este archivo.
+Generado desde los métodos exportados en `app/api/**/route.ts`. Total: **93 métodos**. El control automático falla si aparece o desaparece un método sin regenerar este archivo.
 
 | Método | Ruta | Estado | Autoridad | Destino canónico | Prueba contractual |
 |---|---|---|---|---|---|
@@ -36,6 +36,7 @@ Generado desde los métodos exportados en `app/api/**/route.ts`. Total: **92 mé
 | `POST` | `/api/equipment/register` | Activa | Sesión: customer | `/api/equipment/register` | `tests/integration/api-inventory.test.ts` |
 | `GET` | `/api/health/live` | Activa | Pública; sonda mínima | `/api/health/live` | `tests/integration/api-inventory.test.ts` |
 | `GET` | `/api/health/ready` | Activa | Pública; sonda mínima | `/api/health/ready` | `tests/integration/api-inventory.test.ts` |
+| `GET` | `/api/internal/outbox` | Activa | Servicio interno; secreto específico | `/api/internal/outbox` | `tests/integration/api-inventory.test.ts` |
 | `POST` | `/api/internal/outbox` | Activa | Servicio interno; secreto específico | `/api/internal/outbox` | `tests/integration/api-inventory.test.ts` |
 | `POST` | `/api/internal/refunds` | Activa | Servicio interno; secreto específico | `/api/internal/refunds` | `tests/integration/api-inventory.test.ts` |
 | `POST` | `/api/jobs/advance` | Retirada 410 | Pública; contrato retirado, sin mutación | `/api/pricing/job/status` | `tests/unit/api-route-contracts.vitest.test.ts` |

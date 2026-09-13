@@ -1,7 +1,7 @@
 {
   "task": "T24",
-  "status": "implemented_remote_database_verified_delivery_pending",
-  "updatedAt": "2026-09-13T13:42:00-03:00",
+  "status": "implemented_local_verified_ci_and_staging_acceptance_pending",
+  "updatedAt": "2026-09-13T17:11:50.375255Z",
   "implemented": [
     "versioned templates with authorized URLs",
     "Resend adapter with stable idempotency key and bounded timeout",
@@ -11,27 +11,45 @@
     "MFA operations dashboard with sanitized retry workflow",
     "test environment strips provider and worker credentials",
     "confirmed visit and optional review transactional-v2 templates",
-    "deterministic 390px and 720px light/dark rendering with overflow and CTA checks"
+    "deterministic 390px and 720px light/dark rendering with overflow and CTA checks",
+    "confirmed visit context is derived live with street-number-city only in email",
+    "authenticated customer visit card with schedule, directions, reschedule and Lysto contact actions",
+    "two-hour review request with stale-state and existing-review suppression",
+    "Vercel Cron definition with an authenticated five-message worker batch"
   ],
   "verified": {
-    "unit": 57,
+    "unit": 526,
     "typecheck": "passed",
     "targetedLint": "passed",
     "emailPreview": {
       "renderer": "Playwright Chromium",
       "source": "tests/visual/notification-email-fixtures.ts",
       "sanitizedOutput": "output/email-preview/2026-09-13-visit-review",
-      "widths": [390, 720],
-      "colorSchemes": ["light", "dark"],
+      "widths": [
+        390,
+        720
+      ],
+      "colorSchemes": [
+        "light",
+        "dark"
+      ],
       "horizontalOverflow": false,
       "imagesDisabledReadable": true,
       "ctaLabelsVisible": true,
       "plainTextComplete": true
+    },
+    "domain": 174,
+    "tooling": 27,
+    "productionBuildPages": 81,
+    "ci": {
+      "status": "pending_exact_evidence_commit"
     }
   },
   "pending": [
-    "remote migrations and pgTAP passed; sender and worker integration remains for isolated staging",
-    "D06/T36: approved sender, DNS, sandbox reception and durable hosting scheduler",
+    "require both jobs green for the exact evidence-bearing commit",
+    "promote migration 20260913161215 to isolated staging and repeat guarded SQL/browser acceptance",
+    "configure an approved Resend account, sender domain/DNS and designated test inbox",
+    "prove provider acceptance, receipt and scheduled consecutive runs in staging; Vercel Preview does not activate project cron jobs",
     "T30: production alert transport and monitoring evidence"
   ],
   "productionEmailSent": false
