@@ -277,7 +277,7 @@ end;
 $$;
 
 -- v2 is reserved for the richer, immutable customer email snapshots above.
-create or replace function public.seal_outbox_delivery(p_event_id uuid,p_claim_token uuid,p_content jsonb) returns jsonb
+create or replace function private.seal_outbox_delivery(p_event_id uuid,p_claim_token uuid,p_content jsonb) returns jsonb
 language plpgsql security definer set search_path='' as $$
 declare v_recipient jsonb; v_snapshot private.outbox_delivery_snapshots%rowtype;
 begin
