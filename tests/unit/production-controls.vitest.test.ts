@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it, vi } from 'vitest'
-import { redactLogValue } from '@/lib/observability/logger'
+import { currentRelease, redactLogValue } from '@/lib/observability/logger'
 import { rateLimitKey } from '@/lib/security/rate-limit'
 import {
   requireNewCheckouts,
@@ -17,6 +17,11 @@ it('redacts credentials, cookies, email, phone and bearer values recursively', (
     nested: { authorization: 'Bearer abc', message: 'falló persona@example.com token=abcd' }
   })
   expect(JSON.stringify(redacted)).not.toMatch(/persona|5555|secret|Bearer abc|abcd/)
+})
+
+it('uses the explicit release when Vercel exposes an empty commit value', () => {
+  expect(currentRelease({ VERCEL_GIT_COMMIT_SHA: '', LYSTO_RELEASE: 'ae5b181' })).toBe('ae5b181')
+  expect(currentRelease({})).toBe('local')
 })
 
 it('creates a stable opaque distributed-rate-limit key', () => {

@@ -23,12 +23,15 @@ export function redactLogValue(value: unknown, depth = 0): unknown {
   return value
 }
 export type LogLevel = 'info' | 'warn' | 'error'
+export function currentRelease(env: Record<string, string | undefined> = process.env) {
+  return env.VERCEL_GIT_COMMIT_SHA?.trim() || env.LYSTO_RELEASE?.trim() || 'local'
+}
 export function logEvent(level: LogLevel, event: string, fields: Record<string, unknown> = {}) {
   const record = redactLogValue({
     timestamp: new Date().toISOString(),
     level,
     event,
-    release: process.env.VERCEL_GIT_COMMIT_SHA ?? process.env.LYSTO_RELEASE ?? 'local',
+    release: currentRelease(),
     ...fields
   })
   const line = JSON.stringify(record)

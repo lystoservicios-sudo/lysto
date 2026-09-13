@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { currentRelease } from '@/lib/observability/logger'
 
 export const dynamic = 'force-dynamic'
 
@@ -6,7 +7,7 @@ export function GET() {
   return NextResponse.json(
     {
       status: 'live',
-      release: process.env.VERCEL_GIT_COMMIT_SHA ?? process.env.LYSTO_RELEASE ?? 'local'
+      release: currentRelease()
     },
     { headers: { 'Cache-Control': 'no-store' } }
   )
