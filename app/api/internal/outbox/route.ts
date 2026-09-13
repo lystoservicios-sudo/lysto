@@ -4,6 +4,30 @@ import { dispatchNotifications } from '@/lib/notifications/server'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
+
+async function runBatch(batchSize: number) {
+  try {
+    return privateJson(await dispatchNotifications(batchSize))
+  } catch {
+    return privateJson(
+      { error: 'No se pudo completar el lote; los leases pendientes podrán recuperarse.' },
+      { status: 503 }
+    )
+  }
+}
+
+export async function GET(request: Request) {
+  if (
+    !authorizeOutboxWorker(
+      request.headers.get('authorization'),
+      process.env.CRON_SECRET,
+      process.env.OUTBOX_WORKER_ENABLED === 'true'
+    )
+  )
+    return privateJson({ error: 'Worker no disponible.' }, { status: 403 })
+  return runBatch(5)
+}
+
 export async function POST(request: Request) {
   if (
     !authorizeOutboxWorker(
@@ -19,12 +43,5 @@ export async function POST(request: Request) {
   } catch {
     return privateJson({ error: 'Solicitud inválida.' }, { status: 400 })
   }
-  try {
-    return privateJson(await dispatchNotifications(input.batchSize))
-  } catch {
-    return privateJson(
-      { error: 'No se pudo completar el lote; los leases pendientes podrán recuperarse.' },
-      { status: 503 }
-    )
-  }
+  return runBatch(input.batchSize)
 }

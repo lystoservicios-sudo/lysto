@@ -23,7 +23,7 @@ No habilitar email hasta acreditar remitente, recepción sandbox, SPF, DKIM y DM
 
 ## Scheduler
 
-El scheduler del hosting debe ejecutar `POST /api/internal/outbox` con `Authorization: Bearer <OUTBOX_WORKER_SECRET>`, `Content-Type: application/json` y `{"batchSize":5}`. El request espera el lote completo, tiene presupuesto de 45 segundos y la ruta declara máximo de 60. Frecuencia inicial: cada minuto. T36 debe aportar ejecuciones reales consecutivas y alertas del hosting.
+El scheduler del hosting debe ejecutar el worker cada minuto. El proyecto incluye un Vercel Cron en `vercel.json` que hace `GET /api/internal/outbox`; Vercel envía `Authorization: Bearer <CRON_SECRET>` y la ruta procesa un lote de cinco. La alternativa operativa es `POST /api/internal/outbox` con `Authorization: Bearer <OUTBOX_WORKER_SECRET>`, `Content-Type: application/json` y `{"batchSize":5}`. Cada request espera el lote completo, tiene presupuesto de 45 segundos y la ruta declara máximo de 60. Los cron de Vercel sólo se activan en despliegues Production del proyecto: el staging actual en Preview requiere invocación controlada o un proyecto de staging separado para demostrar frecuencia real. T36 debe aportar ejecuciones consecutivas y alertas del hosting.
 
 Nunca ejecutar dos schedulers con secretos distintos contra entornos mezclados. Los workers concurrentes son válidos porque PostgreSQL usa `SKIP LOCKED`; cada instancia debe tener un identificador distinto.
 
