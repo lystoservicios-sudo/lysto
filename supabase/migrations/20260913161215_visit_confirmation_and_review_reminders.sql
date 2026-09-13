@@ -188,6 +188,7 @@ begin
   select u.email,p.role::text into v_email,v_role
   from public.profiles p join auth.users u on u.id=p.auth_user_id
   where p.id=p_event.recipient_profile_id and u.deleted_at is null and u.email_confirmed_at is not null
+    and u.email is not null and length(u.email::text) between 3 and 320
     and (u.banned_until is null or u.banned_until<=now())
     and coalesce(u.raw_app_meta_data->>'app_role','customer')=p.role::text
   for share of p,u;

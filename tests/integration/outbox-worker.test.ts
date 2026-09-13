@@ -223,6 +223,65 @@ describe('durable notification delivery boundary', () => {
       p_claim_token: event.claim_token
     })
     expect(stale.error?.code).toBe('22023')
+
+    const nextClaim = await db.query(
+      `select * from public.claim_outbox_events($1,100,120,array['email'])`,
+      [`${fixture.runId}-visit-current`]
+    )
+    const currentEvent = nextClaim.rows.find(
+      (row) => row.aggregate_id === jobId && row.event_type === 'visit.confirmed'
+    )
+    expect(currentEvent).toBeTruthy()
+    const resolveCurrent = () =>
+      service.rpc('resolve_outbox_delivery', {
+        p_event_id: currentEvent.id,
+        p_claim_token: currentEvent.claim_token
+      })
+
+    await db.query(`update auth.users set banned_until=now()+interval '1 hour' where id=$1`, [
+      fixture.accounts.customerA.authId
+    ])
+    try {
+      expect((await resolveCurrent()).error?.code).toBe('22023')
+    } finally {
+      await db.query(`update auth.users set banned_until=null where id=$1`, [
+        fixture.accounts.customerA.authId
+      ])
+    }
+
+    await db.query(`update auth.users set deleted_at=clock_timestamp() where id=$1`, [
+      fixture.accounts.customerA.authId
+    ])
+    try {
+      expect((await resolveCurrent()).error?.code).toBe('22023')
+    } finally {
+      await db.query(`update auth.users set deleted_at=null where id=$1`, [
+        fixture.accounts.customerA.authId
+      ])
+    }
+
+    await db.query(`update auth.users set email=null where id=$1`, [
+      fixture.accounts.customerA.authId
+    ])
+    try {
+      expect((await resolveCurrent()).error?.code).toBe('22023')
+    } finally {
+      await db.query(`update auth.users set email=$2 where id=$1`, [
+        fixture.accounts.customerA.authId,
+        fixture.accounts.customerA.email
+      ])
+    }
+
+    await db.query(`update public.profiles set role='professional' where id=$1`, [
+      fixture.accounts.customerA.profileId
+    ])
+    try {
+      expect((await resolveCurrent()).error?.code).toBe('22023')
+    } finally {
+      await db.query(`update public.profiles set role='customer' where id=$1`, [
+        fixture.accounts.customerA.profileId
+      ])
+    }
   })
   it('persists customer, assignment, payment and support events in their business transactions', async () => {
     const requestId = randomUUID(),

@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { Client } from 'pg'
+import { createClient } from '@supabase/supabase-js'
 import { createFixtureAccounts } from './fixtures'
 
 describe('customer confirmation and optional review', () => {
@@ -11,6 +12,7 @@ describe('customer confirmation and optional review', () => {
     requestIds = [randomUUID(), randomUUID(), randomUUID()],
     jobIds = [randomUUID(), randomUUID(), randomUUID()],
     reportIds = [randomUUID(), randomUUID()]
+  let reviewClaim: { id: string; claim_token: string } | undefined
   beforeAll(async () => {
     fixture = await setup
     await db.connect()
@@ -108,6 +110,32 @@ describe('customer confirmation and optional review', () => {
       (await db.query('select count(*) from public.reviews where job_id=$1', [jobIds[0]])).rows[0]
         .count
     ).toBe('0')
+    const reminders = await db.query(
+      `select id,available_at,
+        available_at between clock_timestamp()+interval '119 minutes' and clock_timestamp()+interval '121 minutes' due_in_two_hours
+       from private.outbox_events
+       where aggregate_id=$1 and event_type='review.requested'`,
+      [jobIds[0]]
+    )
+    expect(reminders.rows).toHaveLength(1)
+    expect(reminders.rows[0].due_in_two_hours).toBe(true)
+    const early = await db.query(
+      `select * from public.claim_outbox_events($1,100,120,array['email'])`,
+      [`${fixture.runId}-review-early`]
+    )
+    expect(early.rows.some((row) => row.id === reminders.rows[0].id)).toBe(false)
+
+    await db.query(
+      `update private.outbox_events set available_at=clock_timestamp()-interval '1 minute'
+       where id=$1`,
+      [reminders.rows[0].id]
+    )
+    const due = await db.query(
+      `select * from public.claim_outbox_events($1,100,120,array['email'])`,
+      [`${fixture.runId}-review-due`]
+    )
+    reviewClaim = due.rows.find((row) => row.id === reminders.rows[0].id)
+    expect(reviewClaim).toBeTruthy()
   })
   it('submits one optional review without changing completion or job counts', async () => {
     const payload = {
@@ -146,6 +174,24 @@ describe('customer confirmation and optional review', () => {
     ).rows[0]
     expect(metrics.jobs_completed).toBe(metrics.actual_completed)
     expect(metrics.quality_cases).toBe(1)
+    const staleReminder = await fixture.accounts.customerA.client.rpc('resolve_outbox_delivery', {
+      p_event_id: reviewClaim!.id,
+      p_claim_token: reviewClaim!.claim_token
+    })
+    expect(staleReminder.error?.code).toBe('42501')
+    const service = createClient(
+      process.env.LYSTO_TEST_SUPABASE_URL!,
+      process.env.LYSTO_TEST_SERVICE_ROLE_KEY!,
+      { auth: { persistSession: false, autoRefreshToken: false } }
+    )
+    expect(
+      (
+        await service.rpc('resolve_outbox_delivery', {
+          p_event_id: reviewClaim!.id,
+          p_claim_token: reviewClaim!.claim_token
+        })
+      ).error?.code
+    ).toBe('22023')
   })
   it('records disagreement once and keeps the service disputed', async () => {
     const payload = {
@@ -168,5 +214,14 @@ describe('customer confirmation and optional review', () => {
       )
     ).rows[0]
     expect(state).toMatchObject({ status: 'disputed', cases: 1 })
+    expect(
+      (
+        await db.query(
+          `select count(*)::int count from private.outbox_events
+           where aggregate_id=$1 and event_type='review.requested'`,
+          [jobIds[1]]
+        )
+      ).rows[0].count
+    ).toBe(0)
   })
 })
