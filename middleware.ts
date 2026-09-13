@@ -49,6 +49,9 @@ export async function middleware(request: NextRequest) {
   if (!privatePage && !api) return withCorrelation(nextResponse())
   let response = withCorrelation(onboardingHeaders(privateResponse(nextResponse())))
   if (sessionlessApis.has(pathname)) return response
+  // API handlers resolve and refresh their own session before any domain work.
+  // Repeating getClaims here adds a second Auth pass to every private API call.
+  if (api) return response
   try {
     const env = assertPublicSupabaseEnv()
     const pending = new Map<string, Parameters<SetAllCookies>[0][number]>()

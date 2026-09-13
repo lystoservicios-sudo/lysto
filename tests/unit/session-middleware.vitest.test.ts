@@ -59,6 +59,11 @@ it.each([
   expect(response.status).toBe(200)
   expect(mocks.create).not.toHaveBeenCalled()
 })
+it('leaves authenticated API session validation to the route handler', async () => {
+  const response = await middleware(new NextRequest('https://lysto.test/api/customer/addresses'))
+  expect(response.headers.get('cache-control')).toContain('no-store')
+  expect(mocks.create).not.toHaveBeenCalled()
+})
 it('does not use panel-like public prefixes as private routes', async () => {
   await middleware(new NextRequest('https://lysto.test/application'))
   expect(mocks.create).not.toHaveBeenCalled()
