@@ -984,7 +984,7 @@
       ],
       "nextAction": "Remote migrations and SQL acceptance passed. Configure the approved sender and scheduler in staging and demonstrate retry, suppression and dead-letter recovery.",
       "deviations": [
-        "T24 remains in progress: code checks passed, but database acceptance is not inferred from unit tests."
+        "T24 implementation is complete; staging sender and scheduler acceptance remains external."
       ]
     },
     {
@@ -1420,8 +1420,7 @@
       ],
       "commit": null,
       "blockedBy": [
-        "D04 designated isolated staging identity",
-        "D04 designated staging identity",
+        "D04 designated isolated staging identity; Vercel lysto-demo Preview currently points to production Supabase dqonlqcurvjnjgsczevu",
         "Physical phone and named customer/professional/operator/finance/quality UAT"
       ],
       "nextAction": "Execute all 36 discovered cases against the disposable release build and designated staging with zero skipped/failed; complete E01-E18 plus physical-phone UAT and record sanitized artifacts; continue T36 preparation meanwhile.",
@@ -1459,7 +1458,7 @@
       "commit": null,
       "blockedBy": [
         "D01 expected capacity and D10 SLO/budget approvals",
-        "D04 designated non-production staging target",
+        "D04 designated non-production staging target; Vercel lysto-demo Preview is explicitly excluded because it points to production Supabase",
         "Database load must run against designated isolated staging, never the production project",
         "Official k6 Windows installer did not complete within the bounded execution window"
       ],
@@ -1495,19 +1494,20 @@
         "docs/release/staging-acceptance.md",
         "docs/release/provider-acceptance.md",
         "docs/release/staging-identity.example.json",
+        "docs/release/vercel-environment-audit-2026-09-12.md",
         "scripts/test-e2e-staging.mjs",
         "tests/tooling/staging-acceptance.test.mjs"
       ],
       "commit": null,
       "blockedBy": [
-        "D04 has no designated staging provider, project, domain or accountable owner",
+        "D04 has a reachable Vercel demo but no isolated staging backend, domain or accountable owner; Preview points to production Supabase",
         "D11 has no identified Mercado Pago application and official test accounts",
         "D06/D10 sender, scheduler and alert destinations are not approved",
         "T32/T34/T35 require remote execution evidence"
       ],
       "nextAction": "Once D04/D11 identify staging and provider owners, deploy this exact candidate with isolated secrets, run migrations, smoke, T34/T35, restore and MP01-MP12, then collect named acceptance; continue T37 preparation without enabling production.",
       "deviations": [
-        "The historical Vercel demo was not treated as staging or production.",
+        "The Vercel demo was inspected read-only and excluded from staging because its Preview environment points to the production Supabase project.",
         "No remote environment, email, payment, refund or OAuth account was modified."
       ]
     },
@@ -1685,7 +1685,9 @@
       "value": null,
       "approvedBy": null,
       "approvedAt": null,
-      "evidence": []
+      "evidence": [
+        "docs/release/vercel-environment-audit-2026-09-12.md"
+      ]
     },
     {
       "id": "D05",
@@ -2149,6 +2151,17 @@
         "T31"
       ],
       "note": "Permanent management access was configured outside the repository. Migrations advanced from 7/56 to 58/58, 28 remote SQL suites passed with forced rollback, RPC boundary defects were repaired, password minimum became 12 and no test fixture or pgTAP extension persisted. Tasks moved to implemented while staging, provider and human acceptance remain pending."
+    },
+    {
+      "type": "vercel_environment_audited",
+      "at": "2026-09-12",
+      "tasks": [
+        "T33",
+        "T34",
+        "T35",
+        "T36"
+      ],
+      "note": "Authenticated read-only inspection confirmed lysto-demo is reachable but its Preview environment points to production Supabase dqonlqcurvjnjgsczevu, uses Node 24.x and lacks the required operational variables. It is excluded from destructive staging tests until D04 provides isolated backend and secrets."
     }
   ],
   "executionWorktree": "E:/Proyectos/GitHub/Lysto-production-readiness"

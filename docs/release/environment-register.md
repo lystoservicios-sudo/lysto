@@ -1,17 +1,17 @@
 # Registro de ambientes y dependencias — T01
 
-Estado: inventario local verificado; designación de staging y producción pendiente de D04. No se han consultado ni modificado despliegues remotos.
+Estado: inventario local y Vercel remoto verificados; designación de staging y producción pendiente de D04. No se modificaron despliegues remotos.
 
 | Ambiente | Evidencia disponible | Estado / siguiente paso |
 |---|---|---|
 | Directorio original | Lysto en main, cambios preservados; Supabase local preexistente | No usar como destino de reset ni fixtures nuevos |
 | Implementación aislada | Rama codex/production-readiness, worktree hermano; sin .env.local copiado | Builds/tests locales; DB propia en T03 |
-| Demo Vercel | Archivo local .vercel/project.json identifica proyecto lysto-demo; .env.local incluye metadatos Vercel | Demuestra enlace local, no disponibilidad ni idoneidad productiva; verificar remoto cuando se designe |
+| Demo Vercel | Proyecto remoto `lysto-demo`, Preview y Production activos; auditoría del 2026-09-12 | Preview apunta al Supabase productivo `dqonlqcurvjnjgsczevu`, usa Node 24.x y sólo tiene tres variables de aplicación; no es staging aislado |
 | Staging | No hay designación inequívoca verificada | Confirmar proyecto, dominio, región, cuentas de prueba y responsables D04 |
 | Producción | No hay designación inequívoca verificada | Configurar únicamente después de D04/D11 y gates |
 | Mercado Pago | Integración usa aplicación marketplace, OAuth y ledger propios | Credenciales/aceptación no verificadas; no llamadas financieras reales |
 
-No se presume que la demo sea producción ni se cambia de proveedor por archivos históricos. Se consultó al usuario por hosting/dominio/proyectos; respuesta pendiente al crear el registro. Node 22 y PostgreSQL/Prisma requieren runtime compatible; no desplegar los handlers Node en un runtime edge incompatible.
+La demo remota existe y es operable, pero no puede recibir fixtures, carga o pruebas de proveedor mientras comparta el backend productivo. D04 debe decidir si se corrige con un Supabase separado o se crea un proyecto de staging nuevo. Node 22 y PostgreSQL/Prisma requieren runtime compatible; no desplegar los handlers Node en un runtime edge incompatible. Evidencia: `docs/release/vercel-environment-audit-2026-09-12.md`.
 
 ## Variables y custodios
 
