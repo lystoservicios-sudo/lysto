@@ -1,6 +1,20 @@
 import { privateJson } from '@/lib/http/api-error'
 import { z } from 'zod'
-import { getPricingSession, pricingError } from '@/lib/pricing/server'
+import { getPricingSession, pricingError, throwPricingDatabaseError } from '@/lib/pricing/server'
+
+const visitSchema = z
+  .object({
+    scheduleVersion: z.number().int().positive(),
+    startsAt: z.string().datetime({ offset: true }),
+    endsAt: z.string().datetime({ offset: true }),
+    timezone: z.literal('America/Argentina/Buenos_Aires'),
+    addressLabel: z.string().trim().min(1).max(500),
+    professionalName: z.string().trim().min(1).max(160),
+    durationMinutes: z.number().int().min(30).max(480),
+    travelBufferMinutes: z.number().int().min(0).max(180),
+    confirmed: z.literal(true)
+  })
+  .strict()
 export async function GET(request: Request) {
   try {
     const s = await getPricingSession()
@@ -21,6 +35,9 @@ export async function GET(request: Request) {
         { error: 'No encontramos un trabajo disponible para tu cuenta.' },
         { status: 404 }
       )
+    const visitResult = await s.client.rpc('get_job_visit', { p_job_id: job.id })
+    if (visitResult.error) throwPricingDatabaseError(visitResult.error)
+    const visit = visitSchema.nullable().parse(visitResult.data)
     const { data: savedQuote } = await s.client
       .from('service_quotes')
       .select('*')
@@ -55,6 +72,7 @@ export async function GET(request: Request) {
       onsiteDiagnosis: onsite.data ?? null,
       finalReport: finalReport.data ?? null,
       equipmentId: serviceRequest?.equipment_id ?? null,
+      visit,
       role: s.role
     })
   } catch (error) {

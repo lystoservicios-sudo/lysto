@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set search_path=public,extensions;
-select plan(14);
+select plan(17);
 
 select has_function('private','enqueue_visit_confirmation',array['uuid'],'visit confirmation enqueue helper exists');
 select has_function('private','enqueue_review_request',array[]::text[],'review reminder trigger function exists');
@@ -10,6 +10,9 @@ select has_trigger('public','job_schedule_reservations','schedule_visit_confirma
 select has_trigger('public','job_customer_decisions','customer_review_request','customer conformity schedules review request');
 select ok(not has_function_privilege('authenticated','private.enqueue_visit_confirmation(uuid)','execute'),'authenticated cannot enqueue visit email directly');
 select ok(not has_function_privilege('service_role','private.enqueue_visit_confirmation(uuid)','execute'),'service role cannot bypass visit eligibility helper');
+select has_function('public','get_job_visit',array['uuid'],'authenticated visit projection exists');
+select ok(has_function_privilege('authenticated','public.get_job_visit(uuid)','execute'),'authenticated participants can read the visit projection');
+select ok(not has_function_privilege('anon','public.get_job_visit(uuid)','execute'),'anonymous callers cannot read a visit projection');
 
 do $$
 declare

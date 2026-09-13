@@ -11,6 +11,11 @@ import { acknowledgeCommand, recoverCommand } from '@/lib/jobs/recoverable-comma
 import { QuoteBreakdown } from './quote-breakdown'
 import { PaymentPanel } from '@/components/payments/payment-panel'
 import { JobCloseoutForm } from '@/components/pro/job-closeout-form'
+import {
+  JobVisitCard,
+  type CustomerJobVisit,
+  type RescheduleRequest
+} from '@/components/customer/job-visit-card'
 
 type Extra = { id: string; fault: string; description: string; amount: number; status: string }
 type Diagnosis = {
@@ -26,6 +31,7 @@ type JobData = {
   role: string
   job: { id: string; status: string }
   equipmentId: string | null
+  visit: CustomerJobVisit | null
   onsiteDiagnosis: Diagnosis | null
   finalReport: {
     id: string
@@ -200,6 +206,19 @@ export function JobQuotePanel({ jobId, requestId }: { jobId?: string; requestId?
               registros separados.
             </p>
           </Card>
+          {data.role === 'customer' ? (
+            <JobVisitCard
+              jobId={data.job.id}
+              visit={data.visit}
+              onReschedule={async (request: RescheduleRequest) => {
+                await command('/api/jobs/reschedule', 'POST', 'reschedule-request', {
+                  action: 'request',
+                  jobId: data.job.id,
+                  ...request
+                })
+              }}
+            />
+          ) : null}
           {data.savedQuote ? (
             <QuoteBreakdown
               quote={data.savedQuote.quote}

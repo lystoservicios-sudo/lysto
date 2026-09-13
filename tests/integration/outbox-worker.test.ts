@@ -183,6 +183,23 @@ describe('durable notification delivery boundary', () => {
     expect(JSON.stringify(resolved.data.context)).not.toContain(
       fixture.accounts.professionalApproved.email
     )
+    const ownedVisit = await fixture.accounts.customerA.client.rpc('get_job_visit', {
+      p_job_id: jobId
+    })
+    expect(ownedVisit.error).toBeNull()
+    expect(ownedVisit.data).toMatchObject({
+      scheduleVersion: 1,
+      professionalName: resolved.data.context.professionalName,
+      addressLabel: 'Av. Siempre Viva 742, Piso 3 Depto. B, Buenos Aires',
+      confirmed: true
+    })
+    expect(
+      (
+        await fixture.accounts.customerB.client.rpc('get_job_visit', {
+          p_job_id: jobId
+        })
+      ).error?.code
+    ).toBe('P0002')
 
     await db.query(
       `update public.job_schedule_reservations
