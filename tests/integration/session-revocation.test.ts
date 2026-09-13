@@ -217,14 +217,23 @@ describe('effective session revocation and administrative MFA', () => {
       const secret = await key.inputValue()
       stage = 'submitting verification'
       let verified = false
-      for (let attempt = 0; attempt < 2 && !verified; attempt++) {
-        await page.getByLabel('Código del autenticador').fill(fixtureTotp(secret))
+      for (const offset of [0, -30_000, 30_000]) {
+        const response = page.waitForResponse(
+          (candidate) =>
+            candidate.request().method() === 'POST' &&
+            /\/auth\/v1\/factors\/[^/]+\/verify$/.test(new URL(candidate.url()).pathname),
+          { timeout: 15_000 }
+        )
+        await page.getByLabel('Código del autenticador').fill(fixtureTotp(secret, Date.now() + offset))
         await page.getByRole('button', { name: 'Verificar y continuar' }).click()
         stage = 'waiting for administrative redirect'
-        verified = await Promise.race([
-          page.waitForURL(new URL('/admin/dashboard', app!.baseURL).toString(), { timeout: 15000 }).then(() => true),
-          page.getByRole('alert').waitFor({ timeout: 15000 }).then(() => false)
-        ])
+        if ((await response).ok()) {
+          await page.waitForURL(new URL('/admin/dashboard', app!.baseURL).toString(), {
+            timeout: 15_000
+          })
+          verified = true
+          break
+        }
       }
       if (!verified) throw new Error('verification did not redirect')
       expect(await page.getByLabel('Clave de configuración').count()).toBe(0)

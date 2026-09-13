@@ -93,6 +93,9 @@ it('allows the Next development runtime to hydrate local browser tests', async (
     expect(headers['Content-Security-Policy']).toContain("'unsafe-eval'")
     expect(headers['Content-Security-Policy']).toContain('http://127.0.0.1:54321')
     expect(headers['Content-Security-Policy']).toContain('ws://127.0.0.1:54321')
+    expect(headers['Content-Security-Policy']).toMatch(
+      /img-src[^;]*http:\/\/127\.0\.0\.1:54321/
+    )
   } finally {
     vi.unstubAllEnvs()
   }

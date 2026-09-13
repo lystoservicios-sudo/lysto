@@ -90,6 +90,8 @@ describe('onsite workflow', () => {
       await db.query('delete from public.marketplace_checkouts where id=any($1::uuid[])', [
         checkoutIds
       ])
+      await db.query('delete from public.job_extras where id=any($1::uuid[])', [extraIds])
+      await db.query('delete from public.onsite_diagnoses where job_id=$1', [jobId])
       await db.query('delete from public.job_media where id=$1', [evidenceId])
       await db.query('delete from public.jobs where id=any($1::uuid[])', [[jobId, unpaidJob]])
       await db.query('delete from public.service_requests where id=any($1::uuid[])', [

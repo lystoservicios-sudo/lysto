@@ -65,6 +65,10 @@ describe('support and warranty operations', () => {
       await db.query(`delete from private.outbox_events where aggregate_id=any($1::uuid[])`, [
         caseIds
       ])
+      await db.query(
+        `delete from private.support_case_commands where actor_profile_id=any($1::uuid[])`,
+        [Object.values(fixture.accounts).map((account) => account.profileId)]
+      )
       await db.query(`delete from public.warranty_claims where job_id=$1`, [jobId])
       await db.query(`delete from public.complaints where job_id=$1`, [jobId])
       if (revisitJobs.length)

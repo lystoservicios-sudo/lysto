@@ -63,6 +63,7 @@ describe('marketplace payment concurrency', () => {
   afterAll(async () => {
     try {
       await closePaymentDatabaseForTests()
+      await database.query('delete from private.marketplace_applied_events where checkout_id in (select id from public.marketplace_checkouts where job_id=$1)', [jobId])
       await database.query('delete from public.marketplace_payment_observations where checkout_id in (select id from public.marketplace_checkouts where job_id=$1)', [jobId])
       await database.query('delete from public.payments where job_id=$1', [jobId])
       await database.query('delete from public.marketplace_checkouts where job_id=$1', [jobId])

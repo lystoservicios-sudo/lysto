@@ -37,7 +37,7 @@ const nextConfig: NextConfig = {
         'https://api.mercadopago.com'
       ].join(' '),
       'frame-src https://www.mercadopago.com https://*.mercadopago.com',
-      "img-src 'self' data: blob: https:",
+      ["img-src 'self' data: blob: https:", ...supabaseBrowserOrigins()].join(' '),
       "style-src 'self' 'unsafe-inline'",
       "form-action 'self' https://www.mercadopago.com https://*.mercadopago.com",
       ...(process.env.APP_ENV === 'production' ? ['upgrade-insecure-requests'] : [])
