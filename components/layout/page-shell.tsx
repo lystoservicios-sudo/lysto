@@ -5,25 +5,16 @@ import type { AppRole } from './app-navigation-config'
 import { AppShellProvider } from './app-shell-provider'
 import { AppTopbar } from './app-topbar'
 import { MarketingHeader } from './marketing-header'
-import Link from 'next/link'
+import { MarketingFooter } from '@/components/marketing/shared'
 import type { AccountIdentity } from '@/lib/auth/account-identity'
 
 export function PublicShell({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="m-site">
+      <a href="#contenido" className="m-skip-link">Saltar al contenido</a>
       <MarketingHeader />
-      {children}
-      <footer className="border-t border-slate-200 bg-slate-50">
-        <nav
-          aria-label="Información legal"
-          className="mx-auto flex max-w-6xl flex-wrap gap-5 px-4 py-8 text-sm font-semibold text-slate-700 sm:px-6"
-        >
-          <Link href="/terminos">Términos</Link>
-          <Link href="/privacidad">Privacidad</Link>
-          <Link href="/cancelaciones">Cancelaciones</Link>
-          <Link href="/ayuda">Ayuda</Link>
-        </nav>
-      </footer>
+      <div id="contenido" tabIndex={-1}>{children}</div>
+      <MarketingFooter />
     </div>
   )
 }
