@@ -74,7 +74,8 @@ export async function listCustomerAddresses(session: Session, input: unknown = {
   let query = session.client
     .from('customer_addresses')
     .select(
-      'id,label,street,number,floor,apartment,city,province,postal_code,reference,property_type,has_elevator,has_parking,stairs_required,outdoor_unit_at_height,outdoor_unit_on_balcony,difficult_access,is_default,version,created_at,archived_at'
+      'id,label,street,number,floor,apartment,city,province,postal_code,reference,property_type,has_elevator,has_parking,stairs_required,outdoor_unit_at_height,outdoor_unit_on_balcony,difficult_access,is_default,version,created_at,archived_at',
+      { count: 'exact' }
     )
     .eq('customer_id', owner)
     .is('archived_at', null)
@@ -82,18 +83,11 @@ export async function listCustomerAddresses(session: Session, input: unknown = {
     query = query.or(
       `created_at.lt.${cursor.createdAt},and(created_at.eq.${cursor.createdAt},id.lt.${cursor.id})`
     )
-  const [result, count] = await Promise.all([
-    query
-      .order('created_at', { ascending: false })
-      .order('id', { ascending: false })
-      .limit(pageSize + 1),
-    session.client
-      .from('customer_addresses')
-      .select('id', { count: 'exact', head: true })
-      .eq('customer_id', owner)
-      .is('archived_at', null)
-  ])
-  if (result.error || count.error || !result.data || count.count === null)
+  const result = await query
+    .order('created_at', { ascending: false })
+    .order('id', { ascending: false })
+    .limit(pageSize + 1)
+  if (result.error || !result.data || result.count === null)
     throw new ApiError('service_unavailable')
   const items: CustomerAssetAddress[] = result.data
     .slice(0, pageSize)
@@ -125,7 +119,7 @@ export async function listCustomerAddresses(session: Session, input: unknown = {
   const last = items.at(-1)
   return {
     items,
-    total: count.count,
+    total: result.count,
     nextCursor:
       result.data.length > pageSize && last
         ? encodeCursor({ id: last.id, createdAt: last.createdAt }, scope)
