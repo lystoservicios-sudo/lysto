@@ -4146,6 +4146,7 @@ export type Database = {
         Args: { p_claim_token: string; p_event_id: string }
         Returns: boolean
       }
+      get_job_visit: { Args: { p_job_id: string }; Returns: Json }
       get_payment_refund_execution_context: {
         Args: { p_claim_token: string; p_request_id: string }
         Returns: Json
@@ -4157,7 +4158,6 @@ export type Database = {
         Args: { p_from: string; p_professional_id: string; p_to: string }
         Returns: Json
       }
-      get_job_visit: { Args: { p_job_id: string }; Returns: Json }
       get_session_context: { Args: never; Returns: Json }
       get_upload_intent: { Args: { p_intent_id: string }; Returns: Json }
       is_admin: { Args: never; Returns: boolean }
@@ -4800,3 +4800,4 @@ export const Constants = {
     },
   },
 } as const
+
