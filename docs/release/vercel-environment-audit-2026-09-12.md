@@ -1,17 +1,19 @@
 # Auditoría remota de Vercel — 2026-09-12
 
-Estado: **demo existente verificada; no apta como staging aislado**.
+Estado: **Preview convertido en staging técnico aislado; aceptación externa pendiente**.
 
 ## Resultado
 
 - La sesión autenticada de Vercel pertenece a `waltergaltieri` y expone el proyecto `lysto-demo` (`prj_nggGpeRYxmcrXDni6Xt98OWwVJg7`).
 - El proyecto usa Next.js y mantiene despliegues Preview y Production listos; el último despliegue productivo observado fue creado el 25 de agosto de 2026 y publica `https://lysto-demo.vercel.app`.
-- Vercel configura Node 24.x, mientras el candidato declara Node 22.x en `package.json`. El runtime debe alinearse antes de aceptar un candidato.
-- Sólo están declaradas las variables de aplicación `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. No están configurados los secretos y controles requeridos para operaciones, pagos, workers, correo, límites y observabilidad.
-- La configuración Preview de `lysto-demo` apunta al proyecto Supabase `dqonlqcurvjnjgsczevu`, clasificado como producción. Por lo tanto no ofrece aislamiento para fixtures, E2E autenticado, carga, restauración ni pruebas de proveedor.
+- El candidato se compiló con Node 22.23.2 y publicó 81 rutas en Preview.
+- Preview usa variables propias de staging, controles de admisión explícitos, proveedor de pagos simulado y protección de despliegue. El secreto de automatización está fuera del repositorio y fue rotado durante la preparación.
+- La configuración Preview apunta al Supabase aislado `obksyzasmfwcbbksesqt` (`lysto-staging`, `us-east-1`, `production:false`). Producción conserva `dqonlqcurvjnjgsczevu` y su alias no fue modificado.
+- El alias estable es `https://lysto-staging-preview.vercel.app`; el candidato runtime `ff9925959eab64dd40362e4aaff7bc6114a4ad6b` corresponde al deployment `dpl_BkgTPU5Nurei2dp8Q7DTMPvQEURN`.
+- `/api/health/live` y `/api/health/ready` respondieron 200. La aceptación funcional pasó 36/36 casos, sin omitidos, en Chromium desktop/mobile y WebKit mobile.
 
 ## Decisión técnica
 
-No ejecutar T32, T34, T35 ni T36 contra `lysto-demo` mientras comparta el Supabase productivo. D04 requiere un proyecto Supabase separado, secretos propios, `APP_ENV=staging`, dominio identificable, cuentas sintéticas y custodios. El proyecto Vercel existente puede reutilizarse únicamente si se separa completamente su backend y se corrige su configuración; esa designación sigue pendiente.
+El aislamiento técnico requerido para T34/T35 ya existe y fue utilizado. T35 aprobó carga sostenida, doble pico, ráfaga y recuperación. T32 sigue pendiente porque el plan Free no entrega un backup recuperable, y T36 conserva gates por Mercado Pago, correo, scheduler, alertas y aceptación de responsables. D04 aún necesita aprobación nominal de titular y suplente; la identidad técnica está registrada fuera del checkout.
 
-La inspección fue de solo lectura. Se descargó la configuración Preview a una ruta temporal fuera del repositorio para comparar únicamente el project ref y los nombres de variables; su contenido quedó sobrescrito a longitud cero y ningún valor secreto fue registrado.
+Ningún secreto fue registrado. La configuración de Production y el alias `https://lysto-demo.vercel.app` no se cambiaron; todas las mutaciones se limitaron a Preview y al proyecto Supabase de staging.

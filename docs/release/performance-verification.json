@@ -1,22 +1,36 @@
 {
   "task": "T35",
-  "status": "prepared_pending_staging_measurement_and_budget_approval",
-  "candidateCommit": null,
-  "target": null,
+  "status": "implemented_pending_capacity_and_budget_approval",
+  "measuredAt": "2026-09-13",
+  "candidateCommit": "ff9925959eab64dd40362e4aaff7bc6114a4ad6b",
+  "repositoryEvidenceCommit": "19129cf",
+  "deploymentId": "dpl_BkgTPU5Nurei2dp8Q7DTMPvQEURN",
+  "target": "https://lysto-staging-preview.vercel.app",
+  "supabaseProjectRef": "obksyzasmfwcbbksesqt",
   "profiles": {
-    "smoke": null,
-    "peak": null,
-    "double_peak": null,
-    "burst": null,
-    "sustained_60m": null,
-    "recovery": null
+    "smoke": { "status": "pass", "requests": 194, "failedRate": 0, "readP95Ms": 739.694225, "readP99Ms": 1640.72465, "mutationP95Ms": 655.273405, "mutationP99Ms": 697.944601, "evidence": "output/load/2026-09-13T06-07-01.149Z/smoke.json" },
+    "peak": { "status": "pass", "requests": 4598, "failedRate": 0, "readP95Ms": 943.20624, "readP99Ms": 2203.852182, "mutationP95Ms": 814.732625, "mutationP99Ms": 1565.531825, "evidence": "output/load/2026-09-13T04-44-13.504Z/peak.json" },
+    "double_peak": { "status": "pass", "requests": 14062, "failedRate": 0, "readP95Ms": 759.494875, "readP99Ms": 1620.24245, "mutationP95Ms": 873.68994, "mutationP99Ms": 1672.395494, "evidence": "output/load/2026-09-13T06-07-01.149Z/double_peak.json" },
+    "burst": { "status": "pass", "requests": 3699, "failedRate": 0, "readP95Ms": 864.7585, "readP99Ms": 2117.9002, "mutationP95Ms": 726.87602, "mutationP99Ms": 1076.949052, "evidence": "output/load/2026-09-13T06-04-05.026Z/burst.json" },
+    "sustained_60m": { "status": "pass", "requests": 27916, "failedRate": 0.00017910875483593638, "checksPassed": 14509, "checksFailed": 5, "readP95Ms": 814.8687, "readP99Ms": 1853.669, "mutationP95Ms": 734.14086, "mutationP99Ms": 1332.225689, "evidence": "output/load/2026-09-13T03-41-59.186Z/sustained.json", "note": "Measured on the immediately preceding staging release. Later changes removed duplicate API work and improved the measured path; double peak, burst and recovery were repeated on the final runtime candidate." },
+    "recovery": { "status": "pass", "requests": 194, "failedRate": 0, "readP95Ms": 739.694225, "mutationP95Ms": 655.273405, "evidence": "output/load/2026-09-13T06-07-01.149Z/smoke.json" }
   },
-  "thresholdsProposed": {
+  "thresholdsApplied": {
     "readP95Ms": 1000,
     "mutationP95Ms": 2000,
     "failedRateMax": 0.01,
     "integrityErrors": 0
   },
+  "databaseAfterRecovery": {
+    "backends": 14,
+    "waitingLocks": 0,
+    "activeQueriesOverOneSecond": 0,
+    "deadlocks": 0,
+    "conflicts": 0,
+    "evidence": "output/load/2026-09-13T06-07-01.149Z/database-after.json"
+  },
+  "syntheticCleanup": { "authUsers": 0, "profiles": 0 },
+  "ci": { "runId": 34741236649, "commit": "ff9925959eab64dd40362e4aaff7bc6114a4ad6b", "status": "success" },
   "costApproval": null,
-  "pending": ["D01 capacity approval", "D10 SLO and budget approval", "designated staging target"]
+  "pending": ["D01 capacity approval", "D10 SLO and budget approval"]
 }

@@ -1,6 +1,6 @@
 # Capacidad, rendimiento y costo
 
-Estado: perfil y controles preparados; medición remota y D01/D10 pendientes. Fecha de tarifas consultadas: 12/09/2026. Moneda de proveedores: USD, sin impuestos ni conversión.
+Estado: medición técnica remota aprobada; D01/D10 y presupuesto nominal pendientes. Fecha de tarifas consultadas: 12/09/2026. Moneda de proveedores: USD, sin impuestos ni conversión.
 
 ## Hipótesis de lanzamiento
 
@@ -13,6 +13,20 @@ Estas cifras permiten ensayar el sistema; no autorizan escala ilimitada.
 | 5× | 300 | 25 | 8 | 25 | 1.500 × 5 MB |
 
 La aceptación inicial propuesta sigue siendo 20 servicios completos durante al menos dos semanas. Dirección y operaciones deben aprobar cupo, zona, horarios y simultaneidad en D01. D10 debe aprobar volumen, SLO, alertas y presupuesto.
+
+## Resultado medido en staging
+
+El candidato runtime `ff9925959eab64dd40362e4aaff7bc6114a4ad6b`, deployment `dpl_BkgTPU5Nurei2dp8Q7DTMPvQEURN`, aprobó smoke, doble pico, ráfaga y recuperación sobre el alias protegido. La corrida sostenida de 60 minutos se ejecutó sobre el candidato inmediatamente anterior; los cambios posteriores eliminaron trabajo duplicado del mismo camino y sus perfiles más exigentes se repitieron sobre el candidato final.
+
+| Perfil | Solicitudes | Fallos HTTP | Lectura p95 | Mutación p95 | Resultado |
+| --- | ---: | ---: | ---: | ---: | --- |
+| Pico | 4.598 | 0% | 943 ms | 815 ms | aprobado |
+| Doble pico, candidato final | 14.062 | 0% | 759 ms | 874 ms | aprobado |
+| Ráfaga, candidato final | 3.699 | 0% | 865 ms | 727 ms | aprobado |
+| Sostenido 60 min | 27.916 | 0,018% | 815 ms | 734 ms | aprobado |
+| Recuperación, candidato final | 194 | 0% | 740 ms | 655 ms | aprobado |
+
+Después de recuperación hubo cero locks en espera, cero consultas activas de más de un segundo, cero deadlocks, cero conflictos y cero cuentas o perfiles sintéticos remanentes. La evidencia estructurada está en `docs/release/performance-verification.json`. Estos resultados completan la implementación técnica de T35; el volumen comercial y el gasto permitido todavía requieren D01 y D10.
 
 ## Perfil reproducible
 

@@ -4,15 +4,15 @@ Fecha de preparación: 2026-09-12. Estado final demostrado: **PREPARACIÓN LOCAL
 
 ## Versión y destino
 
-La implementación está en la rama local `codex/production-readiness`. El candidato definitivo debe crearse después de todos los cambios desde un checkout limpio. El Supabase remoto `dqonlqcurvjnjgsczevu` fue identificado como `PRODUCTION`, pero todavía no existe staging identificado ni un destino de hosting aprobado para el candidato.
+La implementación está en la rama remota `codex/production-readiness`. El candidato runtime `ff9925959eab64dd40362e4aaff7bc6114a4ad6b` está desplegado en staging protegido; el alias productivo no fue modificado. El Supabase remoto `dqonlqcurvjnjgsczevu` fue identificado como `PRODUCTION` y staging usa el proyecto aislado `obksyzasmfwcbbksesqt`.
 
-El registro canónico es `docs/plans/2026-09-10-production-progress.json`. Registra 11 tareas verificadas, 23 implementadas con aceptación externa pendiente, 2 en progreso por E2E/carga y T36–T39 bloqueadas por dependencias externas. Las 40 tareas fueron trabajadas; ese contador no equivale a release.
+El registro canónico es `docs/plans/2026-09-10-production-progress.json`. Registra 11 tareas verificadas, 26 implementadas con aceptación externa pendiente y 3 bloqueadas por dependencias externas. Las 40 tareas fueron trabajadas; ese contador no equivale a release. Staging remoto pasó 36/36 casos automatizados sin omitidos y T35 aprobó todos los perfiles de carga.
 
 ## Gates y decisión
 
 G01–G16 permanecen `pending` porque no existe un manifest del candidato final con evidencia autenticada. D01–D12 también permanecen pendientes. Por lo tanto no se ha demostrado TECHNICALLY_READY, PILOT_ENABLED ni GENERAL_PRODUCTION_READY. El manifiesto se genera con `pnpm release:manifest` y debe validarse contra la confianza protegida; una evidencia local o este traspaso no firma gates.
 
-La verificación local final aprobó lint, tipos, 174 pruebas de dominio, 503 pruebas unitarias en 78 archivos, 24 controles de tooling, build de 81 páginas, auditoría productiva sin vulnerabilidades conocidas y verificadores de pagos e imágenes sin llamadas externas. Playwright descubrió 36 casos en siete suites y tres proyectos; no se ejecutaron porque requieren Supabase descartable o staging.
+La CI del candidato aprobó Windows, lint, tipos, 174 pruebas de dominio, 509 pruebas unitarias, 698 pruebas SQL en 28 suites, 274 pruebas integrales y la compilación de 81 páginas. Playwright ejecutó y aprobó 36/36 casos en siete suites y tres proyectos contra staging remoto; la limpieza posterior dejó cero identidades sintéticas.
 
 ## Trabajo entregado
 
@@ -23,8 +23,8 @@ La verificación local final aprobó lint, tipos, 174 pruebas de dominio, 503 pr
 
 ## Bloqueos para el piloto
 
-1. Pasar el Supabase remoto a un plan con backup restaurable y protección HIBP; demostrar una restauración completa en un proyecto aislado. El esquema ya está en 58/58 migraciones, con 65/65 tablas públicas bajo RLS y 28 suites SQL aprobadas con rollback. No usar Supabase local ni Docker.
-2. Designar staging/hosting, project ref, dominio, secretos, remitente, scheduler y destinos de alertas; ejecutar T32, T34, T35 y T36 allí.
+1. Pasar el Supabase productivo a un plan con backup restaurable y protección HIBP; demostrar una restauración completa en un proyecto aislado y promover 59/62 a 62/62. Staging ya está en 62/62, con 65/65 tablas públicas bajo RLS y 28 suites SQL aprobadas con rollback. No usar Supabase local ni Docker en este equipo.
+2. Designar responsables nominales de hosting/staging, remitente, scheduler y destinos de alertas; completar T32 y T36. T34 y la implementación técnica de T35 ya están ejecutadas.
 3. Identificar la aplicación y cuentas Mercado Pago, completar MP01–MP12 y cualquier prueba financiera real expresamente autorizada.
 4. Resolver D01–D12, aprobar políticas, economía, soporte, RPO/RTO, capacidad y responsables/suplentes nominales.
 5. Construir el candidato exacto, completar G01–G15, firmar GO y abrir sólo el cupo autorizado con interruptores controlables.
@@ -41,4 +41,4 @@ Usar `docs/runbooks/daily-operations.md` para turnos, `docs/release/production-r
 
 Sólo pueden postergarse mejoras no bloqueantes registradas con responsable, vencimiento y riesgo aceptado. Seguridad, aislamiento, integridad monetaria, trazabilidad, soporte, backups, funciones nucleares y cualquier S0/S1 quedan fuera de ese backlog.
 
-Próxima revisión: al vincular el CLI/DB con `dqonlqcurvjnjgsczevu` y asegurar un backup recuperable, o al designar staging, lo que ocurra primero. Hasta entonces mantener ambos interruptores de entrada apagados en cualquier entorno que pudiera recibir tráfico real.
+Próxima revisión: al asegurar un backup recuperable y responsables nominales, o al identificar la aplicación y cuentas oficiales de Mercado Pago, lo que ocurra primero. Hasta entonces mantener ambos interruptores de entrada apagados en cualquier entorno que pudiera recibir tráfico real.

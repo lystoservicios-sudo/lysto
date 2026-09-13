@@ -42,7 +42,7 @@ Se regeneraron los tipos TypeScript desde el esquema remoto. Las cinco nulabilid
 
 ## Pruebas remotas
 
-Las 28 suites SQL del repositorio pasaron contra el esquema remoto. Cada suite se ejecutó en una transacción que instaló pgTAP sólo dentro de la transacción y terminó con una excepción de control para forzar la reversión. La comprobación posterior confirmó cero usuarios fixture, ningún helper de prueba y ninguna extensión pgTAP persistidos.
+Las 28 suites SQL del repositorio pasaron contra el esquema remoto. Producción conserva 59 migraciones y staging avanzó a las 62 del repositorio, incluida la corrección de autorización de soporte. Cada suite se ejecutó en una transacción que instaló pgTAP sólo dentro de la transacción y terminó con una excepción de control para forzar la reversión. La comprobación posterior confirmó cero usuarios fixture, ningún helper de prueba y ninguna extensión pgTAP persistidos.
 
 Esta ejecución cubre esquema, RLS, roles, registro, almacenamiento, eventos, cotizaciones, agenda, asignación, pagos, cierre, confirmación, recibos, soporte, notificaciones, mantenimiento, políticas y colas operativas. Los tests integrales que crean identidades o ejercen HTTP siguen reservados para un entorno desechable de staging; no deben ejecutarse con datos persistentes de producción.
 
@@ -54,4 +54,4 @@ El asesor no informa errores. Permanecen tres clases de advertencias:
 - 32 RPC `security definer` ejecutables por usuarios autenticados: son límites públicos intencionales. Todas fijan `search_path`; las funciones de negocio verifican sesión, rol, pertenencia o permiso antes de mutar. Las implementaciones privadas sensibles siguen sin permiso de ejecución directa.
 - `citext` en `public`: mover la extensión exige una migración coordinada porque funciones existentes referencian `public.citext`. Se mantiene documentada hasta realizar ese refactor.
 
-La organización sigue en el plan Free y no ofrece backups restaurables. Aunque el esquema ya está reconciliado, producción y piloto continúan bloqueados hasta habilitar backup/restore verificable, disponer de staging aislado y completar las aceptaciones externas de la hoja de ruta.
+La organización sigue en el plan Free y no ofrece backups restaurables. Staging está aislado y validado, pero producción y piloto continúan bloqueados hasta habilitar backup/restore verificable, promover las tres migraciones pendientes de producción mediante el proceso aprobado y completar las aceptaciones externas de la hoja de ruta.

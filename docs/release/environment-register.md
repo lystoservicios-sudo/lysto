@@ -1,17 +1,17 @@
 # Registro de ambientes y dependencias — T01
 
-Estado: inventario local y Vercel remoto verificados; designación de staging y producción pendiente de D04. No se modificaron despliegues remotos.
+Estado: staging técnico remoto aislado y verificado; responsables nominales y producción definitiva pendientes de D04.
 
 | Ambiente | Evidencia disponible | Estado / siguiente paso |
 |---|---|---|
 | Directorio original | Lysto en main, cambios preservados; Supabase local preexistente | No usar como destino de reset ni fixtures nuevos |
 | Implementación aislada | Rama codex/production-readiness, worktree hermano; sin .env.local copiado | Builds/tests locales; DB propia en T03 |
-| Demo Vercel | Proyecto remoto `lysto-demo`, Preview y Production activos; auditoría del 2026-09-12 | Preview apunta al Supabase productivo `dqonlqcurvjnjgsczevu`, usa Node 24.x y sólo tiene tres variables de aplicación; no es staging aislado |
-| Staging | No hay designación inequívoca verificada | Confirmar proyecto, dominio, región, cuentas de prueba y responsables D04 |
+| Demo Vercel | Proyecto remoto `lysto-demo`; Production conservada | El alias productivo no fue modificado |
+| Staging | Preview protegido `lysto-staging-preview.vercel.app`; Supabase `obksyzasmfwcbbksesqt`, `us-east-1`, `production:false` | 62 migraciones, health 200, 36/36 E2E y carga T35 aprobada; confirmar titular/suplente y completar servicios externos |
 | Producción | No hay designación inequívoca verificada | Configurar únicamente después de D04/D11 y gates |
 | Mercado Pago | Integración usa aplicación marketplace, OAuth y ledger propios | Credenciales/aceptación no verificadas; no llamadas financieras reales |
 
-La demo remota existe y es operable, pero no puede recibir fixtures, carga o pruebas de proveedor mientras comparta el backend productivo. D04 debe decidir si se corrige con un Supabase separado o se crea un proyecto de staging nuevo. Node 22 y PostgreSQL/Prisma requieren runtime compatible; no desplegar los handlers Node en un runtime edge incompatible. Evidencia: `docs/release/vercel-environment-audit-2026-09-12.md`.
+Preview quedó separado del backend productivo y acepta únicamente fixtures sintéticos identificados; el runner reconcilia IDs exactos y verificó cero usuarios sintéticos remanentes. Node 22 y PostgreSQL/Prisma usan runtime compatible. Evidencia: `docs/release/vercel-environment-audit-2026-09-12.md`.
 
 ## Variables y custodios
 
@@ -34,7 +34,7 @@ Valores se administran en el gestor de secretos de cada ambiente; este registro 
 | AI_ENABLED, AI_PROVIDER, OPENAI_API_KEY | Función opcional | D12; límites y habilitación explícitos |
 | APP_ENV, LYSTO_ACCEPT_NEW_REQUESTS, LYSTO_ALLOW_NEW_CHECKOUTS | Controles operativos T30 | Implementados; producción exige valores explícitos y proveedor split. Validar ambos interruptores en cada deploy. |
 | RATE_LIMIT_HASH_KEY | HMAC de claves opacas para límites compartidos | 32–128 caracteres aleatorios, distinto por ambiente; nunca frontend |
-| LYSTO_TEST_DATABASE_URL | Pruebas PostgreSQL locales | Exclusivamente DB descartable identificada; guard T04 |
+| LYSTO_TEST_DATABASE_URL | Pruebas PostgreSQL controladas | Exclusivamente staging remoto identificado o backend descartable de CI; guard T04 |
 
 En el .env.local original se detectó configuración pública de Supabase y metadatos de Vercel, incluyendo token de contexto. Ningún valor fue copiado al snapshot, logs versionados o este registro. No afirmar presencia de secretos de Mercado Pago por existir nombres en .env.example.
 
@@ -57,4 +57,4 @@ La plantilla `staging-identity.example.json` describe únicamente la forma; sus 
 
 ## Capacidad y gasto
 
-El perfil de carga seguro y las hipótesis base/2×/5× están en `docs/release/performance-and-cost.md`. Staging debe registrar CPU, memoria, conexiones, locks, egress, colas y latencias propias por candidato. Configurar avisos de gasto al 50%, 75% y 90% del presupuesto D10 y conservar el límite de conexiones del pool de pagos por instancia. Ninguna estimación local habilita aumento de cupo comercial.
+El perfil de carga seguro y las hipótesis base/2×/5× están en `docs/release/performance-and-cost.md`. Staging registró latencias, conexiones, locks, consultas largas y recuperación; los perfiles técnicos aprobaron. Configurar avisos de gasto al 50%, 75% y 90% del presupuesto D10 y conservar el límite de conexiones del pool de pagos por instancia. La medición no habilita aumento de cupo comercial sin D01/D10.

@@ -1,6 +1,6 @@
 # Política verificable de releases
 
-Estado: implementación local de T33; pendiente la ejecución en GitHub del candidato definitivo y la configuración real de protecciones. Una compilación local, este documento o un archivo de avance no autorizan clientes reales.
+Estado: CI remota del candidato ejecutada y aprobada; pendiente configurar protecciones reales. El run `34741236649` reconstruyó y aprobó el candidato runtime `ff9925959eab64dd40362e4aaff7bc6114a4ad6b` en GitHub. La consulta autenticada encontró `main` sin protección y cero rulesets. Una CI verde, este documento o un archivo de avance no autorizan clientes reales sin las firmas y gates correspondientes.
 
 ## Catálogo y objetivos
 
@@ -64,7 +64,7 @@ El runner exige `APP_ENV=staging`, `MERCADOPAGO_MODE=test`, origen HTTPS exacto,
 
 ## Configuración externa pendiente
 
-Para cerrar T33 se debe ejecutar el workflow en GitHub, conservar URL del run del commit candidato y comprobar un fallo real ante evidencia incompleta. Configurar en las reglas de `main` los checks obligatorios `Quality gates (Ubuntu)` y `Domain tests (Windows)`, revisión obligatoria del cambio, prohibición de force push y actualización de checks al cambiar la base. El proceso que promueva a staging/producción debe exigir el resultado del verificador para el objetivo correspondiente, tomar la confianza desde un entorno protegido y requerir responsables distintos del autor del cambio para los gates externos. Este repositorio no incluye un despliegue automático ni modifica reglas remotas. Hasta verificar esas protecciones, T33 permanece parcialmente implementada.
+El workflow ya se ejecutó sobre el candidato y conserva el run `34741236649`; también se comprobó que la evidencia incompleta queda bloqueada. La auditoría autenticada confirmó el 2026-09-13 que todavía no existe protección ni ruleset. Configurar en las reglas de `main` los checks obligatorios `Quality gates (Ubuntu)` y `Domain tests (Windows)`, revisión obligatoria del cambio, prohibición de force push y actualización de checks al cambiar la base. El proceso que promueva a staging/producción debe exigir el resultado del verificador para el objetivo correspondiente, tomar la confianza desde un entorno protegido y requerir responsables distintos del autor del cambio para los gates externos. Hasta verificar esas protecciones, T33 permanece parcialmente implementada.
 
 ## Promoción a producción
 

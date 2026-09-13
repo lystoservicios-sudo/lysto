@@ -29,6 +29,7 @@ if (!profiles[profile]) fail('Unknown LOAD_PROFILE')
 const selected = profiles[profile]
 
 export const options = {
+  summaryTrendStats: ['avg', 'min', 'med', 'p(90)', 'p(95)', 'p(99)', 'max'],
   scenarios: {
     reads: { executor: 'constant-vus', exec: 'reads', vus: selected.readVus, duration: selected.readDuration },
     safe_mutations: { executor: 'constant-vus', exec: 'safeMutations', vus: selected.mutationVus, duration: selected.mutationDuration, startTime: '5s' }

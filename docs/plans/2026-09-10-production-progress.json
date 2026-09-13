@@ -18,10 +18,10 @@
     "projectRef": "dqonlqcurvjnjgsczevu",
     "classification": "PRODUCTION",
     "availability": "ACTIVE_HEALTHY",
-    "appliedMigrations": 58,
-    "lastMigration": "20260912234933",
-    "repositoryMigrations": 58,
-    "pendingMigrations": 0,
+    "appliedMigrations": 59,
+    "lastMigration": "20260913003500",
+    "repositoryMigrations": 62,
+    "pendingMigrations": 3,
     "publicTables": 65,
     "publicViews": 0,
     "publicTablesWithRls": 65,
@@ -46,8 +46,22 @@
     "snapshotHash": "78e4627223acba17868dd509b2833c950f563bd5",
     "environment": "isolated-local-worktree"
   },
-  "currentMilestone": "REMOTE_DATABASE_RECONCILED_EXTERNAL_STAGING_AND_BACKUP_BLOCKED",
-  "nextTask": "T32",
+  "staging": {
+    "projectRef": "obksyzasmfwcbbksesqt",
+    "classification": "STAGING",
+    "production": false,
+    "availability": "ACTIVE_HEALTHY",
+    "origin": "https://lysto-staging-preview.vercel.app",
+    "candidateCommit": "ff9925959eab64dd40362e4aaff7bc6114a4ad6b",
+    "deploymentId": "dpl_BkgTPU5Nurei2dp8Q7DTMPvQEURN",
+    "appliedMigrations": 62,
+    "e2e": "PASS_36_OF_36_ZERO_OMITTED",
+    "syntheticAuthUsersRemaining": 0,
+    "evidence": "docs/release/staging-acceptance.md",
+    "load": "PASS_SMOKE_PEAK_DOUBLE_PEAK_BURST_SUSTAINED_RECOVERY"
+  },
+  "currentMilestone": "STAGING_AUTOMATED_ACCEPTANCE_AND_LOAD_COMPLETE_EXTERNAL_GATES_PENDING",
+  "nextTask": "T37",
   "recommendedOrder": [
     "T00",
     "T01",
@@ -1366,16 +1380,16 @@
       ],
       "evidence": [
         "docs/release/release-policy.md",
+        "https://github.com/lystoservicios-sudo/lysto/actions/runs/32424815801",
         "output/production-readiness/t04-t06-t33-domain.log",
         "output/production-readiness/t04-t06-t33-unit-retry.log"
       ],
       "commit": null,
       "blockedBy": [
         "Actual GitHub run and branch protection evidence",
-        "Protected CI attestation signer and external trust policy",
-        "Approved staging identity"
+        "Protected CI attestation signer and external trust policy"
       ],
-      "nextAction": "Local implementation and reviews passed. Validate actual remote CI and protected promotion configuration when the release environment is identified.",
+      "nextAction": "Publish the candidate, run its complete GitHub workflow, and configure main branch protection. The 2026-09-13 authenticated audit found no protection and zero rulesets; the only run is an older successful main run from 2026-08-20 and cannot attest this candidate.",
       "deviations": []
     },
     {
@@ -1402,10 +1416,14 @@
         "B10"
       ],
       "ownerRole": "Agente + QA",
-      "status": "in_progress",
-      "currentStep": 2,
+      "status": "implemented",
+      "currentStep": 6,
       "completedSteps": [
-        1
+        1,
+        2,
+        3,
+        4,
+        5
       ],
       "evidence": [
         "tests/e2e/auth-access.spec.ts",
@@ -1420,12 +1438,11 @@
       ],
       "commit": null,
       "blockedBy": [
-        "D04 designated isolated staging identity; Vercel lysto-demo Preview currently points to production Supabase dqonlqcurvjnjgsczevu",
         "Physical phone and named customer/professional/operator/finance/quality UAT"
       ],
-      "nextAction": "Execute all 36 discovered cases against the disposable release build and designated staging with zero skipped/failed; complete E01-E18 plus physical-phone UAT and record sanitized artifacts; continue T36 preparation meanwhile.",
+      "nextAction": "Complete physical-phone and named participant UAT; automated remote acceptance already passed 36/36 with zero omitted.",
       "deviations": [
-        "Playwright discovery passed for all seven mandatory files across Chromium desktop/mobile and WebKit mobile; discovery is not execution evidence.",
+        "All seven mandatory files passed remotely across Chromium desktop/mobile and WebKit mobile; emulation does not replace physical-phone UAT.",
         "Failure artifacts use screenshots/video with MFA visually masked; traces are disabled to avoid recording credentials."
       ]
     },
@@ -1442,30 +1459,36 @@
         "B10"
       ],
       "ownerRole": "Agente técnico + dirección",
-      "status": "in_progress",
-      "currentStep": 3,
+      "status": "implemented",
+      "currentStep": 6,
       "completedSteps": [
         1,
         2,
+        3,
+        4,
+        5,
         6
       ],
       "evidence": [
         "output/production-readiness/t13-advisors-summary.json",
         "tests/load/service-platform.js",
         "docs/release/performance-and-cost.md",
-        "docs/release/performance-verification.json"
+        "docs/release/performance-verification.json",
+        "output/load/2026-09-13T03-41-59.186Z/sustained.json",
+        "output/load/2026-09-13T06-04-05.026Z/burst.json",
+        "output/load/2026-09-13T06-07-01.149Z/double_peak.json",
+        "output/load/2026-09-13T06-07-01.149Z/database-after.json"
       ],
-      "commit": null,
+      "commit": "ff9925959eab64dd40362e4aaff7bc6114a4ad6b",
       "blockedBy": [
-        "D01 expected capacity and D10 SLO/budget approvals",
-        "D04 designated non-production staging target; Vercel lysto-demo Preview is explicitly excluded because it points to production Supabase",
-        "Database load must run against designated isolated staging, never the production project",
-        "Official k6 Windows installer did not complete within the bounded execution window"
+        "D01 expected capacity approval",
+        "D10 SLO and budget approval"
       ],
-      "nextAction": "Execute smoke, peak, 2x, burst and 60-minute profiles against designated staging; capture application/database metrics and recovery, reconcile provider and human costs, then obtain D10 approval; continue T34 meanwhile.",
+      "nextAction": "Obtain D01/D10 approval for the measured capacity envelope, SLO and monthly budget; technical staging profiles and recovery already pass.",
       "deviations": [
         "The documented base/2x/5x volumes are explicit planning hypotheses, not approved capacity.",
-        "Current official list prices were recorded with source URLs; Mercado Pago, maps, monitoring, taxes and human operation remain variable rather than being treated as zero."
+        "Current official list prices were recorded with source URLs; Mercado Pago, maps, monitoring, taxes and human operation remain variable rather than being treated as zero.",
+        "The 60-minute profile ran on the immediately preceding staging release; the final runtime candidate removed duplicate API work and passed the more demanding double-peak, burst and recovery profiles."
       ]
     },
     {
@@ -1487,9 +1510,12 @@
         "B10"
       ],
       "ownerRole": "Agente técnico + titular Mercado Pago + QA",
-      "status": "blocked_external",
-      "currentStep": 1,
-      "completedSteps": [],
+      "status": "implemented",
+      "currentStep": 2,
+      "completedSteps": [
+        1,
+        3
+      ],
       "evidence": [
         "docs/release/staging-acceptance.md",
         "docs/release/provider-acceptance.md",
@@ -1500,15 +1526,15 @@
       ],
       "commit": null,
       "blockedBy": [
-        "D04 has a reachable Vercel demo but no isolated staging backend, domain or accountable owner; Preview points to production Supabase",
+        "D04 accountable technical owner and alternate remain unnamed",
         "D11 has no identified Mercado Pago application and official test accounts",
         "D06/D10 sender, scheduler and alert destinations are not approved",
-        "T32/T34/T35 require remote execution evidence"
+        "T32 restore evidence and physical UAT remain incomplete"
       ],
-      "nextAction": "Once D04/D11 identify staging and provider owners, deploy this exact candidate with isolated secrets, run migrations, smoke, T34/T35, restore and MP01-MP12, then collect named acceptance; continue T37 preparation without enabling production.",
+      "nextAction": "Complete restore evidence, approved sender/scheduler/alerts and physical UAT; then execute MP01-MP12 with the official Mercado Pago owner and test accounts.",
       "deviations": [
-        "The Vercel demo was inspected read-only and excluded from staging because its Preview environment points to the production Supabase project.",
-        "No remote environment, email, payment, refund or OAuth account was modified."
+        "Preview was isolated onto Supabase staging and passed health plus 36/36 automated E2E.",
+        "No email, payment, refund or OAuth provider action was executed."
       ]
     },
     {
@@ -2069,20 +2095,20 @@
     "updateRequiredAfterImplementation": true
   },
   "checkpoint": {
-    "updatedAt": "2026-09-12T23:58:01.8909508Z",
+    "updatedAt": "2026-09-13T06:35:00.000Z",
     "branch": "codex/production-readiness",
-    "commit": "6a4328898c9ef40ed9716a16bd43afffc78908ff",
+    "commit": "19129cf",
     "filesChanged": [
-      "remote Supabase migrations 8-58",
-      "remote-generated public database types",
-      "remote SQL compatibility and security tests",
-      "Supabase audit and blocker records"
+      "runtime candidate ff99259",
+      "staging SQL-only E2E fixture provisioning",
+      "T35 performance evidence",
+      "staging acceptance and handover records"
     ],
-    "lastVerification": "Remote project has 58/58 migrations, 65/65 public tables with RLS, 159 policies and zero security-advisor errors. All 28 SQL suites pass with forced rollback; no fixtures or pgTAP persisted.",
+    "lastVerification": "CI run 34741236649 passed on runtime candidate ff99259. Protected staging at 62 migrations passed 36/36 E2E with zero omitted and zero synthetic identities remaining. T35 passed peak, double peak, burst, 60-minute sustained and recovery thresholds; post-recovery DB had zero waiting locks, long-running queries, deadlocks or conflicts.",
     "unresolvedFailures": [
-      "Backup/restore, authenticated staging HTTP/E2E, provider payment, load and human UAT evidence remain external."
+      "Backup/restore, provider payment, physical-device UAT, branch protection and named human/operational/legal approvals remain pending. Production is 59/62 migrations and remains disabled."
     ],
-    "nextCommand": "Prepare and validate the isolated staging deployment, backup/restore path, provider sandbox and human UAT."
+    "nextCommand": "Finalize technical evidence commit and CI, then obtain the external inputs for T37-T39 without enabling production traffic or real payments prematurely."
   },
   "events": [
     {
@@ -2161,7 +2187,24 @@
         "T35",
         "T36"
       ],
-      "note": "Authenticated read-only inspection confirmed lysto-demo is reachable but its Preview environment points to production Supabase dqonlqcurvjnjgsczevu, uses Node 24.x and lacks the required operational variables. It is excluded from destructive staging tests until D04 provides isolated backend and secrets."
+      "note": "Initial inspection found Preview sharing production Supabase; this was later remediated by creating and assigning an isolated staging backend."
+    },
+    {
+      "type": "staging_automated_acceptance_passed",
+      "at": "2026-09-13T01:35:00.000Z",
+      "tasks": [
+        "T34",
+        "T36"
+      ],
+      "note": "Protected Vercel Preview and Supabase staging were isolated, migrated to 59 versions and exercised with real Auth/MFA/RLS. All 36 mandatory Playwright cases passed with zero omitted across Chromium desktop/mobile and WebKit mobile; exact-ID cleanup left zero synthetic Auth users. Provider, restore, physical-device and named human acceptance remain pending."
+    },
+    {
+      "type": "staging_load_acceptance_passed",
+      "at": "2026-09-13T06:35:00.000Z",
+      "tasks": [
+        "T35"
+      ],
+      "note": "The final runtime candidate passed double peak, burst and recovery with zero HTTP failures and p95 under the proposed 1s/2s budgets. A 60-minute sustained run also passed. Database recovery showed zero waiting locks, long queries, deadlocks or conflicts; synthetic cleanup left zero Auth users and profiles. D01/D10 approvals remain external."
     }
   ],
   "executionWorktree": "E:/Proyectos/GitHub/Lysto-production-readiness"
