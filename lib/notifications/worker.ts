@@ -20,7 +20,7 @@ const snapshotSchema = z.object({
   idempotencyKey: z.string().min(1).max(256),
   firstAttemptAt: z.string().datetime({ offset: true }),
   content: emailSnapshotSchema.extend({
-    version: z.literal('transactional-v1'),
+    version: z.enum(['transactional-v1', 'transactional-v2']),
     url: z.string().url()
   })
 })

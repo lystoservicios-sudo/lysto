@@ -1,59 +1,79 @@
 import { z } from 'zod'
+import { emailJobLinks, notificationOrigin } from './email-links'
 
-const events = [
-  'professional.invited',
-  'professional.application.submitted',
-  'professional.approved',
-  'professional.rejected',
-  'professional.suspended',
-  'quote.ready',
-  'request.created',
-  'request.cancelled',
-  'job.assigned',
-  'job.confirmed',
-  'job.technician_on_way',
-  'job.arrived',
-  'job.completed_pending_customer_confirmation',
-  'job.completed',
-  'payment.approved',
-  'payment.failed',
-  'payment.refunded',
-  'support.opened'
-] as const
-export const noticeContextSchema = z
+export { notificationOrigin } from './email-links'
+
+const aggregateId = z.string().uuid()
+const simpleContextSchema = z
   .object({
-    eventType: z.enum(events),
-    aggregateId: z.string().uuid(),
-    audience: z.enum(['customer', 'professional', 'operations', 'finance', 'quality']),
-    invitationToken: z
-      .string()
-      .regex(/^[A-Za-z0-9_-]{43}$/)
-      .optional()
+    eventType: z.enum([
+      'professional.application.submitted',
+      'professional.approved',
+      'professional.rejected',
+      'professional.suspended',
+      'quote.ready',
+      'request.created',
+      'request.cancelled',
+      'job.assigned',
+      'job.confirmed',
+      'job.technician_on_way',
+      'job.arrived',
+      'job.completed_pending_customer_confirmation',
+      'job.completed',
+      'payment.approved',
+      'payment.failed',
+      'payment.refunded',
+      'support.opened'
+    ]),
+    aggregateId,
+    audience: z.enum(['customer', 'professional', 'operations', 'finance', 'quality'])
   })
   .strict()
+const invitationContextSchema = z
+  .object({
+    eventType: z.literal('professional.invited'),
+    aggregateId,
+    audience: z.literal('professional'),
+    invitationToken: z.string().regex(/^[A-Za-z0-9_-]{43}$/)
+  })
+  .strict()
+const visitContextSchema = z
+  .object({
+    eventType: z.literal('visit.confirmed'),
+    aggregateId,
+    audience: z.literal('customer'),
+    scheduleVersion: z.number().int().positive(),
+    startsAt: z.string().datetime({ offset: true }),
+    endsAt: z.string().datetime({ offset: true }),
+    timezone: z.literal('America/Argentina/Buenos_Aires'),
+    serviceName: z.string().trim().min(1).max(160),
+    professionalName: z.string().trim().min(1).max(160),
+    addressLabel: z.string().trim().min(1).max(500)
+  })
+  .strict()
+const reviewContextSchema = z
+  .object({
+    eventType: z.literal('review.requested'),
+    aggregateId,
+    audience: z.literal('customer')
+  })
+  .strict()
+
+export const noticeContextSchema = z.union([
+  invitationContextSchema,
+  visitContextSchema,
+  reviewContextSchema,
+  simpleContextSchema
+])
 export type NoticeContext = z.infer<typeof noticeContextSchema>
 export type RenderedNotice = {
-  version: 'transactional-v1'
+  version: 'transactional-v1' | 'transactional-v2'
   subject: string
   text: string
   html: string
   url: string
 }
 
-export function notificationOrigin(value: string): string {
-  const url = new URL(value)
-  if (
-    url.username ||
-    url.password ||
-    url.pathname !== '/' ||
-    url.search ||
-    url.hash ||
-    (url.protocol !== 'https:' &&
-      !(url.protocol === 'http:' && ['127.0.0.1', 'localhost', '[::1]'].includes(url.hostname)))
-  )
-    throw new Error('invalid_notification_origin')
-  return url.origin
-}
 const escapeHtml = (text: string) =>
   text.replace(
     /[&<>"']/g,
@@ -61,18 +81,69 @@ const escapeHtml = (text: string) =>
       ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]!
   )
 
+function formatVisitInstant(value: string, timezone: string, kind: 'date' | 'time') {
+  const options: Intl.DateTimeFormatOptions =
+    kind === 'date'
+      ? { timeZone: timezone, day: 'numeric', month: 'long', year: 'numeric' }
+      : { timeZone: timezone, hour: '2-digit', minute: '2-digit', hour12: false }
+  return new Intl.DateTimeFormat('es-AR', options).format(new Date(value)).replace(',', '')
+}
+
+function emailShell(preheader: string, content: string) {
+  return `<div style="display:none;max-height:0;overflow:hidden;opacity:0">${escapeHtml(preheader)}</div><div style="margin:0;background:#f1f5f9;padding:24px 12px;font-family:Arial,sans-serif;color:#0f172a"><div style="margin:0 auto;max-width:600px;overflow:hidden;border:1px solid #dbeafe;border-radius:20px;background:#ffffff"><div style="background:#1d4ed8;padding:22px 28px;color:#ffffff;font-size:24px;font-weight:800">Lysto</div><div style="padding:28px">${content}</div></div></div>`
+}
+
+function button(label: string, href: string, secondary = false) {
+  const colors = secondary
+    ? 'background:#ffffff;color:#1d4ed8;border:1px solid #93c5fd'
+    : 'background:#1d4ed8;color:#ffffff;border:1px solid #1d4ed8'
+  return `<a href="${escapeHtml(href)}" style="display:inline-block;margin:6px 6px 6px 0;padding:12px 16px;border-radius:12px;text-decoration:none;font-weight:700;${colors}">${escapeHtml(label)}</a>`
+}
+
 /** The dispatcher supplies a database-derived context, never a caller's message. */
 export function renderOutboxNotification(raw: unknown, baseUrl: string): RenderedNotice {
   const context = noticeContextSchema.parse(raw)
   const origin = notificationOrigin(baseUrl)
   const { eventType: event, aggregateId: id, audience } = context
+
+  if (event === 'visit.confirmed') {
+    const links = emailJobLinks(origin, id)
+    const date = formatVisitInstant(context.startsAt, context.timezone, 'date')
+    const start = formatVisitInstant(context.startsAt, context.timezone, 'time')
+    const end = formatVisitInstant(context.endsAt, context.timezone, 'time')
+    const facts = `${date} · ${start}–${end}`
+    const subject = 'Tu visita con Lysto está confirmada'
+    const text = `${subject}\n\nServicio: ${context.serviceName}\nFecha y horario: ${facts}\nDirección: ${context.addressLabel}\nProfesional: ${context.professionalName}\n\nVer servicio: ${links.detail}\nCómo llegar: ${links.directions}\nSolicitar reprogramación: ${links.reschedule}\nContactar desde Lysto: ${links.contact}\n\nUna reprogramación sólo queda confirmada cuando Lysto muestra la nueva fecha.`
+    const html = emailShell(
+      `${context.serviceName}: ${facts}`,
+      `<h1 style="margin:0 0 10px;font-size:28px;line-height:1.2">${escapeHtml(subject)}</h1><p style="margin:0 0 22px;color:#475569">Tu profesional y el horario ya están confirmados.</p><div style="border-radius:16px;background:#eff6ff;padding:20px"><p style="margin:0 0 12px;font-size:20px;font-weight:800">${escapeHtml(facts)}</p><p style="margin:6px 0"><strong>Servicio:</strong> ${escapeHtml(context.serviceName)}</p><p style="margin:6px 0"><strong>Dirección:</strong> ${escapeHtml(context.addressLabel)}</p><p style="margin:6px 0"><strong>Profesional:</strong> ${escapeHtml(context.professionalName)}</p></div><div style="margin-top:20px">${button('Ver servicio', links.detail)}${button('Cómo llegar', links.directions, true)}${button('Solicitar reprogramación', links.reschedule, true)}${button('Contactar desde Lysto', links.contact, true)}</div><p style="margin:20px 0 0;color:#64748b;font-size:13px">Una reprogramación sólo queda confirmada cuando Lysto muestra la nueva fecha.</p>`
+    )
+    return { version: 'transactional-v2', subject, text, html, url: links.detail }
+  }
+
+  if (event === 'review.requested') {
+    const links = emailJobLinks(origin, id)
+    const subject = '¿Cómo salió tu servicio?'
+    const body =
+      'Tu opinión nos ayuda a cuidar la calidad. La calificación es opcional y no cambia el cierre ni el pago del servicio.'
+    return {
+      version: 'transactional-v2',
+      subject,
+      text: `${subject}\n\n${body}\n\nCalificar servicio: ${links.review}`,
+      html: emailShell(
+        subject,
+        `<h1 style="margin:0 0 12px;font-size:28px;line-height:1.2">${escapeHtml(subject)}</h1><p style="margin:0 0 20px;line-height:1.6;color:#334155">${escapeHtml(body)}</p>${button('Calificar servicio', links.review)}`
+      ),
+      url: links.review
+    }
+  }
+
   let subject: string, body: string, path: string
   const allow = (...allowed: NoticeContext['audience'][]) => {
     if (!allowed.includes(audience)) throw new Error('invalid_notification_audience')
   }
   if (event === 'professional.invited') {
     allow('professional')
-    if (!context.invitationToken) throw new Error('invitation_token_required')
     subject = 'Tu invitación a Lysto'
     body =
       'Te invitamos a iniciar tu postulación profesional. Abrí el enlace para consultar los pasos y verificar tu cuenta.'
@@ -149,8 +220,6 @@ export function renderOutboxNotification(raw: unknown, baseUrl: string): Rendere
           ? '/pro/soporte'
           : '/admin/reclamos'
   }
-  if (event !== 'professional.invited' && context.invitationToken)
-    throw new Error('unexpected_invitation_token')
   const url = new URL(path, origin).href
   return {
     version: 'transactional-v1',

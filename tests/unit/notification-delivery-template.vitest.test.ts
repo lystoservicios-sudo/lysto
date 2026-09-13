@@ -68,6 +68,46 @@ describe('versioned transactional notification templates', () => {
     expect(message.url).toBe(`${origin}/app/presupuestos`)
     expect(message.text).not.toContain('pago aprobado')
   })
+  it('renders a rich confirmed visit without exposing direct contact data', () => {
+    const message = renderOutboxNotification(
+      {
+        eventType: 'visit.confirmed',
+        aggregateId: id,
+        audience: 'customer',
+        scheduleVersion: 3,
+        startsAt: '2026-09-18T13:00:00.000Z',
+        endsAt: '2026-09-18T15:00:00.000Z',
+        timezone: 'America/Argentina/Buenos_Aires',
+        serviceName: 'Aire <acondicionado>',
+        professionalName: 'Martín R.',
+        addressLabel: 'Av. Siempre Viva 742, Buenos Aires'
+      },
+      origin
+    )
+    expect(message.version).toBe('transactional-v2')
+    expect(message.subject).toBe('Tu visita con Lysto está confirmada')
+    expect(message.text).toContain('18 de septiembre de 2026')
+    expect(message.text).toContain('10:00–12:00')
+    expect(message.text).toContain('Aire <acondicionado>')
+    expect(message.html).toContain('Aire &lt;acondicionado&gt;')
+    expect(message.text).toContain('Martín R.')
+    expect(message.text).toContain('Av. Siempre Viva 742, Buenos Aires')
+    expect(message.html).toContain(`${origin}/app/trabajos/${id}#agenda`)
+    expect(message.html).toContain(`${origin}/app/trabajos/${id}#reprogramacion`)
+    expect(message.html).toContain(`${origin}/app/trabajos/${id}#contacto`)
+    expect(message.html).not.toMatch(/tel:|<script|onerror=/i)
+  })
+  it('renders an optional authenticated review request', () => {
+    const message = renderOutboxNotification(
+      { eventType: 'review.requested', aggregateId: id, audience: 'customer' },
+      origin
+    )
+    expect(message.version).toBe('transactional-v2')
+    expect(message.subject).toBe('¿Cómo salió tu servicio?')
+    expect(message.url).toBe(`${origin}/app/trabajos/${id}/review`)
+    expect(message.text).toMatch(/opcional/i)
+    expect(message.text).toMatch(/no cambia.*pago/i)
+  })
   it('keeps operational notices inside the administrative dossier', () => {
     expect(
       renderOutboxNotification(
