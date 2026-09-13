@@ -11,6 +11,7 @@ const loginCredentialsSchema = z.object({
 export type LoginProfile = {
   role: UserRole
   professionalApproved?: boolean
+  assuranceLevel: 'aal1' | 'aal2'
 }
 
 type SignInResult =
@@ -73,5 +74,10 @@ export async function authenticateLogin(
     }
   }
 
-  return { ok: true, redirectTo: safeLocalRedirectPath(input.next, profile.role) }
+  const destination = safeLocalRedirectPath(input.next, profile.role)
+  if (profile.role !== 'customer' && profile.assuranceLevel !== 'aal2') {
+    return { ok: true, redirectTo: `/seguridad?next=${encodeURIComponent(destination)}` }
+  }
+
+  return { ok: true, redirectTo: destination }
 }

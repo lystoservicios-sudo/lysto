@@ -17,3 +17,10 @@ test('staging checklist binds the candidate and rejects local equivalence', () =
   for (const term of ['Commit y deployment ID', 'Supabase project ref', 'MP01–MP12', '36 casos', 'RPO/RTO']) assert.match(source, new RegExp(term))
   assert.match(source, /test local.*no equivalen/i)
 })
+
+test('browser staging access uses a protected header without putting the bypass secret in URLs', () => {
+  const source = readFileSync('tests/e2e/fixtures/production.ts', 'utf8')
+  assert.match(source, /x-vercel-protection-bypass/)
+  assert.match(source, /VERCEL_AUTOMATION_BYPASS_SECRET/)
+  assert.doesNotMatch(source, /x-vercel-protection-bypass=/)
+})

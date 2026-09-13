@@ -1,19 +1,20 @@
 'use server'
 
 import { redirect } from 'next/navigation'
+import { z } from 'zod'
 
 import { authenticateLogin, type LoginGateway, type LoginProfile } from '@/lib/auth/login'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
-import type { Database } from '@/lib/supabase/database.types'
 import { assertAccountMutationOrigin, bootstrapVerifiedCustomer } from '@/lib/auth/account-server'
 import { readTrustedRole } from '@/lib/auth/session-routing'
 import { enforceRateLimit, serverActionSubject } from '@/lib/security/rate-limit'
 
-type ProfileSelection = Pick<Database['public']['Tables']['profiles']['Row'], 'id' | 'role'>
-type ProfessionalSelection = Pick<
-  Database['public']['Tables']['professional_profiles']['Row'],
-  'status'
->
+const loginContextSchema = z.object({
+  role: z.enum(['customer', 'professional', 'admin']),
+  professional_status: z.string().nullable(),
+  professional_eligible: z.boolean(),
+  aal: z.enum(['aal1', 'aal2'])
+})
 
 export type LoginActionState = {
   status: 'idle' | 'error'
@@ -61,26 +62,16 @@ export async function loginAction(
         return { ok: true, userId: data.user.id, accountIncomplete: prepared === 'incomplete' }
       },
 
-      async findProfile(userId): Promise<LoginProfile | null> {
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('id,role')
-          .eq('auth_user_id', userId)
-          .maybeSingle<ProfileSelection>()
-
-        if (profileError || !profile || profile.role !== trustedRole) return null
-        if (profile.role !== 'professional') return { role: profile.role }
-
-        const { data: professional, error: professionalError } = await supabase
-          .from('professional_profiles')
-          .select('status')
-          .eq('profile_id', profile.id)
-          .maybeSingle<ProfessionalSelection>()
-
-        if (professionalError || !professional) return null
+      async findProfile(): Promise<LoginProfile | null> {
+        const { data, error } = await supabase.rpc('get_session_context')
+        const context = loginContextSchema.safeParse(data)
+        if (error || !context.success || context.data.role !== trustedRole) return null
         return {
-          role: profile.role,
-          professionalApproved: professional.status === 'approved'
+          role: context.data.role,
+          professionalApproved:
+            context.data.role !== 'professional' ||
+            (context.data.professional_status === 'approved' && context.data.professional_eligible),
+          assuranceLevel: context.data.aal
         }
       },
 

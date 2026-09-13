@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from './fixtures/production'
 
 test('public navigation and policy links work with keyboard focus', async ({ page }) => {
   await page.goto('/')

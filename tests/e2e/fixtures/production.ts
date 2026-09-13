@@ -7,8 +7,28 @@ import {
 import { fixtureTotp } from '../../integration/mfa'
 
 type WorkerFixtures = { accounts: Awaited<ReturnType<typeof createFixtureAccounts>> }
+type TestFixtures = { stagingAccess: void }
 
-export const test = base.extend<object, WorkerFixtures>({
+export const test = base.extend<TestFixtures, WorkerFixtures>({
+  stagingAccess: [
+    async ({ page }, use) => {
+      if (process.env.APP_ENV === 'staging') {
+        const bypass = process.env.VERCEL_AUTOMATION_BYPASS_SECRET
+        if (!bypass || !/^[A-Za-z0-9]{32}$/.test(bypass))
+          throw new Error('A protected staging bypass is required')
+        const response = await page.context().request.get('/?x-vercel-set-bypass-cookie=true', {
+          headers: { 'x-vercel-protection-bypass': bypass }
+        })
+        if (!response.ok()) throw new Error('Unable to establish protected staging access')
+        const bypassCookie = (await page.context().cookies()).some(
+          (cookie) => cookie.name === '_vercel_jwt'
+        )
+        if (!bypassCookie) throw new Error('Protected staging cookie was not established')
+      }
+      await use()
+    },
+    { auto: true }
+  ],
   accounts: [
     async ({}, use) => {
       const pending = createFixtureAccounts()
