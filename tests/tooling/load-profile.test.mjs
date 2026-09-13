@@ -16,4 +16,8 @@ test('load profile contains peak, burst, sustained and separately tagged own lat
   assert.match(source, /p\(95\)<2000/)
   assert.match(source, /rate<0\.01/)
   assert.match(source, /operation: 'mutation'/)
+  assert.match(source, /timeSince: 'months'/)
+  assert.doesNotMatch(source, /answers: \{ timeSince/)
+  assert.match(source, /Origin: baseUrl/)
+  assert.match(source, /sleep\(6\)/)
 })

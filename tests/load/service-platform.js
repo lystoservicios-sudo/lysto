@@ -41,7 +41,7 @@ export const options = {
 
 const ownRead = new Trend('own_read_latency', true)
 const ownMutation = new Trend('own_mutation_latency', true)
-const headers = { Cookie: authCookie, 'Content-Type': 'application/json', 'X-Lysto-Load-Test': 'synthetic' }
+const headers = { Cookie: authCookie, Origin: baseUrl, 'Content-Type': 'application/json', 'X-Lysto-Load-Test': 'synthetic' }
 
 export function reads() {
   const live = http.get(`${baseUrl}/api/health/live`, { tags: { operation: 'read', endpoint: 'live' } })
@@ -53,10 +53,11 @@ export function reads() {
 }
 
 export function safeMutations() {
-  const response = http.post(`${baseUrl}/api/diagnosis/generate`, JSON.stringify({ issue: 'mantenimiento', answers: { timeSince: 'months' } }), { headers, tags: { operation: 'mutation', endpoint: 'diagnosis' } })
+  const response = http.post(`${baseUrl}/api/diagnosis/generate`, JSON.stringify({ issue: 'mantenimiento', timeSince: 'months' }), { headers, tags: { operation: 'mutation', endpoint: 'diagnosis' } })
   check(response, { 'bounded synthetic calculation is 200': value => value.status === 200 })
   ownMutation.add(response.timings.duration)
-  sleep(2)
+  // Keep the shared synthetic identity below the 60/minute mutation guard.
+  sleep(6)
 }
 
 export function handleSummary(data) {
