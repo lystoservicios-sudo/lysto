@@ -32,7 +32,7 @@ describe('authenticated professional pages', () => {
       [addressId, customer, 'Profesional', '88', 'CABA', 'CABA']
     )
     await database.query(
-      "insert into public.customer_equipment(id,customer_id,address_id,nickname,equipment_type) values($1,$2,$3,'Equipo asignado','split')",
+      "insert into public.customer_equipment(id,customer_id,address_id,category_id,nickname,equipment_type) select $1,$2,$3,id,'Equipo asignado','split' from public.service_categories where slug='aire_acondicionado'",
       [equipmentId, customer, addressId]
     )
     await database.query(

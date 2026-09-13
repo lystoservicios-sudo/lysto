@@ -916,7 +916,7 @@ describe('professional invitation and review lifecycle', () => {
     expect(audit.metadata.to_status).toBe('approved')
     expect(
       (await request('/api/jobs/final-report', 'professionalApproved', 'POST', {})).status
-    ).toBe(503)
+    ).toBe(400)
   }, 120000)
   it('withdraws operational authority when required evidence expires while preserving the application', async () => {
     const professionalId = fixture.accounts.professionalApproved.entityId
@@ -954,6 +954,6 @@ describe('professional invitation and review lifecycle', () => {
     }
     expect(
       (await request('/api/jobs/final-report', 'professionalApproved', 'POST', {})).status
-    ).toBe(503)
+    ).toBe(400)
   })
 })

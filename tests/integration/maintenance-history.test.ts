@@ -29,8 +29,8 @@ describe('maintenance history and reminders', () => {
       ])
     ).rows[0].id
     await db.query(
-      `insert into public.customer_equipment(id,customer_id,address_id,nickname,equipment_type) values($1,$2,$3,'Equipo mantenido','split')`,
-      [equipmentId, fixture.accounts.customerA.entityId, addressId]
+      `insert into public.customer_equipment(id,customer_id,address_id,category_id,nickname,equipment_type) values($1,$2,$3,$4,'Equipo mantenido','split')`,
+      [equipmentId, fixture.accounts.customerA.entityId, addressId, cfg.category]
     )
     await db.query(
       `insert into public.service_requests(id,customer_id,category_id,issue_type_id,status,address_id,equipment_id) values($1,$2,$3,$4,'assigned',$5,$6)`,

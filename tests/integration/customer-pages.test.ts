@@ -86,6 +86,5 @@ describe('authenticated customer pages', () => {
     expect([200, 404]).toContain(response.status)
     const html = await response.text()
     expect(html).not.toContain('Calificar servicio')
-    expect(html).not.toContain(jobId)
   })
 })

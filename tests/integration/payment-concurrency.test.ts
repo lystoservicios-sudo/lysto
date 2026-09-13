@@ -48,7 +48,7 @@ describe('marketplace payment concurrency', () => {
         accepted_at,request_id,version,revision,upload_intent_ids)
        values($1,$2,'{"street":"Corrientes","number":"1240","city":"CABA","province":"Buenos Aires"}',
         '{"materialsConfirmed":true}',
-        '{"total":130000,"platformFee":23400,"professionalAmount":106600,"coverage":"covered"}',
+        '{"total":130000,"calculatorSubtotal":100000,"safetyRate":0.30,"platformFee":23400,"professionalAmount":106600,"coverage":"covered"}',
         current_date+10,'09:00-12:00','accepted',now()+interval '1 hour',now(),$3,3,1,'{}')`,
       [quoteId, fixture.accounts.customerA.entityId, requestId]
     )

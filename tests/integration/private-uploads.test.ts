@@ -249,7 +249,12 @@ describe('private uploads through actual HTTP and Storage', () => {
         .getByLabel('Agregar fotos')
         .setInputFiles({ name: 'equipo.png', mimeType: 'image/png', buffer: png })
       await page.getByRole('button', { name: /Guardar fotos/ }).click()
-      await page.getByText('Guardada y verificada', { exact: true }).waitFor()
+      await Promise.race([
+        page.getByText('Guardada y verificada', { exact: true }).waitFor(),
+        page.getByRole('alert').waitFor().then(async () => {
+          throw new Error(`Equipment browser upload failed: ${await page.getByRole('alert').innerText()}`)
+        })
+      ])
       await page.reload()
       await page.getByRole('button', { name: 'Fotos de Equipo navegador', exact: true }).click()
       await page.getByRole('button', { name: 'Consultar fotos guardadas', exact: true }).click()

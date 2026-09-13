@@ -9,6 +9,7 @@ describe('minimal public receipt', () => {
   let fixture: Awaited<typeof setup>
   const db = new Client({ connectionString: process.env.LYSTO_TEST_DATABASE_URL })
   const equipmentId = randomUUID(),
+    addressId = randomUUID(),
     requestId = randomUUID(),
     jobId = randomUUID(),
     reportId = randomUUID(),
@@ -23,12 +24,16 @@ describe('minimal public receipt', () => {
       )
     ).rows[0]
     await db.query(
-      `insert into public.customer_equipment(id,customer_id,nickname,equipment_type,notes) values($1,$2,'Equipo recibo','split','nota privada')`,
-      [equipmentId, fixture.accounts.customerA.entityId]
+      `insert into public.customer_addresses(id,customer_id,street,number,city,province) values($1,$2,'Privada','123','CABA','CABA')`,
+      [addressId, fixture.accounts.customerA.entityId]
     )
     await db.query(
-      `insert into public.service_requests(id,customer_id,category_id,issue_type_id,status,equipment_id,address_snapshot) values($1,$2,$3,$4,'completed',$5,'{"street":"Privada 123"}')`,
-      [requestId, fixture.accounts.customerA.entityId, config.category, config.issue, equipmentId]
+      `insert into public.customer_equipment(id,customer_id,address_id,category_id,nickname,equipment_type,notes) values($1,$2,$3,$4,'Equipo recibo','split','nota privada')`,
+      [equipmentId, fixture.accounts.customerA.entityId, addressId, config.category]
+    )
+    await db.query(
+      `insert into public.service_requests(id,customer_id,category_id,issue_type_id,status,equipment_id,address_id) values($1,$2,$3,$4,'completed',$5,$6)`,
+      [requestId, fixture.accounts.customerA.entityId, config.category, config.issue, equipmentId, addressId]
     )
     await db.query(
       `insert into public.jobs(id,request_id,customer_id,professional_id,status,warranty_until) values($1,$2,$3,$4,'completed',current_date+30)`,
@@ -56,6 +61,7 @@ describe('minimal public receipt', () => {
       await db.query('delete from public.jobs where id=$1', [jobId])
       await db.query('delete from public.service_requests where id=$1', [requestId])
       await db.query('delete from public.customer_equipment where id=$1', [equipmentId])
+      await db.query('delete from public.customer_addresses where id=$1', [addressId])
       await db.query(`delete from private.rate_limit_buckets where key like 'receipt:%'`)
     } finally {
       await db.end()

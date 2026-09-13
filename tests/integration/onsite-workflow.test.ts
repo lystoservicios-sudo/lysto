@@ -23,22 +23,28 @@ describe('onsite workflow', () => {
     const config = await db.query(
       `select c.id category,i.id issue from public.service_categories c join public.service_issue_types i on i.category_id=c.id where c.active and i.active limit 1`
     )
+    const addressId = (
+      await db.query('select id from public.customer_addresses where customer_id=$1 limit 1', [
+        fixture.accounts.customerA.entityId
+      ])
+    ).rows[0].id
     await db.query(
-      `insert into public.customer_equipment(id,customer_id,nickname,equipment_type) values($1,$2,'Equipo visita','split')`,
-      [equipmentId, fixture.accounts.customerA.entityId]
+      `insert into public.customer_equipment(id,customer_id,address_id,category_id,nickname,equipment_type) values($1,$2,$3,$4,'Equipo visita','split')`,
+      [equipmentId, fixture.accounts.customerA.entityId, addressId, config.rows[0].category]
     )
     for (const [request, job] of [
       [requestId, jobId],
       [unpaidRequest, unpaidJob]
     ]) {
       await db.query(
-        `insert into public.service_requests(id,customer_id,category_id,issue_type_id,status,equipment_id) values($1,$2,$3,$4,'assigned',$5)`,
+        `insert into public.service_requests(id,customer_id,category_id,issue_type_id,status,equipment_id,address_id) values($1,$2,$3,$4,'assigned',$5,$6)`,
         [
           request,
           fixture.accounts.customerA.entityId,
           config.rows[0].category,
           config.rows[0].issue,
-          equipmentId
+          equipmentId,
+          addressId
         ]
       )
       await db.query(

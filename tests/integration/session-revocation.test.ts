@@ -186,6 +186,7 @@ describe('effective session revocation and administrative MFA', () => {
   })
   it('enrolls and verifies a real authenticator through the browser without persisting setup material', async () => {
     const browser = await chromium.launch({ headless: true })
+    let stage = 'opening security page'
     try {
       const context = await browser.newContext()
       const header = await fixtureCookieHeader(fixture.accounts.quality)
@@ -202,7 +203,9 @@ describe('effective session revocation and administrative MFA', () => {
       )
       const page = await context.newPage()
       await page.goto(new URL('/seguridad', app!.baseURL).toString())
+      stage = 'starting enrollment'
       await page.getByRole('button', { name: 'Configurar autenticador' }).click()
+      stage = 'waiting for enrollment material'
       const key = page.getByLabel('Clave de configuración')
       await key.waitFor({ state: 'visible' })
       await page.waitForFunction(() => {
@@ -212,9 +215,18 @@ describe('effective session revocation and administrative MFA', () => {
         return image?.complete && image.naturalWidth > 0
       })
       const secret = await key.inputValue()
-      await page.getByLabel('Código del autenticador').fill(fixtureTotp(secret))
-      await page.getByRole('button', { name: 'Verificar y continuar' }).click()
-      await page.waitForURL(new URL('/admin/dashboard', app!.baseURL).toString())
+      stage = 'submitting verification'
+      let verified = false
+      for (let attempt = 0; attempt < 2 && !verified; attempt++) {
+        await page.getByLabel('Código del autenticador').fill(fixtureTotp(secret))
+        await page.getByRole('button', { name: 'Verificar y continuar' }).click()
+        stage = 'waiting for administrative redirect'
+        verified = await Promise.race([
+          page.waitForURL(new URL('/admin/dashboard', app!.baseURL).toString(), { timeout: 15000 }).then(() => true),
+          page.getByRole('alert').waitFor({ timeout: 15000 }).then(() => false)
+        ])
+      }
+      if (!verified) throw new Error('verification did not redirect')
       expect(await page.getByLabel('Clave de configuración').count()).toBe(0)
       expect(
         await page.evaluate(() =>
@@ -226,7 +238,7 @@ describe('effective session revocation and administrative MFA', () => {
       await context.close()
     } catch {
       // Playwright action logs can include a filled OTP. Never persist them.
-      throw new Error('Browser MFA flow failed; session and setup material were not recorded')
+      throw new Error(`Browser MFA flow failed while ${stage}; session and setup material were not recorded`)
     } finally {
       await browser.close()
     }

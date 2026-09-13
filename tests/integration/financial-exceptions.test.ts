@@ -41,10 +41,13 @@ describe('financial exceptions',()=>{
 
   it('creates a linked replacement only after finance closes every checkout',async()=>{
     const original=await job();const checkout=randomUUID();checkouts.push(checkout)
-    await db.query(`insert into public.marketplace_checkouts(id,job_id,customer_id,professional_id,seller_account_id,amount,marketplace_fee,live_mode,status,closed_for_new_payments_at,closure_evidence) values($1,$2,$3,$4,'seller',100,18,false,'expired',now(),'{}')`,[checkout,original.id,fixture.accounts.customerA.entityId,fixture.accounts.professionalApproved.entityId])
+    await db.query(`insert into public.marketplace_checkouts(id,job_id,customer_id,professional_id,seller_account_id,amount,marketplace_fee,live_mode,status,preference_id) values($1,$2,$3,$4,'seller',100,18,false,'ready','pref-replacement')`,[checkout,original.id,fixture.accounts.customerA.entityId,fixture.accounts.professionalApproved.entityId])
     const opened=await fixture.accounts.operations.client.rpc('request_professional_replacement',{p_job_id:original.id,p_reason:'El profesional no puede asistir y se requiere sustitución.',p_expected_version:0})
     expect(opened.error).toBeNull()
+    const closed=await fixture.accounts.finance.client.rpc('mark_marketplace_checkout_closed',{p_checkout_id:checkout,p_evidence:{providerPreferenceStatus:'expired',summary:'El proveedor confirmó que la preferencia venció sin pagos.'}})
+    expect(closed.error).toBeNull()
     const cleared=await fixture.accounts.finance.client.rpc('clear_financial_exception',{p_case_id:opened.data.caseId,p_expected_version:opened.data.version,p_evidence:{summary:'Preferencia vencida sin pagos encontrados al conciliar.'}})
+    expect(cleared.error).toBeNull()
     expect(cleared.data.status).toBe('ready')
     const resolved=await fixture.accounts.operations.client.rpc('resolve_financial_exception',{p_case_id:opened.data.caseId,p_expected_version:cleared.data.version,p_reason:'Crear servicio sustituto conservando el historial original.'})
     expect(resolved.data.replacementJobId).toMatch(/[0-9a-f-]{36}/)

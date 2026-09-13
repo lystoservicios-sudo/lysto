@@ -12,12 +12,15 @@ describe('persistent customer profiles, addresses and equipment', () => {
   let app: Awaited<ReturnType<typeof startTestApp>> | undefined
   let pendingApp: ReturnType<typeof startTestApp> | undefined
   let database: Client | undefined
+  let mailOrigin = ''
   const mailIds = new Set<string>()
   const ownedRequests: string[] = []
   beforeAll(async () => {
     pending = createFixtureAccounts()
     fixture = await pending
     const target = assertTestEnvironment(process.env, readTestIdentity(process.env))
+    const api = new URL(target.apiUrl)
+    mailOrigin = `${api.protocol}//${api.hostname}:${target.projectId === 'lysto_production_check' ? 56324 : 54324}`
     database = new Client({
       connectionString: target.databaseUrl,
       connectionTimeoutMillis: 5000,
@@ -38,7 +41,7 @@ describe('persistent customer profiles, addresses and equipment', () => {
             [ownedRequests, fixture.accounts.customerA.entityId]
           )
         if (mailIds.size) {
-          const response = await fetch('http://127.0.0.1:56324/api/v1/messages', {
+          const response = await fetch(`${mailOrigin}/api/v1/messages`, {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ IDs: [...mailIds] }),
@@ -448,7 +451,7 @@ describe('persistent customer profiles, addresses and equipment', () => {
       const deadline = Date.now() + 30000
       while (Date.now() < deadline) {
         const search = await fetch(
-          `http://127.0.0.1:56324/api/v1/search?query=${encodeURIComponent(`to:${email}`)}`,
+          `${mailOrigin}/api/v1/search?query=${encodeURIComponent(`to:${email}`)}`,
           { signal: AbortSignal.timeout(10000) }
         )
         const messages = (await search.json()).messages as Array<{ ID: string; Subject: string }>
@@ -456,7 +459,7 @@ describe('persistent customer profiles, addresses and equipment', () => {
         if (found) {
           mailIds.add(found.ID)
           const message = await (
-            await fetch(`http://127.0.0.1:56324/api/v1/message/${encodeURIComponent(found.ID)}`, {
+            await fetch(`${mailOrigin}/api/v1/message/${encodeURIComponent(found.ID)}`, {
               signal: AbortSignal.timeout(10000)
             })
           ).json()
