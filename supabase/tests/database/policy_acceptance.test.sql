@@ -1,0 +1,14 @@
+begin;
+create extension if not exists pgtap with schema extensions;
+set search_path=public,extensions;
+select plan(8);
+select has_table('private','policy_acceptances','General policy acceptances are durable');
+select has_column('private','policy_acceptances','document_sha256','Acceptance binds the document digest');
+select has_column('private','policy_acceptances','subject_kind','Acceptance identifies its subject type');
+select has_column('private','policy_acceptances','accepted_at','Acceptance records its server time');
+select has_function('public','record_policy_acceptance',array['text','text','text','uuid','jsonb'],'Guarded policy acceptance exists');
+select ok(has_function_privilege('authenticated','public.record_policy_acceptance(text,text,text,uuid,jsonb)','execute'),'Authenticated customers may enter the guarded function');
+select ok(not has_function_privilege('anon','public.record_policy_acceptance(text,text,text,uuid,jsonb)','execute'),'Anonymous callers cannot record service acceptance');
+select ok(not has_table_privilege('authenticated','private.policy_acceptances','select'),'Acceptances cannot be enumerated from browsers');
+select * from finish();
+rollback;

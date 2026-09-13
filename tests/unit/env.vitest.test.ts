@@ -19,22 +19,28 @@ const serverEnv = {
 
 describe('parsePublicEnv', () => {
   it('requires valid application and Supabase URLs', () => {
-    expect(() => parsePublicEnv({
-      ...publicEnv,
-      NEXT_PUBLIC_APP_URL: 'not-a-url',
-      NEXT_PUBLIC_SUPABASE_URL: 'also-not-a-url'
-    })).toThrow(/NEXT_PUBLIC_APP_URL/)
-    expect(() => parsePublicEnv({
-      ...publicEnv,
-      NEXT_PUBLIC_SUPABASE_URL: 'not-a-url'
-    })).toThrow(/NEXT_PUBLIC_SUPABASE_URL/)
+    expect(() =>
+      parsePublicEnv({
+        ...publicEnv,
+        NEXT_PUBLIC_APP_URL: 'not-a-url',
+        NEXT_PUBLIC_SUPABASE_URL: 'also-not-a-url'
+      })
+    ).toThrow(/NEXT_PUBLIC_APP_URL/)
+    expect(() =>
+      parsePublicEnv({
+        ...publicEnv,
+        NEXT_PUBLIC_SUPABASE_URL: 'not-a-url'
+      })
+    ).toThrow(/NEXT_PUBLIC_SUPABASE_URL/)
   })
 
   it('requires a non-empty publishable or legacy anon key', () => {
-    expect(() => parsePublicEnv({
-      ...publicEnv,
-      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: '   '
-    })).toThrow(/NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY/)
+    expect(() =>
+      parsePublicEnv({
+        ...publicEnv,
+        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: '   '
+      })
+    ).toThrow(/NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY/)
   })
 
   it('normalizes the legacy anon key without exposing server credentials', () => {
@@ -55,9 +61,45 @@ describe('parsePublicEnv', () => {
 })
 
 describe('parseServerEnv', () => {
-  it('accepts split configuration without requiring a platform access token and keeps its secrets redacted',()=>{
-    const parsed=parseServerEnv({...serverEnv,PAYMENTS_PROVIDER:'mercadopago_split',MERCADOPAGO_MODE:'test',MERCADOPAGO_DATABASE_URL:'postgres://private-db',MERCADOPAGO_ENCRYPTION_KEY:'private-cipher-key',MERCADOPAGO_WEBHOOK_SECRET:'private-hook',MERCADOPAGO_MARKETPLACE_CLIENT_ID:'123',MERCADOPAGO_MARKETPLACE_CLIENT_SECRET:'private-client-secret'})
-    expect(parsed.payments.provider).toBe('mercadopago_split');expect(JSON.stringify(redactEnvForLogs(parsed))).not.toContain('private-')
+  it('allows the public production site with explicitly disabled payments and closed intake', () => {
+    const env = {
+      ...serverEnv,
+      APP_ENV: 'production',
+      PAYMENTS_PROVIDER: 'disabled',
+      LYSTO_ACCEPT_NEW_REQUESTS: 'false',
+      LYSTO_ALLOW_NEW_CHECKOUTS: 'false',
+      RATE_LIMIT_HASH_KEY: 'r'.repeat(48)
+    }
+    expect(parseServerEnv(env).payments).toEqual({ provider: 'disabled' })
+    expect(() => parseServerEnv({ ...env, LYSTO_ALLOW_NEW_CHECKOUTS: 'true' })).toThrow()
+    expect(() => parseServerEnv({ ...env, LYSTO_ACCEPT_NEW_REQUESTS: 'true' })).toThrow()
+  })
+  it('rejects incomplete and mock production configuration', () => {
+    expect(() => parseServerEnv({ ...serverEnv, APP_ENV: 'production' })).toThrow()
+    expect(() =>
+      parseServerEnv({
+        ...serverEnv,
+        APP_ENV: 'production',
+        LYSTO_ACCEPT_NEW_REQUESTS: 'true',
+        LYSTO_ALLOW_NEW_CHECKOUTS: 'true',
+        RATE_LIMIT_HASH_KEY: 'r'.repeat(48),
+        PAYMENTS_PROVIDER: 'mock'
+      })
+    ).toThrow(/PAYMENTS_PROVIDER/)
+  })
+  it('accepts split configuration without requiring a platform access token and keeps its secrets redacted', () => {
+    const parsed = parseServerEnv({
+      ...serverEnv,
+      PAYMENTS_PROVIDER: 'mercadopago_split',
+      MERCADOPAGO_MODE: 'test',
+      MERCADOPAGO_DATABASE_URL: 'postgres://private-db',
+      MERCADOPAGO_ENCRYPTION_KEY: 'private-cipher-key',
+      MERCADOPAGO_WEBHOOK_SECRET: 'private-hook',
+      MERCADOPAGO_MARKETPLACE_CLIENT_ID: '123',
+      MERCADOPAGO_MARKETPLACE_CLIENT_SECRET: 'private-client-secret'
+    })
+    expect(parsed.payments.provider).toBe('mercadopago_split')
+    expect(JSON.stringify(redactEnvForLogs(parsed))).not.toContain('private-')
   })
   it('requires the Supabase service role key', () => {
     expect(() => parseServerEnv(publicEnv)).toThrow(/SUPABASE_SERVICE_ROLE_KEY/)
@@ -73,6 +115,7 @@ describe('parseServerEnv', () => {
     expect(parsed.email).toEqual({ enabled: false })
     expect(parsed.whatsapp).toEqual({ enabled: false })
     expect(parsed.ai).toEqual({ enabled: false })
+    expect(parsed.refundWorker).toEqual({ enabled: false })
   })
 
   it('parses explicit false flags as false and rejects truthy-looking alternatives', () => {
@@ -86,17 +129,21 @@ describe('parseServerEnv', () => {
     expect(parsed.email.enabled).toBe(false)
     expect(parsed.whatsapp.enabled).toBe(false)
     expect(parsed.ai.enabled).toBe(false)
-    expect(() => parseServerEnv({
-      ...serverEnv,
-      NOTIFICATIONS_EMAIL_ENABLED: 'yes'
-    })).toThrow(/NOTIFICATIONS_EMAIL_ENABLED/)
+    expect(() =>
+      parseServerEnv({
+        ...serverEnv,
+        NOTIFICATIONS_EMAIL_ENABLED: 'yes'
+      })
+    ).toThrow(/NOTIFICATIONS_EMAIL_ENABLED/)
   })
 
   it('requires every Mercado Pago variable only for that provider', () => {
-    expect(() => parseServerEnv({
-      ...serverEnv,
-      PAYMENTS_PROVIDER: 'mercadopago'
-    })).toThrow(/MERCADOPAGO_ACCESS_TOKEN/)
+    expect(() =>
+      parseServerEnv({
+        ...serverEnv,
+        PAYMENTS_PROVIDER: 'mercadopago'
+      })
+    ).toThrow(/MERCADOPAGO_ACCESS_TOKEN/)
 
     const parsed = parseServerEnv({
       ...serverEnv,
@@ -112,29 +159,39 @@ describe('parseServerEnv', () => {
   })
 
   it('requires email, WhatsApp and AI variables only when enabled', () => {
-    expect(() => parseServerEnv({
-      ...serverEnv,
-      NOTIFICATIONS_EMAIL_ENABLED: 'true'
-    })).toThrow(/RESEND_API_KEY/)
-    expect(() => parseServerEnv({
-      ...serverEnv,
-      WHATSAPP_ENABLED: 'true'
-    })).toThrow(/WHATSAPP_API_TOKEN/)
-    expect(() => parseServerEnv({
-      ...serverEnv,
-      AI_ENABLED: 'true'
-    })).toThrow(/AI_PROVIDER/)
-    expect(() => parseServerEnv({
-      ...serverEnv,
-      AI_ENABLED: 'true',
-      AI_PROVIDER: 'unsupported',
-      OPENAI_API_KEY: 'ai-secret'
-    })).toThrow(/AI_PROVIDER/)
+    expect(() =>
+      parseServerEnv({
+        ...serverEnv,
+        NOTIFICATIONS_EMAIL_ENABLED: 'true',
+        RESEND_API_KEY: 'resend-secret'
+      })
+    ).toThrow(/NOTIFICATIONS_EMAIL_FROM/)
+    expect(() =>
+      parseServerEnv({
+        ...serverEnv,
+        WHATSAPP_ENABLED: 'true'
+      })
+    ).toThrow(/WHATSAPP_API_TOKEN/)
+    expect(() =>
+      parseServerEnv({
+        ...serverEnv,
+        AI_ENABLED: 'true'
+      })
+    ).toThrow(/AI_PROVIDER/)
+    expect(() =>
+      parseServerEnv({
+        ...serverEnv,
+        AI_ENABLED: 'true',
+        AI_PROVIDER: 'unsupported',
+        OPENAI_API_KEY: 'ai-secret'
+      })
+    ).toThrow(/AI_PROVIDER/)
 
     const parsed = parseServerEnv({
       ...serverEnv,
       NOTIFICATIONS_EMAIL_ENABLED: 'true',
       RESEND_API_KEY: 'resend-secret',
+      NOTIFICATIONS_EMAIL_FROM: 'Lysto <avisos@example.com>',
       WHATSAPP_ENABLED: 'true',
       WHATSAPP_API_TOKEN: 'whatsapp-secret',
       WHATSAPP_PHONE_NUMBER_ID: 'phone-number-id',
@@ -146,6 +203,63 @@ describe('parseServerEnv', () => {
     expect(parsed.email.enabled).toBe(true)
     expect(parsed.whatsapp.enabled).toBe(true)
     expect(parsed.ai.enabled).toBe(true)
+  })
+
+  it('requires a strong worker secret only when the durable worker is enabled', () => {
+    expect(() => parseServerEnv({ ...serverEnv, OUTBOX_WORKER_ENABLED: 'true' })).toThrow(
+      /OUTBOX_WORKER_SECRET/
+    )
+    expect(() =>
+      parseServerEnv({ ...serverEnv, OUTBOX_WORKER_ENABLED: 'true', OUTBOX_WORKER_SECRET: 'short' })
+    ).toThrow(/OUTBOX_WORKER_SECRET/)
+    const parsed = parseServerEnv({
+      ...serverEnv,
+      OUTBOX_WORKER_ENABLED: 'true',
+      OUTBOX_WORKER_SECRET: 's'.repeat(48)
+    })
+    expect(parsed.outboxWorker).toEqual({ enabled: true, secret: 's'.repeat(48) })
+    expect(JSON.stringify(redactEnvForLogs(parsed))).not.toContain('s'.repeat(48))
+    expect(() =>
+      parseServerEnv({ ...serverEnv, REFUND_WORKER_ENABLED: 'true', REFUND_WORKER_SECRET: 'short' })
+    ).toThrow(/REFUND_WORKER_SECRET/)
+    const refund = parseServerEnv({
+      ...serverEnv,
+      REFUND_WORKER_ENABLED: 'true',
+      REFUND_WORKER_SECRET: 'r'.repeat(48)
+    })
+    expect(refund.refundWorker.enabled).toBe(true)
+    expect(JSON.stringify(redactEnvForLogs(refund))).not.toContain('r'.repeat(48))
+  })
+
+  it('requires the Vercel cron credential before enabling the production worker', () => {
+    const productionWorkerEnv = {
+      ...serverEnv,
+      APP_ENV: 'production' as const,
+      LYSTO_ACCEPT_NEW_REQUESTS: 'false' as const,
+      LYSTO_ALLOW_NEW_CHECKOUTS: 'false' as const,
+      RATE_LIMIT_HASH_KEY: 'r'.repeat(48),
+      PAYMENTS_PROVIDER: 'mercadopago_split' as const,
+      MERCADOPAGO_MODE: 'live' as const,
+      MERCADOPAGO_DATABASE_URL: 'postgres://private-db',
+      MERCADOPAGO_ENCRYPTION_KEY: 'private-cipher-key',
+      MERCADOPAGO_WEBHOOK_SECRET: 'private-hook',
+      MERCADOPAGO_MARKETPLACE_CLIENT_ID: '123',
+      MERCADOPAGO_MARKETPLACE_CLIENT_SECRET: 'private-client-secret',
+      OUTBOX_WORKER_ENABLED: 'true' as const,
+      OUTBOX_WORKER_SECRET: 's'.repeat(48)
+    }
+    expect(() =>
+      parseServerEnv(productionWorkerEnv)
+    ).toThrow(/CRON_SECRET/)
+    expect(() =>
+      parseServerEnv({
+        ...productionWorkerEnv,
+        CRON_SECRET: 'short'
+      })
+    ).toThrow(/CRON_SECRET/)
+    expect(
+      parseServerEnv({ ...productionWorkerEnv, CRON_SECRET: 'c'.repeat(48) }).outboxWorker.enabled
+    ).toBe(true)
   })
 })
 
@@ -174,6 +288,7 @@ describe('redactEnvForLogs', () => {
       MERCADOPAGO_MARKETPLACE_CLIENT_SECRET: 'mp-client-secret',
       NOTIFICATIONS_EMAIL_ENABLED: 'true',
       RESEND_API_KEY: 'resend-secret',
+      NOTIFICATIONS_EMAIL_FROM: 'Lysto <avisos@example.com>',
       WHATSAPP_ENABLED: 'true',
       WHATSAPP_API_TOKEN: 'whatsapp-secret',
       WHATSAPP_PHONE_NUMBER_ID: 'phone-number-id',
@@ -198,20 +313,19 @@ describe('Supabase environment adapter', () => {
     vi.stubEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY', '')
 
     try {
-      await expect(import('../../lib/supabase/env')).resolves.toEqual(expect.objectContaining({
-        getPublicSupabaseEnv: expect.any(Function),
-        assertPublicSupabaseEnv: expect.any(Function)
-      }))
+      await expect(import('../../lib/supabase/env')).resolves.toEqual(
+        expect.objectContaining({
+          getPublicSupabaseEnv: expect.any(Function),
+          assertPublicSupabaseEnv: expect.any(Function)
+        })
+      )
     } finally {
       vi.unstubAllEnvs()
     }
   })
 
   it('keeps direct public process.env references for Next.js inlining', () => {
-    const source = readFileSync(
-      resolve(process.cwd(), 'lib/supabase/env.ts'),
-      'utf8'
-    )
+    const source = readFileSync(resolve(process.cwd(), 'lib/supabase/env.ts'), 'utf8')
     const publicNames = [
       'NEXT_PUBLIC_APP_URL',
       'NEXT_PUBLIC_SUPABASE_URL',

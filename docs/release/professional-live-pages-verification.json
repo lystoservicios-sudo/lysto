@@ -1,0 +1,39 @@
+{
+  "task": "T28",
+  "status": "implemented_remote_database_verified_staging_pending",
+  "implementedAt": "2026-09-12T16:20:00Z",
+  "routes": {
+    "serverSession": ["/pro/dashboard", "/pro/trabajos", "/pro/perfil", "/pro/agenda", "/pro/equipos/[id]"],
+    "authenticatedApi": ["/pro/solicitudes", "/pro/presupuestos", "/pro/pagos", "/pro/mercadopago", "/pro/soporte"],
+    "localReferenceOnly": ["/pro/capacitacion"]
+  },
+  "controls": [
+    "No professional production TypeScript source imports mock datasets or displays a demonstration banner.",
+    "The professional read repository verifies an approved session and scopes jobs by professional_id.",
+    "Job lists use identity-bound cursors and expose only request/address fields available through RLS.",
+    "Request and job detail paths require UUIDs and rely on the canonical quote/job API authorization.",
+    "Equipment detail requires an assigned job before reading the equipment or its published service history.",
+    "Offers, acceptance, checkout, schedule, onsite work, closeout and support retain their canonical authenticated endpoints.",
+    "A suspended professional cannot pass the professional session boundary.",
+    "Training is described as reference material without certification or persisted-completion claims."
+  ],
+  "localVerification": {
+    "focusedTests": "10/10 passed",
+    "domainRegression": "174/174 passed at preceding checkpoint; domain files unchanged",
+    "typecheck": "passed",
+    "lint": "passed"
+  },
+  "preparedIntegration": "tests/integration/professional-pages.test.ts",
+  "integrationScenarios": [
+    "approved professional sees assigned job",
+    "assigned equipment history is visible",
+    "invalid cursor fails explicitly",
+    "suspended professional cannot open workspace"
+  ],
+  "blockedVerification": [
+    "Authenticated professional-page integration requires isolated staging; remote SQL verification passed.",
+    "Full mobile device, interrupted network and multi-device recovery walkthrough requires designated staging.",
+    "D07 must approve the documentary renewal policy before operations can activate a renewal workflow."
+  ],
+  "releaseCredit": false
+}

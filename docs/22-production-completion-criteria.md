@@ -1,5 +1,7 @@
 # Criterios para declarar Lysto 100% terminado
 
+> Documento histórico de criterios iniciales. La autoridad vigente es `docs/plans/2026-09-10-production-acceptance.md`, con D01–D12, G01–G16 y targets `technical`, `pilot` y `general`. A fecha 2026-09-12 estos gates siguen pendientes; este checklist no autoriza producción.
+
 Lysto solo se considera terminado cuando cumple todos estos puntos.
 
 ## 1. Producto

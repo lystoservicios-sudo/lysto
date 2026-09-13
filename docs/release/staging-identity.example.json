@@ -1,0 +1,9 @@
+{
+  "environment": "staging",
+  "production": false,
+  "origin": "https://staging.example.invalid",
+  "projectRef": "replacewithtwentychars",
+  "testResources": ["customer-synthetic-id", "professional-synthetic-id", "operator-synthetic-id"],
+  "approvedBy": null,
+  "approvedAt": null
+}

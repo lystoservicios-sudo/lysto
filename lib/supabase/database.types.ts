@@ -53,6 +53,7 @@ export type Database = {
           can_manage_professionals: boolean
           created_at: string
           id: string
+          permissions_version: number
           profile_id: string
           updated_at: string
         }
@@ -61,6 +62,7 @@ export type Database = {
           can_manage_professionals?: boolean
           created_at?: string
           id?: string
+          permissions_version?: number
           profile_id: string
           updated_at?: string
         }
@@ -69,6 +71,7 @@ export type Database = {
           can_manage_professionals?: boolean
           created_at?: string
           id?: string
+          permissions_version?: number
           profile_id?: string
           updated_at?: string
         }
@@ -82,44 +85,145 @@ export type Database = {
           },
         ]
       }
-      complaints: {
+      assignment_offers: {
         Row: {
           created_at: string
-          customer_id: string | null
-          description: string
+          created_by: string
+          expires_at: string
           id: string
-          job_id: string | null
-          professional_id: string | null
-          resolution: string | null
-          severity: string
+          job_id: string
+          professional_id: string
+          rejection_reason: string | null
+          responded_at: string | null
           status: string
-          updated_at: string
+          version: number
         }
         Insert: {
           created_at?: string
-          customer_id?: string | null
-          description: string
+          created_by: string
+          expires_at: string
           id?: string
-          job_id?: string | null
-          professional_id?: string | null
-          resolution?: string | null
-          severity?: string
+          job_id: string
+          professional_id: string
+          rejection_reason?: string | null
+          responded_at?: string | null
           status?: string
-          updated_at?: string
+          version: number
         }
         Update: {
           created_at?: string
-          customer_id?: string | null
-          description?: string
+          created_by?: string
+          expires_at?: string
           id?: string
-          job_id?: string | null
-          professional_id?: string | null
-          resolution?: string | null
-          severity?: string
+          job_id?: string
+          professional_id?: string
+          rejection_reason?: string | null
+          responded_at?: string | null
           status?: string
-          updated_at?: string
+          version?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "assignment_offers_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assignment_offers_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assignment_offers_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professional_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      complaints: {
+        Row: {
+          assigned_to: string | null
+          category: string
+          created_at: string
+          customer_id: string | null
+          description: string
+          due_at: string | null
+          evidence_ids: string[]
+          id: string
+          job_id: string | null
+          last_communication_failed_at: string | null
+          opened_by: string | null
+          policy_snapshot: Json
+          professional_id: string | null
+          public_resolution: string | null
+          resolution: string | null
+          resolved_at: string | null
+          severity: string
+          source: string
+          status: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          assigned_to?: string | null
+          category?: string
+          created_at?: string
+          customer_id?: string | null
+          description: string
+          due_at?: string | null
+          evidence_ids?: string[]
+          id?: string
+          job_id?: string | null
+          last_communication_failed_at?: string | null
+          opened_by?: string | null
+          policy_snapshot?: Json
+          professional_id?: string | null
+          public_resolution?: string | null
+          resolution?: string | null
+          resolved_at?: string | null
+          severity?: string
+          source?: string
+          status?: string
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          assigned_to?: string | null
+          category?: string
+          created_at?: string
+          customer_id?: string | null
+          description?: string
+          due_at?: string | null
+          evidence_ids?: string[]
+          id?: string
+          job_id?: string | null
+          last_communication_failed_at?: string | null
+          opened_by?: string | null
+          policy_snapshot?: Json
+          professional_id?: string | null
+          public_resolution?: string | null
+          resolution?: string | null
+          resolved_at?: string | null
+          severity?: string
+          source?: string
+          status?: string
+          updated_at?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "complaints_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "complaints_customer_id_fkey"
             columns: ["customer_id"]
@@ -135,11 +239,11 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "complaints_job_id_fkey"
-            columns: ["job_id"]
+            foreignKeyName: "complaints_opened_by_fkey"
+            columns: ["opened_by"]
             isOneToOne: false
-            referencedRelation: "public_receipt_view"
-            referencedColumns: ["job_id"]
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "complaints_professional_id_fkey"
@@ -150,9 +254,43 @@ export type Database = {
           },
         ]
       }
+      contact_inquiries: {
+        Row: {
+          consent_at: string
+          created_at: string
+          email: string
+          id: string
+          message: string
+          name: string
+          phone: string
+          subject: string
+        }
+        Insert: {
+          consent_at?: string
+          created_at?: string
+          email: string
+          id?: string
+          message: string
+          name: string
+          phone?: string
+          subject: string
+        }
+        Update: {
+          consent_at?: string
+          created_at?: string
+          email?: string
+          id?: string
+          message?: string
+          name?: string
+          phone?: string
+          subject?: string
+        }
+        Relationships: []
+      }
       customer_addresses: {
         Row: {
           apartment: string | null
+          archived_at: string | null
           city: string
           created_at: string
           customer_id: string
@@ -162,6 +300,7 @@ export type Database = {
           has_parking: boolean | null
           id: string
           is_default: boolean
+          label: string | null
           number: string
           outdoor_unit_at_height: boolean | null
           outdoor_unit_on_balcony: boolean | null
@@ -172,9 +311,11 @@ export type Database = {
           stairs_required: boolean | null
           street: string
           updated_at: string
+          version: number
         }
         Insert: {
           apartment?: string | null
+          archived_at?: string | null
           city?: string
           created_at?: string
           customer_id: string
@@ -184,6 +325,7 @@ export type Database = {
           has_parking?: boolean | null
           id?: string
           is_default?: boolean
+          label?: string | null
           number: string
           outdoor_unit_at_height?: boolean | null
           outdoor_unit_on_balcony?: boolean | null
@@ -194,9 +336,11 @@ export type Database = {
           stairs_required?: boolean | null
           street: string
           updated_at?: string
+          version?: number
         }
         Update: {
           apartment?: string | null
+          archived_at?: string | null
           city?: string
           created_at?: string
           customer_id?: string
@@ -206,6 +350,7 @@ export type Database = {
           has_parking?: boolean | null
           id?: string
           is_default?: boolean
+          label?: string | null
           number?: string
           outdoor_unit_at_height?: boolean | null
           outdoor_unit_on_balcony?: boolean | null
@@ -216,6 +361,7 @@ export type Database = {
           stairs_required?: boolean | null
           street?: string
           updated_at?: string
+          version?: number
         }
         Relationships: [
           {
@@ -227,9 +373,42 @@ export type Database = {
           },
         ]
       }
+      customer_contact_preferences: {
+        Row: {
+          commercial_reminders_enabled: boolean
+          customer_id: string
+          email_enabled: boolean
+          in_app_enabled: boolean
+          updated_at: string
+        }
+        Insert: {
+          commercial_reminders_enabled?: boolean
+          customer_id: string
+          email_enabled?: boolean
+          in_app_enabled?: boolean
+          updated_at?: string
+        }
+        Update: {
+          commercial_reminders_enabled?: boolean
+          customer_id?: string
+          email_enabled?: boolean
+          in_app_enabled?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_contact_preferences_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: true
+            referencedRelation: "customer_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customer_equipment: {
         Row: {
           address_id: string | null
+          archived_at: string | null
           brand: string | null
           category_id: string | null
           created_at: string
@@ -243,9 +422,11 @@ export type Database = {
           photo_url: string | null
           serial_number: string | null
           updated_at: string
+          version: number
         }
         Insert: {
           address_id?: string | null
+          archived_at?: string | null
           brand?: string | null
           category_id?: string | null
           created_at?: string
@@ -259,9 +440,11 @@ export type Database = {
           photo_url?: string | null
           serial_number?: string | null
           updated_at?: string
+          version?: number
         }
         Update: {
           address_id?: string | null
+          archived_at?: string | null
           brand?: string | null
           category_id?: string | null
           created_at?: string
@@ -275,6 +458,7 @@ export type Database = {
           photo_url?: string | null
           serial_number?: string | null
           updated_at?: string
+          version?: number
         }
         Relationships: [
           {
@@ -443,6 +627,48 @@ export type Database = {
           },
         ]
       }
+      equipment_media: {
+        Row: {
+          created_at: string
+          equipment_id: string
+          id: string
+          storage_bucket: string
+          storage_path: string
+          uploaded_by: string
+        }
+        Insert: {
+          created_at?: string
+          equipment_id: string
+          id: string
+          storage_bucket: string
+          storage_path: string
+          uploaded_by: string
+        }
+        Update: {
+          created_at?: string
+          equipment_id?: string
+          id?: string
+          storage_bucket?: string
+          storage_path?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_media_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "customer_equipment"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_media_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       equipment_service_records: {
         Row: {
           created_at: string
@@ -502,17 +728,116 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "equipment_service_records_job_id_fkey"
-            columns: ["job_id"]
-            isOneToOne: false
-            referencedRelation: "public_receipt_view"
-            referencedColumns: ["job_id"]
-          },
-          {
             foreignKeyName: "equipment_service_records_professional_id_fkey"
             columns: ["professional_id"]
             isOneToOne: false
             referencedRelation: "professional_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_closeout_followups: {
+        Row: {
+          created_at: string
+          details: string
+          due_at: string | null
+          final_report_id: string
+          id: string
+          job_id: string
+          kind: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          details: string
+          due_at?: string | null
+          final_report_id: string
+          id?: string
+          job_id: string
+          kind: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          details?: string
+          due_at?: string | null
+          final_report_id?: string
+          id?: string
+          job_id?: string
+          kind?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_closeout_followups_final_report_id_fkey"
+            columns: ["final_report_id"]
+            isOneToOne: true
+            referencedRelation: "job_final_reports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_closeout_followups_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: true
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_customer_decisions: {
+        Row: {
+          created_at: string
+          created_by: string
+          customer_id: string
+          decision: string
+          id: string
+          idempotency_key: string
+          job_id: string
+          reason: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          customer_id: string
+          decision: string
+          id?: string
+          idempotency_key: string
+          job_id: string
+          reason?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          customer_id?: string
+          decision?: string
+          id?: string
+          idempotency_key?: string
+          job_id?: string
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_customer_decisions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_customer_decisions_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customer_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_customer_decisions_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: true
+            referencedRelation: "jobs"
             referencedColumns: ["id"]
           },
         ]
@@ -582,13 +907,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "job_extras_job_id_fkey"
-            columns: ["job_id"]
-            isOneToOne: false
-            referencedRelation: "public_receipt_view"
-            referencedColumns: ["job_id"]
-          },
-          {
             foreignKeyName: "job_extras_professional_id_fkey"
             columns: ["professional_id"]
             isOneToOne: false
@@ -599,6 +917,7 @@ export type Database = {
       }
       job_final_reports: {
         Row: {
+          after_photo_ids: string[]
           created_at: string
           equipment_id: string | null
           final_state: string
@@ -610,10 +929,13 @@ export type Database = {
           parts_used: string | null
           public_token: string
           real_diagnosis: string
+          submission_fingerprint: string | null
+          version: number
           warranty_days: number
           work_done: string
         }
         Insert: {
+          after_photo_ids?: string[]
           created_at?: string
           equipment_id?: string | null
           final_state: string
@@ -625,10 +947,13 @@ export type Database = {
           parts_used?: string | null
           public_token?: string
           real_diagnosis: string
+          submission_fingerprint?: string | null
+          version?: number
           warranty_days?: number
           work_done: string
         }
         Update: {
+          after_photo_ids?: string[]
           created_at?: string
           equipment_id?: string | null
           final_state?: string
@@ -640,6 +965,8 @@ export type Database = {
           parts_used?: string | null
           public_token?: string
           real_diagnosis?: string
+          submission_fingerprint?: string | null
+          version?: number
           warranty_days?: number
           work_done?: string
         }
@@ -657,13 +984,6 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "jobs"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "job_final_reports_job_id_fkey"
-            columns: ["job_id"]
-            isOneToOne: true
-            referencedRelation: "public_receipt_view"
-            referencedColumns: ["job_id"]
           },
         ]
       }
@@ -707,17 +1027,171 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "job_media_job_id_fkey"
-            columns: ["job_id"]
-            isOneToOne: false
-            referencedRelation: "public_receipt_view"
-            referencedColumns: ["job_id"]
-          },
-          {
             foreignKeyName: "job_media_uploaded_by_fkey"
             columns: ["uploaded_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_reschedule_requests: {
+        Row: {
+          created_at: string
+          customer_approved_at: string | null
+          decided_at: string | null
+          decided_by: string | null
+          duration_minutes: number
+          expected_schedule_version: number
+          id: string
+          job_id: string
+          professional_approved_at: string | null
+          proposed_ends_at: string
+          proposed_local_date: string
+          proposed_starts_at: string
+          reason: string
+          requested_by: string
+          requested_by_role: Database["public"]["Enums"]["user_role"]
+          status: string
+          travel_buffer_minutes: number
+        }
+        Insert: {
+          created_at?: string
+          customer_approved_at?: string | null
+          decided_at?: string | null
+          decided_by?: string | null
+          duration_minutes: number
+          expected_schedule_version: number
+          id?: string
+          job_id: string
+          professional_approved_at?: string | null
+          proposed_ends_at: string
+          proposed_local_date: string
+          proposed_starts_at: string
+          reason: string
+          requested_by: string
+          requested_by_role: Database["public"]["Enums"]["user_role"]
+          status?: string
+          travel_buffer_minutes: number
+        }
+        Update: {
+          created_at?: string
+          customer_approved_at?: string | null
+          decided_at?: string | null
+          decided_by?: string | null
+          duration_minutes?: number
+          expected_schedule_version?: number
+          id?: string
+          job_id?: string
+          professional_approved_at?: string | null
+          proposed_ends_at?: string
+          proposed_local_date?: string
+          proposed_starts_at?: string
+          reason?: string
+          requested_by?: string
+          requested_by_role?: Database["public"]["Enums"]["user_role"]
+          status?: string
+          travel_buffer_minutes?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_reschedule_requests_decided_by_fkey"
+            columns: ["decided_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_reschedule_requests_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_reschedule_requests_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_schedule_reservations: {
+        Row: {
+          created_at: string
+          created_by: string
+          duration_minutes: number
+          ends_at: string
+          hold_expires_at: string | null
+          id: string
+          job_id: string
+          local_visit_date: string
+          professional_id: string
+          released_at: string | null
+          released_reason: string | null
+          starts_at: string
+          state: string
+          timezone: string
+          travel_buffer_minutes: number
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          duration_minutes: number
+          ends_at: string
+          hold_expires_at?: string | null
+          id?: string
+          job_id: string
+          local_visit_date: string
+          professional_id: string
+          released_at?: string | null
+          released_reason?: string | null
+          starts_at: string
+          state: string
+          timezone?: string
+          travel_buffer_minutes?: number
+          version: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          duration_minutes?: number
+          ends_at?: string
+          hold_expires_at?: string | null
+          id?: string
+          job_id?: string
+          local_visit_date?: string
+          professional_id?: string
+          released_at?: string | null
+          released_reason?: string | null
+          starts_at?: string
+          state?: string
+          timezone?: string
+          travel_buffer_minutes?: number
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_schedule_reservations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_schedule_reservations_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_schedule_reservations_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professional_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -765,19 +1239,14 @@ export type Database = {
             referencedRelation: "jobs"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "job_status_events_job_id_fkey"
-            columns: ["job_id"]
-            isOneToOne: false
-            referencedRelation: "public_receipt_view"
-            referencedColumns: ["job_id"]
-          },
         ]
       }
       jobs: {
         Row: {
           accepted_at: string | null
           arrived_at: string | null
+          assignment_version: number
+          billing_policy: string | null
           cancelled_at: string | null
           completed_at: string | null
           created_at: string
@@ -786,17 +1255,21 @@ export type Database = {
           id: string
           professional_id: string | null
           request_id: string
+          schedule_version: number
           scheduled_date: string | null
           scheduled_time_window: string | null
           started_at: string | null
           status: Database["public"]["Enums"]["job_status"]
           technician_on_way_at: string | null
           updated_at: string
+          warranty_revisit_of_job_id: string | null
           warranty_until: string | null
         }
         Insert: {
           accepted_at?: string | null
           arrived_at?: string | null
+          assignment_version?: number
+          billing_policy?: string | null
           cancelled_at?: string | null
           completed_at?: string | null
           created_at?: string
@@ -805,17 +1278,21 @@ export type Database = {
           id?: string
           professional_id?: string | null
           request_id: string
+          schedule_version?: number
           scheduled_date?: string | null
           scheduled_time_window?: string | null
           started_at?: string | null
           status?: Database["public"]["Enums"]["job_status"]
           technician_on_way_at?: string | null
           updated_at?: string
+          warranty_revisit_of_job_id?: string | null
           warranty_until?: string | null
         }
         Update: {
           accepted_at?: string | null
           arrived_at?: string | null
+          assignment_version?: number
+          billing_policy?: string | null
           cancelled_at?: string | null
           completed_at?: string | null
           created_at?: string
@@ -824,12 +1301,14 @@ export type Database = {
           id?: string
           professional_id?: string | null
           request_id?: string
+          schedule_version?: number
           scheduled_date?: string | null
           scheduled_time_window?: string | null
           started_at?: string | null
           status?: Database["public"]["Enums"]["job_status"]
           technician_on_way_at?: string | null
           updated_at?: string
+          warranty_revisit_of_job_id?: string | null
           warranty_until?: string | null
         }
         Relationships: [
@@ -861,11 +1340,101 @@ export type Database = {
             referencedRelation: "service_requests"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "jobs_warranty_revisit_of_job_id_fkey"
+            columns: ["warranty_revisit_of_job_id"]
+            isOneToOne: true
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      maintenance_plans: {
+        Row: {
+          created_at: string
+          customer_id: string
+          due_date: string | null
+          equipment_id: string
+          id: string
+          recommendation: Database["public"]["Enums"]["maintenance_option"]
+          requested_service_request_id: string | null
+          source_job_id: string | null
+          source_service_record_id: string | null
+          status: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          due_date?: string | null
+          equipment_id: string
+          id?: string
+          recommendation: Database["public"]["Enums"]["maintenance_option"]
+          requested_service_request_id?: string | null
+          source_job_id?: string | null
+          source_service_record_id?: string | null
+          status: string
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          due_date?: string | null
+          equipment_id?: string
+          id?: string
+          recommendation?: Database["public"]["Enums"]["maintenance_option"]
+          requested_service_request_id?: string | null
+          source_job_id?: string | null
+          source_service_record_id?: string | null
+          status?: string
+          updated_at?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_plans_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customer_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_plans_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "customer_equipment"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_plans_requested_service_request_id_fkey"
+            columns: ["requested_service_request_id"]
+            isOneToOne: false
+            referencedRelation: "service_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_plans_source_job_id_fkey"
+            columns: ["source_job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_plans_source_service_record_id_fkey"
+            columns: ["source_service_record_id"]
+            isOneToOne: true
+            referencedRelation: "equipment_service_records"
+            referencedColumns: ["id"]
+          },
         ]
       }
       marketplace_checkouts: {
         Row: {
           amount: number
+          closed_for_new_payments_at: string | null
+          closure_evidence: Json | null
           created_at: string
           currency: string
           customer_id: string
@@ -892,6 +1461,8 @@ export type Database = {
         }
         Insert: {
           amount: number
+          closed_for_new_payments_at?: string | null
+          closure_evidence?: Json | null
           created_at?: string
           currency?: string
           customer_id: string
@@ -918,6 +1489,8 @@ export type Database = {
         }
         Update: {
           amount?: number
+          closed_for_new_payments_at?: string | null
+          closure_evidence?: Json | null
           created_at?: string
           currency?: string
           customer_id?: string
@@ -963,13 +1536,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "jobs"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "marketplace_checkouts_job_id_fkey"
-            columns: ["job_id"]
-            isOneToOne: false
-            referencedRelation: "public_receipt_view"
-            referencedColumns: ["job_id"]
           },
           {
             foreignKeyName: "marketplace_checkouts_professional_id_fkey"
@@ -1226,34 +1792,40 @@ export type Database = {
       }
       notifications: {
         Row: {
+          action_url: string | null
           body: string
           created_at: string
           entity_id: string | null
           entity_type: string | null
           event_type: string
           id: string
+          outbox_id: string | null
           profile_id: string
           read_at: string | null
           title: string
         }
         Insert: {
+          action_url?: string | null
           body: string
           created_at?: string
           entity_id?: string | null
           entity_type?: string | null
           event_type: string
           id?: string
+          outbox_id?: string | null
           profile_id: string
           read_at?: string | null
           title: string
         }
         Update: {
+          action_url?: string | null
           body?: string
           created_at?: string
           entity_id?: string | null
           entity_type?: string | null
           event_type?: string
           id?: string
+          outbox_id?: string | null
           profile_id?: string
           read_at?: string | null
           title?: string
@@ -1262,6 +1834,128 @@ export type Database = {
           {
             foreignKeyName: "notifications_profile_id_fkey"
             columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onsite_diagnoses: {
+        Row: {
+          actual_diagnosis: string
+          base_scope: string
+          decided_at: string | null
+          decided_by: string | null
+          decision_reason: string | null
+          equipment_id: string
+          evidence_ids: string[]
+          id: string
+          job_id: string
+          professional_id: string
+          status: string
+          submitted_at: string
+          submitted_by: string
+          version: number
+        }
+        Insert: {
+          actual_diagnosis: string
+          base_scope: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_reason?: string | null
+          equipment_id: string
+          evidence_ids: string[]
+          id?: string
+          job_id: string
+          professional_id: string
+          status?: string
+          submitted_at?: string
+          submitted_by: string
+          version?: number
+        }
+        Update: {
+          actual_diagnosis?: string
+          base_scope?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_reason?: string | null
+          equipment_id?: string
+          evidence_ids?: string[]
+          id?: string
+          job_id?: string
+          professional_id?: string
+          status?: string
+          submitted_at?: string
+          submitted_by?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onsite_diagnoses_decided_by_fkey"
+            columns: ["decided_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onsite_diagnoses_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "customer_equipment"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onsite_diagnoses_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: true
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onsite_diagnoses_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professional_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onsite_diagnoses_submitted_by_fkey"
+            columns: ["submitted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      operator_queue_configuration: {
+        Row: {
+          id: boolean
+          priority_sla_minutes: number
+          standard_sla_minutes: number
+          updated_at: string
+          updated_by: string | null
+          version: number
+        }
+        Insert: {
+          id?: boolean
+          priority_sla_minutes?: number
+          standard_sla_minutes?: number
+          updated_at?: string
+          updated_by?: string | null
+          version?: number
+        }
+        Update: {
+          id?: boolean
+          priority_sla_minutes?: number
+          standard_sla_minutes?: number
+          updated_at?: string
+          updated_by?: string | null
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "operator_queue_configuration_updated_by_fkey"
+            columns: ["updated_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -1381,13 +2075,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "jobs"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "payments_job_id_fkey"
-            columns: ["job_id"]
-            isOneToOne: false
-            referencedRelation: "public_receipt_view"
-            referencedColumns: ["job_id"]
           },
           {
             foreignKeyName: "payments_professional_id_fkey"
@@ -1595,6 +2282,51 @@ export type Database = {
           },
         ]
       }
+      professional_absences: {
+        Row: {
+          created_at: string
+          created_by: string
+          ends_at: string
+          id: string
+          professional_id: string
+          reason: string | null
+          starts_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          ends_at: string
+          id?: string
+          professional_id: string
+          reason?: string | null
+          starts_at: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          ends_at?: string
+          id?: string
+          professional_id?: string
+          reason?: string | null
+          starts_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "professional_absences_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "professional_absences_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professional_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       professional_availability: {
         Row: {
           active: boolean
@@ -1637,35 +2369,44 @@ export type Database = {
         Row: {
           created_at: string
           document_type: string
+          expires_at: string | null
           id: string
           professional_id: string
+          review_reason: string | null
           reviewed_at: string | null
           reviewed_by: string | null
           status: string
           storage_bucket: string
           storage_path: string
+          version: number
         }
         Insert: {
           created_at?: string
           document_type: string
+          expires_at?: string | null
           id?: string
           professional_id: string
+          review_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string
           storage_bucket: string
           storage_path: string
+          version?: number
         }
         Update: {
           created_at?: string
           document_type?: string
+          expires_at?: string | null
           id?: string
           professional_id?: string
+          review_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string
           storage_bucket?: string
           storage_path?: string
+          version?: number
         }
         Relationships: [
           {
@@ -1686,6 +2427,8 @@ export type Database = {
       }
       professional_invitations: {
         Row: {
+          bound_auth_user_id: string | null
+          consumed_at: string | null
           created_at: string
           created_by: string | null
           email: string
@@ -1696,8 +2439,11 @@ export type Database = {
           status: string
           token_hash: string
           updated_at: string
+          version: number
         }
         Insert: {
+          bound_auth_user_id?: string | null
+          consumed_at?: string | null
           created_at?: string
           created_by?: string | null
           email: string
@@ -1708,8 +2454,11 @@ export type Database = {
           status?: string
           token_hash: string
           updated_at?: string
+          version?: number
         }
         Update: {
+          bound_auth_user_id?: string | null
+          consumed_at?: string | null
           created_at?: string
           created_by?: string | null
           email?: string
@@ -1720,6 +2469,7 @@ export type Database = {
           status?: string
           token_hash?: string
           updated_at?: string
+          version?: number
         }
         Relationships: [
           {
@@ -1786,6 +2536,7 @@ export type Database = {
           birthdate: string | null
           created_at: string
           cuil: string | null
+          current_submission_id: string | null
           dni: string | null
           has_mobility: boolean
           id: string
@@ -1798,8 +2549,10 @@ export type Database = {
           mobility_type: string | null
           profile_id: string
           rating_avg: number | null
+          schedule_settings_version: number
           status: Database["public"]["Enums"]["professional_status"]
           updated_at: string
+          version: number
           years_experience: number
         }
         Insert: {
@@ -1809,6 +2562,7 @@ export type Database = {
           birthdate?: string | null
           created_at?: string
           cuil?: string | null
+          current_submission_id?: string | null
           dni?: string | null
           has_mobility?: boolean
           id?: string
@@ -1821,8 +2575,10 @@ export type Database = {
           mobility_type?: string | null
           profile_id: string
           rating_avg?: number | null
+          schedule_settings_version?: number
           status?: Database["public"]["Enums"]["professional_status"]
           updated_at?: string
+          version?: number
           years_experience?: number
         }
         Update: {
@@ -1832,6 +2588,7 @@ export type Database = {
           birthdate?: string | null
           created_at?: string
           cuil?: string | null
+          current_submission_id?: string | null
           dni?: string | null
           has_mobility?: boolean
           id?: string
@@ -1844,8 +2601,10 @@ export type Database = {
           mobility_type?: string | null
           profile_id?: string
           rating_avg?: number | null
+          schedule_settings_version?: number
           status?: Database["public"]["Enums"]["professional_status"]
           updated_at?: string
+          version?: number
           years_experience?: number
         }
         Relationships: [
@@ -1911,6 +2670,7 @@ export type Database = {
           id: string
           professional_id: string
           radius_km: number
+          service_zone_id: string | null
           zone_name: string
           zone_slug: string
         }
@@ -1920,6 +2680,7 @@ export type Database = {
           id?: string
           professional_id: string
           radius_km?: number
+          service_zone_id?: string | null
           zone_name: string
           zone_slug: string
         }
@@ -1929,6 +2690,7 @@ export type Database = {
           id?: string
           professional_id?: string
           radius_km?: number
+          service_zone_id?: string | null
           zone_name?: string
           zone_slug?: string
         }
@@ -1938,6 +2700,13 @@ export type Database = {
             columns: ["professional_id"]
             isOneToOne: false
             referencedRelation: "professional_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "professional_service_zones_service_zone_id_fkey"
+            columns: ["service_zone_id"]
+            isOneToOne: false
+            referencedRelation: "service_zones"
             referencedColumns: ["id"]
           },
         ]
@@ -2061,9 +2830,11 @@ export type Database = {
           first_name: string
           id: string
           last_name: string
+          notification_preference: string
           phone: string | null
           role: Database["public"]["Enums"]["user_role"]
           updated_at: string
+          version: number
         }
         Insert: {
           auth_user_id?: string | null
@@ -2073,9 +2844,11 @@ export type Database = {
           first_name?: string
           id?: string
           last_name?: string
+          notification_preference?: string
           phone?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
+          version?: number
         }
         Update: {
           auth_user_id?: string | null
@@ -2085,9 +2858,11 @@ export type Database = {
           first_name?: string
           id?: string
           last_name?: string
+          notification_preference?: string
           phone?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
+          version?: number
         }
         Relationships: []
       }
@@ -2136,13 +2911,6 @@ export type Database = {
             referencedRelation: "jobs"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "public_receipts_job_id_fkey"
-            columns: ["job_id"]
-            isOneToOne: true
-            referencedRelation: "public_receipt_view"
-            referencedColumns: ["job_id"]
-          },
         ]
       }
       quality_events: {
@@ -2190,13 +2958,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "jobs"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "quality_events_job_id_fkey"
-            columns: ["job_id"]
-            isOneToOne: false
-            referencedRelation: "public_receipt_view"
-            referencedColumns: ["job_id"]
           },
           {
             foreignKeyName: "quality_events_professional_id_fkey"
@@ -2249,13 +3010,6 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "jobs"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "receipts_job_id_fkey"
-            columns: ["job_id"]
-            isOneToOne: true
-            referencedRelation: "public_receipt_view"
-            referencedColumns: ["job_id"]
           },
         ]
       }
@@ -2345,11 +3099,13 @@ export type Database = {
           created_at: string
           customer_id: string
           id: string
+          idempotency_key: string | null
           job_id: string
           problem_resolved: boolean | null
           professional_id: string | null
           professional_rating: number
           service_rating: number
+          submission_fingerprint: string | null
           would_hire_again: boolean | null
         }
         Insert: {
@@ -2357,11 +3113,13 @@ export type Database = {
           created_at?: string
           customer_id: string
           id?: string
+          idempotency_key?: string | null
           job_id: string
           problem_resolved?: boolean | null
           professional_id?: string | null
           professional_rating: number
           service_rating: number
+          submission_fingerprint?: string | null
           would_hire_again?: boolean | null
         }
         Update: {
@@ -2369,11 +3127,13 @@ export type Database = {
           created_at?: string
           customer_id?: string
           id?: string
+          idempotency_key?: string | null
           job_id?: string
           problem_resolved?: boolean | null
           professional_id?: string | null
           professional_rating?: number
           service_rating?: number
+          submission_fingerprint?: string | null
           would_hire_again?: boolean | null
         }
         Relationships: [
@@ -2390,13 +3150,6 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "jobs"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "reviews_job_id_fkey"
-            columns: ["job_id"]
-            isOneToOne: true
-            referencedRelation: "public_receipt_view"
-            referencedColumns: ["job_id"]
           },
           {
             foreignKeyName: "reviews_professional_id_fkey"
@@ -2581,62 +3334,109 @@ export type Database = {
       }
       service_quotes: {
         Row: {
+          acceptance_result: Json | null
           accepted_at: string | null
           address: Json
           created_at: string
+          created_by: string | null
           customer_id: string
           expires_at: string
           id: string
           input: Json
+          manual_route_reason: string | null
+          policy_id: string | null
+          policy_snapshot: Json | null
           preferred_date: string
+          previous_quote_id: string | null
           quote: Json
           request_id: string | null
           review_reason: string | null
           reviewed_at: string | null
           reviewed_by: string | null
+          revision: number
+          revision_reason: string | null
+          root_quote_id: string | null
           status: string
           time_window: string
+          upload_intent_ids: string[]
+          version: number
         }
         Insert: {
+          acceptance_result?: Json | null
           accepted_at?: string | null
           address: Json
           created_at?: string
+          created_by?: string | null
           customer_id: string
           expires_at: string
           id?: string
           input: Json
+          manual_route_reason?: string | null
+          policy_id?: string | null
+          policy_snapshot?: Json | null
           preferred_date: string
+          previous_quote_id?: string | null
           quote: Json
           request_id?: string | null
           review_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          revision?: number
+          revision_reason?: string | null
+          root_quote_id?: string | null
           status: string
           time_window: string
+          upload_intent_ids?: string[]
+          version?: number
         }
         Update: {
+          acceptance_result?: Json | null
           accepted_at?: string | null
           address?: Json
           created_at?: string
+          created_by?: string | null
           customer_id?: string
           expires_at?: string
           id?: string
           input?: Json
+          manual_route_reason?: string | null
+          policy_id?: string | null
+          policy_snapshot?: Json | null
           preferred_date?: string
+          previous_quote_id?: string | null
           quote?: Json
           request_id?: string | null
           review_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          revision?: number
+          revision_reason?: string | null
+          root_quote_id?: string | null
           status?: string
           time_window?: string
+          upload_intent_ids?: string[]
+          version?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "service_quotes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "service_quotes_customer_id_fkey"
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customer_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_quotes_previous_quote_id_fkey"
+            columns: ["previous_quote_id"]
+            isOneToOne: true
+            referencedRelation: "service_quotes"
             referencedColumns: ["id"]
           },
           {
@@ -2653,6 +3453,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "service_quotes_root_quote_id_fkey"
+            columns: ["root_quote_id"]
+            isOneToOne: false
+            referencedRelation: "service_quotes"
+            referencedColumns: ["id"]
+          },
         ]
       }
       service_requests: {
@@ -2666,6 +3473,7 @@ export type Database = {
           issue_type_id: string
           preferred_date: string | null
           preferred_time_window: string | null
+          replacement_of_request_id: string | null
           selected_price_option_id: string | null
           status: Database["public"]["Enums"]["request_status"]
           submitted_at: string | null
@@ -2683,6 +3491,7 @@ export type Database = {
           issue_type_id: string
           preferred_date?: string | null
           preferred_time_window?: string | null
+          replacement_of_request_id?: string | null
           selected_price_option_id?: string | null
           status?: Database["public"]["Enums"]["request_status"]
           submitted_at?: string | null
@@ -2700,6 +3509,7 @@ export type Database = {
           issue_type_id?: string
           preferred_date?: string | null
           preferred_time_window?: string | null
+          replacement_of_request_id?: string | null
           selected_price_option_id?: string | null
           status?: Database["public"]["Enums"]["request_status"]
           submitted_at?: string | null
@@ -2761,6 +3571,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "service_requests_replacement_of_request_id_fkey"
+            columns: ["replacement_of_request_id"]
+            isOneToOne: false
+            referencedRelation: "service_requests"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "service_requests_selected_price_fk"
             columns: ["selected_price_option_id"]
             isOneToOne: false
@@ -2809,38 +3626,132 @@ export type Database = {
         }
         Relationships: []
       }
-      warranty_claims: {
+      support_case_events: {
         Row: {
+          actor_profile_id: string
+          case_id: string
           created_at: string
-          customer_id: string
-          description: string
+          event_type: string
+          evidence_ids: string[]
+          from_status: string | null
           id: string
-          job_id: string
-          resolution: string | null
-          status: string
-          updated_at: string
+          internal_note: string | null
+          metadata: Json
+          public_message: string | null
+          to_status: string | null
         }
         Insert: {
+          actor_profile_id: string
+          case_id: string
           created_at?: string
-          customer_id: string
-          description: string
+          event_type: string
+          evidence_ids?: string[]
+          from_status?: string | null
           id?: string
-          job_id: string
-          resolution?: string | null
-          status?: string
-          updated_at?: string
+          internal_note?: string | null
+          metadata?: Json
+          public_message?: string | null
+          to_status?: string | null
         }
         Update: {
+          actor_profile_id?: string
+          case_id?: string
           created_at?: string
-          customer_id?: string
-          description?: string
+          event_type?: string
+          evidence_ids?: string[]
+          from_status?: string | null
           id?: string
-          job_id?: string
-          resolution?: string | null
-          status?: string
-          updated_at?: string
+          internal_note?: string | null
+          metadata?: Json
+          public_message?: string | null
+          to_status?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "support_case_events_actor_profile_id_fkey"
+            columns: ["actor_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_case_events_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "complaints"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      warranty_claims: {
+        Row: {
+          complaint_id: string | null
+          coverage_eligible: boolean
+          coverage_until: string | null
+          created_at: string
+          customer_id: string
+          decided_at: string | null
+          decision_reason: string | null
+          description: string
+          id: string
+          idempotency_key: string | null
+          job_id: string
+          resolution: string | null
+          revisit_job_id: string | null
+          same_problem: boolean
+          status: string
+          submission_fingerprint: string | null
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          complaint_id?: string | null
+          coverage_eligible?: boolean
+          coverage_until?: string | null
+          created_at?: string
+          customer_id: string
+          decided_at?: string | null
+          decision_reason?: string | null
+          description: string
+          id?: string
+          idempotency_key?: string | null
+          job_id: string
+          resolution?: string | null
+          revisit_job_id?: string | null
+          same_problem?: boolean
+          status?: string
+          submission_fingerprint?: string | null
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          complaint_id?: string | null
+          coverage_eligible?: boolean
+          coverage_until?: string | null
+          created_at?: string
+          customer_id?: string
+          decided_at?: string | null
+          decision_reason?: string | null
+          description?: string
+          id?: string
+          idempotency_key?: string | null
+          job_id?: string
+          resolution?: string | null
+          revisit_job_id?: string | null
+          same_problem?: boolean
+          status?: string
+          submission_fingerprint?: string | null
+          updated_at?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "warranty_claims_complaint_id_fkey"
+            columns: ["complaint_id"]
+            isOneToOne: true
+            referencedRelation: "complaints"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "warranty_claims_customer_id_fkey"
             columns: ["customer_id"]
@@ -2856,43 +3767,23 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "warranty_claims_job_id_fkey"
-            columns: ["job_id"]
-            isOneToOne: false
-            referencedRelation: "public_receipt_view"
-            referencedColumns: ["job_id"]
+            foreignKeyName: "warranty_claims_revisit_job_id_fkey"
+            columns: ["revisit_job_id"]
+            isOneToOne: true
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
           },
         ]
       }
     }
     Views: {
-      public_receipt_view: {
-        Row: {
-          created_at: string | null
-          equipment_brand: string | null
-          equipment_model: string | null
-          equipment_nickname: string | null
-          equipment_type: string | null
-          final_state: string | null
-          job_id: string | null
-          job_status: Database["public"]["Enums"]["job_status"] | null
-          maintenance_option:
-            | Database["public"]["Enums"]["maintenance_option"]
-            | null
-          next_maintenance_date: string | null
-          professional_first_name: string | null
-          professional_last_name: string | null
-          public_token: string | null
-          real_diagnosis: string | null
-          scheduled_date: string | null
-          scheduled_time_window: string | null
-          warranty_days: number | null
-          work_done: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
+      accept_professional_invitation: {
+        Args: { p_token: string }
+        Returns: Json
+      }
       ack_outbox_event: {
         Args: {
           p_claim_token: string
@@ -2907,6 +3798,14 @@ export type Database = {
       }
       advance_service_job: {
         Args: { p_expected_status: string; p_job_id: string }
+        Returns: Json
+      }
+      advance_service_job_v2: {
+        Args: {
+          p_expected_status: string
+          p_idempotency_key: string
+          p_job_id: string
+        }
         Returns: Json
       }
       apply_mercadopago_payment_webhook: {
@@ -2927,28 +3826,67 @@ export type Database = {
         }
         Returns: Json
       }
-      claim_outbox_events: {
-        Args: {
-          p_batch_size?: number
-          p_lease_seconds?: number
-          p_worker_id: string
-        }
-        Returns: {
-          aggregate_id: string
-          aggregate_type: string
-          attempt_count: number
-          channel: string
-          claim_token: string
-          created_at: string
-          dedupe_key: string
-          event_type: string
-          id: string
-          locked_until: string
-          payload: Json
-          recipient_key: string
-          recipient_profile_id: string
-        }[]
+      bootstrap_customer_account: { Args: never; Returns: Json }
+      cancel_professional_invitation: {
+        Args: { p_expected_version: number; p_id: string; p_reason: string }
+        Returns: Json
       }
+      change_admin_permissions: {
+        Args: {
+          p_admin_profile_id: string
+          p_expected_version: number
+          p_permissions: Database["public"]["Enums"]["admin_permission"][]
+          p_reason: string
+        }
+        Returns: Json
+      }
+      claim_expired_upload_intents: { Args: { p_limit: number }; Returns: Json }
+      claim_outbox_events:
+        | {
+            Args: {
+              p_batch_size?: number
+              p_lease_seconds?: number
+              p_worker_id: string
+            }
+            Returns: {
+              aggregate_id: string
+              aggregate_type: string
+              attempt_count: number
+              channel: string
+              claim_token: string
+              created_at: string
+              dedupe_key: string
+              event_type: string
+              id: string
+              locked_until: string
+              payload: Json
+              recipient_key: string
+              recipient_profile_id: string
+            }[]
+          }
+        | {
+            Args: {
+              p_batch_size: number
+              p_channels: string[]
+              p_lease_seconds: number
+              p_worker_id: string
+            }
+            Returns: {
+              aggregate_id: string
+              aggregate_type: string
+              attempt_count: number
+              channel: string
+              claim_token: string
+              created_at: string
+              dedupe_key: string
+              event_type: string
+              id: string
+              locked_until: string
+              payload: Json
+              recipient_key: string
+              recipient_profile_id: string
+            }[]
+          }
       claim_payment_refund_requests: {
         Args: { p_batch_size?: number; p_lease_seconds?: number }
         Returns: {
@@ -2986,11 +3924,21 @@ export type Database = {
           resource_type: string
         }[]
       }
+      clear_financial_exception: {
+        Args: {
+          p_case_id: string
+          p_evidence: Json
+          p_expected_version: number
+        }
+        Returns: Json
+      }
       close_job_with_final_report: {
         Args: {
+          p_after_photo_ids: string[]
           p_equipment_id: string
           p_final_state: string
-          p_internal_notes?: string
+          p_idempotency_key: string
+          p_internal_notes: string
           p_job_id: string
           p_maintenance_option: Database["public"]["Enums"]["maintenance_option"]
           p_next_maintenance_date: string
@@ -3001,6 +3949,34 @@ export type Database = {
         }
         Returns: Json
       }
+      complete_customer_registration: {
+        Args: {
+          p_accepted: boolean
+          p_first_name: string
+          p_last_name: string
+          p_phone: string
+          p_privacy_version: string
+          p_terms_version: string
+        }
+        Returns: Json
+      }
+      complete_upload_cleanup: {
+        Args: { p_intent_id: string; p_lease_token: string }
+        Returns: boolean
+      }
+      confirm_job_outcome: {
+        Args: {
+          p_decision: string
+          p_idempotency_key: string
+          p_job_id: string
+          p_reason: string
+        }
+        Returns: Json
+      }
+      consume_rate_limit: {
+        Args: { p_key: string; p_limit: number; p_window_seconds: number }
+        Returns: Json
+      }
       create_admin_audit_event: {
         Args: {
           action: string
@@ -3009,6 +3985,22 @@ export type Database = {
           metadata?: Json
         }
         Returns: string
+      }
+      create_assignment_offer: {
+        Args: {
+          p_duration_minutes: number
+          p_expected_version: number
+          p_expires_at: string
+          p_job_id: string
+          p_professional_id: string
+          p_starts_at: string
+          p_travel_buffer_minutes: number
+        }
+        Returns: Json
+      }
+      create_professional_invitation: {
+        Args: { p_email: string; p_reason: string; p_specialty_slug: string }
+        Returns: Json
       }
       create_service_request_from_app: {
         Args: {
@@ -3027,6 +4019,19 @@ export type Database = {
         }
         Returns: Json
       }
+      create_upload_intent: {
+        Args: {
+          p_document_type: string
+          p_draft_id: string
+          p_entity_id: string
+          p_kind: string
+          p_mime_type: string
+          p_phase: string
+          p_sha256: string
+          p_size_bytes: number
+        }
+        Returns: Json
+      }
       current_customer_id: { Args: never; Returns: string }
       current_professional_id: { Args: never; Returns: string }
       current_profile_id: { Args: never; Returns: string }
@@ -3036,6 +4041,42 @@ export type Database = {
       }
       decide_job_extra: {
         Args: { p_decision: string; p_extra_id: string }
+        Returns: Json
+      }
+      decide_job_extra_v2: {
+        Args: {
+          p_decision: string
+          p_extra_id: string
+          p_idempotency_key: string
+        }
+        Returns: Json
+      }
+      decide_onsite_scope: {
+        Args: {
+          p_decision: string
+          p_expected_version: number
+          p_idempotency_key: string
+          p_job_id: string
+          p_reason: string
+        }
+        Returns: Json
+      }
+      decide_professional_application: {
+        Args: {
+          p_decision: string
+          p_expected_version: number
+          p_professional_id: string
+          p_reason: string
+        }
+        Returns: Json
+      }
+      decide_warranty_claim: {
+        Args: {
+          p_claim_id: string
+          p_decision: string
+          p_expected_version: number
+          p_reason: string
+        }
         Returns: Json
       }
       enqueue_outbox_event: {
@@ -3051,6 +4092,8 @@ export type Database = {
         }
         Returns: string
       }
+      expire_assignment_offers: { Args: { p_limit?: number }; Returns: number }
+      expire_schedule_holds: { Args: never; Returns: number }
       fail_outbox_event: {
         Args: {
           p_claim_token: string
@@ -3098,8 +4141,100 @@ export type Database = {
         }
         Returns: string
       }
+      finalize_verified_upload:
+        | {
+            Args: {
+              p_actor_auth_user_id: string
+              p_actual_mime_type: string
+              p_actual_sha256: string
+              p_actual_size_bytes: number
+              p_intent_id: string
+              p_output_sha256: string
+              p_output_size_bytes: number
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_actor_auth_user_id: string
+              p_actor_session_id: string
+              p_actual_mime_type: string
+              p_actual_sha256: string
+              p_actual_size_bytes: number
+              p_intent_id: string
+              p_output_sha256: string
+              p_output_size_bytes: number
+            }
+            Returns: Json
+          }
+      finish_email_delivery: {
+        Args: {
+          p_claim_token: string
+          p_event_id: string
+          p_provider_message_id: string
+        }
+        Returns: boolean
+      }
+      finish_in_app_delivery: {
+        Args: { p_claim_token: string; p_event_id: string }
+        Returns: boolean
+      }
+      get_job_visit: { Args: { p_job_id: string }; Returns: Json }
+      get_payment_refund_execution_context: {
+        Args: { p_claim_token: string; p_request_id: string }
+        Returns: Json
+      }
       get_quote_policy: { Args: never; Returns: Json }
+      get_quote_policy_record: { Args: never; Returns: Json }
+      get_registration_policy: { Args: never; Returns: Json }
+      get_schedule_availability: {
+        Args: { p_from: string; p_professional_id: string; p_to: string }
+        Returns: Json
+      }
+      get_session_context: { Args: never; Returns: Json }
+      get_upload_intent: { Args: { p_intent_id: string }; Returns: Json }
       is_admin: { Args: never; Returns: boolean }
+      list_admin_workflow: {
+        Args: {
+          p_cursor_at: string
+          p_cursor_id: string
+          p_limit: number
+          p_resource: string
+        }
+        Returns: Json
+      }
+      list_assignment_candidates: {
+        Args: {
+          p_duration_minutes: number
+          p_job_id: string
+          p_starts_at: string
+          p_travel_buffer_minutes: number
+        }
+        Returns: Json
+      }
+      list_customer_maintenance: { Args: never; Returns: Json }
+      list_financial_exceptions: {
+        Args: { p_before?: string; p_limit?: number }
+        Returns: Json
+      }
+      list_operator_queue: {
+        Args: { p_cursor_at?: string; p_cursor_id?: string; p_limit?: number }
+        Returns: Json
+      }
+      list_outbox_deliveries: {
+        Args: { p_cursor_at: string; p_cursor_id: string; p_limit: number }
+        Returns: Json
+      }
+      list_professional_workflow: {
+        Args: {
+          p_before_created_at?: string
+          p_before_id?: string
+          p_limit?: number
+          p_resource: string
+        }
+        Returns: Json
+      }
+      list_support_cases: { Args: { p_limit?: number }; Returns: Json }
       log_admin_action: {
         Args: {
           p_action: string
@@ -3112,13 +4247,75 @@ export type Database = {
       lookup_public_receipt: {
         Args: { p_token: string }
         Returns: {
+          confirmation_status: string
+          final_state: string
           issued_at: string
           next_maintenance_date: string
           professional_name: string
           service_name: string
-          warranty_days: number
+          warranty_until: string
           work_done: string
         }[]
+      }
+      manage_maintenance_plan: {
+        Args: {
+          p_action: string
+          p_address_id: string
+          p_due_date: string
+          p_expected_version: number
+          p_plan_id: string
+        }
+        Returns: Json
+      }
+      manage_public_receipt_token: {
+        Args: {
+          p_action: string
+          p_expected_token: string
+          p_reason: string
+          p_receipt_id: string
+        }
+        Returns: Json
+      }
+      mark_marketplace_checkout_closed: {
+        Args: { p_checkout_id: string; p_evidence: Json }
+        Returns: Json
+      }
+      open_support_case: {
+        Args: {
+          p_category: string
+          p_customer_waiting: boolean
+          p_description: string
+          p_evidence_ids: string[]
+          p_has_safety_risk: boolean
+          p_idempotency_key: string
+          p_job_id: string
+          p_payment_blocked: boolean
+        }
+        Returns: Json
+      }
+      open_warranty_claim: {
+        Args: {
+          p_description: string
+          p_evidence_ids: string[]
+          p_idempotency_key: string
+          p_job_id: string
+          p_same_problem: boolean
+        }
+        Returns: Json
+      }
+      persist_calculated_quote: {
+        Args: {
+          p_actor_session_id: string
+          p_actor_user_id: string
+          p_customer_id: string
+          p_payload: Json
+        }
+        Returns: Json
+      }
+      production_readiness_probe: { Args: never; Returns: Json }
+      professional_invitation_matches: {
+        Args: { p_email: string; p_token: string }
+        Returns: boolean
       }
       professional_respond_to_job: {
         Args: {
@@ -3129,6 +4326,7 @@ export type Database = {
         }
         Returns: Json
       }
+      professional_review_context: { Args: { p_id?: string }; Returns: Json }
       propose_job_extra: {
         Args: {
           p_amount: number
@@ -3136,6 +4334,18 @@ export type Database = {
           p_fault: string
           p_idempotency_key: string
           p_job_id: string
+        }
+        Returns: Json
+      }
+      prune_rate_limits: { Args: { p_limit?: number }; Returns: number }
+      read_professional_onboarding: { Args: never; Returns: Json }
+      record_policy_acceptance: {
+        Args: {
+          p_evidence?: Json
+          p_kind: string
+          p_subject_id: string
+          p_subject_kind: string
+          p_version: string
         }
         Returns: Json
       }
@@ -3151,6 +4361,30 @@ export type Database = {
         }
         Returns: string
       }
+      replace_professional_schedule_settings: {
+        Args: {
+          p_absences: Json
+          p_expected_version: number
+          p_professional_id: string
+          p_windows: Json
+        }
+        Returns: Json
+      }
+      request_job_cancellation: {
+        Args: { p_expected_version: number; p_job_id: string; p_reason: string }
+        Returns: Json
+      }
+      request_job_reschedule: {
+        Args: {
+          p_duration_minutes: number
+          p_expected_version: number
+          p_job_id: string
+          p_reason: string
+          p_starts_at: string
+          p_travel_buffer_minutes: number
+        }
+        Returns: Json
+      }
       request_payment_refund: {
         Args: {
           p_amount: number
@@ -3160,8 +4394,87 @@ export type Database = {
         }
         Returns: Json
       }
+      request_professional_replacement: {
+        Args: { p_expected_version: number; p_job_id: string; p_reason: string }
+        Returns: Json
+      }
+      reserve_job_schedule: {
+        Args: {
+          p_duration_minutes: number
+          p_expected_version: number
+          p_hold_minutes: number
+          p_job_id: string
+          p_starts_at: string
+          p_state: string
+          p_travel_buffer_minutes: number
+        }
+        Returns: Json
+      }
+      resolve_financial_exception: {
+        Args: {
+          p_case_id: string
+          p_expected_version: number
+          p_reason: string
+        }
+        Returns: Json
+      }
+      resolve_outbox_delivery: {
+        Args: { p_claim_token: string; p_event_id: string }
+        Returns: Json
+      }
+      respond_assignment_offer: {
+        Args: {
+          p_expected_version: number
+          p_offer_id: string
+          p_reason: string
+          p_response: string
+        }
+        Returns: Json
+      }
+      respond_job_reschedule: {
+        Args: {
+          p_decision: string
+          p_expected_version: number
+          p_request_id: string
+        }
+        Returns: Json
+      }
+      retry_outbox_delivery: {
+        Args: {
+          p_event_id: string
+          p_expected_revision: number
+          p_reason: string
+        }
+        Returns: Json
+      }
+      review_professional_document: {
+        Args: {
+          p_decision: string
+          p_document_id: string
+          p_expected_version: number
+          p_expires_at: string
+          p_reason: string
+        }
+        Returns: Json
+      }
       review_service_quote: {
         Args: { p_quote_id: string; p_reason: string }
+        Returns: Json
+      }
+      review_service_quote_v2: {
+        Args: {
+          p_expected_version: number
+          p_quote_id: string
+          p_reason: string
+        }
+        Returns: Json
+      }
+      save_professional_onboarding: {
+        Args: { p_expected_version: number; p_input: Json }
+        Returns: Json
+      }
+      seal_outbox_delivery: {
+        Args: { p_claim_token: string; p_content: Json; p_event_id: string }
         Returns: Json
       }
       set_admin_permissions: {
@@ -3171,10 +4484,19 @@ export type Database = {
         }
         Returns: undefined
       }
+      stop_outbox_delivery: {
+        Args: {
+          p_claim_token: string
+          p_code: string
+          p_event_id: string
+          p_suppressed?: boolean
+        }
+        Returns: boolean
+      }
       submit_customer_review_transaction: {
         Args: {
           p_comment: string
-          p_customer_id: string
+          p_idempotency_key: string
           p_job_id: string
           p_problem_resolved: boolean
           p_professional_rating: number
@@ -3183,8 +4505,66 @@ export type Database = {
         }
         Returns: Json
       }
+      submit_marketing_inquiry: { Args: { payload: Json }; Returns: string }
+      submit_onsite_diagnosis: {
+        Args: {
+          p_actual_diagnosis: string
+          p_base_scope: string
+          p_equipment_id: string
+          p_evidence_ids: string[]
+          p_expected_status: string
+          p_idempotency_key: string
+          p_job_id: string
+        }
+        Returns: Json
+      }
+      submit_professional_application: {
+        Args: {
+          p_accepted: boolean
+          p_expected_version: number
+          p_privacy_version: string
+          p_terms_version: string
+        }
+        Returns: Json
+      }
       submit_service_quote: { Args: { p_quote_id: string }; Returns: Json }
+      submit_service_quote_v2: {
+        Args: { p_expected_version: number; p_quote_id: string }
+        Returns: Json
+      }
+      suspend_professional: {
+        Args: { p_professional_id: string; p_reason: string }
+        Returns: Json
+      }
       update_quote_policy: { Args: { p_policy: Json }; Returns: Json }
+      update_quote_policy_v2: {
+        Args: { p_expected_revision: number; p_policy: Json; p_reason: string }
+        Returns: Json
+      }
+      update_support_case: {
+        Args: {
+          p_action: string
+          p_assigned_to: string
+          p_case_id: string
+          p_communication_failed: boolean
+          p_evidence_ids: string[]
+          p_expected_version: number
+          p_internal_note: string
+          p_public_message: string
+          p_resolution_reason: string
+        }
+        Returns: Json
+      }
+      write_customer_asset: {
+        Args: {
+          p_archive?: boolean
+          p_data: Json
+          p_expected_version: number
+          p_id: string
+          p_kind: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       admin_permission: "operations" | "finance" | "quality" | "owner"

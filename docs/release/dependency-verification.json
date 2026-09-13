@@ -1,0 +1,156 @@
+{
+  "task": "T02",
+  "status": "verified",
+  "verifiedAt": "2026-09-11T03:47:31.620Z",
+  "baseCommit": "afb14ba2eb1af5a5f8ab7ba7edd11aba5861a6b3",
+  "scope": "Local release verification on Windows and clean Linux; no deployment or real provider calls",
+  "reviewedSources": [
+    {
+      "path": "package.json",
+      "sha256": "b0c18d1872181a09435e6d61b80a73f3f6e71ad715f7e881bfe3ecb2523eb911"
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "sha256": "e710460241723e0df80786296347c6d47298224973983446e0d098ed3bd4e6af"
+    },
+    {
+      "path": "next.config.ts",
+      "sha256": "be2dff8f41802e224e1f5e195da0eaebb8edf61be99a5b040e6c3bedcc661f80"
+    },
+    {
+      "path": "scripts/verify-payment-runtime.mjs",
+      "sha256": "bae011718a6a3a980867ba5364efd7db7f0f481711409bdbcbbc7eecaa29460a"
+    },
+    {
+      "path": "scripts/verify-image-runtime.mjs",
+      "sha256": "ac7b3e25084d9cdcc49b9c80a56dcdd200d1663c6de719466213fe2390d47bec"
+    },
+    {
+      "path": "scripts/verify-linux-release.sh",
+      "sha256": "ef611495708bafb49a84569212f6b9dd9d3e5c39dd49b2374313fb7f875b88ea"
+    }
+  ],
+  "versions": {
+    "node": "22.23.2",
+    "pnpm": "9.15.0",
+    "next": "15.5.24",
+    "nextPostcss": "8.5.26",
+    "nextSharp": "0.35.4",
+    "retainedMercadoPagoSdk": "3.6.1"
+  },
+  "productionAudit": {
+    "vulnerabilities": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0
+    },
+    "dependencies": 101,
+    "devDependencies": 0,
+    "optionalDependencies": 0,
+    "totalDependencies": 101
+  },
+  "frozenInstalls": {
+    "windows": "passed",
+    "linux": "passed"
+  },
+  "productionBuilds": {
+    "windows": "passed",
+    "linux": "passed",
+    "generatedPaths": 93
+  },
+  "checks": {
+    "windowsLint": "passed",
+    "windowsTypes": "passed",
+    "domainPassed": 124,
+    "unitPassed": 263,
+    "unitSkipped": 8,
+    "linuxMarketplacePassed": 32,
+    "linuxMarketplaceSkipped": 8,
+    "paymentRuntimeWindows": "passed",
+    "paymentRuntimeLinux": "passed",
+    "imageRuntimeWindows": "passed",
+    "imageRuntimeLinux": "passed"
+  },
+  "sourceArchive": {
+    "files": 546,
+    "sha256": "72066e38bb8de9434d80a3dffe6d2e7695f6e2d2d0f4ca8e6f5cca01d3896309",
+    "lockfileSha256": "e710460241723e0df80786296347c6d47298224973983446e0d098ed3bd4e6af",
+    "createdAt": "2026-09-11T03:22:58.397Z",
+    "updatedAt": "2026-09-11T03:27:03.624Z",
+    "note": "Image verifier follows public Sharp API and preserves AVIF-input block; refreshed before Linux execution."
+  },
+  "vendorEvidence": "docs/release/vendor-provenance.json",
+  "limits": [
+    "Domain/unit suite ran before final Sharp update; final Sharp has direct optimizer checks and both complete builds with lint/type checking.",
+    "Linux marketplace tests are a subset of Windows unit tests; do not sum them.",
+    "Linux Prisma smoke initializes the generated client but makes no database queries; eight real DB tests passed separately on Windows in T03.",
+    "Deployment target and commercial custody of UNLICENSED vendor remain external decisions D04/D05.",
+    "Audit scope is production dependencies, not all application security."
+  ],
+  "evidence": [
+    {
+      "path": "output/production-readiness/dependencies-final.json",
+      "sha256": "68a1b1d7fec8bd3d493ef046570bbd770d8589e382726bb568f84f33881d2ce0"
+    },
+    {
+      "path": "output/production-readiness/final-install-windows.log",
+      "sha256": "a598352dbff2ea94dc6c9fb5034ee0dea0cf5ccbea4e46fe2aaf51074c8c3ab7"
+    },
+    {
+      "path": "output/production-readiness/updated-windows-checks.json",
+      "sha256": "45efe7eb87187af48398442327b0e62340807265b5af023960f5f545ad23bb22"
+    },
+    {
+      "path": "output/production-readiness/updated-domain.log",
+      "sha256": "3fcd3db64d5c40fa4973f21d2b0b96c0bf27d72022105bbe4085def37fb69c8b"
+    },
+    {
+      "path": "output/production-readiness/updated-unit.log",
+      "sha256": "3cb7bfb07310de2aaa94dce1234025e1fa0748838d5761c010c6beca2d03b04f"
+    },
+    {
+      "path": "output/production-readiness/updated-build-windows.log",
+      "sha256": "cf14ea8322813c2c2e24f6f0d03ac290e60e2ca6ac3fd2157c7b87bd299b37a7"
+    },
+    {
+      "path": "output/production-readiness/updated-linux-release.log",
+      "sha256": "252017612759577d961875baa0e63990f12c1d0220e68040ee14276a83ed788c"
+    },
+    {
+      "path": "output/production-readiness/linux-release-result.json",
+      "sha256": "ea9c6c10810999832a0b1c8daa3bac488ef5218ab8ee1203e143d06958b62240"
+    },
+    {
+      "path": "output/production-readiness/image-runtime-after.log",
+      "sha256": "2c3088376644382010af38062b38312f23decd3b32a265c9a1b3345d9f97904b"
+    },
+    {
+      "path": "output/production-readiness/vendor-comparison.json",
+      "sha256": "7fc57e51dad4305b92643e741959a7e1cb8fa546a1b15c743c2096c04bb99626"
+    },
+    {
+      "path": "output/production-readiness/linux-status-red.log",
+      "sha256": "33c975f604481f446176eb7c613a1faebd304073059c15d094a0f10466e6b3ba"
+    },
+    {
+      "path": "output/production-readiness/linux-status-green.log",
+      "sha256": "8179c99450f06c86dc2e729a7d5275520055c032a701f12ec874c700c0e497a1"
+    }
+  ],
+  "review": {
+    "independent": "completed",
+    "findings": [
+      {
+        "priority": "P2",
+        "description": "Stale passed result after a later failed checker run",
+        "status": "fixed",
+        "red": "linux-status-red.log",
+        "green": "linux-status-green.log"
+      }
+    ],
+    "fullBuildCheckerSha256": "5eaf2828e30dc701c806f777be8bb236a8e342e3f69eb9c2efbc0849bbfbe9c9",
+    "currentCheckerValidation": "Exit-state harness passed both error and success with corepack stubbed; no app build credited to harness."
+  }
+}

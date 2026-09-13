@@ -1,3 +1,4 @@
+import { customerJobStatusLabels } from '../domain/job-status-labels.ts'
 import type { JobStatus } from '../domain/types.ts'
 import { assertTransition, jobTransitions } from '../domain/state-machine.ts'
 
@@ -31,30 +32,24 @@ export function nextJobActions(status: JobStatus): JobAction[] {
   return jobTransitions[status].map((to) => actionLabels[to] ?? { to, label: to })
 }
 
-export function transitionJobStatus(current: JobStatus, next: JobStatus, context: { hasFinalReport?: boolean; customerApproved?: boolean } = {}): JobStatus {
+export type JobTransitionContext = {
+  /** Canonical marketplace_checkouts.status; never payments.status or browser input. */
+  canonicalPaymentStatus?: string
+  hasFinalReport?: boolean
+  customerApproved?: boolean
+  customerConfirmed?: boolean
+}
+
+/** Pure capability check. Mutations must use the authorized transactional SQL command. */
+export function transitionJobStatus(current: JobStatus, next: JobStatus, context: JobTransitionContext = {}): JobStatus {
   assertTransition(jobTransitions, current, next, 'job')
+  if (['technician_on_way', 'arrived', 'onsite_diagnosis', 'in_progress'].includes(next) && context.canonicalPaymentStatus !== 'approved') throw new Error('Initial payment must be approved before the visit')
   if (next === 'completed_pending_customer_confirmation' && !context.hasFinalReport) throw new Error('Final report is required before finishing the job')
   if (current === 'waiting_customer_approval' && next === 'in_progress' && !context.customerApproved) throw new Error('Customer approval is required before starting approved extra work')
+  if (next === 'completed' && (!context.hasFinalReport || !context.customerConfirmed)) throw new Error('Final report and explicit customer confirmation are required')
   return next
 }
 
 export function customerVisibleJobStatus(status: JobStatus): string {
-  const labels: Record<JobStatus, string> = {
-    pending_assignment: 'Estamos asignando un profesional',
-    pending_professional_acceptance: 'Esperando confirmación del profesional',
-    confirmed: 'Técnico confirmado',
-    technician_on_way: 'El técnico está en camino',
-    arrived: 'El técnico llegó al domicilio',
-    onsite_diagnosis: 'Diagnóstico en curso',
-    waiting_customer_approval: 'Hay un presupuesto adicional para aprobar',
-    in_progress: 'Trabajo en curso',
-    completed_pending_customer_confirmation: 'Trabajo terminado, pendiente de confirmación',
-    completed: 'Trabajo completado',
-    cancelled_by_customer: 'Cancelado por el cliente',
-    cancelled_by_professional: 'Cancelado por el profesional',
-    cancelled_by_admin: 'Cancelado por Lysto',
-    disputed: 'Caso en revisión',
-    warranty_claim: 'Garantía en curso'
-  }
-  return labels[status]
+  return customerJobStatusLabels[status]
 }

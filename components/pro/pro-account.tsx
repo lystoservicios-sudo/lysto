@@ -1,85 +1,83 @@
 'use client'
 
-import { useRef, useState } from 'react'
-import { ArrowLeft, ArrowRight, BookOpen, Check, ChevronDown, CreditCard, GraduationCap, LifeBuoy, MapPin, ShieldCheck, UserRound, Wrench } from 'lucide-react'
-import { Button, ButtonLink } from '@/components/ui/button'
-import { Input, Textarea } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
-import { EmptyState } from '@/components/customer/states'
-import { InfoNotice } from '@/components/customer/info-notice'
-import { demoProfessional, searchMatches, toolOptions } from './pro-model'
-import { DraftFeedback, ProFacts, ProPage, ProPanel, ProSearch, ProShortcut, useProDraft } from './pro-ui'
+import { useState } from 'react'
+import { BookOpen, Check, ChevronDown } from 'lucide-react'
 
-export function ProfessionalProfile() {
-  const draft = useProDraft('profile', { name: demoProfessional.name, email: demoProfessional.email, phone: demoProfessional.phone, zone: demoProfessional.zone, mobility: demoProfessional.mobility, availability: '', bio: demoProfessional.specialty, ...Object.fromEntries(toolOptions.map(tool => [tool, demoProfessional.tools.includes(tool)])) })
-  return <ProPage title="Mi perfil" description="Tu presentación, tu zona y lo que necesitás para trabajar.">
-    <div className="pro-two-col"><form className="pro-stack" onSubmit={event => { event.preventDefault(); draft.save() }}><ProPanel title="Datos personales"><div className="pro-form-grid">{([
-      ['name', 'Nombre y apellido', 'text', 'name'], ['email', 'Email', 'email', 'email'], ['phone', 'Teléfono', 'tel', 'tel']
-    ] as const).map(([key, label, type, autoComplete]) => <label className="pro-field" key={key}>{label}<Input type={type} autoComplete={autoComplete} required value={draft.values[key]} maxLength={150} onChange={event => draft.setValues({ ...draft.values, [key]: event.target.value })} /></label>)}</div><label className="pro-field mt-5">Presentación profesional<Textarea value={draft.values.bio} maxLength={600} onChange={event => draft.setValues({ ...draft.values, bio: event.target.value })} /></label></ProPanel>
-      <ProPanel title="Cómo trabajás" description="Preferencias de cobertura y horarios."><div className="pro-form-grid">{([['zone', 'Zona de trabajo'], ['mobility', 'Movilidad'], ['availability', 'Días y horarios disponibles']] as const).map(([key, label]) => <label className="pro-field" key={key}>{label}<Input value={draft.values[key]} maxLength={150} onChange={event => draft.setValues({ ...draft.values, [key]: event.target.value })} placeholder={key === 'availability' ? 'Ej.: lunes a viernes, de 9 a 18' : undefined} /></label>)}</div></ProPanel>
-      <ProPanel title="Tus herramientas" description="Seleccioná las que tenés disponibles."><div className="pro-form-grid">{toolOptions.map(tool => <label className="pro-checkbox" key={tool}><input type="checkbox" checked={Boolean(draft.values[tool as keyof typeof draft.values])} onChange={event => draft.setValues({ ...draft.values, [tool]: event.target.checked })} />{tool}</label>)}</div></ProPanel>
-      <div className="pro-action-bar"><p className="pro-muted">Sólo se guarda en esta pestaña.</p><Button type="submit">Guardar borrador de perfil</Button></div><DraftFeedback feedback={draft.feedback} />
-    </form><div className="pro-stack"><ProPanel title="Perfil registrado"><div className="flex gap-4 items-center mb-6"><span className="pro-icon"><UserRound size={23} aria-hidden="true" /></span><div><h2 className="font-bold">{demoProfessional.name}</h2><Badge tone="green" className="mt-2">Aprobado · Demo</Badge></div></div><ProFacts items={[{ label: 'Calificación', value: `${demoProfessional.rating.toLocaleString('es-AR')} / 5` }, { label: 'Trabajos del perfil', value: demoProfessional.jobsCompleted }, { label: 'Matrícula', value: demoProfessional.hasLicense ? 'Registrada' : 'Sin registrar' }, { label: 'Aceptación', value: `${Math.round(demoProfessional.acceptanceRate * 100)}%` }]} /></ProPanel><ProPanel title="Tu espacio"><ProShortcut href="/pro/mercadopago" title="Cuenta de cobro" description="Revisá la vinculación de Mercado Pago." icon={CreditCard} /><ProShortcut href="/pro/pagos" title="Mis cobros" description="Consultá tus movimientos." icon={CreditCard} /><ProShortcut href="/pro/capacitacion" title="Capacitación" description="Guías para tus visitas." icon={GraduationCap} /><ProShortcut href="/pro/soporte" title="Soporte" description="Resolvé dudas de la operación." icon={LifeBuoy} /></ProPanel></div></div>
-  </ProPage>
-}
+import { Button } from '@/components/ui/button'
+import { ProPage, ProPanel } from './pro-ui'
 
 const guides = [
-  { title: 'Prepará tu visita', time: '2 min', icon: MapPin, content: ['Revisá la dirección, la franja horaria y las condiciones de acceso.', 'Consultá el problema informado y los antecedentes disponibles.', 'Si surge un imprevisto, informalo antes del horario acordado.'] },
-  { title: 'Identificá el equipo', time: '2 min', icon: Wrench, content: ['Compará marca y modelo con la ficha existente.', 'Anotá diferencias en las notas de la visita.', 'Documentá el estado inicial antes de intervenir. Esta guía no reemplaza la formación técnica.'] },
-  { title: 'Fotos que ayudan', time: '2 min', icon: BookOpen, content: ['Tomá una vista general y otra del detalle relevante.', 'Evitá incluir rostros, documentos u objetos personales del cliente.', 'Identificá cuáles muestran el antes y cuáles el después.'] },
-  { title: 'Diagnóstico y aprobación', time: '3 min', icon: ShieldCheck, content: ['Registrá qué encontraste y cómo lo verificaste.', 'Explicá el alcance del trabajo y cualquier adicional.', 'Esperá la aprobación correspondiente antes de realizar tareas adicionales.'] },
-  { title: 'Un cierre completo', time: '2 min', icon: Check, content: ['Describí el trabajo realizado y los repuestos utilizados.', 'Revisá los datos del equipo y agregá recomendaciones de mantenimiento.', 'El cliente confirma el servicio por su propio canal; no lo hagas en su nombre.'] },
-  { title: 'Comunicación con el cliente', time: '2 min', icon: UserRound, content: ['Presentate y confirmá el motivo de la visita.', 'Explicá el diagnóstico en palabras sencillas, sin prometer resultados que no verificaste.', 'Antes de retirarte, repasá las tareas realizadas y las dudas pendientes.'] }
-]
+  ['Prepará tu visita', 'Revisá horario, dirección, acceso y antecedentes antes de salir.'],
+  ['Documentá el equipo', 'Registrá el estado inicial sin incluir datos personales en las fotos.'],
+  ['Confirmá el diagnóstico', 'Explicá alcance y adicionales antes de comenzar tareas nuevas.'],
+  ['Cerrá el trabajo', 'Completá el informe, la evidencia y las recomendaciones de mantenimiento.']
+] as const
 
 export function ProfessionalTraining() {
-  const draft = useProDraft('guides', Object.fromEntries(guides.map((_, index) => [String(index), false])))
-  const count = Object.values(draft.values).filter(Boolean).length
-  return <ProPage title="Aprendé a tu ritmo" description="Guías breves para preparar, realizar y cerrar una visita con claridad.">
-    <div className="pro-two-col"><ProPanel title="Tu recorrido"><div className="flex gap-4 items-center mb-5"><span className="pro-icon"><GraduationCap size={24} aria-hidden="true" /></span><div><p className="font-bold">{count} de 6 guías leídas</p><p className="pro-muted">Lectura autoguiada · Sin certificación</p></div></div><progress className="pro-progress" aria-label="Guías leídas" value={count} max={6} /><div className="mt-6">{guides.map((guide, index) => <details className="pro-accordion" key={guide.title}><summary><guide.icon size={20} className="text-blue-700 shrink-0" aria-hidden="true" /><span className="flex-1">{guide.title}<span className="pro-muted block font-normal mt-1">{draft.values[index] ? 'Leída' : guide.time}</span></span><ChevronDown size={18} aria-hidden="true" /></summary><div><ul className="list-disc pl-5 space-y-3 text-sm leading-6 text-slate-600">{guide.content.map(text => <li key={text}>{text}</li>)}</ul><Button className="mt-5" variant="secondary" onClick={() => draft.setValues({ ...draft.values, [index]: !draft.values[index] })}>{draft.values[index] ? 'Marcar como pendiente' : 'Marcar como leída'}</Button></div></details>)}</div><div className="pro-stack mt-5"><Button variant="secondary" onClick={draft.save}>Guardar progreso local</Button><DraftFeedback feedback={draft.feedback} /></div></ProPanel><div className="pro-stack"><InfoNotice title="Un repaso, no una certificación" description="Estas guías explican el uso de Lysto. No sustituyen capacitación técnica, habilitaciones ni protocolos de seguridad." /><ProPanel title="Llevá lo aprendido a la visita"><ProShortcut href="/pro/trabajos" title="Mis trabajos" description="Consultá el próximo paso." icon={Wrench} /><ProShortcut href="/pro/soporte" title="Tengo una duda" description="Buscá una respuesta de operación." icon={LifeBuoy} /></ProPanel></div></div>
-  </ProPage>
+  const [read, setRead] = useState<string[]>([])
+  return (
+    <ProPage
+      title="Guías de operación"
+      description="Material de referencia para usar Lysto durante una visita."
+    >
+      <ProPanel title={`${read.length} de ${guides.length} guías revisadas`}>
+        <div className="space-y-3">
+          {guides.map(([title, content]) => (
+            <details key={title} className="pro-accordion">
+              <summary>
+                <BookOpen size={18} />
+                <span className="flex-1">{title}</span>
+                {read.includes(title) ? <Check size={18} /> : <ChevronDown size={18} />}
+              </summary>
+              <div>
+                <p className="pro-muted">{content}</p>
+                <Button
+                  className="mt-3"
+                  variant="secondary"
+                  onClick={() =>
+                    setRead((current) =>
+                      current.includes(title)
+                        ? current.filter((item) => item !== title)
+                        : [...current, title]
+                    )
+                  }
+                >
+                  {read.includes(title) ? 'Marcar pendiente' : 'Marcar revisada'}
+                </Button>
+              </div>
+            </details>
+          ))}
+        </div>
+        <p className="pro-muted mt-5">
+          Estas guías explican la operación en Lysto. No sustituyen habilitaciones ni formación
+          técnica.
+        </p>
+      </ProPanel>
+    </ProPage>
+  )
 }
 
-const helpAnswers = [
-  { title: '¿Necesitás reprogramar una visita?', category: 'Agenda', text: 'Revisá la franja horaria y anotá el motivo del cambio junto con una alternativa. La demo no reprograma visitas ni avisa al cliente; coordiná por el canal operativo que te haya indicado Lysto.' },
-  { title: '¿El problema es distinto al informado?', category: 'Visita', text: 'Registrá lo que encontraste en las notas del trabajo. Explicá qué cambió y esperá la aprobación correspondiente antes de realizar tareas o cobrar adicionales.' },
-  { title: '¿Cuándo se acredita un cobro?', category: 'Pagos', text: 'En Mis cobros podés ver el total, la comisión y el neto. Un pago aprobado o capturado no garantiza que esté liquidado. La fecha de acreditación no está disponible en los registros demostrativos.' },
-  { title: '¿El cliente no está en el domicilio?', category: 'Visita', text: 'Verificá la dirección y el horario del trabajo. Documentá la situación y usá el canal operativo acordado con Lysto. No marques como realizado un servicio que no pudiste prestar.' },
-  { title: '¿Hay un reclamo después de la visita?', category: 'Calidad', text: 'Reuní el diagnóstico, las tareas realizadas y la evidencia disponible. Consultá las condiciones aplicables al servicio con Lysto; la demo no abre garantías ni confirma su cobertura.' },
-  { title: '¿Cómo actualizo mi documentación?', category: 'Perfil', text: 'Podés revisar los datos registrados en Mi perfil. La carga y validación de documentos todavía no está conectada en esta demo. No adjuntes documentación sensible a las notas de trabajo.' }
-]
-
-export function ProfessionalSupport() {
-  const [query, setQuery] = useState('')
-  const answers = helpAnswers.filter(item => searchMatches(query, item.title, item.category, item.text))
-  const draft = useProDraft('support', { subject: '', job: '', message: '' })
-  return <ProPage title="¿En qué te ayudamos?" description="Encontrá una respuesta o prepará los datos de tu consulta.">
-    <ProSearch label="Buscar ayuda" value={query} onChange={setQuery} />
-    <div className="pro-two-col"><ProPanel title="Respuestas para tu jornada">{answers.map(item => <details className="pro-accordion" key={item.title}><summary><span className="flex-1">{item.title}<span className="pro-muted font-normal block mt-1">{item.category}</span></span><ChevronDown size={18} aria-hidden="true" /></summary><div><p className="pro-muted">{item.text}</p></div></details>)}{!answers.length && <EmptyState compact title="No encontramos esa respuesta" description="Probá con agenda, pagos, visita o perfil." action={<Button variant="secondary" onClick={() => setQuery('')}>Limpiar búsqueda</Button>} />}</ProPanel>
-    <ProPanel title="Prepará una consulta" description="Borrador local: no se crea un ticket ni se envía un mensaje."><form className="pro-stack" onSubmit={event => { event.preventDefault(); draft.save() }}><label className="pro-field">Tema<Input required maxLength={160} value={draft.values.subject} onChange={event => draft.setValues({ ...draft.values, subject: event.target.value })} placeholder="Ej.: consulta sobre un cobro" /></label><label className="pro-field">Número de trabajo (opcional)<Input maxLength={60} value={draft.values.job} onChange={event => draft.setValues({ ...draft.values, job: event.target.value })} placeholder="Ej.: 7001" /></label><label className="pro-field">¿Qué pasó?<Textarea required maxLength={2000} value={draft.values.message} onChange={event => draft.setValues({ ...draft.values, message: event.target.value })} placeholder="Contanos el contexto y qué necesitás resolver." /></label><Button type="submit">Guardar consulta de prueba</Button><DraftFeedback feedback={draft.feedback} /></form></ProPanel></div>
-  </ProPage>
-}
-
-export function ProfessionalMercadoPago() {
-  return <ProPage title="Cuenta de cobro" description="Revisá cómo se vincula tu cuenta con los pagos de Lysto." back={{ href: '/pro/pagos', label: 'Mis cobros' }}>
-    <div className="pro-two-col"><ProPanel title="Mercado Pago"><div className="flex items-center gap-4 mb-6"><span className="pro-icon"><CreditCard size={25} aria-hidden="true" /></span><div><h2 className="text-xl font-bold">Vinculación registrada</h2><Badge tone="blue" className="mt-2">Conectada en los datos demo</Badge></div></div><p className="pro-muted">El perfil demostrativo figura conectado. No verificamos una cuenta real, su titular ni sus permisos desde esta pantalla.</p><div className="mt-6 pt-6 border-t border-slate-100"><Button disabled className="w-full">Vinculación real no disponible</Button><p className="pro-muted mt-3">La conexión segura con Mercado Pago todavía no está habilitada aquí. Nunca ingreses tu contraseña en Lysto.</p></div></ProPanel><ProPanel title="Cómo se compone un cobro"><ol className="space-y-5">{[['Pago del cliente', 'El importe del servicio queda registrado.'], ['Comisión Lysto', 'Se identifica la parte correspondiente a la plataforma.'], ['Neto profesional', 'Consultás tu monto y el estado del pago. La acreditación requiere confirmación.']].map(([title, description], index) => <li key={title} className="flex gap-3"><span className="pro-icon font-bold">{index + 1}</span><div><h3 className="font-semibold">{title}</h3><p className="pro-muted mt-1">{description}</p></div></li>)}</ol><ButtonLink href="/pro/pagos" variant="secondary" className="w-full mt-6">Ver movimientos</ButtonLink></ProPanel></div>
-  </ProPage>
+export function ProfessionalProfile() {
+  return (
+    <ProPage title="Mi perfil" description="La página productiva carga el perfil autenticado.">
+      <ProPanel title="Perfil">
+        <p className="pro-muted">Abrí esta vista desde una sesión profesional aprobada.</p>
+      </ProPanel>
+    </ProPage>
+  )
 }
 
 export function ProfessionalOnboarding() {
-  const [step, setStep] = useState(0)
-  const headingRef = useRef<HTMLHeadingElement>(null)
-  const draft = useProDraft('onboarding-preview', { name: '', email: '', phone: '', experience: '', license: '', issuer: '', zone: '', mobility: '', availability: '', bio: '', tools: '' })
-  const sections = ['Tus datos', 'Tu trabajo', 'Revisión']
-  function go(next: number) { setStep(next); requestAnimationFrame(() => headingRef.current?.focus()) }
-  return <ProPage title="Empezá tu perfil profesional" description="Prepará tu presentación en tres pasos. Podés revisar todo antes de terminar.">
-    <InfoNotice title="Registro por invitación · Vista previa" description="La invitación todavía no se valida y el alta no se envía desde esta demo. No ingreses documentos ni información sensible." />
-    <div className="pro-two-col"><ProPanel title="Tu registro"><ol className="flex gap-2 mb-6" aria-label="Pasos del registro">{sections.map((title, index) => <li key={title} className="flex-1 text-sm" aria-current={step === index ? 'step' : undefined}><span className={`block h-1 rounded mb-2 ${index <= step ? 'bg-blue-600' : 'bg-slate-200'}`} /><span className={step === index ? 'font-bold text-blue-700' : 'text-slate-600'}>{index + 1}. {title}</span></li>)}</ol><h2 ref={headingRef} tabIndex={-1} className="text-xl font-bold mb-6">{sections[step]}</h2>
-      <form onSubmit={event => { event.preventDefault(); if (step < 2) go(step + 1); else draft.save() }} className="pro-stack">
-        {step === 0 && <div className="pro-form-grid">{([['name', 'Nombre y apellido', 'text', 'name'], ['email', 'Email', 'email', 'email'], ['phone', 'Teléfono', 'tel', 'tel']] as const).map(([key, label, type, autoComplete]) => <label key={key} className="pro-field">{label}<Input autoComplete={autoComplete} required type={type} value={draft.values[key]} maxLength={150} onChange={event => draft.setValues({ ...draft.values, [key]: event.target.value })} /></label>)}</div>}
-        {step === 1 && <><div className="pro-form-grid">{([['zone', 'Zona de trabajo'], ['experience', 'Años de experiencia'], ['mobility', 'Movilidad'], ['availability', 'Disponibilidad'], ['license', 'Matrícula (opcional)'], ['issuer', 'Entidad emisora (opcional)']] as const).map(([key, label]) => <label key={key} className="pro-field">{label}<Input required={key === 'zone' || key === 'experience'} type={key === 'experience' ? 'number' : 'text'} min={key === 'experience' ? 0 : undefined} max={key === 'experience' ? 70 : undefined} maxLength={150} value={draft.values[key]} onChange={event => draft.setValues({ ...draft.values, [key]: event.target.value })} /></label>)}</div><fieldset><legend className="font-semibold text-sm mb-2">Herramientas disponibles</legend><div className="pro-form-grid">{toolOptions.map(tool => <label className="pro-checkbox" key={tool}><input type="checkbox" checked={draft.values.tools.split('|').includes(tool)} onChange={event => { const selected = draft.values.tools.split('|').filter(Boolean); draft.setValues({ ...draft.values, tools: (event.target.checked ? [...selected, tool] : selected.filter(value => value !== tool)).join('|') }) }} />{tool}</label>)}</div></fieldset><label className="pro-field">Presentación breve<Textarea value={draft.values.bio} maxLength={600} onChange={event => draft.setValues({ ...draft.values, bio: event.target.value })} /></label></>}
-        {step === 2 && <><ProFacts items={[{ label: 'Nombre', value: draft.values.name }, { label: 'Email', value: draft.values.email }, { label: 'Teléfono', value: draft.values.phone }, { label: 'Zona', value: draft.values.zone }, { label: 'Experiencia', value: `${draft.values.experience} años` }, { label: 'Herramientas', value: draft.values.tools.split('|').filter(Boolean).length }]} /><InfoNotice title="Documentación y aprobación, más adelante" description="La carga segura de DNI, CUIL y matrícula requiere una invitación validada. Guardar este borrador no crea una cuenta ni envía el perfil a revisión." /></>}
-        <div className="flex flex-wrap gap-3 justify-between pt-3">{step > 0 && <Button type="button" variant="secondary" onClick={() => go(step - 1)}><ArrowLeft size={17} className="mr-2" aria-hidden="true" />Atrás</Button>}<Button type="submit" className="ml-auto">{step < 2 ? 'Continuar' : 'Guardar borrador de registro'}<ArrowRight size={17} className="ml-2" aria-hidden="true" /></Button></div><DraftFeedback feedback={draft.feedback} />
-      </form></ProPanel><ProPanel title="Qué vas a necesitar"><div className="space-y-5 text-sm leading-6"><p><strong>Datos de contacto</strong><br />Para identificar tu perfil profesional.</p><p><strong>Zona, horarios y herramientas</strong><br />Para describir los servicios que podés realizar.</p><p><strong>Validación de Lysto</strong><br />La aprobación no es automática. El proceso real requiere revisar documentación y habilitaciones.</p></div></ProPanel></div>
-  </ProPage>
+  return (
+    <ProPage
+      title="Registro profesional"
+      description="El alta productiva se inicia con una invitación válida."
+    >
+      <ProPanel title="Invitación requerida">
+        <p className="pro-muted">
+          Usá el enlace personal enviado por Lysto para completar y presentar tu expediente.
+        </p>
+      </ProPanel>
+    </ProPage>
+  )
 }

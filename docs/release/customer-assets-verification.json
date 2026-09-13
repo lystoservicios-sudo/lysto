@@ -1,0 +1,97 @@
+{
+  "task": "T13",
+  "status": "locally_verified",
+  "checkedAt": "2026-09-12T01:56:28.389Z",
+  "releaseReady": false,
+  "checks": {
+    "unit": {
+      "passed": 438,
+      "files": 55,
+      "report": "output/production-readiness/t13-unit-final.json"
+    },
+    "domain": {
+      "passed": 171
+    },
+    "tooling": {
+      "passed": 7
+    },
+    "integration": {
+      "passed": 154,
+      "files": 11,
+      "zeroSkipped": true,
+      "report": "E:/Proyectos/GitHub/Lysto-production-readiness/output/integration/7814e9bb-a97b-4f99-b6b9-8999352ca1fb/result.json"
+    },
+    "database": {
+      "status": "passed",
+      "projectId": "lysto_production_check",
+      "baseline": "20260912003701",
+      "versions": [
+        "202608190001",
+        "202608190002",
+        "202608190003",
+        "202608190004",
+        "202608190005",
+        "202608190006",
+        "202608190007",
+        "20260910195050",
+        "20260910204604",
+        "20260910220000",
+        "20260911042254",
+        "20260911051612",
+        "20260911053515",
+        "20260911224417",
+        "20260911231948",
+        "20260911234506",
+        "20260912000828",
+        "20260912002838",
+        "20260912003701",
+        "20260912005741",
+        "20260912011452",
+        "20260912011853",
+        "20260912012604",
+        "20260912013847"
+      ],
+      "witnessPreserved": true,
+      "schemaSha256": "ac22a6cefaca8dbd40675d033eb33596d8bb21bdb787766cb10a7486d39ab918",
+      "storagePoliciesMatch": true,
+      "typesMatch": true,
+      "checkedAt": "2026-09-12T01:47:54.489Z",
+      "tests": 465,
+      "files": 13
+    },
+    "static": {
+      "types": 0,
+      "lint": 0,
+      "tooling": 0,
+      "checkedAt": "2026-09-12T01:53:47.608Z"
+    },
+    "advisors": {
+      "errors": 0,
+      "warnings": 42,
+      "addedSinceBaseline": 0,
+      "baselineLog": "output/production-readiness/t13-baseline-advisors.log",
+      "finalLog": "output/production-readiness/t13-advisors.log"
+    },
+    "build": {
+      "commit": "928676f05f6ff2b35865dc35fa46ab44a3e4b354",
+      "environment": "isolated-local-production-build",
+      "checkout": "E:/Proyectos/GitHub/Lysto-production-build-check",
+      "dependencies": "junction to verified frozen lock installation, including direct Sharp 0.35.4",
+      "status": "passed",
+      "startedAt": "2026-09-12T01:54:52.232Z",
+      "exitCode": 0,
+      "completedAt": "2026-09-12T01:56:00.558Z"
+    }
+  },
+  "review": {
+    "method": "local source, SQL permissions, historical snapshot and real browser regression review",
+    "independentFinalReview": false
+  },
+  "pending": [],
+  "externalDependencies": [
+    "SMTP/templates and double confirmation acceptance in the real environment: T07/T36",
+    "approved retention and scheduled upload cleanup: D08/T24/T36"
+  ],
+  "originalIndexSha256": "85c6b16dcb04891642c46370bfd9c5342a21e79dea59eff11cc4fac915c84f67",
+  "codeCommit": "928676f05f6ff2b35865dc35fa46ab44a3e4b354"
+}

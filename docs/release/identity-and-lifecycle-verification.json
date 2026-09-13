@@ -1,0 +1,127 @@
+{
+  "schemaVersion": 1,
+  "tasks": [
+    "T04",
+    "T05",
+    "T06"
+  ],
+  "status": "verified_local_checkpoint",
+  "environment": {
+    "kind": "disposable-local",
+    "projectId": "lysto_production_check",
+    "apiPort": 56321,
+    "databasePort": 56322,
+    "originalProjectMutated": false,
+    "providerLiveCalls": false
+  },
+  "checks": [
+    {
+      "name": "real-auth-and-database-integration",
+      "status": "passed",
+      "executed": 22,
+      "skipped": 0,
+      "log": "output/production-readiness/t04-cleanup-integration.log",
+      "report": "output/integration/c595fc10-443b-4b18-a563-bdab2a71ea17/result.json",
+      "scope": "T04 baseline: environment guards, report guards, eight authenticated roles, customer isolation, OAuth credential denial and eight marketplace PostgreSQL tests. T06 HTTP tests are not included.",
+      "mandatoryReportValidation": "verifyIntegrationReport(report, false) passed independently through output/production-readiness/checkpoint-t04-close.mjs"
+    },
+    {
+      "name": "database-pgtap",
+      "status": "passed",
+      "executed": 434,
+      "files": 10,
+      "log": "output/production-readiness/t04-t06-pgtap-retry.log",
+      "scope": "Existing 416 assertions plus two quote immutability negatives and sixteen current-session authority assertions.",
+      "earlierFailure": "First CLI invocation timed out connecting. PostgreSQL was healthy; retry completed all assertions. Original log retained as t04-t06-pgtap.log."
+    },
+    {
+      "name": "service-lifecycle-domain",
+      "status": "passed",
+      "executed": 140,
+      "log": "output/production-readiness/t05-stale-projection-replay-green.log",
+      "redLog": "output/production-readiness/t05-stale-projection-replay-red.log",
+      "scope": "Includes canonical payment state, customer conformity and replay reconciliation without duplicate events or regressing an active visit."
+    },
+    {
+      "name": "test-server-environment-guard",
+      "status": "passed",
+      "executed": 3,
+      "log": "output/production-readiness/t04-public-key-green.log",
+      "redLog": "output/production-readiness/t04-public-key-red.log",
+      "scope": "Requires disposable backend, replaces both public key variants using the actual environment parser, removes payment secrets and rejects dotenv files before Next starts."
+    },
+    {
+      "name": "bounded-fixture-cleanup",
+      "status": "passed",
+      "executed": 4,
+      "log": "output/production-readiness/t04-fixture-cleanup-green.log",
+      "redLog": "output/production-readiness/t04-fixture-cleanup-red.log",
+      "scope": "Setup cancellation and independent cleanup handle; all registered IDs are attempted after errors or hangs; uncertain creations remain explicitly unverified."
+    },
+    {
+      "name": "targeted-unit",
+      "status": "passed",
+      "executed": 140,
+      "files": 14,
+      "log": "output/production-readiness/t06-targeted-green.log",
+      "scope": "T05 lifecycle and marketplace contracts; T06 sessions, middleware, roles, login and APIs; T04 asynchronous professional UI without act warnings."
+    },
+    {
+      "name": "typescript-and-lint",
+      "status": "passed",
+      "logs": [
+        "output/production-readiness/t04-cleanup-types.log",
+        "output/production-readiness/t04-t06-lint-green.log"
+      ],
+      "scope": "T04 cleanup and T05/T06 implementation at checkpoint. Later T06 concurrency test and T33 review changes require their own checks."
+    },
+    {
+      "name": "playwright-discovery",
+      "status": "passed",
+      "log": "output/production-readiness/t04-playwright-list.log",
+      "scope": "Discovery only; does not establish that browser journeys passed."
+    },
+    {
+      "name": "full-unit",
+      "status": "passed",
+      "executed": 327,
+      "files": 42,
+      "skipped": 0,
+      "log": "output/production-readiness/t04-t06-t33-unit-retry.log",
+      "note": "Initial run failed before discovery due to conflicting default min/max workers; minWorkers=1 fixed configuration. Initial log retained."
+    },
+    {
+      "name": "full-domain",
+      "status": "passed",
+      "executed": 171,
+      "log": "output/production-readiness/t04-t06-t33-domain.log"
+    },
+    {
+      "name": "actual-http",
+      "status": "passed",
+      "executed": 62,
+      "skipped": 0,
+      "log": "output/production-readiness/t06-http-concurrency-green.log",
+      "report": "output/integration/bf4a1ce0-60df-42fb-b97f-508d007f7533/result.json",
+      "redLog": "output/production-readiness/t06-http-concurrency-red.log"
+    },
+    {
+      "name": "checkpoint-build",
+      "commit": "62ed2c19eb4b84e6f13817d21b2bc0e6eceac743",
+      "environment": "isolated-local-production-build",
+      "checkout": "E:/Proyectos/GitHub/Lysto-production-build-check",
+      "dependencies": "junction to identical frozen lock installation plus exact server-only 0.0.1",
+      "status": "passed",
+      "startedAt": "2026-09-11T05:22:04.095Z",
+      "exitCode": 0,
+      "completedAt": "2026-09-11T05:23:40.395Z",
+      "generatedStaticPages": 45,
+      "log": "output/production-readiness/identity-checkpoint-build.log"
+    }
+  ],
+  "pending": [
+    "Release/staging/provider gates are separate and remain pending; T33 requires actual protected CI evidence."
+  ],
+  "releaseReady": false,
+  "commit": "62ed2c19eb4b84e6f13817d21b2bc0e6eceac743"
+}

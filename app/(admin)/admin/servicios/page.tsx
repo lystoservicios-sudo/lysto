@@ -1,3 +1,8 @@
-import { ServicesPage } from '@/components/admin/admin-settings'
+import { CatalogConsole } from '@/components/admin/live-operations'
+import { requirePageSession } from '@/lib/auth/session'
+import { adminCatalog } from '@/lib/operations/admin-console'
 
-export default function Page() { return <ServicesPage /> }
+export default async function Page() {
+  const catalog = await adminCatalog(await requirePageSession('admin'))
+  return <CatalogConsole title="Servicios" rows={catalog.categories} />
+}

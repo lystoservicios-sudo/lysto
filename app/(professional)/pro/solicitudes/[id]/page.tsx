@@ -1,10 +1,9 @@
 import { notFound } from 'next/navigation'
-import { ProfessionalRequestDetail } from '@/components/pro/pro-details'
-import { visibleRequests } from '@/components/pro/pro-model'
+import { JobQuotePanel } from '@/components/pricing/job-quote-panel'
+import { z } from 'zod'
 
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const request = visibleRequests.find(record => record.id === id)
-  if (!request) notFound()
-  return <ProfessionalRequestDetail key={request.id} request={request} />
+  if (!z.string().uuid().safeParse(id).success) notFound()
+  return <JobQuotePanel requestId={id} />
 }

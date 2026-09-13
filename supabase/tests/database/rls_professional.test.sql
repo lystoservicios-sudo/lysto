@@ -1,12 +1,15 @@
 begin;
 
+\ir ../fixtures/session.sql.inc
+
+
 select plan(21);
 
 create function pg_temp.set_jwt(p_uid uuid, p_app_role text)
 returns void
 language sql
 as $$
-  select set_config(
+  select pg_temp.fixture_set_config(
     'request.jwt.claims',
     jsonb_build_object(
       'sub', p_uid::text,
@@ -100,6 +103,37 @@ values ('29000000-0000-0000-0000-000000000001', '27000000-0000-0000-0000-0000000
 insert into public.payout_records (id, professional_id, payment_id, amount)
 values ('2a000000-0000-0000-0000-000000000001', '22000000-0000-0000-0000-000000000001', '29000000-0000-0000-0000-000000000001', 820);
 
+insert into private.upload_intents (
+  id, owner_profile_id, owner_auth_user_id, kind, entity_id, mime_type, size_bytes,
+  sha256, phase, quarantine_path, output_bucket, output_path, output_mime_type,
+  output_size_bytes, output_sha256, status, attachment_id, verified_at
+)
+values (
+  '2b000000-0000-0000-0000-000000000001', '21000000-0000-0000-0000-000000000001',
+  '20000000-0000-0000-0000-000000000001', 'job-photo', '27000000-0000-0000-0000-000000000006',
+  'image/png', 100, repeat('a', 64), 'after', 'rls-professional/after-source.png',
+  'job-evidence', 'rls-professional/after.webp', 'image/webp', 80, repeat('b', 64),
+  'verified', '2b000000-0000-0000-0000-000000000001', now()
+);
+
+insert into public.job_media (id, job_id, media_type, phase, storage_bucket, storage_path, uploaded_by)
+values (
+  '2b000000-0000-0000-0000-000000000001', '27000000-0000-0000-0000-000000000006',
+  'photo', 'after', 'job-evidence', 'rls-professional/after.webp', '21000000-0000-0000-0000-000000000001'
+);
+
+insert into public.onsite_diagnoses (
+  job_id, professional_id, equipment_id, actual_diagnosis, base_scope, evidence_ids,
+  status, submitted_by, decided_by, decided_at
+)
+values (
+  '27000000-0000-0000-0000-000000000006', '22000000-0000-0000-0000-000000000001',
+  '25000000-0000-0000-0000-000000000003', 'Diagnóstico aceptado para cierre',
+  'Alcance base aceptado para cierre', array['2b000000-0000-0000-0000-000000000001']::uuid[],
+  'accepted', '21000000-0000-0000-0000-000000000001',
+  '21000000-0000-0000-0000-000000000004', now()
+);
+
 select pg_temp.set_jwt('20000000-0000-0000-0000-000000000001', 'professional');
 set local role authenticated;
 
@@ -124,9 +158,9 @@ select throws_ok(
   'professional cannot update their protected approval and score fields'
 );
 
-select results_eq(
+select throws_ok(
   $$update public.professional_profiles set status = 'suspended' where id = '22000000-0000-0000-0000-000000000001' returning id$$,
-  $$select id from public.professional_profiles where false$$,
+  '42501', null,
   'professional cannot approve, suspend or otherwise change their own status'
 );
 
@@ -144,8 +178,8 @@ select throws_ok(
     'Intento de devolución profesional',
     'professional-refund-attempt-0001'
   )$$,
-  'P0001',
-  'Finance permission required',
+  '42501',
+  'finance_required',
   'professional cannot initiate a refund request'
 );
 
@@ -182,10 +216,12 @@ select throws_ok(
     'none',
     null,
     0,
-    null
+    null,
+    array['2b000000-0000-0000-0000-000000000004']::uuid[],
+    '2c000000-0000-0000-0000-000000000004'
   )$$,
-  'P0001',
-  'Job must be in progress to close',
+  '40001',
+  'job_not_in_progress',
   'professional cannot close from onsite diagnosis'
 );
 
@@ -200,10 +236,12 @@ select throws_ok(
     'none',
     null,
     0,
-    null
+    null,
+    array['2b000000-0000-0000-0000-000000000005']::uuid[],
+    '2c000000-0000-0000-0000-000000000005'
   )$$,
-  'P0001',
-  'Job must be in progress to close',
+  '40001',
+  'job_not_in_progress',
   'professional cannot close while waiting customer approval'
 );
 
@@ -218,10 +256,12 @@ select throws_ok(
     'none',
     null,
     30,
-    null
+    null,
+    array['2b000000-0000-0000-0000-000000000006']::uuid[],
+    '2c000000-0000-0000-0000-000000000006'
   )$$,
-  'P0001',
-  'Job equipment does not match its service request',
+  '40001',
+  'accepted_onsite_diagnosis_required',
   'professional cannot close with a different customer equipment record'
 );
 
@@ -236,7 +276,9 @@ select lives_ok(
     'none',
     null,
     30,
-    null
+    null,
+    array['2b000000-0000-0000-0000-000000000001']::uuid[],
+    '2c000000-0000-0000-0000-000000000001'
   )$$,
   'professional can close an in-progress job with its exact linked equipment'
 );
@@ -252,10 +294,12 @@ select throws_ok(
     'none',
     null,
     0,
-    null
+    null,
+    array['2b000000-0000-0000-0000-000000000002']::uuid[],
+    '2c000000-0000-0000-0000-000000000002'
   )$$,
-  'P0001',
-  'Only an approved assigned professional can close a job',
+  'P0002',
+  'job_not_found',
   'professional cannot close another professional job'
 );
 
@@ -292,10 +336,12 @@ select throws_ok(
     'none',
     null,
     0,
-    null
+    null,
+    array['2b000000-0000-0000-0000-000000000003']::uuid[],
+    '2c000000-0000-0000-0000-000000000003'
   )$$,
-  'P0001',
-  'Only an approved assigned professional can close a job',
+  '42501',
+  'professional_required',
   'suspended professional cannot close an assigned job'
 );
 

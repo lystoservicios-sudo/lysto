@@ -1,21 +1,45 @@
-import { NextResponse, type NextRequest } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
-import { safeCustomerNext } from '@/lib/auth/customer-access'
-import { resolvedCustomerDestination } from '@/lib/auth/customer-session'
+import { bootstrapVerifiedCustomer } from '@/lib/auth/account-server'
+import {
+  accountRedirect,
+  checkAccountOrigin,
+  confirmationPage,
+  validAccountToken
+} from '@/lib/auth/account-response'
 
-export async function GET(request: NextRequest) {
-  const url = request.nextUrl
-  const token_hash = url.searchParams.get('token_hash')
-  const type = url.searchParams.get('type')
-  let destination = '/login?notice=invalid-link'
-  if (token_hash && (type === 'signup' || type === 'email' || type === 'recovery')) {
-    try {
-      const supabase = await createServerSupabaseClient()
-      const { error } = await supabase.auth.verifyOtp({ token_hash, type })
-      if (!error) destination = type === 'recovery' ? '/actualizar-contrasena' : await resolvedCustomerDestination(safeCustomerNext(url.searchParams.get('next')), supabase)
-    } catch { destination = '/login?notice=unavailable' }
+export const dynamic = 'force-dynamic'
+export async function GET(request: Request) {
+  const token = new URL(request.url).searchParams.get('token_hash') ?? ''
+  return validAccountToken(token)
+    ? confirmationPage(token)
+    : confirmationPage('', 'El enlace no es válido. Solicitá uno nuevo desde el registro.', 400)
+}
+export async function POST(request: Request) {
+  if (!checkAccountOrigin(request))
+    return confirmationPage('', 'No pudimos validar el origen de la solicitud.', 403)
+  try {
+    const form = await request.formData()
+    const token = form.get('token_hash')
+    if (typeof token !== 'string' || !validAccountToken(token))
+      return confirmationPage('', 'El enlace no es válido.', 400)
+    const client = await createServerSupabaseClient()
+    const { data, error } = await client.auth.verifyOtp({ token_hash: token, type: 'email' })
+    if (error || !data.user)
+      return confirmationPage(
+        '',
+        'El enlace venció o ya fue utilizado. Solicitá uno nuevo desde el registro.',
+        400
+      )
+    // This editable hint chooses a bounded page; it grants no domain authority.
+    if (data.user.user_metadata?.professional_onboarding === true)
+      return accountRedirect('/pro/onboarding')
+    if (data.user.app_metadata.app_role !== 'customer') return accountRedirect('/login')
+    return accountRedirect((await bootstrapVerifiedCustomer(client, data.user)) === 'ready' ? '/app' : '/completar-cuenta')
+  } catch {
+    return confirmationPage(
+      '',
+      'El correo pudo haberse confirmado, pero no pudimos preparar tu cuenta. Iniciá sesión para reintentar.',
+      503
+    )
   }
-  const response = NextResponse.redirect(new URL(destination, url.origin))
-  response.headers.set('Cache-Control', 'private, no-store')
-  return response
 }

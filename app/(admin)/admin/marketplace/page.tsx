@@ -1,3 +1,5 @@
-import { MarketplacePage } from '@/components/admin/admin-settings'
+import { PaymentPanel } from '@/components/payments/payment-panel'
 
-export default function Page() { return <MarketplacePage /> }
+export default function Page() {
+  return <PaymentPanel role="admin" />
+}

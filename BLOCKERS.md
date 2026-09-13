@@ -1,54 +1,17 @@
-# Bloqueos y decisiones pendientes
+# Bloqueos de producción
 
-La base local puede seguir evolucionando, pero todavía no está habilitada para operar en producción. Estos son los bloqueos reales para conectar servicios externos y desplegar.
+Fecha: 2026-09-12. Estado: producción y piloto no habilitados.
 
-## 1. Publicación en GitHub
+| Bloqueo | Impacto | Condición de salida |
+| --- | --- | --- |
+| Supabase de producción sin backup restaurable | `dqonlqcurvjnjgsczevu` está activo en 59/62 migraciones; el plan Free no ofrece backups y tampoco permite protección HIBP de contraseñas | pasar a un plan con backups y HIBP, producir un backup recuperable, demostrar una restauración aislada y promover las tres migraciones pendientes con RPO/RTO medidos |
+| Staging carece de servicios operativos externos | app y base aisladas existen y pasaron 36/36 E2E; faltan remitente, scheduler, alertas, backup/restore y responsables nominales | configurar y demostrar esos servicios con custodios y evidencia saneada |
+| Mercado Pago D11 sin app/cuentas | bloquea MP01–MP12, conciliación y aceptación comercial | titular, cuentas oficiales, webhook y matriz proveedor aprobada |
+| Decisiones D01–D12 pendientes | bloquea políticas, economía, soporte, continuidad, capacidad y alcance | decisiones fechadas por responsables con referencias verificables |
+| Responsables y suplentes nominales pendientes | bloquea operación, incidentes y GO | completar ownership, turnos, capacitación y accesos mínimos con MFA |
+| Protección de rama y aprobación de promoción pendientes | CI completa del candidato pasa, pero `main` aún no tiene ruleset/protección ni firma humana de promoción | configurar checks obligatorios, confianza protegida y responsables aprobadores |
+| Piloto real no iniciado | bloquea G16 y salida general | muestra/duración D01, conciliación, cero S0/S1 y aceptación de resultados |
 
-El push y la apertura de un PR se postergan por decisión de coordinación de este trabajo; no existe un error de permisos registrado como bloqueo actual.
+Además faltan backup/restore medidos, móviles físicos, remitente/scheduler/alertas y aprobación legal de políticas. La ejecución automatizada remota pasó 36/36 en Chromium desktop/mobile y WebKit mobile; T35 aprobó carga sostenida, doble pico, ráfaga y recuperación.
 
-Cuando se autorice la publicación, corresponde revisar el historial local, subir la rama elegida y abrir el PR. Este documento no presupone ese permiso.
-
-## 2. Staging y conexión remota de Supabase
-
-Task 4 quedó aprobada para desarrollo local: reset 001–007, 376 pgTAP, RLS, Storage, solicitudes de reembolso, eventos y lint de base están verdes.
-
-Antes de aplicar estos artefactos a staging o producción todavía faltan:
-
-- crear/configurar el entorno remoto y sus secrets por canales seguros;
-- ejecutar migración dry-run, reset/diff y tests RLS contra staging;
-- validar Auth, backups, restore, observabilidad y E2E;
-- completar inspección de bytes y limpieza de archivos huérfanos de Task 8.
-
-`pnpm audit --prod` no está limpio actualmente: reporta advisories transitivos en Sharp, PostCSS y UUID. No se conoce una superficie habilitada que procese imágenes o CSS no confiables ni buffers UUID, pero las dependencias deben actualizarse y el audit debe revalidarse antes de staging o producción.
-
-## 3. Secrets e integraciones externas
-
-Faltan credenciales y configuración suministradas por los responsables de cada entorno, entre ellas Supabase, Mercado Pago y proveedores opcionales de email, WhatsApp o IA.
-
-Los valores reales deben cargarse por mecanismos seguros del entorno o de CI. No deben escribirse en `.env.example`, documentación, commits ni logs.
-
-## 4. Mercado Pago
-
-Antes de habilitar pagos reales faltan:
-
-- credenciales sandbox o producción;
-- una URL pública y segura para webhooks;
-- validación de firma e idempotencia con el proveedor real;
-- definición del modelo de cobro, split y liquidación;
-- validación operativa y contable del onboarding profesional.
-
-## 5. Decisiones legales y operativas
-
-Requieren validación humana:
-
-- términos, privacidad y texto legal de garantía;
-- política de cancelación y devolución;
-- relación contractual con profesionales;
-- comisión y reglas de liquidación;
-- procedimientos de soporte, reclamos y calidad.
-
-## 6. E2E y despliegue
-
-Playwright está configurado, pero no se ejecutó una suite E2E en navegador para esta evidencia. Tampoco hay un despliegue productivo validado.
-
-Después de configurar entornos seguros, deben validarse los recorridos críticos E2E y los gates de release antes de cualquier salida a producción.
+No se usará Supabase local ni Docker en este equipo. La identidad, acceso permanente, estado productivo 59/62, staging 62/62 y 28 suites SQL reversibles están documentados en `docs/release/remote-supabase-audit-2026-09-12.md`. No hay autorización para pago, devolución, correo externo o activación de tráfico productivo.

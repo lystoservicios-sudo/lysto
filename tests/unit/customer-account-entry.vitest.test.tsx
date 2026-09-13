@@ -1,37 +1,27 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, render, screen } from '@testing-library/react'
-
-const mocks = vi.hoisted(() => ({ read: vi.fn() }))
-vi.mock('@/lib/auth/customer-session', () => ({ readCustomerSession: mocks.read }))
-vi.mock('next/navigation', () => ({ redirect: (url: string) => { throw new Error(`REDIRECT:${url}`) } }))
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+const mocks = vi.hoisted(() => ({ session: vi.fn(), live: vi.fn(), profile: vi.fn(), addresses: vi.fn() }))
+vi.mock('@/lib/auth/session', () => ({ requirePageSession: mocks.session }))
+vi.mock('@/lib/customer/live-model', () => ({ customerLiveData: mocks.live }))
+vi.mock('@/lib/customer-assets/service', () => ({ readCustomerProfile: mocks.profile, listCustomerAddresses: mocks.addresses }))
 import CustomerDashboardPage from '../../app/(customer)/app/page'
 import CustomerProfilePage from '../../app/(customer)/app/perfil/page'
 import CustomerAddressesPage from '../../app/(customer)/app/direcciones/page'
-
-afterEach(cleanup)
-const session = { kind: 'customer', verified: true, user: { email: 'ines@example.test' }, profile: { first_name: 'Inés', last_name: 'Prueba', phone: '+541155555555' }, address: { street: 'Calle de prueba', number: '82', city: 'Buenos Aires', province: 'Buenos Aires', floor: '3', apartment: 'A', property_type: 'apartment' } }
-
+const authority = { role: 'customer', profileId: 'test-owner' }
+beforeEach(() => { vi.resetAllMocks(); mocks.session.mockResolvedValue(authority); mocks.live.mockResolvedValue({ dashboard: { greeting: 'Inés' } }); mocks.profile.mockResolvedValue({ firstName: 'Inés' }); mocks.addresses.mockResolvedValue({ items: [] }) })
 describe('real customer account entry', () => {
-  it('uses the signed-in identity and address for the initial request entry', async () => {
-    mocks.read.mockResolvedValue(session)
-    render(await CustomerDashboardPage())
-    expect(screen.getByRole('heading', { name: 'Hola, Inés' })).toBeTruthy()
-    expect(screen.getByText(/Calle de prueba 82/)).toBeTruthy()
-    expect(screen.getByRole('link', { name: /Solicitar servicio/ }).getAttribute('href')).toBe('/app/solicitar/aire-acondicionado')
-    expect(screen.queryByText(/demostración/i)).toBeNull()
+  it('loads the dashboard exclusively from the current authorized customer', async () => {
+    await CustomerDashboardPage()
+    expect(mocks.session).toHaveBeenCalledWith('customer')
+    expect(mocks.live).toHaveBeenCalledWith(authority)
   })
-  it('shows saved profile and address information instead of fixtures', async () => {
-    mocks.read.mockResolvedValue(session)
-    render(await CustomerProfilePage())
-    expect(screen.getByText('ines@example.test')).toBeTruthy()
-    expect(screen.getByText('Inés Prueba')).toBeTruthy()
-    cleanup()
-    render(await CustomerAddressesPage())
-    expect(screen.getByText(/Calle de prueba 82/)).toBeTruthy()
-    expect(screen.getByText(/Piso 3/)).toBeTruthy()
+  it('loads editable profile and address data through guarded customer services', async () => {
+    await CustomerProfilePage(); await CustomerAddressesPage()
+    expect(mocks.profile).toHaveBeenCalledWith(authority)
+    expect(mocks.addresses).toHaveBeenCalledWith(authority)
   })
-  it('does not render another identity when the session is absent', async () => {
-    mocks.read.mockResolvedValue({ kind: 'anonymous' })
+  it('does not read another identity when the session is absent', async () => {
+    mocks.session.mockRejectedValue(new Error('REDIRECT:/login'))
     await expect(CustomerDashboardPage()).rejects.toThrow('REDIRECT:/login')
+    expect(mocks.live).not.toHaveBeenCalled()
   })
 })

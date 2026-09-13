@@ -26,15 +26,16 @@ describe('authentication callbacks', () => {
     expect(result.headers.get('location')).toBe('https://lysto.test/completar-perfil?next=%2Fapp')
     expect(result.headers.get('cache-control')).toBe('private, no-store')
   })
-  it('sends confirmed recovery links to password update', async () => {
-    mocks.verifyOtp.mockResolvedValue({ error: null })
-    const result = await confirm(new NextRequest('https://lysto.test/auth/confirm?token_hash=token&type=recovery&next=//evil.test'))
-    expect(mocks.verifyOtp).toHaveBeenCalledWith({ token_hash: 'token', type: 'recovery' })
-    expect(result.headers.get('location')).toBe('https://lysto.test/actualizar-contrasena')
+  it('never consumes a token through GET, including an attacker-supplied recovery type', async () => {
+    const result = await confirm(new NextRequest('https://lysto.test/auth/confirm?token_hash=abcdefghijklmnopqrst123456&type=recovery&next=//evil.test'))
+    expect(mocks.verifyOtp).not.toHaveBeenCalled()
+    expect(result.status).toBe(200)
+    expect(await result.text()).toContain('method="post"')
   })
-  it('rejects unsupported token flows', async () => {
+  it('does not expose an invalid token in the confirmation form', async () => {
     const result = await confirm(new NextRequest('https://lysto.test/auth/confirm?token_hash=token&type=invite'))
     expect(mocks.verifyOtp).not.toHaveBeenCalled()
-    expect(result.headers.get('location')).toContain('/login?notice=invalid-link')
+    expect(result.status).toBe(400)
+    expect(await result.text()).not.toContain('name="token_hash"')
   })
 })

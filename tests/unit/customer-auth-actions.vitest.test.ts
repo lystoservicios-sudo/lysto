@@ -1,47 +1,61 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-const mocks = vi.hoisted(() => ({ signUp: vi.fn(), signInWithPassword: vi.fn(), signOut: vi.fn(), read: vi.fn(), resetPasswordForEmail: vi.fn(), updateUser: vi.fn(), getUser: vi.fn(), signInWithOAuth: vi.fn() }))
-vi.mock('@/lib/supabase/server', () => ({ createServerSupabaseClient: async () => ({ auth: mocks }) }))
+const mocks = vi.hoisted(() => ({ signUp: vi.fn(), signInWithPassword: vi.fn(), signOut: vi.fn(), read: vi.fn(), resetPasswordForEmail: vi.fn(), signInWithOAuth: vi.fn(), origin: vi.fn(), bootstrap: vi.fn(), rpc: vi.fn(), policy: vi.fn(), limit: vi.fn() }))
+vi.mock('@/lib/supabase/server', () => ({ createServerSupabaseClient: async () => ({ auth: mocks, rpc: mocks.rpc }) }))
 vi.mock('@/lib/auth/customer-session', () => ({ resolvedCustomerDestination: mocks.read }))
+vi.mock('@/lib/auth/account-server', () => ({ assertAccountMutationOrigin: mocks.origin, bootstrapVerifiedCustomer: mocks.bootstrap, accountFormText: (form: FormData, key: string) => String(form.get(key) ?? '') }))
+vi.mock('@/lib/auth/account-policy', () => ({ getRegistrationPolicy: mocks.policy }))
+vi.mock('@/lib/security/rate-limit', () => ({ enforceRateLimit: mocks.limit, serverActionSubject: async (email: string) => email }))
+vi.mock('@/lib/release/runtime-switches', () => ({ requireNewRequests: vi.fn() }))
 vi.mock('next/navigation', () => ({ redirect: (path: string) => { throw new Error(`REDIRECT:${path}`) } }))
 import { loginAction } from '../../app/(auth)/login/actions'
-import { registerAction, recoverPasswordAction, updatePasswordAction, googleAuthAction } from '../../app/(auth)/actions'
+import { loginAction as staffLogin } from '../../app/(auth)/equipo/login/actions'
+import { registerAction, recoverPasswordAction, googleAuthAction } from '../../app/(auth)/actions'
 const initial = { status: 'idle' as const, email: '', message: '' }
 function form(values: Record<string, string>) { const data = new FormData(); Object.entries(values).forEach(([k,v]) => data.set(k,v)); return data }
-beforeEach(() => { vi.resetAllMocks(); process.env.NEXT_PUBLIC_APP_URL = 'https://lysto.test' })
+const signup = { email: 'ANA@example.com', password: 'a-password-123', confirmPassword: 'a-password-123', firstName: 'Ana', lastName: 'Pérez', phone: '+541112345678', accepted: 'on', termsVersion: 't1', privacyVersion: 'p1' }
+beforeEach(() => {
+  vi.resetAllMocks(); process.env.NEXT_PUBLIC_APP_URL = 'https://lysto.test'
+  mocks.policy.mockResolvedValue({ termsVersion: 't1', privacyVersion: 'p1' })
+  mocks.bootstrap.mockResolvedValue('ready')
+  mocks.rpc.mockResolvedValue({ data: { role: 'customer', professional_status: null, professional_eligible: false, aal: 'aal1' }, error: null })
+})
 describe('customer authentication server actions', () => {
-  it('does not call auth for invalid registration', async () => {
-    const result = await registerAction(initial, form({ email: 'invalid', password: 'short' }))
-    expect(result.status).toBe('error')
+  it('rejects missing legal acceptance without calling Auth', async () => {
+    expect((await registerAction(initial, form({ ...signup, accepted: '' }))).status).toBe('error')
     expect(mocks.signUp).not.toHaveBeenCalled()
   })
-  it('creates an account with personal data and asks for email confirmation', async () => {
-    mocks.signUp.mockResolvedValue({ data: { session: null, user: { id: 'user' } }, error: null })
-    const result = await registerAction(initial, form({ email: 'ANA@example.com', password: 'a-password-123', confirmPassword: 'a-password-123', firstName: 'Ana', lastName: 'Pérez', next: '/app/solicitar/aire-acondicionado' }))
-    expect(result.status).toBe('success')
-    expect(mocks.signUp.mock.calls[0][0]).toMatchObject({ email: 'ana@example.com', options: { data: { first_name: 'Ana', last_name: 'Pérez' } } })
-    expect(mocks.signUp.mock.calls[0][0].options.data).not.toHaveProperty('role')
-    expect(mocks.signUp.mock.calls[0][0].options.emailRedirectTo).toContain('/auth/callback?next=')
+  it('records versioned consent and personal fields without user-chosen authority', async () => {
+    mocks.signUp.mockResolvedValue({ error: null })
+    expect((await registerAction(initial, form(signup))).status).toBe('success')
+    expect(mocks.signUp.mock.calls[0][0]).toMatchObject({ email: 'ana@example.com', options: { data: { first_name: 'Ana', phone: signup.phone, accepted: true, terms_version: 't1', privacy_version: 'p1' } } })
+    expect(mocks.signUp.mock.calls[0][0].options.data).not.toHaveProperty('app_role')
+    expect(mocks.signUp.mock.calls[0][0].options.emailRedirectTo).toBe('https://lysto.test/auth/confirm')
   })
-  it('sends authenticated customers through the completion gate', async () => {
-    mocks.signInWithPassword.mockResolvedValue({ data: { user: { id: 'user' } }, error: null })
+  it('sends customers through safe profile completion', async () => {
+    mocks.signInWithPassword.mockResolvedValue({ data: { user: { id: 'user', app_metadata: { app_role: 'customer' } } }, error: null })
     mocks.read.mockResolvedValue('/completar-perfil?next=%2Fapp')
-    await expect(loginAction(initial, form({ email: 'ana@example.com', password: 'a-password-123', next: 'https://evil.test' }))).rejects.toThrow('REDIRECT:/completar-perfil?next=%2Fapp')
+    await expect(loginAction(initial, form({ email: signup.email, password: signup.password, next: 'https://evil.test' }))).rejects.toThrow('REDIRECT:/completar-perfil?next=%2Fapp')
     expect(mocks.read.mock.calls[0][0]).toBe('/app')
   })
-  it('does not reveal whether a recovery email exists', async () => {
-    mocks.resetPasswordForEmail.mockResolvedValue({ error: null })
-    const result = await recoverPasswordAction(initial, form({ email: 'ana@example.com' }))
-    expect(result.status).toBe('success')
-    expect(result.message).toContain('Si existe una cuenta')
+  it('rejects staff accounts in public customer login', async () => {
+    mocks.signInWithPassword.mockResolvedValue({ data: { user: { id: 'user', app_metadata: { app_role: 'admin' } } }, error: null })
+    expect((await loginAction(initial, form(signup))).status).toBe('error')
+    expect(mocks.signOut).toHaveBeenCalledWith({ scope: 'local' })
   })
-  it('refuses password updates without a validated session', async () => {
-    mocks.getUser.mockResolvedValue({ data: { user: null }, error: null })
-    const result = await updatePasswordAction(initial, form({ password: 'a-password-123', confirmPassword: 'a-password-123' }))
-    expect(result.status).toBe('error')
-    expect(mocks.updateUser).not.toHaveBeenCalled()
+  it('retains MFA for staff entry', async () => {
+    mocks.signInWithPassword.mockResolvedValue({ data: { user: { id: 'user', app_metadata: { app_role: 'admin' } } }, error: null })
+    mocks.rpc.mockResolvedValue({ data: { role: 'admin', professional_status: null, professional_eligible: false, aal: 'aal1' }, error: null })
+    await expect(staffLogin(initial, form(signup))).rejects.toThrow('REDIRECT:/seguridad?next=%2Fadmin')
   })
-  it('returns an honest error when Google is unavailable', async () => {
-    mocks.signInWithOAuth.mockResolvedValue({ data: { url: null }, error: { code: 'provider_disabled' } })
-    expect(await googleAuthAction(initial, form({ next: '/app' }))).toMatchObject({ status: 'error' })
+  it('does not reveal recovery account existence even on provider errors', async () => {
+    mocks.resetPasswordForEmail.mockRejectedValue(new Error('unknown account'))
+    expect(await recoverPasswordAction(initial, form({ email: 'ana@example.com' }))).toMatchObject({ status: 'success', message: expect.stringContaining('Si existe una cuenta') })
+  })
+  it('rejects cross-origin login and OAuth before provider calls', async () => {
+    mocks.origin.mockRejectedValue(new Error('origin'))
+    expect((await loginAction(initial, form(signup))).status).toBe('error')
+    expect((await googleAuthAction(initial, form({ next: '/app' }))).status).toBe('error')
+    expect(mocks.signInWithPassword).not.toHaveBeenCalled()
+    expect(mocks.signInWithOAuth).not.toHaveBeenCalled()
   })
 })

@@ -1,0 +1,27 @@
+{
+  "task": "T18",
+  "status": "implemented_remote_database_verified_provider_pending",
+  "updatedAt": "2026-09-12T14:35:00-03:00",
+  "migration": "20260912142037_financial_exception_workflows.sql",
+  "implemented": [
+    "durable finance queue with reason, actor, version, evidence and canonical result",
+    "partial and full refund reservation protected by the existing payment row lock",
+    "bounded refund worker with leases and stable provider idempotency keys",
+    "post-refund canonical verification before local success",
+    "separate AAL2 finance and operations capabilities",
+    "late-payment-safe cancellation review and provider preference closure evidence",
+    "linked replacement service without mutating the historical checkout beneficiary",
+    "admin refund, reconciliation and exception queue"
+  ],
+  "verified": {
+    "focusedUnit": 6,
+    "typecheck": "passed",
+    "lint": "passed"
+  },
+  "pending": [
+    "remote migration and pgTAP passed; authenticated financial integration remains for isolated staging",
+    "T36 must execute an authorized Mercado Pago test refund and reconciliation",
+    "D06 must approve cancellation, no-show, refund and warranty economics"
+  ],
+  "realRefundCreated": false
+}

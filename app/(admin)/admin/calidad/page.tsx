@@ -1,3 +1,5 @@
-import { QualityPage } from '@/components/admin/admin-overview'
+import { ConnectedSupportCases } from '@/components/admin/connected-support-cases'
 
-export default function Page() { return <QualityPage /> }
+export default function Page() {
+  return <ConnectedSupportCases />
+}

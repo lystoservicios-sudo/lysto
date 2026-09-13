@@ -1,0 +1,16 @@
+import { test, expect, loginAs } from './fixtures/production'
+
+test('finance lands on the canonical payment module without operations access', async ({
+  page,
+  accounts
+}) => {
+  await loginAs(page, accounts.accounts.finance, 'finance')
+  await expect(page.getByRole('heading', { name: 'Pagos con Mercado Pago' })).toBeVisible()
+  await page.goto('/admin/pagos/split')
+  await expect(page.getByRole('heading', { name: 'Pagos con Mercado Pago' })).toBeVisible()
+  await expect(page.getByText(/Cargando excepciones|No hay/).first()).toBeVisible()
+  const queue = await page.request.get('/admin/dashboard')
+  expect(queue.status()).toBe(200)
+  expect(await queue.text()).toContain('url=/admin/pagos')
+  expect((await page.request.get('/api/admin/professionals')).status()).toBe(403)
+})

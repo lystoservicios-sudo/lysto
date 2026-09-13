@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 import type { UserRole } from '../domain/types'
-import { roleHome } from './session-routing'
+import { safeLocalRedirectPath } from './session-routing'
 
 const loginCredentialsSchema = z.object({
   email: z.string().trim().email(),
@@ -11,10 +11,11 @@ const loginCredentialsSchema = z.object({
 export type LoginProfile = {
   role: UserRole
   professionalApproved?: boolean
+  assuranceLevel: 'aal1' | 'aal2'
 }
 
 type SignInResult =
-  | { ok: true; userId: string }
+  | { ok: true; userId: string; accountIncomplete?: boolean }
   | { ok: false; reason: 'invalid_credentials' | 'unexpected' }
 
 export interface LoginGateway {
@@ -28,7 +29,7 @@ export type LoginResult =
   | { ok: false; email: string; message: string }
 
 export async function authenticateLogin(
-  input: { email: string; password: string },
+  input: { email: string; password: string; next?: string },
   gateway: LoginGateway
 ): Promise<LoginResult> {
   const email = input.email.trim().toLowerCase()
@@ -52,6 +53,8 @@ export async function authenticateLogin(
     }
   }
 
+  if (signIn.accountIncomplete) return { ok: true, redirectTo: '/completar-cuenta' }
+
   const profile = await gateway.findProfile(signIn.userId)
   if (!profile) {
     await gateway.signOut()
@@ -71,5 +74,10 @@ export async function authenticateLogin(
     }
   }
 
-  return { ok: true, redirectTo: roleHome(profile.role) }
+  const destination = safeLocalRedirectPath(input.next, profile.role)
+  if (profile.role !== 'customer' && profile.assuranceLevel !== 'aal2') {
+    return { ok: true, redirectTo: `/seguridad?next=${encodeURIComponent(destination)}` }
+  }
+
+  return { ok: true, redirectTo: destination }
 }

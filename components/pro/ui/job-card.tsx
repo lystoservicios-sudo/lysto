@@ -1,14 +1,33 @@
 import { Clock, MapPin, Wrench, DollarSign, Navigation, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 import { StatusBadge } from './status-badge'
-import type { JobRecord } from '@/lib/mock/lysto-data'
+type JobRecord = {
+  id: string
+  status: string
+  timeWindow: string
+  customer: string
+  address: string
+  issueLabel: string
+  equipment?: string
+  amount: number
+  nextStep: string
+}
 
 function money(value: number) {
-  return value.toLocaleString('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 })
+  return value.toLocaleString('es-AR', {
+    style: 'currency',
+    currency: 'ARS',
+    maximumFractionDigits: 0
+  })
 }
 
 function getInitials(name: string) {
-  return name.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase()
+  return name
+    .split(' ')
+    .slice(0, 2)
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase()
 }
 
 function getCtaLabel(status: string): string {
@@ -19,13 +38,18 @@ function getCtaLabel(status: string): string {
     onsite_diagnosis: 'Completar diagnóstico',
     waiting_customer_approval: 'Ver aprobación',
     in_progress: 'Registrar cierre',
-    completed_pending_customer_confirmation: 'Ver detalles',
+    completed_pending_customer_confirmation: 'Ver detalles'
   }
   return labels[status] ?? 'Ver detalles'
 }
 
 export function JobCard({ job }: { job: JobRecord }) {
-  const isActive = !['completed', 'cancelled_by_customer', 'cancelled_by_professional', 'cancelled_by_admin'].includes(job.status)
+  const isActive = ![
+    'completed',
+    'cancelled_by_customer',
+    'cancelled_by_professional',
+    'cancelled_by_admin'
+  ].includes(job.status)
   const ctaLabel = getCtaLabel(job.status)
 
   return (
@@ -45,9 +69,14 @@ export function JobCard({ job }: { job: JobRecord }) {
           {getInitials(job.customer)}
         </div>
         <div className="min-w-0 flex-1">
-          <h3 className="text-lg font-black text-slate-900 leading-snug tracking-tight">{job.customer}</h3>
+          <h3 className="text-lg font-black text-slate-900 leading-snug tracking-tight">
+            {job.customer}
+          </h3>
           <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-semibold text-slate-500">
-            <span className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5 text-blue-600" />{job.address}</span>
+            <span className="flex items-center gap-1.5">
+              <MapPin className="h-3.5 w-3.5 text-blue-600" />
+              {job.address}
+            </span>
             <span>·</span>
             <span>{job.issueLabel}</span>
           </div>
@@ -61,7 +90,9 @@ export function JobCard({ job }: { job: JobRecord }) {
             <Wrench className="h-3.5 w-3.5 text-blue-600" />
             <span>Equipo</span>
           </div>
-          <p className="text-xs font-black text-slate-900 truncate">{job.equipment?.split(' ').slice(0, 3).join(' ')}</p>
+          <p className="text-xs font-black text-slate-900 truncate">
+            {job.equipment?.split(' ').slice(0, 3).join(' ')}
+          </p>
         </div>
 
         <div className="space-y-0.5">
@@ -84,7 +115,9 @@ export function JobCard({ job }: { job: JobRecord }) {
       {/* Footer Step + Action */}
       <div className="flex items-center justify-between gap-4 pt-1">
         <div className="min-w-0">
-          <p className="text-[10px] font-black uppercase tracking-widest text-blue-600">Próximo paso</p>
+          <p className="text-[10px] font-black uppercase tracking-widest text-blue-600">
+            Próximo paso
+          </p>
           <p className="text-xs font-bold text-slate-600 truncate mt-0.5">{job.nextStep}</p>
         </div>
 

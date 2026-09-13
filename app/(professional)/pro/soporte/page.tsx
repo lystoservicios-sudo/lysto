@@ -1,1 +1,1 @@
-export { ProfessionalSupport as default } from '@/components/pro/pro-account'
+export { ConnectedProfessionalSupport as default } from '@/components/pro/connected-professional-support'

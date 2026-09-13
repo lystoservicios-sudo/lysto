@@ -4,7 +4,8 @@ import {
   canRoleAccessPath,
   readTrustedRole,
   requiredRoleForPath,
-  roleHome
+  roleHome,
+  safeLocalRedirectPath
 } from '../../lib/auth/session-routing'
 
 describe('trusted demo session routing', () => {
@@ -42,5 +43,13 @@ describe('trusted demo session routing', () => {
     expect(canRoleAccessPath('admin', '/app')).toBe(false)
     expect(canRoleAccessPath(null, '/app')).toBe(false)
     expect(canRoleAccessPath(null, '/ingresar')).toBe(true)
+  })
+  it('permits local destinations only inside the authenticated role’s panel', () => {
+    expect(safeLocalRedirectPath('/app/trabajos?estado=abierto', 'customer')).toBe('/app/trabajos?estado=abierto')
+    expect(safeLocalRedirectPath('/admin/pagos', 'customer')).toBe('/app')
+    expect(safeLocalRedirectPath('/pro/agenda', 'professional')).toBe('/pro/agenda')
+  })
+  it.each(['https://attacker.test', '//attacker.test', '/\\attacker.test', '/%2fattacker.test', '/%5cattacker.test', '/app/../../admin', '/app\r\nLocation: https://attacker.test', '/app/%', 'javascript:alert(1)'])('rejects an unsafe redirect %s', value => {
+    expect(safeLocalRedirectPath(value, 'customer')).toBe('/app')
   })
 })

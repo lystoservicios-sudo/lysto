@@ -1,7 +1,44 @@
-import Link from 'next/link'
 import type { Metadata } from 'next'
-import { PublicShell } from '@/components/layout/page-shell'
-export const metadata: Metadata = { title: 'Tus datos en Lysto', robots: { index: false, follow: true } }
-export default function PrivacyPage() {
-  return <PublicShell><main><section className="m-container m-page-hero"><span className="m-small-label">Tu información, con un propósito</span><h1>Tus datos<br/><span>en Lysto.</span></h1><p>Qué información te pedimos y para qué la usamos.</p></section><article className="m-container m-prose"><h2>Para crear tu cuenta</h2><p>Te pedimos email y contraseña, o podés identificarte con Google. Si elegís Google, usamos los datos de identidad que autorices, como tu nombre y email, para completar tu cuenta.</p><h2>Para coordinar un servicio</h2><p>Tu nombre, teléfono y domicilio permiten coordinar la visita. Los detalles del equipo, las fotos que elijas cargar y el historial ayudan a preparar y dar seguimiento al trabajo. Los datos necesarios para realizar el servicio estarán disponibles para el profesional asignado y el equipo que lo coordina.</p><h2>Para responder tu consulta</h2><p>Al completar Contacto, guardamos tu nombre, email, teléfono opcional, motivo y mensaje para atender tu consulta. No incluyas contraseñas, información de tarjetas ni datos sensibles en ese campo.</p><h2>Sesión y proveedores</h2><p>Usamos cookies de sesión para mantener tu acceso y proteger las funciones de tu cuenta. La autenticación y el almacenamiento se realizan con Supabase. Si usás Google o un proveedor de pagos, también aplican las condiciones de ese proveedor.</p><h2>Consultar o actualizar tu información</h2><p>Podés revisar los datos disponibles desde tu cuenta. Para solicitar una corrección, consultar por tu información o pedir su eliminación, <Link href="/contacto">escribinos desde Contacto</Link> e indicá el email de tu cuenta para que podamos verificar la solicitud.</p></article></main></PublicShell>
+import { PolicyPage } from '@/components/public/policy-page'
+
+export const metadata: Metadata = { title: 'Privacidad | Lysto', robots: { index: false } }
+
+export default function Page() {
+  return (
+    <PolicyPage title="Privacidad">
+      <section>
+        <h2 className="text-xl font-black">Datos tratados</h2>
+        <p>
+          La operación necesita identidad y contacto, domicilio del servicio, datos del equipo,
+          agenda, pagos, comunicaciones, informes y evidencia fotográfica que el usuario aporte. Se
+          evita guardar credenciales completas del proveedor de pago y datos que no sean necesarios.
+        </p>
+      </section>
+      <section>
+        <h2 className="text-xl font-black">Finalidades y acceso</h2>
+        <p>
+          Los datos se usan para prestar, cobrar, respaldar y mejorar el servicio, prevenir abuso y
+          atender reclamos. Clientes, profesionales y equipos internos acceden según su función;
+          cada sesión vuelve a comprobar identidad y permisos.
+        </p>
+      </section>
+      <section>
+        <h2 className="text-xl font-black">Conservación y solicitudes</h2>
+        <p>
+          El plazo depende de la clase de dato, reclamos abiertos y obligaciones aplicables. Una
+          solicitud de acceso, corrección o eliminación se registra, verifica y responde por el
+          canal de ayuda. El historial contable y la evidencia necesaria para un reclamo pueden
+          conservarse cuando corresponda.
+        </p>
+      </section>
+      <section>
+        <h2 className="text-xl font-black">Proveedores y seguridad</h2>
+        <p>
+          Los proveedores de identidad, almacenamiento, correo, observación y pagos se documentan
+          antes de producción. Los archivos son privados, los enlaces vencen y los registros
+          técnicos redactan secretos y datos personales.
+        </p>
+      </section>
+    </PolicyPage>
+  )
 }

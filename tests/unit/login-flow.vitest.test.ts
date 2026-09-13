@@ -23,7 +23,7 @@ function createGateway(options: {
     async findProfile() {
       return Object.prototype.hasOwnProperty.call(options, 'profile')
         ? options.profile ?? null
-        : { role: 'customer' }
+        : { role: 'customer', assuranceLevel: 'aal1' }
     },
     async signOut() {
       signOutCalls += 1
@@ -38,6 +38,21 @@ function createGateway(options: {
 }
 
 describe('login flow', () => {
+  it('keeps the existing Auth session when customer profile completion is required', async () => {
+    const fake = createGateway({ signIn: async () => ({ok:true,userId:'existing-customer',accountIncomplete:true}), profile:null })
+    expect(await authenticateLogin({email:'customer@lysto.test',password:'password'},fake.gateway)).toEqual({ok:true,redirectTo:'/completar-cuenta'})
+    expect(fake.signOutCalls()).toBe(0)
+  })
+  it('accepts a local destination inside the authenticated customer panel', async () => {
+    const fake = createGateway()
+    expect(await authenticateLogin({ email: 'customer@lysto.test', password: 'password', next: '/app/trabajos' }, fake.gateway))
+      .toEqual({ ok: true, redirectTo: '/app/trabajos' })
+  })
+  it.each(['https://attacker.test', '//attacker.test', '/admin/dashboard'])('rejects an unauthorized login destination %s', async next => {
+    const fake = createGateway()
+    expect(await authenticateLogin({ email: 'customer@lysto.test', password: 'password', next }, fake.gateway))
+      .toEqual({ ok: true, redirectTo: '/app' })
+  })
   it('rejects incomplete credentials before calling Supabase', async () => {
     const fake = createGateway()
 
@@ -85,7 +100,7 @@ describe('login flow', () => {
 
   it('rejects a professional who is not approved', async () => {
     const fake = createGateway({
-      profile: { role: 'professional', professionalApproved: false }
+      profile: { role: 'professional', professionalApproved: false, assuranceLevel: 'aal1' }
     })
 
     const result = await authenticateLogin(
@@ -101,14 +116,16 @@ describe('login flow', () => {
   })
 
   it.each([
-    ['customer', '/app'],
-    ['professional', '/pro/dashboard'],
-    ['admin', '/admin/dashboard']
-  ] as const)('redirects %s to its own panel', async (role, redirectTo) => {
+    ['customer', 'aal1', '/app'],
+    ['professional', 'aal1', '/seguridad?next=%2Fpro%2Fdashboard'],
+    ['professional', 'aal2', '/pro/dashboard'],
+    ['admin', 'aal1', '/seguridad?next=%2Fadmin%2Fdashboard'],
+    ['admin', 'aal2', '/admin/dashboard']
+  ] as const)('redirects %s with %s to the expected destination', async (role, assuranceLevel, redirectTo) => {
     const fake = createGateway({
       profile: role === 'professional'
-        ? { role, professionalApproved: true }
-        : { role }
+        ? { role, professionalApproved: true, assuranceLevel }
+        : { role, assuranceLevel }
     })
 
     const result = await authenticateLogin(

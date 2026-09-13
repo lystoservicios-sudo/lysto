@@ -17,11 +17,35 @@ port = 55323
 
 [auth]
 enabled = true
-site_url = "http://localhost:3000"
-additional_redirect_urls = ["http://localhost:3000", "http://localhost:3000/auth/callback**", "http://localhost:3000/auth/confirm**"]
+site_url = "http://127.0.0.1:3100"
+additional_redirect_urls = ["http://127.0.0.1:3100/auth/confirm", "http://127.0.0.1:3100/restablecer", "http://127.0.0.1:3100/auth/change-email"]
 jwt_expiry = 3600
 enable_signup = true
+minimum_password_length = 12
 
 [auth.email]
 enable_signup = true
 enable_confirmations = true
+double_confirm_changes = true
+secure_password_change = true
+max_frequency = "1m"
+otp_expiry = 3600
+
+[auth.email.template.confirmation]
+subject = "Confirmá tu correo en Lysto"
+content_path = "./supabase/templates/confirmation.html"
+
+[auth.email.template.recovery]
+subject = "Recuperá tu acceso a Lysto"
+content_path = "./supabase/templates/recovery.html"
+
+[auth.mfa]
+max_enrolled_factors = 10
+
+[auth.email.template.email_change]
+subject = "Confirmá el cambio de correo en Lysto"
+content_path = "./supabase/templates/email-change.html"
+
+[auth.mfa.totp]
+enroll_enabled = true
+verify_enabled = true

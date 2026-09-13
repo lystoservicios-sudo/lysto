@@ -9,9 +9,9 @@ const name = z.string().trim().min(1, 'Completá este dato.').max(100)
 const fieldsSchema = z.object({
   first_name: name,
   last_name: name,
-  phone: z.string().trim().min(7, 'Ingresá un teléfono válido.').max(30).regex(/^[+\d ()-]+$/, 'Ingresá un teléfono válido.').refine((value) => value.replace(/\D/g, '').length >= 7, 'Ingresá un teléfono válido.'),
-  street: z.string().trim().min(1).max(150),
-  number: z.string().trim().min(1).max(20),
+  phone: z.string().trim().max(40).refine((value) => value.replace(/\D/g, '').length >= 8, 'Ingresá un teléfono válido.'),
+  street: z.string().trim().min(1).max(200),
+  number: z.string().trim().min(1).max(30),
   city: name,
   province: name,
   property_type: z.enum(['house', 'apartment', 'commercial', 'office'])
@@ -35,7 +35,7 @@ export function customerDestination(context: { verified: boolean; profile: Custo
     : destination
 }
 
-export const passwordSchema = z.string().min(10, 'Usá al menos 10 caracteres.').max(128, 'Usá hasta 128 caracteres.')
+export const passwordSchema = z.string().min(12, 'Usá al menos 12 caracteres.').max(128, 'Usá hasta 128 caracteres.')
 export function validateRegistration(input: { email: string; password: string; confirmPassword: string; firstName: string; lastName: string }) {
   return z.object({ email: z.string().trim().toLowerCase().email('Ingresá un email válido.'), password: passwordSchema, confirmPassword: z.string(), firstName: name, lastName: name })
     .refine((data) => data.password === data.confirmPassword, { message: 'Las contraseñas no coinciden.', path: ['confirmPassword'] }).safeParse(input)

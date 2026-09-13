@@ -16,6 +16,13 @@ vi.mock('next/navigation', () => ({
 afterEach(() => cleanup())
 
 describe('app shell integration', () => {
+  it('shows verified identity and submits logout as a mutation', async () => {
+    render(await AppShell({ role:'Admin', identity:{name:'Operadora Real',email:'operator@lysto.test'},children:<p>Cuenta</p> }))
+    expect(screen.getByText('Operadora Real').getAttribute('title')).toBe('operator@lysto.test')
+    const form = screen.getByRole('button',{name:'Cerrar sesión'}).closest('form')
+    expect(form?.getAttribute('method')).toBe('post')
+    expect(form?.getAttribute('action')).toBe('/auth/logout')
+  })
   it('composes the shared shell and respects the persisted desktop state', async () => {
     render(await AppShell({ role: 'Admin', children: <p>Contenido operativo</p> }))
 

@@ -1,17 +1,16 @@
 import type { ReactNode } from 'react'
 import { AppShell } from '@/components/layout/page-shell'
+import { requirePageSession } from '@/lib/auth/session'
+import { readAccountIdentity } from '@/lib/auth/account-identity'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
-import { readCustomerSession } from '@/lib/auth/customer-session'
-import { customerDestination, safeCustomerNext } from '@/lib/auth/customer-access'
-
+import { resolvedCustomerDestination } from '@/lib/auth/customer-session'
+import { safeCustomerNext } from '@/lib/auth/customer-access'
+export const dynamic = 'force-dynamic'
 export default async function CustomerLayout({ children }: { children: ReactNode }) {
   const next = safeCustomerNext((await headers()).get('x-lysto-path'))
-  const session = await readCustomerSession().catch(() => null)
-  if (!session) redirect('/login?notice=unavailable')
-  if (session.kind === 'anonymous') redirect(`/login?next=${encodeURIComponent(next)}`)
-  if (session.kind === 'unavailable') redirect('/login?notice=account-unavailable')
-  const destination = customerDestination(session, next)
+  const destination = await resolvedCustomerDestination(next)
   if (destination !== next) redirect(destination)
-  return <AppShell role="Cliente">{children}</AppShell>
+  const session = await requirePageSession('customer')
+  return <AppShell role="Cliente" identity={await readAccountIdentity(session)}>{children}</AppShell>
 }

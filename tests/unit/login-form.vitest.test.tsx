@@ -28,7 +28,7 @@ describe('mobile login form', () => {
     const email = screen.getByLabelText('Email') as HTMLInputElement
     const password = screen.getByLabelText('Contraseña') as HTMLInputElement
     const submit = screen.getByRole('button', { name: 'Ingresar' }) as HTMLButtonElement
-    const register = screen.getByRole('link', { name: 'Crear cuenta' })
+    const register = screen.getByRole('link', { name: 'Crear una cuenta' })
 
     expect(email.name).toBe('email')
     expect(email.type).toBe('email')
@@ -39,7 +39,7 @@ describe('mobile login form', () => {
     expect(password.autocomplete).toBe('current-password')
     expect(password.required).toBe(true)
     expect(submit.type).toBe('submit')
-    expect(register.getAttribute('href')).toBe('/registro')
+    expect(register.getAttribute('href')).toBe('/registro?next=%2Fapp')
   })
 
   it('preserves the email and announces an authentication error', () => {

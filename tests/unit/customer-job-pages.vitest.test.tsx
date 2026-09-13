@@ -38,7 +38,9 @@ describe('customer job pages', () => {
   it('filters active, confirmation and completed jobs with controlled count tabs', () => {
     render(<CustomerJobList jobs={[activeJob, approvalJob, completedJob]} />)
 
-    expect(screen.getByRole('tab', { name: 'Activos 1' }).getAttribute('aria-selected')).toBe('true')
+    expect(screen.getByRole('tab', { name: 'Activos 1' }).getAttribute('aria-selected')).toBe(
+      'true'
+    )
     expect(screen.getByText('No enfría')).toBeTruthy()
     expect(screen.queryByText('Pierde agua')).toBeNull()
 
@@ -56,8 +58,12 @@ describe('customer job pages', () => {
     expect(screen.getByRole('list', { name: 'Etapas del servicio' }).children).toHaveLength(8)
     expect(screen.getByText('Profesional en camino')).toBeTruthy()
     expect(screen.getByText('Llegada estimada')).toBeTruthy()
-    expect((screen.getByRole('button', { name: 'Abrir chat' }) as HTMLButtonElement).disabled).toBe(true)
-    expect(screen.getByText('El chat se habilitará cuando el servicio esté conectado.')).toBeTruthy()
+    expect((screen.getByRole('button', { name: 'Abrir chat' }) as HTMLButtonElement).disabled).toBe(
+      true
+    )
+    expect(
+      screen.getByText('El chat se habilitará cuando el servicio esté conectado.')
+    ).toBeTruthy()
   })
 
   it('compares diagnoses and keeps approval unavailable without a real action', () => {
@@ -66,15 +72,35 @@ describe('customer job pages', () => {
     expect(screen.getByText('Posible obstrucción del drenaje.')).toBeTruthy()
     expect(screen.getByText('Drenaje obstruido y bandeja fuera de nivel.')).toBeTruthy()
     expect(screen.getByText('$ 8.000')).toBeTruthy()
-    expect((screen.getByRole('button', { name: 'Aprobar presupuesto' }) as HTMLButtonElement).disabled).toBe(true)
-    expect((screen.getByRole('button', { name: 'Reservar importe adicional' }) as HTMLButtonElement).disabled).toBe(true)
-    expect(screen.getByText('La aprobación se habilitará cuando exista una acción segura conectada.')).toBeTruthy()
+    expect(
+      (
+        screen.getByRole('button', {
+          name: 'Aprobar presupuesto'
+        }) as HTMLButtonElement
+      ).disabled
+    ).toBe(true)
+    expect(
+      (
+        screen.getByRole('button', {
+          name: 'Reservar importe adicional'
+        }) as HTMLButtonElement
+      ).disabled
+    ).toBe(true)
+    expect(
+      screen.getByText('La aprobación se habilitará cuando exista una acción segura conectada.')
+    ).toBeTruthy()
   })
 
   it('keeps the completed-job receipt unavailable without a confirmed payment record', () => {
     render(<CustomerJobDetail job={completedJob} />)
 
-    expect((screen.getByRole('button', { name: 'Ver comprobante' }) as HTMLButtonElement).disabled).toBe(true)
+    expect(
+      (
+        screen.getByRole('button', {
+          name: 'Ver comprobante'
+        }) as HTMLButtonElement
+      ).disabled
+    ).toBe(true)
   })
 
   it('covers loading, empty and recoverable error states', () => {
@@ -100,22 +126,49 @@ function completeReviewForm() {
 
 describe('customer review form', () => {
   it('allows completing the review but explains why submission is unavailable', () => {
-    render(<CustomerReviewForm jobId={completedJob.id} professionalName={completedJob.professionalName} />)
+    render(
+      <CustomerReviewForm
+        jobId={completedJob.id}
+        professionalName={completedJob.professionalName}
+      />
+    )
     completeReviewForm()
-    fireEvent.change(screen.getByRole('textbox', { name: 'Comentario opcional' }), { target: { value: 'El servicio fue claro y puntual.' } })
+    fireEvent.change(screen.getByRole('textbox', { name: 'Comentario opcional' }), {
+      target: { value: 'El servicio fue claro y puntual.' }
+    })
 
-    expect((screen.getByRole('button', { name: 'Enviar calificación' }) as HTMLButtonElement).disabled).toBe(true)
-    expect(screen.getByText('El envío se habilitará cuando exista persistencia conectada.')).toBeTruthy()
+    expect(
+      (
+        screen.getByRole('button', {
+          name: 'Enviar calificación'
+        }) as HTMLButtonElement
+      ).disabled
+    ).toBe(true)
+    expect(
+      screen.getByText('La calificación estará disponible sobre el trabajo real confirmado.')
+    ).toBeTruthy()
   })
 
   it('selects ratings with arrow keys and prevents a second submission while pending', () => {
     const onSubmit = vi.fn(() => new Promise<{ ok: true; message: string }>(() => undefined))
-    render(<CustomerReviewForm jobId={completedJob.id} professionalName={completedJob.professionalName} onSubmit={onSubmit} />)
+    render(
+      <CustomerReviewForm
+        jobId={completedJob.id}
+        professionalName={completedJob.professionalName}
+        onSubmit={onSubmit}
+      />
+    )
 
-    const firstServiceRating = screen.getByRole('radio', { name: '1 estrella para el servicio' })
+    const firstServiceRating = screen.getByRole('radio', {
+      name: '1 estrella para el servicio'
+    })
     firstServiceRating.focus()
     fireEvent.keyDown(firstServiceRating, { key: 'ArrowRight' })
-    expect(screen.getByRole('radio', { name: '2 estrellas para el servicio' }).getAttribute('aria-checked')).toBe('true')
+    expect(
+      screen
+        .getByRole('radio', { name: '2 estrellas para el servicio' })
+        .getAttribute('aria-checked')
+    ).toBe('true')
 
     completeReviewForm()
     const submit = screen.getByRole('button', { name: 'Enviar calificación' })
@@ -123,7 +176,13 @@ describe('customer review form', () => {
     fireEvent.click(submit)
 
     expect(onSubmit).toHaveBeenCalledTimes(1)
-    expect((screen.getByRole('button', { name: 'Enviando calificación' }) as HTMLButtonElement).disabled).toBe(true)
+    expect(
+      (
+        screen.getByRole('button', {
+          name: 'Enviando calificación'
+        }) as HTMLButtonElement
+      ).disabled
+    ).toBe(true)
   })
 
   it('does not expose a second form for an already reviewed job', () => {

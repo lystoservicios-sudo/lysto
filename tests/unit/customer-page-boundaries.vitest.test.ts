@@ -12,8 +12,8 @@ describe('customer page layout boundary', () => {
     )
 
     expect(shellSource).toContain('<AppShellProvider')
-    expect(shellSource).toContain('<AppSidebar role={role} />')
-    expect(shellSource).toContain('<AppTopbar role={role} />')
+    expect(shellSource).toContain('<AppSidebar role={role} adminPermissions={adminPermissions} />')
+    expect(shellSource).toContain('<AppTopbar role={role} identity={identity} />')
     expect(shellSource).not.toContain('<AppNavigation')
   })
 
@@ -50,41 +50,60 @@ describe('customer page layout boundary', () => {
   })
 
   it('keeps batch two pages independent from global mocks and resolves detail by route id', () => {
-    const batchTwoRoutes = customerScreenRoutes.filter((route) => ['CUS-02', 'CUS-03', 'CUS-04'].includes(route.id))
-    const batchTwoSources = batchTwoRoutes.map((route) => readFileSync(resolve(process.cwd(), route.file), 'utf8'))
+    const batchTwoRoutes = customerScreenRoutes.filter((route) =>
+      ['CUS-02', 'CUS-03', 'CUS-04'].includes(route.id)
+    )
+    const batchTwoSources = batchTwoRoutes.map((route) =>
+      readFileSync(resolve(process.cwd(), route.file), 'utf8')
+    )
     const detailSource = batchTwoSources[2]
 
     expect(batchTwoSources).toHaveLength(3)
     expect(batchTwoSources.every((source) => !source.includes('@/lib/mock/lysto-data'))).toBe(true)
-    expect(detailSource).toContain('findCustomerRecordById')
+    expect(detailSource).toContain('z.string().uuid().safeParse(id)')
+    expect(detailSource).toContain('JobQuotePanel')
     expect(detailSource).toMatch(/params/)
     expect(detailSource).toContain('notFound()')
   })
 
   it('keeps batch three pages independent from global mocks and resolves job routes by id', () => {
-    const batchThreeRoutes = customerScreenRoutes.filter((route) => ['CUS-05', 'CUS-06', 'CUS-07'].includes(route.id))
-    const batchThreeSources = batchThreeRoutes.map((route) => readFileSync(resolve(process.cwd(), route.file), 'utf8'))
+    const batchThreeRoutes = customerScreenRoutes.filter((route) =>
+      ['CUS-05', 'CUS-06', 'CUS-07'].includes(route.id)
+    )
+    const batchThreeSources = batchThreeRoutes.map((route) =>
+      readFileSync(resolve(process.cwd(), route.file), 'utf8')
+    )
 
     expect(batchThreeSources).toHaveLength(3)
-    expect(batchThreeSources.every((source) => !source.includes('@/lib/mock/lysto-data'))).toBe(true)
-    expect(batchThreeSources[1]).toContain('findCustomerRecordById')
+    expect(batchThreeSources.every((source) => !source.includes('@/lib/mock/lysto-data'))).toBe(
+      true
+    )
+    expect(batchThreeSources[1]).toContain('z.string().uuid().safeParse(id)')
+    expect(batchThreeSources[1]).toContain('JobQuotePanel')
     expect(batchThreeSources[1]).toMatch(/params/)
     expect(batchThreeSources[1]).toContain('notFound()')
-    expect(batchThreeSources[2]).toContain('findCustomerRecordById')
+    expect(batchThreeSources[2]).toContain('customerReviewEligibility')
+    expect(batchThreeSources[2]).toContain("requirePageSession('customer')")
     expect(batchThreeSources[2]).toMatch(/params/)
     expect(batchThreeSources[2]).toContain('notFound()')
   })
 
   it('keeps batch four pages independent from global mocks and resolves equipment by id', () => {
-    const batchFourRoutes = customerScreenRoutes.filter((route) => ['CUS-08', 'CUS-09', 'CUS-10'].includes(route.id))
-    const batchFourSources = batchFourRoutes.map((route) => readFileSync(resolve(process.cwd(), route.file), 'utf8'))
+    const batchFourRoutes = customerScreenRoutes.filter((route) =>
+      ['CUS-08', 'CUS-09', 'CUS-10'].includes(route.id)
+    )
+    const batchFourSources = batchFourRoutes.map((route) =>
+      readFileSync(resolve(process.cwd(), route.file), 'utf8')
+    )
 
     expect(batchFourSources).toHaveLength(3)
     expect(batchFourSources.every((source) => !source.includes('@/lib/mock/lysto-data'))).toBe(true)
-    expect(batchFourSources[1]).toContain('findCustomerRecordById')
+    expect(batchFourSources[1]).toContain('customerEquipmentHistory(session, id')
+    expect(batchFourSources[1]).toContain("requirePageSession('customer')")
+    expect(batchFourSources[1]).not.toContain('customerDemoFixtures')
     expect(batchFourSources[1]).toMatch(/params/)
     expect(batchFourSources[1]).toContain('notFound()')
-    expect(batchFourSources[1]).toMatch(/const warranty = .*\.find\(\(item\) => item\.equipmentId === equipment\.id\)/)
+    expect(batchFourSources[1]).toContain('equipment.archived_at')
   })
 
   it('keeps the batch five warranty page independent from global mocks', () => {
@@ -94,7 +113,9 @@ describe('customer page layout boundary', () => {
 
     expect(source).not.toContain('@/lib/mock/lysto-data')
     expect(source).toContain('CustomerWarrantyCenter')
-    expect(source).toContain('customerDemoFixtures')
+    expect(source).toContain('customerLiveData')
+    expect(source).toContain("requirePageSession('customer')")
+    expect(source).not.toContain('customerDemoFixtures')
   })
 
   it('connects the payment page to the authenticated ledger without embedding provider logic', () => {

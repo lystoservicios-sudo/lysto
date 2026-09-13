@@ -1,7 +1,8 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-const mocks = vi.hoisted(() => ({ session: vi.fn() }))
-vi.mock('@/lib/auth/customer-session', () => ({ readCustomerSession: mocks.session }))
+const mocks = vi.hoisted(() => ({ session: vi.fn(), addresses: vi.fn() }))
+vi.mock('@/lib/auth/session', () => ({ requirePageSession: mocks.session }))
+vi.mock('@/lib/customer-assets/service', () => ({ listCustomerAddresses: mocks.addresses }))
 import RequestPage from '@/app/(customer)/app/solicitar/aire-acondicionado/page'
 import { AirConditioningWizard } from '@/features/service-request/air-conditioning-wizard'
 afterEach(cleanup)
@@ -14,7 +15,8 @@ function reachAddress() {
 }
 describe('saved service address integration', () => {
   it('shows the authenticated address, property type and access details in the request', async () => {
-    mocks.session.mockResolvedValue({ kind: 'customer', verified: true, profile: { first_name: 'Ana', last_name: 'Pérez', phone: '+541122334455' }, address: { street: 'San Martín', number: '932', floor: '2', apartment: 'C', city: 'Vicente López', province: 'Buenos Aires', property_type: 'office', has_elevator: true, has_parking: true, stairs_required: false, outdoor_unit_at_height: true, outdoor_unit_on_balcony: true, difficult_access: true } })
+    mocks.session.mockResolvedValue({ role: 'customer', profileId: 'owner' })
+    mocks.addresses.mockResolvedValue({ items: [{ id: 'saved-home', label: 'Mi hogar', isDefault: true, archivedAt: null, street: 'San Martín', number: '932', floor: '2', apartment: 'C', city: 'Vicente López', province: 'Buenos Aires', propertyType: 'office', access: { hasElevator: true, hasParking: true, stairsRequired: false, outdoorUnitAtHeight: true, outdoorUnitOnBalcony: true, difficultAccess: true } }], total: 1, nextCursor: null })
     render(await RequestPage())
     reachAddress()
     expect((screen.getByLabelText('Calle') as HTMLInputElement).value).toBe('San Martín')

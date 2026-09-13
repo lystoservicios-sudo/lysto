@@ -1,0 +1,28 @@
+{
+  "task": "T26",
+  "status": "implemented_database_http_verification_pending",
+  "inventory": "docs/architecture/api-inventory.json",
+  "methodCount": 92,
+  "implemented": [
+    "typescript-ast-route-inventory",
+    "ten-explicit-410-contracts",
+    "canonical-replacement-per-retired-route",
+    "retired-no-store",
+    "provider-webhook-apply-removed",
+    "authenticated-rate-limited-preliminary-diagnosis",
+    "no-successful-placeholder-disposition"
+  ],
+  "localChecks": [
+    "api-inventory-static-integration-3",
+    "retired-and-diagnosis-unit-20",
+    "tooling-12",
+    "typecheck",
+    "lint",
+    "domain",
+    "diff-check"
+  ],
+  "pending": [
+    "api-inventory-integration-disposable-supabase",
+    "full-method-http-matrix-in-staging"
+  ]
+}

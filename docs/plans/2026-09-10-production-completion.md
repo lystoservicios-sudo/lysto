@@ -1379,7 +1379,7 @@ Aplicar el ciclo de prueba de la sección 5. Pruebas nuevas deben demostrar prim
 
 1. Inventariar todas las rutas pro del anexo y sus acciones. Probar técnico sin trabajos, aprobado, suspendido y con caso abierto.
 2. Conectar jornada, agenda, propuestas y trabajos a identidad/asignaciones reales; sin technical IDs de otro profesional ni mock fijo como perfil.
-3. Integrar documentos/perfil, cuenta Mercado Pago y pagos con importes verdaderos y estados canónicos. Mostrar bloqueo de vinculación/pago sin fingir disponibilidad.
+3. Integrar documentos/perfil, cuenta Mercado Pago y pagos con importes verdaderos y estados canónicos. Mostrar bloqueo de vinculación/pago sin fingir disponibilidad. Completar la renovación/reactivación documental detectada en T11: solicitud autorizada, corrección del propio expediente, nueva revisión atribuida y recuperación de habilitación sólo con evidencia vigente; conservar trabajos y pagos y no reactivar una suspensión automáticamente.
 4. Integrar diagnóstico, evidencia, adicionales, informe y soporte. Borradores offline se distinguen de enviados; al volver red, consultar antes de repetir mutaciones.
 5. Capacitación: conectar módulos/publicación/cumplimiento si son requisito operativo; si es expansión opcional, retirar navegación/copy mediante D12, sin inventar certificados o cursos completados.
 6. Probar uso con una mano, teclado móvil, adjuntos, orientación y regreso de sesión expirada. No prometer GPS/realtime no implementado.

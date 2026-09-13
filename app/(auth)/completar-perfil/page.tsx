@@ -10,6 +10,8 @@ export default async function CompleteProfilePage({ searchParams }: { searchPara
   const next = safeCustomerNext(requestedNext)
   const session = await readCustomerSession().catch(() => null)
   if (!session) return <AuthFrame title="Un momento, por favor." description="No pudimos cargar tus datos. Intentá nuevamente en unos minutos."><Link className="auth-link" href="/completar-perfil">Volver a intentar</Link></AuthFrame>
+  if (session.kind === 'incomplete') redirect(`/completar-cuenta?next=${encodeURIComponent(next)}`)
+  if (session.kind === 'unverified') redirect('/login?notice=confirm-email')
   if (session.kind !== 'customer') redirect(`/login?next=${encodeURIComponent(next)}`)
   if (!session.verified) redirect('/login?notice=confirm-email')
   const missing = missingCustomerFields(session.profile, session.address)

@@ -17,6 +17,8 @@
 
 ## Acceptance
 
+Deployment adaptation: Vercel's personal-account integration requires the GitHub repository owner, while the user's existing Vercel identity connects another GitHub account. Keep both identities and deploy main through GitHub Actions after CI instead of changing account-wide GitHub authentication. The initial public-site runtime uses APP_ENV=production and PAYMENTS_PROVIDER=disabled with both intake switches explicitly false until the real payment provider is configured. This mode cannot simulate or accept payments.
+
 - The approved new public website is the production deployment for lystohogar.com.
 - GitHub main contains both work streams and Vercel builds main.
 - No unmerged commits are discarded, no credentials or generated artifacts are committed.

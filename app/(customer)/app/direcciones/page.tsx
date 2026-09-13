@@ -1,11 +1,17 @@
-import { redirect } from 'next/navigation'
-import { readCustomerSession } from '@/lib/auth/customer-session'
 import { PageScaffold } from '@/components/layout/page-scaffold'
-import { AccountAddressDetails } from '@/components/customer/account-details'
-import { ButtonLink } from '@/components/ui/button'
+import { ConnectedCustomerAddresses } from '@/components/customer/connected-customer-addresses'
+import { requirePageSession } from '@/lib/auth/session'
+import { listCustomerAddresses } from '@/lib/customer-assets/service'
 
 export default async function CustomerAddressesPage() {
-  const session = await readCustomerSession()
-  if (session.kind !== 'customer') redirect('/login')
-  return <PageScaffold title="Tu dirección" eyebrow="Tu hogar" description="La dirección que completaste al crear tu perfil."><section className="max-w-2xl rounded-3xl border border-slate-200 bg-white p-6 sm:p-8"><AccountAddressDetails address={session.address}/><p className="my-6 text-sm leading-6 text-slate-600">Al pedir un servicio podés ajustar la dirección y los detalles de acceso para esa visita.</p><ButtonLink href="/app/solicitar/aire-acondicionado">Solicitar servicio</ButtonLink></section></PageScaffold>
+  const page = await listCustomerAddresses(await requirePageSession('customer'))
+  return (
+    <PageScaffold
+      title="Direcciones y accesos"
+      eyebrow="Cliente"
+      description="Prepará cada visita con una ubicación clara y las condiciones de acceso."
+    >
+      <ConnectedCustomerAddresses initialPage={page} />
+    </PageScaffold>
+  )
 }

@@ -5,7 +5,7 @@ export type MercadoPagoWebhookEvent = {
   type: string
   action?: string
   data?: { id?: string }
-  status?: PaymentStatus
+  status?: PaymentStatus | 'charged_back' | 'review' | 'in_process'
   raw?: unknown
 }
 
@@ -26,6 +26,10 @@ export function normalizePaymentStatus(providerStatus: string | undefined | null
     case 'rejected': return 'rejected'
     case 'cancelled': return 'cancelled'
     case 'refunded': return 'refunded'
+    case 'partially_refunded': return 'partially_refunded'
+    case 'captured': return 'captured'
+    case 'failed': return 'failed'
+    case 'review': return 'failed'
     case 'charged_back': return 'failed'
     case 'in_process': return 'pending'
     case 'pending': return 'pending'

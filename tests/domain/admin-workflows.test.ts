@@ -27,14 +27,14 @@ const onboarding = {
 } satisfies ProfessionalOnboardingInput
 
 test('admin assignment chooses only eligible professionals', () => {
-  const result = decideProfessionalAssignment({ requestId: 'REQ-1', requestStatus: 'payment_approved', paid: true, candidates, mode: 'auto_suggested' })
+  const result = decideProfessionalAssignment({ requestId: 'REQ-1', requestStatus: 'pending_assignment', paid: true, candidates, mode: 'auto_suggested' })
   expect(result.ok).toBe(true)
   if (result.ok) expect(result.assignedProfessionalId).toBe('ok')
 })
 
-test('admin assignment rejects unpaid requests', () => {
-  const result = decideProfessionalAssignment({ requestId: 'REQ-1', requestStatus: 'payment_approved', paid: false, candidates, mode: 'auto_suggested' })
-  expect(result.ok).toBe(false)
+test('admin assignment permite ofertar presupuesto aceptado antes del pago', () => {
+  const result = decideProfessionalAssignment({ requestId: 'REQ-1', requestStatus: 'pending_assignment', paid: false, candidates, mode: 'auto_suggested' })
+  expect(result.ok).toBe(true)
 })
 
 test('professional approval requires documents and admin', () => {

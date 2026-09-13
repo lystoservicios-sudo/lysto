@@ -1,39 +1,91 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createServerClient, type SetAllCookies } from '@supabase/ssr'
 import { assertPublicSupabaseEnv } from '@/lib/supabase/env'
-import { safeCustomerNext } from '@/lib/auth/customer-access'
+import { requiredRoleForPath } from '@/lib/auth/session-routing'
+import { ApiError, apiErrorResponse, privateResponse } from '@/lib/http/api-error'
+
+const sessionlessApis = new Set([
+  '/api/mercadopago/webhook',
+  '/api/payments/webhook/apply',
+  '/api/service-request/preview',
+  '/api/admin/assign-professional',
+  '/api/jobs/advance',
+  '/api/jobs/update-status',
+  '/api/admin/approve-professional',
+  '/api/admin/pricing/update',
+  '/api/pro/jobs/action',
+  '/api/pro/onboarding/evaluate',
+  '/api/professional/respond-request'
+])
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
+  const correlationId =
+    request.headers.get('x-correlation-id')?.match(/^[A-Za-z0-9_-]{8,80}$/)?.[0] ??
+    crypto.randomUUID()
   const requestHeaders = new Headers(request.headers)
+  requestHeaders.set('x-correlation-id', correlationId)
   requestHeaders.set('x-lysto-path', pathname)
-  let response = NextResponse.next({ request: { headers: requestHeaders } })
-  const customerRoute = pathname === '/app' || pathname.startsWith('/app/')
+  const nextResponse = () => NextResponse.next({ request: { headers: requestHeaders } })
+  const withCorrelation = <T extends Response>(response: T): T => {
+    response.headers.set('X-Correlation-Id', correlationId)
+    return response
+  }
+  const onboarding = pathname === '/pro/onboarding' || pathname.startsWith('/pro/onboarding/')
+  function onboardingHeaders<T extends Response>(response: T): T {
+    if (onboarding) {
+      response.headers.set('Referrer-Policy', 'no-referrer')
+      response.headers.set('X-Robots-Tag', 'noindex, nofollow')
+    }
+    return response
+  }
+  if (pathname === '/comprobante' || pathname.startsWith('/comprobante/')) {
+    const response = withCorrelation(privateResponse(nextResponse()))
+    response.headers.set('X-Robots-Tag', 'noindex, nofollow')
+    response.headers.set('Referrer-Policy', 'no-referrer')
+    return response
+  }
+  const authPage = ['/login', '/registro', '/completar-cuenta', '/completar-perfil', '/recuperar', '/restablecer', '/recuperar-contrasena', '/actualizar-contrasena', '/equipo/login'].includes(pathname) || pathname.startsWith('/auth/')
+  const privatePage = requiredRoleForPath(pathname) !== null || pathname === '/seguridad' || authPage
+  const api = pathname.startsWith('/api/')
+  if (!privatePage && !api) return withCorrelation(nextResponse())
+  let response = withCorrelation(onboardingHeaders(privateResponse(nextResponse())))
+  if (authPage) {
+    response.headers.set('Referrer-Policy', 'no-referrer')
+    response.headers.set('X-Robots-Tag', 'noindex, nofollow')
+    // Auth handlers own cookie writes; pages must stay readable during provider outages.
+    return response
+  }
+  if (sessionlessApis.has(pathname)) return response
+  // API handlers resolve and refresh their own session before any domain work.
+  // Repeating getClaims here adds a second Auth pass to every private API call.
+  if (api) return response
   try {
     const env = assertPublicSupabaseEnv()
-    const supabase = createServerClient(env.url, env.anonKey, { cookies: {
-      getAll: () => request.cookies.getAll(),
-      setAll(cookies: Parameters<SetAllCookies>[0]) {
-        cookies.forEach(({ name, value }) => request.cookies.set(name, value))
-        requestHeaders.set('cookie', request.cookies.toString())
-        response = NextResponse.next({ request: { headers: requestHeaders } })
-        cookies.forEach(({ name, value, options }) => response.cookies.set(name, value, options))
+    const pending = new Map<string, Parameters<SetAllCookies>[0][number]>()
+    const supabase = createServerClient(env.url, env.anonKey, {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll()
+        },
+        setAll(cookiesToSet: Parameters<SetAllCookies>[0]) {
+          for (const cookie of cookiesToSet) {
+            request.cookies.set(cookie.name, cookie.value)
+            pending.set(cookie.name, cookie)
+          }
+          response = withCorrelation(onboardingHeaders(privateResponse(nextResponse())))
+          for (const { name, value, options } of pending.values())
+            response.cookies.set(name, value, options)
+        }
       }
-    } })
-    const { data: { user } } = await supabase.auth.getUser()
-    if (customerRoute && !user) {
-      const target = new URL('/login', request.url)
-      target.searchParams.set('next', safeCustomerNext(pathname))
-      const redirectResponse = NextResponse.redirect(target)
-      response.cookies.getAll().forEach((cookie) => redirectResponse.cookies.set(cookie))
-      redirectResponse.headers.set('Cache-Control', 'private, no-store')
-      return redirectResponse
-    }
+    })
+    // Refresh cookies for both the downstream server render and the browser.
+    // Layouts and each API still resolve current profile/permissions themselves.
+    await supabase.auth.getClaims()
+    return response
   } catch {
-    if (customerRoute) return NextResponse.redirect(new URL('/login?notice=unavailable', request.url))
+    return withCorrelation(onboardingHeaders(apiErrorResponse(new ApiError('session_unavailable'))))
   }
-  response.headers.set('Cache-Control', 'private, no-store')
-  return response
 }
 
-export const config = { matcher: ['/app/:path*', '/pro/:path*', '/admin/:path*', '/login', '/registro', '/completar-perfil', '/actualizar-contrasena', '/equipo/login', '/auth/:path*'] }
+export const config = { matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'] }

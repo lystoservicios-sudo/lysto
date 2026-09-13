@@ -1,5 +1,6 @@
-import type { JobStatus, PaymentStatus, ProfessionalStatus, RequestStatus } from '../domain/types.ts'
-import { assertTransition, jobTransitions, paymentTransitions, professionalTransitions, requestTransitions } from '../domain/state-machine.ts'
+import type { JobStatus, MarketplaceCheckoutStatus, PaymentStatus, ProfessionalStatus, RequestStatus } from '../domain/types.ts'
+import { assertTransition, paymentTransitions, professionalTransitions, requestTransitions } from '../domain/state-machine.ts'
+import { transitionJobStatus } from '../jobs/workflow.ts'
 
 export type LifecycleEvent = {
   entity: 'request' | 'job' | 'payment' | 'professional'
@@ -13,8 +14,15 @@ export type LifecycleEvent = {
 export type WorkContext = {
   requestStatus: RequestStatus
   jobStatus?: JobStatus
+  /** Legacy payments projection; never used to authorize a visit. */
   paymentStatus?: PaymentStatus
+  /** Authoritative marketplace_checkouts status, independently supplied. */
+  canonicalPaymentStatus?: MarketplaceCheckoutStatus
   professionalStatus?: ProfessionalStatus
+  hasFinalReport?: boolean
+  /** Explicit persisted decision on the current extra, independent of payment. */
+  customerApproved?: boolean
+  customerConfirmed?: boolean
   events: LifecycleEvent[]
 }
 
@@ -29,7 +37,7 @@ export function transitionRequest(ctx: WorkContext, to: RequestStatus, actor: Li
 
 export function transitionJob(ctx: WorkContext, to: JobStatus, actor: LifecycleEvent['actor'], note?: string): WorkContext {
   if (!ctx.jobStatus) throw new Error('Job is required')
-  assertTransition(jobTransitions, ctx.jobStatus, to, 'job')
+  transitionJobStatus(ctx.jobStatus, to, { canonicalPaymentStatus: ctx.canonicalPaymentStatus, customerApproved: ctx.customerApproved, hasFinalReport: ctx.hasFinalReport, customerConfirmed: actor === 'customer' && ctx.customerConfirmed })
   return { ...ctx, jobStatus: to, events: [...ctx.events, event('job', ctx.jobStatus, to, actor, note)] }
 }
 
@@ -50,7 +58,7 @@ export function createRequestFlow(): WorkContext {
 }
 
 export function completeCustomerWizard(ctx: WorkContext): WorkContext {
-  return transitionRequest(
+  const accepted = transitionRequest(
     transitionRequest(
       transitionRequest(
         transitionRequest(
@@ -67,18 +75,26 @@ export function completeCustomerWizard(ctx: WorkContext): WorkContext {
       'customer',
       'presupuesto seleccionado'
     ),
-    'pending_payment',
+    'pending_assignment',
     'customer',
-    'listo para pago'
+    'presupuesto aceptado; trabajo pendiente de asignación'
   )
+  return { ...accepted, jobStatus: 'pending_assignment' }
 }
 
-export function approvePaymentAndCreateJob(ctx: WorkContext): WorkContext {
-  const withPayment = ctx.paymentStatus ? ctx : { ...ctx, paymentStatus: 'pending' as PaymentStatus }
-  const paid = transitionPayment(withPayment, 'approved', 'webhook', 'Mercado Pago approved')
-  const requestApproved = transitionRequest(paid, 'payment_approved', 'system', 'pago aprobado')
-  const requestAssignment = transitionRequest(requestApproved, 'pending_assignment', 'system', 'crear cola de matching')
-  return { ...requestAssignment, jobStatus: 'pending_assignment' }
+export function approveConfirmedJobPayment(ctx: WorkContext): WorkContext {
+  // Replayed observations cannot append events or rewind an already progressing job.
+  if (ctx.canonicalPaymentStatus === 'approved' && ctx.paymentStatus === 'approved') return ctx
+  if (ctx.canonicalPaymentStatus !== 'approved' && (ctx.jobStatus !== 'confirmed' || ctx.requestStatus !== 'assigned')) throw new Error('Confirmed professional and accepted quote required before checkout')
+  const projectedStatus = ctx.paymentStatus ?? 'pending'
+  if (projectedStatus !== 'approved') assertTransition(paymentTransitions, projectedStatus, 'approved', 'payment')
+  // Model one canonical observation; an already updated projection is not a new event.
+  return {
+    ...ctx,
+    paymentStatus: 'approved',
+    canonicalPaymentStatus: 'approved',
+    events: ctx.canonicalPaymentStatus === 'approved' ? ctx.events : [...ctx.events, event('payment', ctx.canonicalPaymentStatus ?? 'pending', 'approved', 'webhook', 'Mercado Pago approved; trabajo existente')]
+  }
 }
 
 export function assignProfessional(ctx: WorkContext): WorkContext {
@@ -117,10 +133,9 @@ export function completeFieldService(ctx: WorkContext): WorkContext {
 
 export function closeJobWithReport(ctx: WorkContext, hasFinalReport: boolean): WorkContext {
   if (!hasFinalReport) throw new Error('Final technical report is required before closing')
-  return transitionJob(
-    transitionJob(ctx, 'completed_pending_customer_confirmation', 'professional', 'cierre técnico cargado'),
-    'completed',
-    'customer',
-    'cliente confirmó o venció ventana de confirmación'
-  )
+  return transitionJob({ ...ctx, hasFinalReport }, 'completed_pending_customer_confirmation', 'professional', 'cierre técnico cargado')
+}
+
+export function confirmCompletedJob(ctx: WorkContext): WorkContext {
+  return transitionJob({ ...ctx, customerConfirmed: true }, 'completed', 'customer', 'conformidad explícita del cliente')
 }

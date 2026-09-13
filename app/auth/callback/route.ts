@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
       const supabase = await createServerSupabaseClient()
       const { error } = await supabase.auth.exchangeCodeForSession(code)
       if (!error) destination = url.searchParams.get('flow') === 'recovery'
-        ? '/actualizar-contrasena'
+        ? '/restablecer'
         : await resolvedCustomerDestination(safeCustomerNext(url.searchParams.get('next')), supabase)
     } catch { destination = '/login?notice=unavailable' }
   }

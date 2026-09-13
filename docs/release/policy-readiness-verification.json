@@ -1,0 +1,19 @@
+{
+  "task": "T31",
+  "status": "implemented_pending_approval_and_training",
+  "publicCopy": "aligned_to_current_service_flow",
+  "policyPublication": "disabled_until_approved_version",
+  "acceptance": "version_hash_subject_and_server_time",
+  "preparedVerification": [
+    "tests/policy-pages.vitest.test.tsx",
+    "tests/integration/policy-acceptance.test.ts",
+    "supabase/tests/database/policy_acceptance.test.sql"
+  ],
+  "pending": [
+    "D02 operating hours and escalation approval",
+    "D05 commercial and invoicing approval",
+    "D06 cancellation, absence, extra and refund approval",
+    "D08 privacy, retention and legal text approval",
+    "operator and finance UAT with signed training record"
+  ]
+}

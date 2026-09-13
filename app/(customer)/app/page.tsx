@@ -1,9 +1,8 @@
-import { redirect } from 'next/navigation'
-import { readCustomerSession } from '@/lib/auth/customer-session'
-import { CustomerAccountEntry } from '@/components/customer/account-details'
+import { CustomerDashboard } from '@/components/customer/customer-dashboard'
+import { requirePageSession } from '@/lib/auth/session'
+import { customerLiveData } from '@/lib/customer/live-model'
 
 export default async function CustomerDashboardPage() {
-  const session = await readCustomerSession()
-  if (session.kind !== 'customer') redirect('/login')
-  return <CustomerAccountEntry firstName={session.profile.first_name} address={session.address}/>
+  const data = await customerLiveData(await requirePageSession('customer'))
+  return <CustomerDashboard model={data.dashboard} />
 }

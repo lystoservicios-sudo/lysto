@@ -1,35 +1,45 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-const mocks = vi.hoisted(() => ({ session: vi.fn(), user: vi.fn(), from: vi.fn(), rpc: vi.fn() }))
-vi.mock('@/lib/supabase/server', () => ({ createServerSupabaseClient: async () => ({ auth: { getUser: mocks.user }, from: mocks.from, rpc: mocks.rpc }) }))
-vi.mock('@/lib/auth/customer-session', () => ({ readCustomerSession: mocks.session }))
-import { getPricingSession } from '@/lib/pricing/server'
-import { POST as submit } from '@/app/api/customer/request/submit/route'
-const complete = { kind: 'customer', verified: true, profile: { first_name: 'Ana', last_name: 'Pérez', phone: '+541122334455' }, address: { street: 'San Martín', number: '932', city: 'Vicente López', province: 'Buenos Aires', property_type: 'house' } }
+const mocks = vi.hoisted(() => ({ user: vi.fn(), rpc: vi.fn(), from: vi.fn(), select: vi.fn(), eq: vi.fn(), is: vi.fn(), order: vi.fn(), maybeSingle: vi.fn(), bootstrap: vi.fn(), signOut: vi.fn() }))
+vi.mock('@/lib/supabase/server', () => ({ createServerSupabaseClient: async () => ({ auth: { getUser: mocks.user, signOut: mocks.signOut }, from: mocks.from, rpc: mocks.rpc }) }))
+vi.mock('@/lib/auth/account-server', () => ({ bootstrapVerifiedCustomer: mocks.bootstrap }))
+import { readCustomerSession, resolvedCustomerDestination } from '@/lib/auth/customer-session'
+const profile = { id: '11111111-1111-4111-8111-111111111111', role: 'customer', first_name: 'Ana', last_name: 'Pérez', phone: '+541122334455' }
+const address = { id: '22222222-2222-4222-8222-222222222222', street: 'San Martín', number: '932', city: 'Vicente López', province: 'Buenos Aires', property_type: 'house' }
 beforeEach(() => {
   vi.resetAllMocks()
   mocks.user.mockResolvedValue({ data: { user: { id: 'user-id', email_confirmed_at: '2026-01-01', app_metadata: { app_role: 'customer' } } }, error: null })
-  mocks.from.mockImplementation((table: string) => ({ select: () => ({ eq: () => ({ single: async () => ({ data: table === 'profiles' ? { id: 'profile-id', role: 'customer' } : { id: 'customer-id' }, error: null }) }) }) }))
-  mocks.session.mockResolvedValue(complete)
+  mocks.bootstrap.mockResolvedValue('ready')
+  mocks.rpc.mockResolvedValue({ data: { role: 'customer', profile_id: profile.id, customer_id: '33333333-3333-4333-8333-333333333333', session_active: true, session_id: '44444444-4444-4444-8444-444444444444' }, error: null })
+  for (const name of ['from', 'select', 'eq', 'is'] as const) mocks[name].mockReturnValue(mocks)
+  mocks.order.mockReturnValueOnce(mocks).mockResolvedValue({ data: [address], error: null })
+  mocks.maybeSingle.mockResolvedValue({ data: profile, error: null })
 })
-describe('service request readiness', () => {
-  it('blocks incomplete customer profiles before request creation', async () => {
-    mocks.session.mockResolvedValue({ ...complete, profile: { ...complete.profile, phone: '' } })
-    await expect(getPricingSession({ requireCompleteCustomer: true })).rejects.toThrow('customer_profile_incomplete')
+describe('progressive customer readiness with fresh authority', () => {
+  it('routes OAuth without accepted policy to completion before reading domain profiles', async () => {
+    mocks.bootstrap.mockResolvedValue('incomplete')
+    expect(await resolvedCustomerDestination('/app/solicitar/aire-acondicionado')).toBe('/completar-cuenta?next=%2Fapp%2Fsolicitar%2Faire-acondicionado')
+    expect(mocks.from).not.toHaveBeenCalled()
   })
-  it('blocks unverified email even if the profile is complete', async () => {
-    mocks.session.mockResolvedValue({ ...complete, verified: false })
-    await expect(getPricingSession({ requireCompleteCustomer: true })).rejects.toThrow('customer_email_unverified')
+  it('does not bootstrap an unverified email', async () => {
+    mocks.user.mockResolvedValue({ data: { user: { app_metadata: { app_role: 'customer' }, email_confirmed_at: null } }, error: null })
+    expect(await resolvedCustomerDestination()).toBe('/login?notice=confirm-email')
+    expect(mocks.bootstrap).not.toHaveBeenCalled()
   })
-  it('allows complete customers and keeps read-only session checks independent from onboarding', async () => {
-    expect((await getPricingSession({ requireCompleteCustomer: true })).customerId).toBe('customer-id')
-    mocks.session.mockResolvedValue({ ...complete, address: null })
-    expect((await getPricingSession()).customerId).toBe('customer-id')
+  it('checks a fresh active server session rather than trusting role metadata alone', async () => {
+    mocks.rpc.mockResolvedValue({ data: null, error: null })
+    expect(await readCustomerSession()).toEqual({ kind: 'unavailable' })
+    expect(mocks.from).not.toHaveBeenCalled()
   })
-  it('returns a useful 403 and never calls the submit RPC for an incomplete profile', async () => {
-    mocks.session.mockResolvedValue({ ...complete, profile: { ...complete.profile, phone: '' } })
-    const response = await submit(new Request('https://lysto.test/api/customer/request/submit', { method: 'POST', body: JSON.stringify({ quoteId: '01010101-0101-4101-8101-010101010101' }) }))
-    expect(response.status).toBe(403)
-    expect(await response.json()).toMatchObject({ code: 'customer_profile_incomplete', next: '/completar-perfil' })
-    expect(mocks.rpc).not.toHaveBeenCalled()
+  it('excludes archived addresses and preserves a complete customer destination', async () => {
+    expect(await resolvedCustomerDestination('/app/solicitar/aire-acondicionado')).toBe('/app/solicitar/aire-acondicionado')
+    expect(mocks.is).toHaveBeenCalledWith('archived_at', null)
+  })
+  it('requires profile completion when no active address remains', async () => {
+    mocks.order.mockReset().mockReturnValueOnce(mocks).mockResolvedValue({ data: [], error: null })
+    expect(await resolvedCustomerDestination()).toBe('/completar-perfil?next=%2Fapp')
+  })
+  it('fails closed when current session authority is unavailable', async () => {
+    mocks.rpc.mockResolvedValue({ data: null, error: { code: 'network' } })
+    await expect(readCustomerSession()).rejects.toThrow('customer_session_unavailable')
   })
 })

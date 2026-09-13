@@ -28,7 +28,7 @@ select columns_are(
     'recipient_profile_id', 'recipient_key', 'dedupe_key', 'payload', 'created_at',
     'available_at', 'attempt_count', 'max_attempts', 'locked_at', 'locked_until',
     'locked_by', 'claim_token', 'last_error', 'provider_message_id', 'processed_at',
-    'dead_lettered_at'
+    'dead_lettered_at', 'delivery_revision', 'delivery_outcome'
   ],
   'outbox exposes the expected delivery columns'
 );

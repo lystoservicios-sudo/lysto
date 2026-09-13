@@ -1,8 +1,8 @@
 import { test, expect } from '../_lib/test.ts'
 import { assertTransition, canTransition, jobTransitions, paymentTransitions, requestTransitions } from '../../lib/domain/state-machine.ts'
 
-test('request permite flujo pago aprobado a asignacion pendiente', () => {
-  expect(canTransition(requestTransitions, 'payment_approved', 'pending_assignment')).toBeTruthy()
+test('request no vuelve a asignación por un pago aprobado', () => {
+  expect(canTransition(requestTransitions, 'payment_approved', 'pending_assignment')).toBeFalsy()
 })
 
 test('request no permite saltar de pending_payment a assigned', () => {

@@ -1,41 +1,34 @@
 # Resultados de calidad
 
-Fecha: 2026-08-19
+Fecha: 2026-09-12. Snapshot: rama local `codex/production-readiness`; producción no habilitada.
 
-## Gates ejecutados
+## Verificación final ejecutada
 
-```bash
-pnpm lint
-pnpm typecheck
-pnpm test
-pnpm build
-```
+| Control | Resultado |
+| --- | --- |
+| ESLint con cero warnings | aprobado |
+| TypeScript sin emitir | aprobado |
+| Dominio | 174/174 aprobados |
+| Unitarias Vitest | 503/503 en 78 archivos |
+| Tooling | 24/24 aprobados |
+| Build Next.js | aprobado; 81 páginas estáticas generadas y rutas dinámicas compiladas |
+| Auditoría de dependencias productivas | sin vulnerabilidades conocidas |
+| Runtime de pagos | aprobado; 0 queries y 0 requests al proveedor |
+| Runtime de imágenes | aprobado; Sharp/PostCSS y bloqueo AVIF verificados |
+| Descubrimiento E2E | 36 casos, siete suites, Chromium desktop/móvil y WebKit móvil |
+| Manifest incompleto | control negativo aprobado; lanzamiento rechazado |
 
-Resultados:
+La suite completa detectó una expectativa antigua de texto público; se alineó con “Consultar disponibilidad” y la repetición completa cerró 503/503.
 
-- lint: aprobado sin warnings ni errores;
-- typecheck: aprobado;
-- tests de dominio: 124/124 aprobados;
-- tests unitarios: 45/45 aprobados en 5 archivos;
-- reset local de Supabase: migraciones 001–007 y seed aprobados desde una base vacía;
-- tests de base: 376/376 pgTAP aprobados en 7 archivos;
-- lint de base: esquemas `public` y `private` sin advertencias;
-- tipos Supabase: generación local reproducible con hash idéntico en dos ejecuciones;
-- build de producción: aprobado con 77 rutas generadas.
+## Comprobaciones que no se ejecutaron
 
-La suite cubre dominio, transiciones de estado, pricing, matching, permisos, formularios, workflows operativos, seguridad del comprobante público, RLS por actor, Storage, reembolsos, inbox/outbox, seed piloto, contratos API, mapeos de repositorio, adaptadores Supabase, configuración de entorno y gates de release.
+- Migraciones y pgTAP T15–T31: 58/58 migraciones remotas y 28/28 suites SQL aprobadas mediante transacciones con rollback. La comprobación posterior confirmó que no persistieron fixtures, helpers ni la extensión pgTAP.
+- Playwright E2E real: las 36 identidades fueron descubiertas, pero no se ejecutaron sin Supabase descartable o staging.
+- Carga, restore, alertas, proveedor, UAT móvil y smoke remoto: requieren los entornos y responsables pendientes.
+- Piloto: no iniciado; no existen días, servicios o conciliaciones que puedan simularse.
 
-## E2E
+## Interpretación
 
-Los tests E2E de Playwright no se ejecutaron en esta evidencia. La configuración existente no demuestra que los flujos funcionen en un navegador ni contra servicios reales.
+Estos resultados validan el código que puede probarse de forma segura en el checkout. No autentican G01–G16, no prueban proveedores o infraestructura real y no sustituyen D01–D12. El estado correcto sigue siendo NO-GO hasta completar el manifest del candidato con evidencia protegida.
 
-## Límites de la evidencia
-
-- Varias pantallas y rutas API todavía utilizan mocks, fixtures o respuestas contractuales.
-- Los tests aprobados demuestran el comportamiento del stack Supabase local; no demuestran un proyecto remoto, Mercado Pago ni otros proveedores reales.
-- La inspección de bytes subidos, limpieza de archivos huérfanos y E2E HTTP de uploads corresponden a Task 8.
-- No se validó un despliegue productivo.
-
-## Próximo hito
-
-Task 5 debe conectar autenticación, perfiles y protección por rol sobre la base local segura. Después corresponderá reemplazar mocks, validar uploads privados, conectar integraciones controladas y ejecutar los recorridos E2E críticos.
+Los resultados de 2026-08-19 corresponden a un snapshot histórico anterior y no autorizan esta release.

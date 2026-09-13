@@ -201,23 +201,7 @@ export const diagnosisRules = [
   { issue: 'No enciende', topCause: 'Problema eléctrico', level: 'Alto', checklist: 'Tensión, térmica, placa, capacitor y bornera.' }
 ]
 
-export const jobStatusLabels: Record<JobStatus, string> = {
-  pending_assignment: 'Pendiente de asignación',
-  pending_professional_acceptance: 'Esperando aceptación',
-  confirmed: 'Confirmado',
-  technician_on_way: 'Técnico en camino',
-  arrived: 'Llegó al domicilio',
-  onsite_diagnosis: 'Diagnóstico en curso',
-  waiting_customer_approval: 'Esperando aprobación',
-  in_progress: 'Trabajo en curso',
-  completed_pending_customer_confirmation: 'Finalizado por técnico',
-  completed: 'Completado',
-  cancelled_by_customer: 'Cancelado por cliente',
-  cancelled_by_professional: 'Cancelado por profesional',
-  cancelled_by_admin: 'Cancelado por admin',
-  disputed: 'En disputa',
-  warranty_claim: 'Garantía'
-}
+export { jobStatusLabels } from '../domain/job-status-labels.ts'
 
 export function money(value: number) {
   return value.toLocaleString('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 })

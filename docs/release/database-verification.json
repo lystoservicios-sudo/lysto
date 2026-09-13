@@ -1,0 +1,696 @@
+{
+  "task": "T03",
+  "status": "verified",
+  "verifiedAt": "2026-09-11T03:47:31.620Z",
+  "baseCommit": "afb14ba2eb1af5a5f8ab7ba7edd11aba5861a6b3",
+  "target": {
+    "project": "lysto_production_check",
+    "port": 56322,
+    "disposable": true
+  },
+  "original": {
+    "project": "lysto",
+    "port": 55322,
+    "access": "read-only schema/history; no repair/reset"
+  },
+  "clean": {
+    "migrationCount": 10,
+    "pgtapPassed": 416,
+    "pgtapFiles": 9,
+    "runnerWallSeconds": 21
+  },
+  "upgrade": {
+    "from": [
+      "202608190001",
+      "202608190002",
+      "202608190003",
+      "202608190004",
+      "202608190005",
+      "202608190006",
+      "202608190007"
+    ],
+    "to": [
+      "202608190001",
+      "202608190002",
+      "202608190003",
+      "202608190004",
+      "202608190005",
+      "202608190006",
+      "202608190007",
+      "20260910195050",
+      "20260910204604",
+      "20260910220000"
+    ],
+    "status": "passed",
+    "nonemptyWitnessCounts": {
+      "profiles": 1,
+      "requests": 1,
+      "jobs": 1,
+      "payments": 1
+    },
+    "witnessPreserved": true,
+    "schemaConverged": true,
+    "schemaSha256": "53d4b4f9266e2a9c186d40d3a71a85283e0706307feefce6c95bfa3d9edc0cc4",
+    "verifiedAt": "2026-09-11T03:43:11.855Z",
+    "pgtapPassed": 416,
+    "pgtapFiles": 9,
+    "runnerWallSeconds": 3
+  },
+  "integration": {
+    "platform": "Windows",
+    "passed": 8,
+    "skipped": 0,
+    "providerRequests": 0,
+    "scope": "Payment ledger against PostgreSQL and real vendor Prisma storage; provider responses synthetic"
+  },
+  "comparison": {
+    "schemaEqual": true,
+    "originalSchemaSha256": "53d4b4f9266e2a9c186d40d3a71a85283e0706307feefce6c95bfa3d9edc0cc4",
+    "cleanSchemaSha256": "53d4b4f9266e2a9c186d40d3a71a85283e0706307feefce6c95bfa3d9edc0cc4",
+    "typeContentEqual": true,
+    "originalTypeSha256": "66c69129e8ece0b8e63b7cc2567816b0485eaa4d3ca7e6877606d0dafb6ea366",
+    "generatedTypeSha256": "66c69129e8ece0b8e63b7cc2567816b0485eaa4d3ca7e6877606d0dafb6ea366",
+    "removedUniqueLines": 0,
+    "addedUniqueLines": 0
+  },
+  "schemaLint": {
+    "failOn": "error",
+    "exitCode": 0,
+    "result": "No schema errors found"
+  },
+  "securityInventory": {
+    "tables": [
+      {
+        "schema": "private",
+        "name": "admin_profile_permissions",
+        "rls": true
+      },
+      {
+        "schema": "private",
+        "name": "marketplace_applied_events",
+        "rls": true
+      },
+      {
+        "schema": "private",
+        "name": "outbox_events",
+        "rls": true
+      },
+      {
+        "schema": "private",
+        "name": "payment_refund_requests",
+        "rls": true
+      },
+      {
+        "schema": "private",
+        "name": "provider_event_inbox",
+        "rls": true
+      },
+      {
+        "schema": "public",
+        "name": "admin_audit_logs",
+        "rls": true
+      },
+      {
+        "schema": "public",
+        "name": "admin_profiles",
+        "rls": true
+      },
+      {
+        "schema": "public",
+        "name": "complaints",
+        "rls": true
+      },
+      {
+        "schema": "public",
+        "name": "customer_addresses",
+        "rls": true
+      },
+      {
+        "schema": "public",
+        "name": "customer_equipment",
+        "rls": true
+      },
+      {
+        "schema": "public",
+        "name": "customer_profiles",
+        "rls": true
+      },
+      {
+        "schema": "public",
+        "name": "diagnosis_reports",
+        "rls": true
+      },
+      {
+        "schema": "public",
+        "name": "diagnosis_rules",
+        "rls": true
+      },
+      {
+        "schema": "public",
+        "name": "equipment_service_records",
+        "rls": true
+      },
+      {
+        "schema": "public",
+        "name": "job_extras",
+        "rls": true
+      },
+      {
+        "schema": "public",
+        "name": "job_final_reports",
+        "rls": true
+      },
+      {
+        "schema": "public",
+        "name": "job_media",
+        "rls": true
+      },
+      {
+        "schema": "public",
+        "name": "job_status_events",
+        "rls": true
+      },
+      {
+        "schema": "public",
+        "name": "jobs",
+        "rls": true
+      },
+      {
+        "schema": "public",
+        "name": "marketplace_checkouts",
+        "rls": true
+      },
+      {
+        "schema": "public",
+        "name": "marketplace_payment_observations",
+        "rls": true
+      },
+      {
+        "schema": "public",
+        "name": "mp_split_connected_accounts",
+        "rls": true
+      },
+      {
+        "schema": "public",
+        "name": "mp_split_oauth_states",
+        "rls": true
+      },
+      {
+        "schema": "public",
+        "name": "mp_split_seller_unlink_events",
+        "rls": true
+      },
+      {
+        "schema": "public",
+        "name": "mp_split_webhook_events",
+        "rls": true
+      },
+      {
+        "schema": "public",
+        "name": "notification_events",
+        "rls": true
+      },
+      {
+        "schema": "public",
+        "name": "notifications",
+        "rls": true
+      },
+      {
+        "schema": "public",
+        "name": "payment_events",
+        "rls": true
+      },
+      {
+        "schema": "public",
+        "name": "payments",
+        "rls": true
+      },
+      {
+        "schema": "public",
+        "name": "payout_records",
+        "rls": true
+      },
+      {
+        "schema": "public",
+        "name": "platform_settings",
+        "rls": true
+      },
+      {
+        "schema": "public",
+        "name": "price_options",
+        "rls": true
+      },
+      {
+        "schema": "public",
+        "name": "pricing_rules",
+        "rls": true
+      },
+      {
+        "schema": "public",
+        "name": "professional_availability",
+        "rls": true
+      },
+      {
+        "schema": "public",
+        "name": "professional_documents",
+        "rls": true
+      },
+      {
+        "schema": "public",
+        "name": "professional_invitations",
+        "rls": true
+      },
+      {
+        "schema": "public",
+        "name": "professional_payment_accounts",
+        "rls": true
+      },
+      {
+        "schema": "public",
+        "name": "professional_profiles",
+        "rls": true
+      },
+      {
+        "schema": "public",
+        "name": "professional_service_categories",
+        "rls": true
+      },
+      {
+        "schema": "public",
+        "name": "professional_service_zones",
+        "rls": true
+      },
+      {
+        "schema": "public",
+        "name": "professional_tools",
+        "rls": true
+      },
+      {
+        "schema": "public",
+        "name": "professional_training_completions",
+        "rls": true
+      },
+      {
+        "schema": "public",
+        "name": "professional_training_modules",
+        "rls": true
+      },
+      {
+        "schema": "public",
+        "name": "profiles",
+        "rls": true
+      },
+      {
+        "schema": "public",
+        "name": "public_receipts",
+        "rls": true
+      },
+      {
+        "schema": "public",
+        "name": "quality_events",
+        "rls": true
+      },
+      {
+        "schema": "public",
+        "name": "receipts",
+        "rls": true
+      },
+      {
+        "schema": "public",
+        "name": "request_answers",
+        "rls": true
+      },
+      {
+        "schema": "public",
+        "name": "request_media",
+        "rls": true
+      },
+      {
+        "schema": "public",
+        "name": "reviews",
+        "rls": true
+      },
+      {
+        "schema": "public",
+        "name": "service_categories",
+        "rls": true
+      },
+      {
+        "schema": "public",
+        "name": "service_issue_types",
+        "rls": true
+      },
+      {
+        "schema": "public",
+        "name": "service_question_options",
+        "rls": true
+      },
+      {
+        "schema": "public",
+        "name": "service_questions",
+        "rls": true
+      },
+      {
+        "schema": "public",
+        "name": "service_quotes",
+        "rls": true
+      },
+      {
+        "schema": "public",
+        "name": "service_requests",
+        "rls": true
+      },
+      {
+        "schema": "public",
+        "name": "service_zones",
+        "rls": true
+      },
+      {
+        "schema": "public",
+        "name": "warranty_claims",
+        "rls": true
+      }
+    ],
+    "views": [
+      {
+        "schema": "public",
+        "name": "public_receipt_view",
+        "options": [
+          "security_invoker=true"
+        ]
+      }
+    ],
+    "privateGrants": [
+      {
+        "grantee": "postgres",
+        "table_name": "admin_profile_permissions",
+        "privilege_type": "DELETE"
+      },
+      {
+        "grantee": "postgres",
+        "table_name": "admin_profile_permissions",
+        "privilege_type": "INSERT"
+      },
+      {
+        "grantee": "postgres",
+        "table_name": "admin_profile_permissions",
+        "privilege_type": "REFERENCES"
+      },
+      {
+        "grantee": "postgres",
+        "table_name": "admin_profile_permissions",
+        "privilege_type": "SELECT"
+      },
+      {
+        "grantee": "postgres",
+        "table_name": "admin_profile_permissions",
+        "privilege_type": "TRIGGER"
+      },
+      {
+        "grantee": "postgres",
+        "table_name": "admin_profile_permissions",
+        "privilege_type": "TRUNCATE"
+      },
+      {
+        "grantee": "postgres",
+        "table_name": "admin_profile_permissions",
+        "privilege_type": "UPDATE"
+      },
+      {
+        "grantee": "postgres",
+        "table_name": "marketplace_applied_events",
+        "privilege_type": "DELETE"
+      },
+      {
+        "grantee": "postgres",
+        "table_name": "marketplace_applied_events",
+        "privilege_type": "INSERT"
+      },
+      {
+        "grantee": "postgres",
+        "table_name": "marketplace_applied_events",
+        "privilege_type": "REFERENCES"
+      },
+      {
+        "grantee": "postgres",
+        "table_name": "marketplace_applied_events",
+        "privilege_type": "SELECT"
+      },
+      {
+        "grantee": "postgres",
+        "table_name": "marketplace_applied_events",
+        "privilege_type": "TRIGGER"
+      },
+      {
+        "grantee": "postgres",
+        "table_name": "marketplace_applied_events",
+        "privilege_type": "TRUNCATE"
+      },
+      {
+        "grantee": "postgres",
+        "table_name": "marketplace_applied_events",
+        "privilege_type": "UPDATE"
+      },
+      {
+        "grantee": "postgres",
+        "table_name": "outbox_events",
+        "privilege_type": "DELETE"
+      },
+      {
+        "grantee": "postgres",
+        "table_name": "outbox_events",
+        "privilege_type": "INSERT"
+      },
+      {
+        "grantee": "postgres",
+        "table_name": "outbox_events",
+        "privilege_type": "REFERENCES"
+      },
+      {
+        "grantee": "postgres",
+        "table_name": "outbox_events",
+        "privilege_type": "SELECT"
+      },
+      {
+        "grantee": "postgres",
+        "table_name": "outbox_events",
+        "privilege_type": "TRIGGER"
+      },
+      {
+        "grantee": "postgres",
+        "table_name": "outbox_events",
+        "privilege_type": "TRUNCATE"
+      },
+      {
+        "grantee": "postgres",
+        "table_name": "outbox_events",
+        "privilege_type": "UPDATE"
+      },
+      {
+        "grantee": "postgres",
+        "table_name": "payment_refund_requests",
+        "privilege_type": "DELETE"
+      },
+      {
+        "grantee": "postgres",
+        "table_name": "payment_refund_requests",
+        "privilege_type": "INSERT"
+      },
+      {
+        "grantee": "postgres",
+        "table_name": "payment_refund_requests",
+        "privilege_type": "REFERENCES"
+      },
+      {
+        "grantee": "postgres",
+        "table_name": "payment_refund_requests",
+        "privilege_type": "SELECT"
+      },
+      {
+        "grantee": "postgres",
+        "table_name": "payment_refund_requests",
+        "privilege_type": "TRIGGER"
+      },
+      {
+        "grantee": "postgres",
+        "table_name": "payment_refund_requests",
+        "privilege_type": "TRUNCATE"
+      },
+      {
+        "grantee": "postgres",
+        "table_name": "payment_refund_requests",
+        "privilege_type": "UPDATE"
+      },
+      {
+        "grantee": "postgres",
+        "table_name": "provider_event_inbox",
+        "privilege_type": "DELETE"
+      },
+      {
+        "grantee": "postgres",
+        "table_name": "provider_event_inbox",
+        "privilege_type": "INSERT"
+      },
+      {
+        "grantee": "postgres",
+        "table_name": "provider_event_inbox",
+        "privilege_type": "REFERENCES"
+      },
+      {
+        "grantee": "postgres",
+        "table_name": "provider_event_inbox",
+        "privilege_type": "SELECT"
+      },
+      {
+        "grantee": "postgres",
+        "table_name": "provider_event_inbox",
+        "privilege_type": "TRIGGER"
+      },
+      {
+        "grantee": "postgres",
+        "table_name": "provider_event_inbox",
+        "privilege_type": "TRUNCATE"
+      },
+      {
+        "grantee": "postgres",
+        "table_name": "provider_event_inbox",
+        "privilege_type": "UPDATE"
+      },
+      {
+        "grantee": "service_role",
+        "table_name": "outbox_events",
+        "privilege_type": "INSERT"
+      },
+      {
+        "grantee": "service_role",
+        "table_name": "outbox_events",
+        "privilege_type": "SELECT"
+      },
+      {
+        "grantee": "service_role",
+        "table_name": "outbox_events",
+        "privilege_type": "UPDATE"
+      },
+      {
+        "grantee": "service_role",
+        "table_name": "provider_event_inbox",
+        "privilege_type": "INSERT"
+      },
+      {
+        "grantee": "service_role",
+        "table_name": "provider_event_inbox",
+        "privilege_type": "SELECT"
+      },
+      {
+        "grantee": "service_role",
+        "table_name": "provider_event_inbox",
+        "privilege_type": "UPDATE"
+      }
+    ],
+    "oauthClientPrivileges": [
+      {
+        "role": "authenticated",
+        "table": "mp_split_connected_accounts",
+        "select": false,
+        "insert": false,
+        "update": false,
+        "delete": false
+      },
+      {
+        "role": "anon",
+        "table": "mp_split_connected_accounts",
+        "select": false,
+        "insert": false,
+        "update": false,
+        "delete": false
+      },
+      {
+        "role": "authenticated",
+        "table": "mp_split_oauth_states",
+        "select": false,
+        "insert": false,
+        "update": false,
+        "delete": false
+      },
+      {
+        "role": "anon",
+        "table": "mp_split_oauth_states",
+        "select": false,
+        "insert": false,
+        "update": false,
+        "delete": false
+      },
+      {
+        "role": "authenticated",
+        "table": "mp_split_webhook_events",
+        "select": false,
+        "insert": false,
+        "update": false,
+        "delete": false
+      },
+      {
+        "role": "anon",
+        "table": "mp_split_webhook_events",
+        "select": false,
+        "insert": false,
+        "update": false,
+        "delete": false
+      }
+    ]
+  },
+  "limits": [
+    "Fresh and upgrade are independent runs reusing the same disposable project after capturing evidence.",
+    "No new migration or type rewrite was necessary because schemas and generated types converge.",
+    "Original database history remains seven migrations although its public/private schema matches ten; remote history is unknown and not repaired.",
+    "Data preservation witness covers selected August fields of one synthetic customer/request/job/payment, not a production-sized dataset.",
+    "Original empty-table witness is superseded. Timeout and fixture collision failures are preserved; fixture cleanup precedes the final passing pgTAP.",
+    "CLI reports runner wall time only; no precise total reset/upgrade duration claimed.",
+    "Recovery exercise and remote security advisors are not covered by T03."
+  ],
+  "evidence": [
+    {
+      "path": "output/production-readiness/database-clean-tests.log",
+      "sha256": "796ca41255412a3601b9f04c503c7dfe385b21179048573569ef266fa7bf8eb9"
+    },
+    {
+      "path": "output/production-readiness/database-populated-upgrade-baseline.log",
+      "sha256": "ea58834c427c9e7c356cd50a817348857b257ee85a875166bccd9287dcc6ec75"
+    },
+    {
+      "path": "output/production-readiness/database-populated-upgrade-apply.log",
+      "sha256": "4b753875d909329f5172c2dea7a7a94533311d0862913fcfb0c47c5fa47bfcd2"
+    },
+    {
+      "path": "output/production-readiness/database-populated-comparison.json",
+      "sha256": "0a1866240e6062b641e3119d1fa120acc88a476d120473bd54197dd5c1725c1e"
+    },
+    {
+      "path": "output/production-readiness/database-upgrade-final-tests.log",
+      "sha256": "e599f49ef79d45091b12a993ebfd7727c1bb2736f495877fab8c0d6e7ef207c4"
+    },
+    {
+      "path": "output/production-readiness/database-integration-final.log",
+      "sha256": "00745f691f04d62adaf4e8fef6ecb5fc3baf9fe0d7c10a675efe952f5f65276e"
+    },
+    {
+      "path": "output/production-readiness/database-final-lint.log",
+      "sha256": "7bf0b8d1ee9760ec2cf668f3a6194b16d726643ba5b153cf7341073aa82d6dec"
+    },
+    {
+      "path": "output/production-readiness/database-security-inventory.json",
+      "sha256": "eb91a1618304f7fc60146caddf0ada68f674f87d715b3aea0ef3d035859a2a6a"
+    },
+    {
+      "path": "output/production-readiness/database-comparison.json",
+      "sha256": "c01b1a78596c1a18c9a36d06efa081bb19f0c95abe362880b64447767f226602"
+    },
+    {
+      "path": "output/production-readiness/database-upgrade-tests-connection-timeout.log",
+      "sha256": "a7e9f2b54dd193ec30d33c59cb3fac7680cc7970221f23dffa57c9313c74a9f2"
+    },
+    {
+      "path": "output/production-readiness/database-populated-upgrade-tests.log",
+      "sha256": "918710b8f69e3139f4769e14fa0584cbda7d2c631fe47a0f6706daadb0454705"
+    }
+  ]
+}

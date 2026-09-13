@@ -1,10 +1,24 @@
-import { NextResponse } from 'next/server'
-import { validateProfessionalOnboarding, type ProfessionalOnboardingInput } from '@/lib/professional/onboarding'
+import { apiErrorResponse, privateJson } from '@/lib/http/api-error'
+import { readPrivateJsonBody } from '@/lib/http/private-json-body'
+import {
+  readProfessionalOnboarding,
+  saveProfessionalOnboarding,
+  onboardingIdentity
+} from '@/lib/professional/onboarding-service'
+
+export async function GET() {
+  try {
+    return privateJson(await readProfessionalOnboarding())
+  } catch (error) {
+    return apiErrorResponse(error)
+  }
+}
 
 export async function POST(request: Request) {
-  const body = await request.json().catch(() => null) as ProfessionalOnboardingInput | null
-  if (!body) return NextResponse.json({ error: 'Invalid JSON payload' }, { status: 400 })
-  const validation = validateProfessionalOnboarding(body)
-  if (!validation.valid) return NextResponse.json({ error: 'Onboarding incomplete', details: validation.errors, missingTools: validation.missingRequiredTools, readinessScore: validation.readinessScore }, { status: 400 })
-  return NextResponse.json({ accepted: true, readinessScore: validation.readinessScore, nextStatus: 'under_review', persistence: 'Persist professional form and documents, mark under_review.' })
+  try {
+    await onboardingIdentity()
+    return privateJson(await saveProfessionalOnboarding(await readPrivateJsonBody(request)))
+  } catch (error) {
+    return apiErrorResponse(error)
+  }
 }

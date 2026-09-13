@@ -1,10 +1,18 @@
-import { NextResponse } from 'next/server'
-import { validateEquipmentRegistration, type EquipmentRegistrationInput } from '@/lib/equipment/equipment-registry'
+import { readPrivateJsonBody } from '@/lib/http/private-json-body'
+import { privateRoute } from '@/lib/http/route-handler'
+import { privateJson } from '@/lib/http/api-error'
+import { equipmentInputSchema } from '@/lib/customer-assets/contracts'
+import { writeCustomerAsset } from '@/lib/customer-assets/service'
 
-export async function POST(request: Request) {
-  const body = await request.json().catch(() => null) as EquipmentRegistrationInput | null
-  if (!body) return NextResponse.json({ error: 'Invalid JSON payload' }, { status: 400 })
-  const result = validateEquipmentRegistration(body)
-  if (!result.ok) return NextResponse.json({ error: 'Invalid equipment registration', details: result.errors }, { status: 400 })
-  return NextResponse.json({ result, persistence: 'Insert/update customer_equipment and link with job_final_reports/equipment_service_records.' })
-}
+export const POST = privateRoute({ roles: ['customer'] }, async (request, session) =>
+  privateJson(
+    await writeCustomerAsset(
+      session,
+      'equipment',
+      equipmentInputSchema.parse(await readPrivateJsonBody(request)),
+      null,
+      null
+    ),
+    { status: 201 }
+  )
+)

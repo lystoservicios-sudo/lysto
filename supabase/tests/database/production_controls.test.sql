@@ -1,0 +1,18 @@
+begin;
+create extension if not exists pgtap with schema extensions;
+set search_path=public,extensions;
+select plan(11);
+select has_table('private','rate_limit_buckets','Rate limits use shared database state');
+select ok((select relrowsecurity and relforcerowsecurity from pg_class where oid=to_regclass('private.rate_limit_buckets')),'Rate-limit state forces RLS');
+select ok(not has_table_privilege('service_role','private.rate_limit_buckets','select'),'Service role cannot read buckets directly');
+select ok(has_function_privilege('service_role','public.consume_rate_limit(text,integer,integer)','execute'),'Service role can consume limits');
+select ok(not has_function_privilege('authenticated','public.consume_rate_limit(text,integer,integer)','execute'),'Authenticated cannot consume limits directly');
+select ok(not has_function_privilege('anon','public.consume_rate_limit(text,integer,integer)','execute'),'Anonymous cannot consume limits directly');
+select ok(has_function_privilege('service_role','public.prune_rate_limits(integer)','execute'),'Service role can prune expired limits');
+select ok(not has_function_privilege('authenticated','public.prune_rate_limits(integer)','execute'),'Authenticated cannot prune limits');
+select ok(has_function_privilege('service_role','public.production_readiness_probe()','execute'),'Service role can execute readiness probe');
+select ok(not has_function_privilege('authenticated','public.production_readiness_probe()','execute'),'Authenticated cannot execute readiness probe');
+select set_config('request.jwt.claim.role','service_role',true);
+select lives_ok($$select public.production_readiness_probe()$$,'Readiness probe executes against the current queue schema');
+select * from finish();
+rollback;

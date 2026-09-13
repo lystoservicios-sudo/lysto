@@ -1,0 +1,55 @@
+{
+  "task": "T27",
+  "status": "implemented_remote_database_verified_staging_pending",
+  "implementedAt": "2026-09-12T16:10:00Z",
+  "scope": {
+    "sessionBoundPages": [
+      "/app",
+      "/app/solicitudes",
+      "/app/solicitudes/[id]",
+      "/app/trabajos",
+      "/app/trabajos/[id]",
+      "/app/trabajos/[id]/review",
+      "/app/garantias"
+    ],
+    "alreadyConnectedReviewed": [
+      "/app/direcciones",
+      "/app/equipos",
+      "/app/equipos/[id]",
+      "/app/mantenimientos",
+      "/app/pagos",
+      "/app/presupuestos",
+      "/app/perfil",
+      "/app/solicitar/aire-acondicionado"
+    ],
+    "fixtureRule": "No TypeScript source under app/(customer) or components/customer imports customer demo fixtures or labels persisted records as demonstrations."
+  },
+  "controls": [
+    "Every server page obtains a customer session or delegates its data fetch to an authenticated API.",
+    "Request and job list cursors are identity and filter scoped by the read repository.",
+    "Detail routes accept strict UUIDs and never fall back to mock records.",
+    "Review eligibility and duplicate review state are read from the owning session.",
+    "Warranty coverage uses the persisted job warranty date; claims come from the customer RLS projection.",
+    "The warranty form presents the customer's completed jobs instead of requiring a copied identifier.",
+    "No chat or live geolocation is advertised as available."
+  ],
+  "localVerification": {
+    "focusedUnit": "28/28 passed",
+    "domain": "174/174 passed",
+    "typecheck": "passed",
+    "lint": "passed after removing one unused type import",
+    "diffCheck": "pending final checkpoint"
+  },
+  "preparedIntegration": "tests/integration/customer-pages.test.ts",
+  "integrationScenarios": [
+    "customer with a persisted active request and job",
+    "customer with no history",
+    "foreign customer detail returns 404",
+    "no demonstration content in rendered HTML"
+  ],
+  "blockedVerification": [
+    "Authenticated customer-page integration requires isolated staging; remote SQL verification passed.",
+    "Mobile browser and complete reload walkthrough remain part of staging acceptance."
+  ],
+  "releaseCredit": false
+}

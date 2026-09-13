@@ -1,13 +1,8 @@
-import { NextResponse } from 'next/server'
-import { evaluateWarrantyClaim, type WarrantyClaimInput } from '@/lib/warranty/claims'
+import { privateJson } from '@/lib/http/api-error'
+import { readPrivateJsonBody } from '@/lib/http/private-json-body'
+import { privateRoute } from '@/lib/http/route-handler'
+import { openWarrantyClaim } from '@/lib/support/service'
 
-export async function POST(request: Request) {
-  const body = await request.json().catch(() => null) as WarrantyClaimInput | null
-  if (!body) return NextResponse.json({ error: 'Invalid JSON payload' }, { status: 400 })
-  try {
-    const decision = evaluateWarrantyClaim(body)
-    return NextResponse.json({ decision, persistence: decision.acceptedForReview ? 'Insert warranty_claims as open and notify admin.' : 'Record rejected claim with reason.' })
-  } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : 'Invalid warranty claim' }, { status: 400 })
-  }
-}
+export const POST = privateRoute({ roles: ['customer'] }, async (request, session) =>
+  privateJson({ claim: await openWarrantyClaim(session, await readPrivateJsonBody(request, 8192)) })
+)

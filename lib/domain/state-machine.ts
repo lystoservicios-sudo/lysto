@@ -7,9 +7,9 @@ export const requestTransitions: TransitionMap<RequestStatus> = {
   diagnosis_completed: ['address_completed', 'cancelled', 'expired'],
   address_completed: ['schedule_completed', 'cancelled', 'expired'],
   schedule_completed: ['price_selected', 'cancelled', 'expired'],
-  price_selected: ['pending_payment', 'cancelled', 'expired'],
+  price_selected: ['pending_assignment', 'cancelled', 'expired'],
   pending_payment: ['payment_approved', 'cancelled', 'expired'],
-  payment_approved: ['matching', 'pending_assignment', 'cancelled'],
+  payment_approved: ['cancelled'],
   matching: ['pending_assignment', 'pending_professional_acceptance', 'cancelled'],
   pending_assignment: ['pending_professional_acceptance', 'assigned', 'cancelled'],
   pending_professional_acceptance: ['assigned', 'pending_assignment', 'cancelled'],
@@ -50,12 +50,12 @@ export const professionalTransitions: TransitionMap<ProfessionalStatus> = {
 export const paymentTransitions: TransitionMap<PaymentStatus> = {
   pending: ['authorized', 'approved', 'rejected', 'cancelled', 'failed'],
   authorized: ['captured', 'cancelled', 'failed'],
-  approved: ['refunded', 'partially_refunded'],
+  approved: ['refunded', 'partially_refunded', 'failed'],
   rejected: [],
   cancelled: [],
   refunded: [],
-  partially_refunded: ['refunded'],
-  captured: ['refunded', 'partially_refunded'],
+  partially_refunded: ['refunded', 'failed'],
+  captured: ['refunded', 'partially_refunded', 'failed'],
   failed: ['pending']
 }
 

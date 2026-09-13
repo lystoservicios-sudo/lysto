@@ -5,6 +5,22 @@ import type {
   CustomerUiTone,
   CustomerWarrantyViewModel
 } from './view-models'
+import { toCustomerJobSummary } from './view-models'
+import type { EquipmentDto,JobDto,ReadMetrics,ReadPage } from '@/lib/data-access/read-contracts'
+import { mapReadPage } from '@/lib/data-access/read-state'
+
+export function buildCustomerReadDashboard(source:{customerName:string;metrics:ReadMetrics;jobs:ReadPage<JobDto>;equipment:ReadPage<EquipmentDto>}) {
+  for(const key of ['activeJobs','equipment','requests','claims'] as const) {
+    const count=source.metrics[key]
+    if(count===undefined||!Number.isSafeInteger(count)||count<0) throw new Error('Customer dashboard requires authorized aggregate counts')
+  }
+  return {
+    customerName:source.customerName,
+    counts:{activeJobs:source.metrics.activeJobs,equipment:source.metrics.equipment!,requests:source.metrics.requests!,claims:source.metrics.claims!},
+    jobs:mapReadPage(source.jobs,toCustomerJobSummary),
+    equipment:source.equipment
+  }
+}
 
 export type CustomerDashboardMetric = {
   id: 'active-jobs' | 'equipment' | 'maintenance' | 'warranties'

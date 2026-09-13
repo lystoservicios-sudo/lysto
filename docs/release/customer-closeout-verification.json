@@ -1,0 +1,8 @@
+{
+  "task": "T21",
+  "status": "implemented_database_verification_pending",
+  "migration": "supabase/migrations/20260912150943_customer_confirmation_and_review_separation.sql",
+  "implemented": ["explicit-customer-confirmation", "idempotent-dispute", "optional-review-after-confirmation", "immutable-single-review", "idempotent-quality-cases", "completed-jobs-metric-separation", "recoverable-browser-commands"],
+  "localChecks": ["domain-171", "unit-customer-closeout", "typecheck", "lint"],
+  "pending": ["integration-customer-closeout-disposable-supabase", "pgtap-disposable-supabase", "staging-two-tab-browser-evidence", "D06 no-response policy"]
+}

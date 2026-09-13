@@ -1,12 +1,15 @@
 begin;
 
-select plan(55);
+\ir ../fixtures/session.sql.inc
+
+
+select plan(61);
 
 create function pg_temp.set_jwt(p_uid uuid, p_user_metadata jsonb default '{}'::jsonb)
 returns void
 language sql
 as $$
-  select set_config(
+  select pg_temp.fixture_set_config(
     'request.jwt.claims',
     jsonb_build_object(
       'sub', p_uid::text,
@@ -150,12 +153,12 @@ $$;
 select pg_temp.set_jwt('30000000-0000-0000-0000-000000000001');
 set local role authenticated;
 
-select is((select count(*) from public.professional_profiles), 1::bigint, 'operations admin can read professional records');
+select is((select count(*) from public.professional_profiles where id = '33000000-0000-0000-0000-000000000001'), 1::bigint, 'operations admin can read the fixture professional record');
 
-select results_eq(
+select throws_ok(
   $$update public.professional_profiles set status = 'under_review' where id = '33000000-0000-0000-0000-000000000001' returning id$$,
-  $$values ('33000000-0000-0000-0000-000000000001'::uuid)$$,
-  'operations admin can change professional approval state'
+  '42501', null,
+  'operations admin must use the versioned review workflow to change approval state'
 );
 
 select throws_ok(
@@ -165,10 +168,10 @@ select throws_ok(
   'operations admin cannot forge document reviewer identity'
 );
 
-select results_eq(
+select throws_ok(
   $$update public.professional_documents set status = 'approved' where id = '34000000-0000-0000-0000-000000000002' returning reviewed_by$$,
-  $$values ('31000000-0000-0000-0000-000000000001'::uuid)$$,
-  'document review derives reviewed_by from the authenticated actor'
+  '42501', null,
+  'document approval must use the attributed review RPC'
 );
 
 select ok(
@@ -202,8 +205,8 @@ select throws_ok(
     'Operations cannot refund',
     'operations-refund-attempt-0001'
   )$$,
-  'P0001',
-  'Finance permission required',
+  '42501',
+  'finance_required',
   'operations admin cannot initiate a refund request'
 );
 
@@ -230,9 +233,9 @@ select throws_ok(
   null,
   'pricing multiplier rejects positive infinity'
 );
-select results_eq(
+select throws_ok(
   $$update public.professional_profiles set status = 'suspended' where id = '33000000-0000-0000-0000-000000000001' returning id$$,
-  $$select id from public.professional_profiles where false$$,
+  '42501', null,
   'finance admin cannot approve or suspend professionals'
 );
 
@@ -298,7 +301,7 @@ select throws_ok(
   'finance cannot refund without a canonical provider payment id'
 );
 
-select set_config(
+select pg_temp.fixture_set_config(
   'test.refund_request',
   public.request_payment_refund(
     '39000000-0000-0000-0000-000000000001',
@@ -335,7 +338,7 @@ select ok(
   'repeating the same refund idempotency key returns the original request'
 );
 
-select set_config(
+select pg_temp.fixture_set_config(
   'test.refund_request_two',
   public.request_payment_refund(
     '39000000-0000-0000-0000-000000000001',
@@ -443,7 +446,7 @@ values
   ('39000000-0000-0000-0000-000000000004', 100, 'Provider fixture', 'worker-ineligible-provider', '31000000-0000-0000-0000-000000000002'),
   ('39000000-0000-0000-0000-000000000005', 100, 'Provider id fixture', 'worker-ineligible-provider-id', '31000000-0000-0000-0000-000000000002');
 
-select set_config('request.jwt.claims', '{"role":"service_role"}', true);
+select pg_temp.fixture_set_config('request.jwt.claims', '{"role":"service_role"}', true);
 set local role service_role;
 
 select throws_ok(
@@ -453,7 +456,7 @@ select throws_ok(
   'service_role cannot mutate the private refund queue directly'
 );
 
-select set_config(
+select pg_temp.fixture_set_config(
   'test.refund_claim_one',
   (
     select to_jsonb(claimed)::text
@@ -476,7 +479,7 @@ reset role;
 update public.payments
 set status = 'rejected'
 where id = '39000000-0000-0000-0000-000000000001';
-select set_config('request.jwt.claims', '{"role":"service_role"}', true);
+select pg_temp.fixture_set_config('request.jwt.claims', '{"role":"service_role"}', true);
 set local role service_role;
 
 select throws_ok(
@@ -494,7 +497,7 @@ reset role;
 update public.payments
 set status = 'approved'
 where id = '39000000-0000-0000-0000-000000000001';
-select set_config('request.jwt.claims', '{"role":"service_role"}', true);
+select pg_temp.fixture_set_config('request.jwt.claims', '{"role":"service_role"}', true);
 set local role service_role;
 
 select throws_ok(
@@ -508,7 +511,7 @@ select throws_ok(
   'worker cannot mark a refund succeeded without a provider reference'
 );
 
-select set_config(
+select pg_temp.fixture_set_config(
   'test.refund_finalized',
   public.finalize_payment_refund_request(
     (current_setting('test.refund_claim_one', true)::jsonb ->> 'request_id')::uuid,
@@ -524,7 +527,7 @@ select ok(
   'first provider-confirmed refund finalization reports a non-replay success'
 );
 
-select set_config(
+select pg_temp.fixture_set_config(
   'test.refund_finalize_replay',
   public.finalize_payment_refund_request(
     (current_setting('test.refund_claim_one', true)::jsonb ->> 'request_id')::uuid,
@@ -566,7 +569,7 @@ select throws_ok(
   'a finalized claim token cannot overwrite a terminal outcome'
 );
 
-select set_config(
+select pg_temp.fixture_set_config(
   'test.refund_claim_two',
   (
     select to_jsonb(claimed)::text
@@ -610,7 +613,7 @@ select throws_ok(
   'claim fencing rejects a different worker token'
 );
 
-select set_config(
+select pg_temp.fixture_set_config(
   'test.refund_ambiguous',
   public.fail_payment_refund_request(
     (current_setting('test.refund_claim_two', true)::jsonb ->> 'request_id')::uuid,
@@ -649,7 +652,7 @@ select ok(
   'ambiguous failure invalidates the worker token and keeps the refund amount reserved'
 );
 
-select set_config('request.jwt.claims', '{"role":"service_role"}', true);
+select pg_temp.fixture_set_config('request.jwt.claims', '{"role":"service_role"}', true);
 set local role service_role;
 
 select throws_ok(
@@ -663,7 +666,7 @@ select throws_ok(
   'ambiguous failure fences the previous worker token immediately'
 );
 
-select set_config(
+select pg_temp.fixture_set_config(
   'test.refund_claim_two_retry',
   (
     select to_jsonb(claimed)::text
@@ -683,7 +686,7 @@ select ok(
   'expired lease reclaim rotates the fencing token but preserves provider idempotency'
 );
 
-select set_config(
+select pg_temp.fixture_set_config(
   'test.refund_failed',
   public.fail_payment_refund_request(
     (current_setting('test.refund_claim_two_retry', true)::jsonb ->> 'request_id')::uuid,
@@ -777,10 +780,11 @@ select is(
   'quality admin cannot read professional identity and approval records'
 );
 
-select results_eq(
-  $$update public.complaints set status = 'in_review' where id = '3a000000-0000-0000-0000-000000000001' returning id$$,
-  $$values ('3a000000-0000-0000-0000-000000000001'::uuid)$$,
-  'quality admin can operate quality cases'
+select throws_ok(
+  $$update public.complaints set status = 'in_review' where id = '3a000000-0000-0000-0000-000000000001'$$,
+  '42501',
+  null,
+  'quality admin cannot bypass the audited support workflow with a raw update'
 );
 
 reset role;
@@ -794,21 +798,46 @@ select pg_temp.set_jwt('30000000-0000-0000-0000-000000000004');
 set local role authenticated;
 
 select lives_ok(
-  $$select public.set_admin_permissions(
+  $$select public.change_admin_permissions(
     '32000000-0000-0000-0000-000000000001',
-    array['operations']::public.admin_permission[]
+    (select permissions_version from public.admin_profiles where id='32000000-0000-0000-0000-000000000001'),
+    array['operations','quality']::public.admin_permission[],
+    'Responsable de operaciones y calidad'
   )$$,
   'owner can manage admin permissions through the audited RPC'
 );
 
 select throws_ok(
-  $$select public.set_admin_permissions(
+  $$select public.change_admin_permissions(
     '32000000-0000-0000-0000-000000000004',
-    array[]::public.admin_permission[]
+    (select permissions_version from public.admin_profiles where id='32000000-0000-0000-0000-000000000004'),
+    array[]::public.admin_permission[],
+    'Intento de retirar el último owner'
   )$$,
-  'P0001',
-  'Cannot remove the last owner permission',
+  '40001',
+  'Cannot remove the final usable owner',
   'serialized permission changes cannot remove the last owner'
+);
+
+select throws_ok(
+  $$select public.set_admin_permissions('32000000-0000-0000-0000-000000000001',array['owner']::public.admin_permission[])$$,
+  '42501', null, 'authenticated owner cannot bypass version and reason with legacy provisioning RPC'
+);
+select throws_ok($$select metadata from public.admin_audit_logs$$,
+  '42501', null, 'even owner cannot select unsanitized audit metadata directly');
+select ok(
+  exists(select 1 from jsonb_array_elements(public.list_admin_workflow('audit',100,null,null)->'items') item
+    where item->>'action'='admin.permissions.updated'
+      and item->'metadata'->'before'='["operations"]'::jsonb
+      and item->'metadata'->'after'='["operations","quality"]'::jsonb
+      and item->'metadata'->>'reason'='Responsable de operaciones y calidad'),
+  'owner reads complete before and after through the restricted audit projection'
+);
+select ok(not has_table_privilege('service_role','public.admin_audit_logs','UPDATE'), 'service role cannot rewrite audit history');
+select ok(not has_table_privilege('service_role','public.admin_audit_logs','DELETE'), 'service role cannot delete audit history');
+select throws_ok(
+  $$select public.list_admin_workflow('audit',101,null,null)$$,
+  '22023', null, 'direct audit RPC enforces bounded page size'
 );
 
 select is(

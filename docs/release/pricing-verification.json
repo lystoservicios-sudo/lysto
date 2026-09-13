@@ -1,0 +1,115 @@
+{
+  "task": "T14",
+  "status": "locally_verified_commercial_approval_pending",
+  "releaseReady": false,
+  "checkedAt": "2026-09-12T05:07:47.002Z",
+  "checks": {
+    "unit": {
+      "passed": 452,
+      "files": 58,
+      "report": "output/production-readiness/t14-unit-final.json"
+    },
+    "domain": {
+      "passed": 171,
+      "log": "output/production-readiness/t14-final-domain.log"
+    },
+    "tooling": {
+      "passed": 8,
+      "log": "output/production-readiness/t14-final-tooling.log"
+    },
+    "integration": {
+      "passed": 216,
+      "files": 14,
+      "zeroSkipped": true,
+      "report": "E:/Proyectos/GitHub/Lysto-production-readiness/output/integration/82ccbd9c-1205-45bf-8dcb-1f7b0983871a/result.json"
+    },
+    "database": {
+      "status": "passed",
+      "projectId": "lysto_production_check",
+      "baseline": "20260912034321",
+      "versions": [
+        "202608190001",
+        "202608190002",
+        "202608190003",
+        "202608190004",
+        "202608190005",
+        "202608190006",
+        "202608190007",
+        "20260910195050",
+        "20260910204604",
+        "20260910220000",
+        "20260911042254",
+        "20260911051612",
+        "20260911053515",
+        "20260911224417",
+        "20260911231948",
+        "20260911234506",
+        "20260912000828",
+        "20260912002838",
+        "20260912003701",
+        "20260912005741",
+        "20260912011452",
+        "20260912011853",
+        "20260912012604",
+        "20260912013847",
+        "20260912015711",
+        "20260912020601",
+        "20260912023256",
+        "20260912023858",
+        "20260912025001",
+        "20260912030114",
+        "20260912030508",
+        "20260912032500",
+        "20260912033500",
+        "20260912033529",
+        "20260912033923",
+        "20260912034105",
+        "20260912034321",
+        "20260912041634",
+        "20260912042522",
+        "20260912043758",
+        "20260912044218"
+      ],
+      "witnessPreserved": true,
+      "historicalQuotesPreserved": 2,
+      "schemaSha256": "4998e11ef12b16c9fad28315d418fc674757f3d8919b9753cc2a9187e91983e1",
+      "storagePoliciesMatch": true,
+      "typesMatch": true,
+      "checkedAt": "2026-09-12T04:54:48.534Z",
+      "tests": 511,
+      "files": 15
+    },
+    "static": {
+      "types": 0,
+      "lint": 0
+    },
+    "advisors": {
+      "warnings": 42,
+      "errors": 0,
+      "addedSinceBaseline": 0
+    },
+    "build": {
+      "commit": "1f7eb5c40e4bd88b21fe4c3c78a4d3eaf6488403",
+      "environment": "isolated-local-production-build",
+      "checkout": "E:/Proyectos/GitHub/Lysto-production-build-check",
+      "dependencies": "junction to verified frozen lock installation, including direct Sharp 0.35.4",
+      "status": "passed",
+      "startedAt": "2026-09-12T05:05:47.900Z",
+      "exitCode": 0,
+      "completedAt": "2026-09-12T05:06:53.607Z"
+    }
+  },
+  "review": {
+    "method": "Local review of service-bound session/grant locks, source attribution, policy and quote versions, immutable acceptance and photo snapshots, selected verified media, provider credential isolation, audit rollback and browser recovery; decimal boundary and Buenos Aires validity checks",
+    "independentFinalReview": false
+  },
+  "pending": [
+    "D05: actual signed financial reference cases and commercial approval"
+  ],
+  "externalDependencies": [
+    "D01/D02/D03/D05: actual labor, material, routing, provider cost, fee and professional-net policy",
+    "T36: actual environment acceptance"
+  ],
+  "originalIndexSha256": "85c6b16dcb04891642c46370bfd9c5342a21e79dea59eff11cc4fac915c84f67",
+  "codeCommit": "1f7eb5c40e4bd88b21fe4c3c78a4d3eaf6488403"
+}

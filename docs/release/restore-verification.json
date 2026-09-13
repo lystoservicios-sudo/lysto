@@ -1,0 +1,7 @@
+{
+  "task": "T32",
+  "status": "implemented_restore_drill_pending",
+  "implemented": ["non-production-target-guard", "migration-and-integrity-verifier", "storage-manifest-check", "synthetic-auth-check", "encryption-canary-check", "rpo-rto-evaluation", "replay-safe-reactivation-runbook", "secret-rotation-runbook"],
+  "localChecks": ["tooling-restore-guard", "typecheck", "lint"],
+  "pending": ["D04 restore target", "D09 approved RPO/RTO and retention", "full DB/Auth/Storage/config restore drill", "measured artifact and accountable sign-off"]
+}

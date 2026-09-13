@@ -1,26 +1,90 @@
-import { PublicShell } from '@/components/layout/page-shell'
+import type { Metadata } from 'next'
+import { notFound } from 'next/navigation'
 import { Card } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { ButtonLink } from '@/components/ui/button'
+import { lookupPublicReceipt } from '@/lib/receipts/public-receipt-service'
 
-export default function PublicReceiptPage() {
+export const dynamic = 'force-dynamic'
+export const metadata: Metadata = {
+  title: 'Comprobante de servicio | Lysto',
+  robots: { index: false, follow: false }
+}
+
+const dates = new Intl.DateTimeFormat('es-AR', { dateStyle: 'long', timeZone: 'UTC' })
+const status = {
+  pending_confirmation: 'Pendiente de conformidad del cliente',
+  confirmed: 'Servicio confirmado por el cliente',
+  disputed: 'Servicio con desacuerdo en revisión'
+} as const
+const outcomes: Record<string, string> = {
+  resolved: 'Resuelto',
+  partially_resolved: 'Parcialmente resuelto',
+  pending_part: 'Pendiente de repuesto',
+  requires_second_visit: 'Requiere segunda visita',
+  not_resolved: 'No resuelto'
+}
+export default async function PublicReceiptPage({
+  params
+}: {
+  params: Promise<{ token: string }>
+}) {
+  const { token } = await params,
+    receipt = await lookupPublicReceipt(token)
+  if (!receipt) notFound()
   return (
-    <PublicShell>
-      <main className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
-        <Card className="p-6 sm:p-8">
-          <Badge tone="green">Comprobante Lysto</Badge>
-          <h1 className="mt-4 text-3xl font-black text-slate-950">Servicio realizado</h1>
-          <p className="mt-2 text-sm leading-6 text-slate-600">Comprobante público con token seguro. No expone DNI, CUIL, teléfono privado ni dirección completa sensible.</p>
-          <div className="mt-6 grid gap-3 sm:grid-cols-2">
-            <div className="rounded-2xl bg-slate-50 p-4"><p className="text-xs font-black uppercase text-slate-400">Servicio</p><p className="mt-1 font-black">Aire acondicionado · No enfría</p></div>
-            <div className="rounded-2xl bg-slate-50 p-4"><p className="text-xs font-black uppercase text-slate-400">Fecha</p><p className="mt-1 font-black">19/08/2026</p></div>
-            <div className="rounded-2xl bg-slate-50 p-4"><p className="text-xs font-black uppercase text-slate-400">Profesional</p><p className="mt-1 font-black">Martín Gómez · Verificado</p></div>
-            <div className="rounded-2xl bg-slate-50 p-4"><p className="text-xs font-black uppercase text-slate-400">Garantía</p><p className="mt-1 font-black">30 días según cierre técnico</p></div>
+    <main className="mx-auto min-h-screen max-w-2xl bg-slate-50 px-4 py-10">
+      <Card className="space-y-6 p-6 sm:p-8">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.12em] text-blue-700">
+            Comprobante de servicio Lysto
+          </p>
+          <h1 className="mt-2 text-3xl font-black text-slate-950">{receipt.service_name}</h1>
+          <p className="mt-2 text-sm text-slate-600">
+            Emitido el {dates.format(new Date(receipt.issued_at))}
+          </p>
+        </div>
+        <dl className="grid gap-4 border-y border-slate-200 py-5">
+          <div>
+            <dt className="text-xs font-bold uppercase text-slate-500">Profesional</dt>
+            <dd className="mt-1 font-semibold">{receipt.professional_name}</dd>
           </div>
-          <div className="mt-6 rounded-3xl bg-blue-50 p-5 text-blue-950"><h2 className="font-black">Trabajo realizado</h2><p className="mt-2 text-sm leading-6">Diagnóstico presencial, revisión de presión, limpieza básica de filtros y recomendación de mantenimiento profundo en 6 meses.</p></div>
-          <div className="mt-6"><ButtonLink href="/">Volver a Lysto</ButtonLink></div>
-        </Card>
-      </main>
-    </PublicShell>
+          <div>
+            <dt className="text-xs font-bold uppercase text-slate-500">Trabajo realizado</dt>
+            <dd className="mt-1 whitespace-pre-line">{receipt.work_done}</dd>
+          </div>
+          <div>
+            <dt className="text-xs font-bold uppercase text-slate-500">Resultado técnico</dt>
+            <dd className="mt-1 font-semibold">
+              {outcomes[receipt.final_state] ?? receipt.final_state}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-xs font-bold uppercase text-slate-500">Conformidad</dt>
+            <dd className="mt-1 font-semibold">{status[receipt.confirmation_status]}</dd>
+          </div>
+          <div>
+            <dt className="text-xs font-bold uppercase text-slate-500">Garantía informada</dt>
+            <dd className="mt-1">
+              {receipt.warranty_until
+                ? `Hasta el ${dates.format(new Date(`${receipt.warranty_until}T00:00:00Z`))}`
+                : 'Sin garantía automática registrada'}
+            </dd>
+          </div>
+          {receipt.next_maintenance_date ? (
+            <div>
+              <dt className="text-xs font-bold uppercase text-slate-500">
+                Próximo mantenimiento sugerido
+              </dt>
+              <dd className="mt-1">
+                {dates.format(new Date(`${receipt.next_maintenance_date}T00:00:00Z`))}
+              </dd>
+            </div>
+          ) : null}
+        </dl>
+        <p className="text-sm leading-6 text-slate-600">
+          Este documento acredita el registro del servicio en Lysto. No reemplaza la factura o
+          comprobante fiscal que corresponda emitir.
+        </p>
+      </Card>
+    </main>
   )
 }

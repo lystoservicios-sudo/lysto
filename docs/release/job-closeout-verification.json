@@ -1,0 +1,8 @@
+{
+  "task": "T20",
+  "status": "implemented_database_verification_pending",
+  "migration": "supabase/migrations/20260912145546_job_closeout_idempotency_and_evidence.sql",
+  "implemented": ["session-derived-professional", "verified-after-evidence", "atomic-report-history-receipt", "immutable-idempotent-closeout", "pending-customer-confirmation", "persistent-unresolved-followup", "browser-timeout-recovery"],
+  "localChecks": ["domain-171", "unit-job-closeout", "typecheck", "lint"],
+  "pending": ["integration-job-closeout-disposable-supabase", "pgtap-disposable-supabase", "browser-staging-timeout-reload"]
+}

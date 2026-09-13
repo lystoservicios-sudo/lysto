@@ -1,12 +1,15 @@
 begin;
 
+\ir ../fixtures/session.sql.inc
+
+
 select plan(29);
 
 create function pg_temp.set_jwt(p_uid uuid, p_app_role text, p_user_metadata jsonb default '{}'::jsonb)
 returns void
 language sql
 as $$
-  select set_config(
+  select pg_temp.fixture_set_config(
     'request.jwt.claims',
     jsonb_build_object(
       'sub', p_uid::text,
@@ -50,8 +53,6 @@ exception
 end;
 $$;
 
--- Keep deterministic legacy fixture IDs; signup itself has a dedicated regression suite.
-alter table auth.users disable trigger lysto_signup_customer_profile;
 insert into auth.users (
   instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
   raw_app_meta_data, raw_user_meta_data, created_at, updated_at
@@ -59,8 +60,6 @@ insert into auth.users (
 values
   ('00000000-0000-0000-0000-000000000000', '10000000-0000-0000-0000-000000000001', 'authenticated', 'authenticated', 'customer-a@lysto.test', '', now(), '{"app_role":"customer"}', '{}', now(), now()),
   ('00000000-0000-0000-0000-000000000000', '10000000-0000-0000-0000-000000000002', 'authenticated', 'authenticated', 'customer-b@lysto.test', '', now(), '{"app_role":"customer"}', '{}', now(), now());
-
-alter table auth.users enable trigger lysto_signup_customer_profile;
 
 insert into public.profiles (id, auth_user_id, role, first_name, last_name, email)
 values
@@ -113,7 +112,7 @@ values
 
 insert into public.jobs (id, request_id, customer_id, status)
 values
-  ('17000000-0000-0000-0000-000000000001', '15000000-0000-0000-0000-000000000001', '12000000-0000-0000-0000-000000000001', 'pending_assignment'),
+  ('17000000-0000-0000-0000-000000000001', '15000000-0000-0000-0000-000000000001', '12000000-0000-0000-0000-000000000001', 'completed_pending_customer_confirmation'),
   ('17000000-0000-0000-0000-000000000002', '15000000-0000-0000-0000-000000000002', '12000000-0000-0000-0000-000000000002', 'pending_assignment'),
   ('17000000-0000-0000-0000-000000000003', '15000000-0000-0000-0000-000000000003', '12000000-0000-0000-0000-000000000002', 'pending_assignment'),
   ('17000000-0000-0000-0000-000000000004', '15000000-0000-0000-0000-000000000004', '12000000-0000-0000-0000-000000000002', 'in_progress'),
@@ -133,12 +132,12 @@ values
   ('19000000-0000-0000-0000-000000000002', '12000000-0000-0000-0000-000000000002', '13000000-0000-0000-0000-000000000002', '14000000-0000-0000-0000-000000000001', 'Equipo B');
 
 insert into public.job_final_reports (
-  id, job_id, equipment_id, real_diagnosis, work_done, final_state, warranty_days
+  id, job_id, equipment_id, real_diagnosis, work_done, final_state, warranty_days, after_photo_ids
 )
 values
-  ('1c000000-0000-0000-0000-000000000001', '17000000-0000-0000-0000-000000000001', '19000000-0000-0000-0000-000000000001', 'Diagnóstico válido', 'Trabajo realizado', 'resolved', 30),
-  ('1c000000-0000-0000-0000-000000000002', '17000000-0000-0000-0000-000000000002', '19000000-0000-0000-0000-000000000002', 'Diagnóstico expirado', 'Trabajo realizado', 'resolved', 15),
-  ('1c000000-0000-0000-0000-000000000003', '17000000-0000-0000-0000-000000000003', '19000000-0000-0000-0000-000000000002', 'Diagnóstico revocado', 'Trabajo realizado', 'resolved', 15);
+  ('1c000000-0000-0000-0000-000000000001', '17000000-0000-0000-0000-000000000001', '19000000-0000-0000-0000-000000000001', 'Diagnóstico válido', 'Trabajo realizado', 'resolved', 30, array['1d000000-0000-0000-0000-000000000001']::uuid[]),
+  ('1c000000-0000-0000-0000-000000000002', '17000000-0000-0000-0000-000000000002', '19000000-0000-0000-0000-000000000002', 'Diagnóstico expirado', 'Trabajo realizado', 'resolved', 15, array['1d000000-0000-0000-0000-000000000002']::uuid[]),
+  ('1c000000-0000-0000-0000-000000000003', '17000000-0000-0000-0000-000000000003', '19000000-0000-0000-0000-000000000002', 'Diagnóstico revocado', 'Trabajo realizado', 'resolved', 15, array['1d000000-0000-0000-0000-000000000003']::uuid[]);
 
 insert into public.receipts (id, job_id, final_report_id, public_token, expires_at)
 values
@@ -207,9 +206,9 @@ select throws_ok(
     '14000000-0000-0000-0000-000000000001',
     'Equipo con dirección ajena'
   )$$,
-  '23503',
+  '42501',
   null,
-  'customer equipment cannot reference another customer address'
+  'direct equipment inserts cannot bypass the ownership-checked workflow'
 );
 
 select throws_ok(
@@ -230,7 +229,7 @@ select throws_ok(
 -- now live in service_quotes.test.sql and pricing-routes.vitest.test.ts.
 select ok(not has_function_privilege('authenticated', 'public.create_service_request_from_app(uuid,uuid,text,text,text,date,text,public.urgency_level,jsonb,numeric,numeric,numeric)', 'execute'), 'customer cannot bypass immutable quotes through the legacy public RPC');
 select ok(not has_function_privilege('authenticated', 'private.create_service_request_from_app(uuid,uuid,text,text,text,date,text,public.urgency_level,jsonb,numeric,numeric,numeric)', 'execute'), 'customer cannot bypass immutable quotes through the legacy private RPC');
-select ok(has_function_privilege('authenticated', 'public.submit_service_quote(uuid)', 'execute'), 'customer can use the authenticated quote acceptance entrypoint');
+select ok(has_function_privilege('authenticated', 'public.submit_service_quote_v2(uuid,integer)', 'execute'), 'customer can use the authenticated versioned quote acceptance entrypoint');
 select throws_ok(
   $$select public.apply_mercadopago_payment_webhook('customer-forged-event', 'missing-payment', 'approved', '{}'::jsonb)$$,
   '42501',
@@ -245,8 +244,8 @@ select throws_ok(
     'Intento de devolución cliente',
     'customer-refund-attempt-0001'
   )$$,
-  'P0001',
-  'Finance permission required',
+  '42501',
+  'finance_required',
   'customer cannot initiate a refund request'
 );
 
@@ -261,25 +260,27 @@ select throws_ok(
     'none',
     null,
     0,
-    null
+    null,
+    array['1d000000-0000-0000-0000-000000000004']::uuid[],
+    '1f000000-0000-0000-0000-000000000004'
   )$$,
-  'P0001',
-  'Only an approved assigned professional can close a job',
+  '42501',
+  'professional_required',
   'customer cannot close a job through the professional RPC'
 );
 
 select throws_ok(
   $$select public.submit_customer_review_transaction(
     '17000000-0000-0000-0000-000000000006',
-    '12000000-0000-0000-0000-000000000002',
     5,
     5,
     true,
     true,
-    'Intento ajeno'
+    'Intento ajeno',
+    '1f000000-0000-0000-0000-000000000006'
   )$$,
-  'P0001',
-  'Only the owning customer can review this job',
+  'P0002',
+  'job_not_found',
   'customer cannot review another customer job'
 );
 
@@ -291,7 +292,7 @@ select throws_ok(
 );
 
 reset role;
-select set_config('request.jwt.claims', '{}'::text, true);
+select pg_temp.fixture_set_config('request.jwt.claims', '{}'::text, true);
 set local role anon;
 
 select throws_ok(
@@ -326,7 +327,9 @@ select throws_ok(
     'none',
     null,
     0,
-    null
+    null,
+    array['1d000000-0000-0000-0000-000000000005']::uuid[],
+    '1f000000-0000-0000-0000-000000000005'
   )$$,
   '42501',
   null,
@@ -342,11 +345,10 @@ select is(pg_temp.receipt_count('1e000000-0000-0000-0000-000000000002'), 0::bigi
 select is(pg_temp.receipt_count('1e000000-0000-0000-0000-000000000003'), 0::bigint, 'server lookup returns no row for a revoked token');
 select is(
   pg_temp.receipt_keys('1e000000-0000-0000-0000-000000000001'),
-  array['issued_at','next_maintenance_date','professional_name','service_name','warranty_days','work_done']::text[],
+  array['confirmation_status','final_state','issued_at','next_maintenance_date','professional_name','service_name','warranty_until','work_done']::text[],
   'server lookup exposes only the minimal public receipt projection'
 );
 
 reset role;
 select * from finish();
 rollback;
-

@@ -2,9 +2,6 @@
 node_modules/
 .next/
 .next-verify/
-.next-site-dev/
-.next-site-build/
-.next-*/
 out/
 dist/
 coverage/
@@ -20,9 +17,6 @@ coverage/
 # Test artifacts
 playwright-report/
 test-results/
-.playwright-cli/
-output/
-.codex-remote-attachments/
 
 # Local tooling and OS files
 .DS_Store
@@ -33,3 +27,10 @@ output/
 .supabase/
 supabase/.temp/
 supabase/.branches/
+
+# Isolated release verification and local attachments
+.next-*/
+output/
+.codex-remote-attachments/
+.playwright-cli/
+.worktrees/

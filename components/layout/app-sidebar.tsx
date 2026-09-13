@@ -33,6 +33,7 @@ import {
 } from './app-navigation-config'
 import { useAppShell } from './app-shell-provider'
 import { cn } from '@/lib/utils/cn'
+import { canAccessAdminModule } from '@/components/admin/admin-model'
 
 const navigationIcons: Record<AppNavigationIcon, LucideIcon> = {
   home: Home,
@@ -72,12 +73,16 @@ function Brand({ compact = false }: { compact?: boolean }) {
   )
 }
 
-function NavigationItems({ role, compact = false, onNavigate }: {
+function NavigationItems({ role, compact = false, onNavigate, adminPermissions }: {
   role: AppRole
   compact?: boolean
   onNavigate?: () => void
+  adminPermissions: readonly string[]
 }) {
   const pathname = usePathname()
+  const items = appNavigation[role].filter(
+    (item) => role !== 'Admin' || canAccessAdminModule(item.href.replace('/admin/', ''), adminPermissions)
+  )
 
   return (
     <nav aria-label={`Secciones de ${appRoleLabels[role]}`} className="min-h-0 flex-1 overflow-y-auto px-2 py-3">
@@ -85,7 +90,7 @@ function NavigationItems({ role, compact = false, onNavigate }: {
         Navegación
       </p>
       <ul className="space-y-1">
-        {appNavigation[role].map(({ label, href, icon }) => {
+        {items.map(({ label, href, icon }) => {
           const Icon = navigationIcons[icon]
           const isActive = isNavigationItemActive(pathname, href)
 
@@ -134,7 +139,7 @@ function SidebarFooter({ compact = false }: { compact?: boolean }) {
   )
 }
 
-function DesktopSidebar({ role }: { role: AppRole }) {
+function DesktopSidebar({ role, adminPermissions }: { role: AppRole; adminPermissions: readonly string[] }) {
   const { desktopOpen } = useAppShell()
 
   return (
@@ -150,13 +155,13 @@ function DesktopSidebar({ role }: { role: AppRole }) {
       <div className={cn('flex h-16 shrink-0 items-center border-b border-slate-200/80', desktopOpen ? 'px-4' : 'justify-center px-2')}>
         <Brand compact={!desktopOpen} />
       </div>
-      <NavigationItems role={role} compact={!desktopOpen} />
+      <NavigationItems role={role} compact={!desktopOpen} adminPermissions={adminPermissions} />
       <SidebarFooter compact={!desktopOpen} />
     </aside>
   )
 }
 
-function MobileSidebar({ role }: { role: AppRole }) {
+function MobileSidebar({ role, adminPermissions }: { role: AppRole; adminPermissions: readonly string[] }) {
   const { mobileOpen, setMobileOpen, triggerRef } = useAppShell()
   const closeRef = useRef<HTMLButtonElement>(null)
   const dialogRef = useRef<HTMLElement>(null)
@@ -236,7 +241,7 @@ function MobileSidebar({ role }: { role: AppRole }) {
           <p className="text-sm font-bold text-slate-950">{appRoleLabels[role]}</p>
           <p className="mt-0.5 text-xs leading-5 text-slate-500">Accesos temporales para validar la estructura.</p>
         </div>
-        <NavigationItems role={role} onNavigate={() => setMobileOpen(false)} />
+        <NavigationItems role={role} onNavigate={() => setMobileOpen(false)} adminPermissions={adminPermissions} />
         <SidebarFooter />
       </aside>
     </div>,
@@ -244,15 +249,21 @@ function MobileSidebar({ role }: { role: AppRole }) {
   )
 }
 
-export function AppSidebar({ role }: { role: AppRole }) {
+export function AppSidebar({
+  role,
+  adminPermissions = ['owner']
+}: {
+  role: AppRole
+  adminPermissions?: readonly string[]
+}) {
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => setMounted(true), [])
 
   return (
     <>
-      <DesktopSidebar role={role} />
-      {mounted ? <MobileSidebar role={role} /> : null}
+      <DesktopSidebar role={role} adminPermissions={adminPermissions} />
+      {mounted ? <MobileSidebar role={role} adminPermissions={adminPermissions} /> : null}
     </>
   )
 }

@@ -1,5 +1,5 @@
 import { test, expect } from '../_lib/test.ts'
-import { runManagedServiceSimulation } from '../../lib/use-cases/full-system-simulation.ts'
+import { runManagedServiceSimulation } from '../simulations/full-system-simulation.ts'
 import type { ProfessionalCandidate } from '../../lib/matching/score-professionals.ts'
 
 const request = {
@@ -50,7 +50,7 @@ const finalReport = {
   warrantyDays: 30
 }
 
-test('simulación completa cliente-pago-admin-profesional-cierre-review termina completada', () => {
+test('simulación completa cliente-asignación-profesional-pago-cierre-conformidad-review termina completada', () => {
   const result = runManagedServiceSimulation({
     adminProfileId: 'admin-100',
     request,

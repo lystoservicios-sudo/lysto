@@ -1,0 +1,18 @@
+begin;
+create extension if not exists pgtap with schema extensions;
+set search_path=public,extensions;
+select plan(12);
+select has_table('public','maintenance_plans','Maintenance plans are durable');
+select has_table('private','maintenance_reminders','Reminder delivery state is private');
+select has_table('public','customer_contact_preferences','Contact preferences are explicit');
+select has_column('public','maintenance_plans','source_service_record_id','Plan traces to service history');
+select has_column('public','maintenance_plans','requested_service_request_id','Plan traces to initiated request');
+select col_is_unique('public','maintenance_plans','source_service_record_id','A service record creates at most one plan');
+select ok((select relrowsecurity and relforcerowsecurity from pg_class where oid=to_regclass('private.maintenance_reminders')),'Reminder delivery forces RLS');
+select ok(not has_table_privilege('authenticated','private.maintenance_reminders','select'),'Customers cannot inspect delivery internals');
+select ok(has_function_privilege('authenticated','public.list_customer_maintenance()','execute'),'Customer can list guarded history');
+select ok(has_function_privilege('authenticated','public.manage_maintenance_plan(uuid,text,integer,date,uuid)','execute'),'Customer can manage a guarded plan');
+select ok(not has_function_privilege('anon','public.manage_maintenance_plan(uuid,text,integer,date,uuid)','execute'),'Anonymous plan mutation is blocked');
+select ok(not has_table_privilege('authenticated','public.maintenance_plans','update'),'Direct plan changes are blocked');
+select * from finish();
+rollback;

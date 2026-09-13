@@ -1,3 +1,11 @@
-import { AuditPage } from '@/components/admin/admin-quality'
+import { ConnectedAdminAudit } from '@/components/admin/connected-admin-audit'
+import { requirePageSession } from '@/lib/auth/session'
+import { listAdminWorkflow } from '@/lib/admin/permissions-service'
 
-export default function Page() { return <AuditPage /> }
+export default async function Page() {
+  return (
+    <ConnectedAdminAudit
+      initial={await listAdminWorkflow(await requirePageSession('admin'), 'audit')}
+    />
+  )
+}

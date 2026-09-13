@@ -1,0 +1,7 @@
+{
+  "task": "T30",
+  "status": "implemented_database_verification_pending",
+  "implemented": ["structured-redacted-logs", "correlation-ids", "shared-rate-limits", "runtime-switches", "security-headers", "live-ready-health", "alert-runbook"],
+  "localChecks": ["unit", "typecheck", "lint"],
+  "pending": ["integration-disposable-supabase", "pgtap-disposable-supabase", "staging-alert-routing"]
+}
