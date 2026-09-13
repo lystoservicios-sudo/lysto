@@ -201,8 +201,8 @@ select throws_ok(
     'Operations cannot refund',
     'operations-refund-attempt-0001'
   )$$,
-  'P0001',
-  'Finance permission required',
+  '42501',
+  'finance_required',
   'operations admin cannot initiate a refund request'
 );
 

@@ -174,8 +174,8 @@ select throws_ok(
     'Intento de devolución profesional',
     'professional-refund-attempt-0001'
   )$$,
-  'P0001',
-  'Finance permission required',
+  '42501',
+  'finance_required',
   'professional cannot initiate a refund request'
 );
 

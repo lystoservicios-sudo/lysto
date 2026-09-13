@@ -244,8 +244,8 @@ select throws_ok(
     'Intento de devolución cliente',
     'customer-refund-attempt-0001'
   )$$,
-  'P0001',
-  'Finance permission required',
+  '42501',
+  'finance_required',
   'customer cannot initiate a refund request'
 );
 
