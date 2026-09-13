@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import {
+  emailAllowance,
   listNotificationDeliveries,
   retryNotificationDelivery
 } from '../../lib/notifications/operations'
@@ -33,12 +34,27 @@ describe('notification operations service', () => {
     const current = session({
       items: [item],
       total: 1,
-      counts: { queued: 1, leased: 0, processed: 0, deadLetter: 0, suppressed: 0, manual: 0 }
+      counts: { queued: 1, leased: 0, processed: 0, deadLetter: 0, suppressed: 0, manual: 0 },
+      emailUsage: { daily: 69, monthly: 2399 }
     })
     const result = await listNotificationDeliveries(actualSession(current), { pageSize: 20 })
     expect(result.items).toEqual([item])
     expect(result.total).toBe(1)
+    expect(result.emailAllowance).toEqual({
+      daily: { accepted: 69, limit: 100, state: 'normal' },
+      monthly: { accepted: 2399, limit: 3000, state: 'normal' }
+    })
     expect(JSON.stringify(result)).not.toContain('recipient')
+  })
+  it('reserves capacity before the provider free-plan limits', () => {
+    expect(emailAllowance({ daily: 70, monthly: 2400 })).toMatchObject({
+      daily: { state: 'warning' },
+      monthly: { state: 'warning' }
+    })
+    expect(emailAllowance({ daily: 90, monthly: 2800 })).toMatchObject({
+      daily: { state: 'critical' },
+      monthly: { state: 'critical' }
+    })
   })
   it('requires operations MFA before database access', async () => {
     for (const current of [
@@ -77,7 +93,8 @@ describe('notification operations service', () => {
           session({
             items: [{ ...item, recipientEmail: 'secret@example.test' }],
             total: 1,
-            counts: {}
+            counts: {},
+            emailUsage: { daily: 0, monthly: 0 }
           })
         )
       )

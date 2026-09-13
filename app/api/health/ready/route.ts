@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { parseServerEnv } from '@/lib/config/env'
 import type { Database } from '@/lib/supabase/database.types'
 import { runtimeSwitches } from '@/lib/release/runtime-switches'
+import { emailAllowance } from '@/lib/notifications/operations'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -12,7 +13,9 @@ const probeSchema = z.object({
   databaseTime: z.string(),
   outboxOldestPendingAt: z.string().nullable(),
   refundOldestPendingAt: z.string().nullable(),
-  paymentReviewCount: z.number().int().nonnegative()
+  paymentReviewCount: z.number().int().nonnegative(),
+  emailAcceptedToday: z.number().int().nonnegative(),
+  emailAcceptedThisMonth: z.number().int().nonnegative()
 })
 
 function ageSeconds(value: string | null) {
@@ -35,6 +38,10 @@ export async function GET() {
     ])
     if (result.error) throw new Error('probe_failed')
     const probe = probeSchema.parse(result.data)
+    const allowance = emailAllowance({
+      daily: probe.emailAcceptedToday,
+      monthly: probe.emailAcceptedThisMonth
+    })
     return NextResponse.json(
       {
         status: 'ready',
@@ -45,7 +52,12 @@ export async function GET() {
           outboxOldestPendingSeconds: ageSeconds(probe.outboxOldestPendingAt),
           refundOldestPendingSeconds: ageSeconds(probe.refundOldestPendingAt),
           paymentsInReview: probe.paymentReviewCount
-        }
+        },
+        communications: { emailAllowance: allowance },
+        warnings:
+          allowance.daily.state === 'normal' && allowance.monthly.state === 'normal'
+            ? []
+            : ['email_allowance_pressure']
       },
       { headers: { 'Cache-Control': 'no-store' } }
     )

@@ -113,6 +113,32 @@ export function ConnectedNotificationDeliveries({
           ))}
         </dl>
       </Panel>
+      <Panel
+        title="Capacidad de correo"
+        description="Mensajes aceptados por el proveedor en UTC"
+      >
+        <dl className="adm-facts">
+          <div>
+            <dt>Emails aceptados hoy</dt>
+            <dd>
+              {page.emailAllowance.daily.accepted} de {page.emailAllowance.daily.limit}
+            </dd>
+          </div>
+          <div>
+            <dt>Emails aceptados este mes</dt>
+            <dd>
+              {page.emailAllowance.monthly.accepted} de {page.emailAllowance.monthly.limit}
+            </dd>
+          </div>
+        </dl>
+        {page.emailAllowance.daily.state !== 'normal' ||
+        page.emailAllowance.monthly.state !== 'normal' ? (
+          <p className="adm-notice mt-4" role="status">
+            Pausá primero las solicitudes de calificación si la capacidad se acerca al límite. Las
+            confirmaciones de visita y la recuperación de cuentas tienen prioridad.
+          </p>
+        ) : null}
+      </Panel>
       <Panel title="Eventos recientes">
         {!page.items.length && <p>No hay eventos de entrega.</p>}
         <ul>

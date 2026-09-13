@@ -19,13 +19,20 @@ const page = {
   items: [delivery],
   total: 1,
   nextCursor: null,
-  counts: { queued: 0, leased: 0, processed: 0, deadLetter: 1, suppressed: 0, manual: 0 }
+  counts: { queued: 0, leased: 0, processed: 0, deadLetter: 1, suppressed: 0, manual: 0 },
+  emailAllowance: {
+    daily: { accepted: 90, limit: 100 as const, state: 'critical' as const },
+    monthly: { accepted: 2800, limit: 3000 as const, state: 'critical' as const }
+  }
 }
 afterEach(() => vi.unstubAllGlobals())
 it('shows operational state without recipient, payload or false inbox-delivery claims', () => {
   render(<ConnectedNotificationDeliveries initial={page} />)
   expect(screen.getByText('Requiere intervención')).toBeTruthy()
   expect(screen.getByText(/proveedor no confirma/i)).toBeTruthy()
+  expect(screen.getByText('90 de 100')).toBeTruthy()
+  expect(screen.getByText('2800 de 3000')).toBeTruthy()
+  expect(screen.getByText(/pausá primero las solicitudes de calificación/i)).toBeTruthy()
   expect(document.body.textContent).not.toContain('recipient')
 })
 it('requires an operator reason and sends the event version when retrying', async () => {

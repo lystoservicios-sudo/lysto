@@ -33,6 +33,25 @@ const countsSchema = z
     manual: z.number().int().nonnegative()
   })
   .strict()
+const emailUsageSchema = z
+  .object({
+    daily: z.number().int().nonnegative(),
+    monthly: z.number().int().nonnegative()
+  })
+  .strict()
+export type EmailAllowanceState = 'normal' | 'warning' | 'critical'
+export function emailAllowance(usage: z.infer<typeof emailUsageSchema>) {
+  const state = (value: number, warning: number, critical: number): EmailAllowanceState =>
+    value >= critical ? 'critical' : value >= warning ? 'warning' : 'normal'
+  return {
+    daily: { accepted: usage.daily, limit: 100 as const, state: state(usage.daily, 70, 90) },
+    monthly: {
+      accepted: usage.monthly,
+      limit: 3000 as const,
+      state: state(usage.monthly, 2400, 2800)
+    }
+  }
+}
 const retrySchema = z
   .object({
     eventId: z.string().uuid(),
@@ -45,6 +64,7 @@ export type NotificationDeliveryPage = {
   items: NotificationDelivery[]
   total: number
   counts: z.infer<typeof countsSchema>
+  emailAllowance: ReturnType<typeof emailAllowance>
   nextCursor: string | null
 }
 
@@ -85,7 +105,8 @@ export async function listNotificationDeliveries(
     .object({
       items: z.array(itemSchema).max(101),
       total: z.number().int().nonnegative(),
-      counts: countsSchema
+      counts: countsSchema,
+      emailUsage: emailUsageSchema
     })
     .strict()
     .safeParse(result.data)
@@ -93,8 +114,10 @@ export async function listNotificationDeliveries(
   const items = parsed.data.items.slice(0, page.pageSize),
     last = items.at(-1)
   return {
-    ...parsed.data,
     items,
+    total: parsed.data.total,
+    counts: parsed.data.counts,
+    emailAllowance: emailAllowance(parsed.data.emailUsage),
     nextCursor:
       parsed.data.items.length > page.pageSize && last
         ? encodeCursor({ id: last.id, createdAt: last.createdAt }, scope)

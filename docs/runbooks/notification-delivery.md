@@ -42,6 +42,20 @@ Estados atendibles:
 
 Alertar si hay un dead-letter nuevo, si el evento más antiguo en cola supera cinco minutos, si un lease supera su vencimiento o si no hay una ejecución exitosa del scheduler durante cinco minutos. T30 conecta estas señales a observabilidad.
 
+## Capacidad de email y prioridad
+
+La consola y `/api/health/ready` cuentan solamente emails con `provider_accepted`, usando día y mes UTC. No cuentan mensajes internos, eventos suprimidos, intentos fallidos ni filas en cola. Los conteos no incluyen destinatario, asunto, contenido, domicilio ni identificador del proveedor.
+
+Mientras Lysto use Resend Free, los límites operativos son 100 emails por día y 3.000 por mes. Se reserva margen antes del límite:
+
+- Normal: menos de 70 diarios y menos de 2.400 mensuales.
+- Advertencia: desde 70 diarios o 2.400 mensuales.
+- Crítico: desde 90 diarios o 2.800 mensuales.
+
+Una advertencia de capacidad no declara caída de la base ni cambia el estado general de readiness. Operaciones debe revisar la tendencia y el backlog. Si se acerca al límite, pausar primero los recordatorios opcionales `review.requested`; conservar `visit.confirmed` y los correos de acceso y recuperación. Si el consumo normal supera repetidamente los umbrales, actualizar el plan de Resend antes de ampliar volumen de clientes.
+
+No eliminar eventos ni snapshots para recuperar cupo. Las confirmaciones antiguas y las reseñas ya realizadas se suprimen automáticamente cuando el worker revalida el estado actual. Ante presión sostenida, actualizar el plan de Resend; apagar todo el worker también detendría confirmaciones prioritarias y sólo corresponde durante un incidente del transporte.
+
 ## Incidentes y recuperación
 
 1. Pausar `OUTBOX_WORKER_ENABLED` manteniendo la tabla intacta.
