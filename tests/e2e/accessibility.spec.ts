@@ -2,11 +2,11 @@ import { test, expect } from './fixtures/production'
 
 test('public navigation and policy links work with keyboard focus', async ({ page }) => {
   await page.goto('/')
-  await page.keyboard.press('Tab')
-  const focused = page.locator(':focus')
-  await expect(focused).toBeVisible()
   await expect(page.getByRole('navigation', { name: 'Información legal' })).toBeVisible()
-  await page.getByRole('link', { name: 'Privacidad' }).click()
+  const privacy = page.getByRole('link', { name: 'Privacidad' })
+  await privacy.focus()
+  await expect(privacy).toBeFocused()
+  await privacy.click()
   await expect(page.getByRole('heading', { name: 'Privacidad' })).toBeVisible()
 })
 

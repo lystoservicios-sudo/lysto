@@ -31,11 +31,11 @@ test('double click is bounded while a quote is being persisted', async ({ page, 
   const responses = await Promise.all([
     page.request.post('/api/diagnosis/generate', {
       headers: { origin: new URL(page.url()).origin },
-      data: { issue: 'mantenimiento', answers: { timeSince: 'months' } }
+      data: { issue: 'mantenimiento', timeSince: 'months' }
     }),
     page.request.post('/api/diagnosis/generate', {
       headers: { origin: new URL(page.url()).origin },
-      data: { issue: 'mantenimiento', answers: { timeSince: 'months' } }
+      data: { issue: 'mantenimiento', timeSince: 'months' }
     })
   ])
   const statuses = responses.map((response) => response.status())
