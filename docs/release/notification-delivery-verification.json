@@ -1,7 +1,7 @@
 {
   "task": "T24",
-  "status": "implemented_staging_accepted_provider_receipt_pending",
-  "updatedAt": "2026-09-13T18:09:25.1109516Z",
+  "status": "implemented_staging_provider_accepted_inbox_confirmation_pending",
+  "updatedAt": "2026-09-13T19:07:30.000Z",
   "implemented": [
     "versioned templates with authorized URLs",
     "Resend adapter with stable idempotency key and bounded timeout",
@@ -52,19 +52,33 @@
     },
     "staging": {
       "projectRef": "obksyzasmfwcbbksesqt",
-      "deploymentId": "dpl_C6iWi3YnSW4i6NYLCpgMKKPe7Vv4",
+      "deploymentId": "dpl_HFUS6175CLWP1fiwhRgjfvvMXxJ7",
       "migrations": 63,
       "pgTap": "PASS_17_OF_17_ROLLED_BACK",
       "e2e": "PASS_39_OF_39_ZERO_OMITTED",
       "scheduler": "ACTIVE_EVERY_MINUTE_LAST_FIVE_HTTP_200",
       "syntheticAuthUsersRemaining": 0,
       "syntheticProfilesRemaining": 0,
-      "emailProviderEnabled": false
+      "emailProviderEnabled": true,
+      "providerAcceptance": {
+        "provider": "Resend",
+        "keyScope": "send_only",
+        "recipient": "lystoservicios@gmail.com",
+        "visitConfirmation": {
+          "accepted": true,
+          "providerMessageId": "7dc8…1786"
+        },
+        "reviewRequest": {
+          "accepted": true,
+          "providerMessageId": "31d1…a046"
+        },
+        "inboxReceiptConfirmed": false
+      }
     }
   },
   "pending": [
-    "configure an approved Resend account, sender domain/DNS and designated test inbox",
-    "prove EM01-EM03 provider acceptance and receipt in isolated staging",
+    "confirm EM01 and EM02 receipt in the designated Gmail inbox",
+    "verify an owned sender domain before any production delivery",
     "T30/D10: production alert transport, scheduler ownership and monitoring evidence"
   ],
   "productionEmailSent": false

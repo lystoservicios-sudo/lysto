@@ -53,13 +53,14 @@
     "availability": "ACTIVE_HEALTHY",
     "origin": "https://lysto-staging-preview.vercel.app",
     "candidateCommit": "67932c45e563849d5085abec5997bed220983186",
-    "deploymentId": "dpl_C6iWi3YnSW4i6NYLCpgMKKPe7Vv4",
+    "deploymentId": "dpl_HFUS6175CLWP1fiwhRgjfvvMXxJ7",
     "appliedMigrations": 63,
     "e2e": "PASS_39_OF_39_ZERO_OMITTED",
     "syntheticAuthUsersRemaining": 0,
     "evidence": "docs/release/staging-acceptance.md",
     "load": "PASS_SMOKE_PEAK_DOUBLE_PEAK_BURST_SUSTAINED_RECOVERY",
-    "scheduler": "SUPABASE_CRON_ACTIVE_ONE_MINUTE_LAST_FIVE_HTTP_200"
+    "scheduler": "SUPABASE_CRON_ACTIVE_ONE_MINUTE_LAST_FIVE_HTTP_200",
+    "emailProvider": "RESEND_TWO_MESSAGES_ACCEPTED_INBOX_CONFIRMATION_PENDING"
   },
   "currentMilestone": "VISIT_REVIEW_NOTIFICATION_STAGING_ACCEPTED_PROVIDER_PENDING",
   "nextTask": "T37",
@@ -999,16 +1000,17 @@
         "174 domain, 526 unit and 27 tooling checks plus typecheck, lint and 81-page production build passed locally",
         "Supabase Cron job lysto-outbox-every-minute active in isolated staging; five consecutive runs succeeded with HTTP 200",
         "Staging migration 20260913161215 applied; remote pgTAP passed 17/17 with rollback",
-        "39/39 guarded staging E2E passed across desktop and mobile browser projects; zero synthetic identities remained"
+        "39/39 guarded staging E2E passed across desktop and mobile browser projects; zero synthetic identities remained",
+        "Resend send-only key stored as a sensitive Preview variable; EM01 and EM02 accepted with provider IDs 7dc8…1786 and 31d1…a046"
       ],
       "commit": "67932c45e563849d5085abec5997bed220983186",
       "blockedBy": [
-        "D06/T36: approved Resend account, sender domain/DNS, designated inbox and provider receipt",
+        "D06/T36: confirm receipt in the designated inbox and verify an owned sender domain for production",
         "T30/D10: production alert transport, destinations and scheduler ownership approval"
       ],
-      "nextAction": "Configure the approved Resend sender and designated test inbox, then prove provider receipt, timing and suppression before production promotion.",
+      "nextAction": "Confirm EM01/EM02 receipt in lystoservicios@gmail.com, then verify an owned sender domain before production promotion.",
       "deviations": [
-        "Implementation, migration, UI and the one-minute staging scheduler are accepted; external email-provider receipt remains pending."
+        "Implementation, migration, UI, minute scheduler and Resend API acceptance are complete in staging; inbox confirmation and an owned production sender domain remain pending."
       ]
     },
     {
@@ -1541,14 +1543,15 @@
       "blockedBy": [
         "D04 accountable technical owner and alternate remain unnamed",
         "D11 has no identified Mercado Pago application and official test accounts",
-        "D06/D10 approved Resend sender, recipient, production alert destinations and scheduler owner remain absent",
+        "D06/D10 inbox receipt, owned production sender domain, production alert destinations and scheduler owner remain absent",
         "T32 restore evidence and physical UAT remain incomplete"
       ],
       "nextAction": "Complete the approved Resend sender/receipt, restore evidence, alert ownership, physical UAT and MP01-MP12; the notification candidate and minute scheduler are already accepted in isolated staging.",
       "deviations": [
         "Preview is isolated on Supabase staging, migrated to 63 versions and passed health plus 39/39 automated E2E.",
-        "Supabase Cron is active every minute and its last five HTTP calls returned 200; email sending remains disabled without an approved Resend sender.",
-        "No email, payment, refund or OAuth provider action was executed."
+        "Supabase Cron is active every minute and its last five HTTP calls returned 200.",
+        "Resend accepted both authorized transactional templates for the designated Gmail inbox; inbox confirmation and owned-domain delivery remain pending.",
+        "No payment, refund or OAuth provider action was executed."
       ]
     },
     {
@@ -2109,9 +2112,9 @@
     "updateRequiredAfterImplementation": true
   },
   "checkpoint": {
-    "updatedAt": "2026-09-13T18:09:25.1109516Z",
+    "updatedAt": "2026-09-13T19:07:30.000Z",
     "branch": "codex/production-readiness",
-    "commit": "fb3afcde780bd2c9c6214bf540bc2b365b564c01",
+    "commit": "7a999289bce42adb6905ef89a880fa4108bee85c",
     "filesChanged": [
       "visit confirmation and delayed optional review email",
       "authenticated customer visit actions",
@@ -2120,11 +2123,11 @@
       "Supabase authenticated minute scheduler",
       "staging session and MFA test stability"
     ],
-    "lastVerification": "Runtime commit 67932c45 passed both CI jobs. Staging migration and 17/17 pgTAP passed, 39/39 browser cases passed with zero omitted, the last five scheduler calls returned HTTP 200 and cleanup left zero synthetic users/profiles.",
+    "lastVerification": "Final commit 7a999289 passed both CI jobs. Staging passed 17/17 pgTAP and 39/39 browser cases; the current deployment has encrypted Resend Preview variables, both authorized templates were accepted by Resend, the last five cron calls returned HTTP 200 and the queue is empty.",
     "unresolvedFailures": [
-      "Approved Resend account/sender/DNS/inbox, provider receipt, production scheduler/alerts, restore, payments provider, physical UAT and named approvals remain external. Production is untouched."
+      "Confirm Gmail inbox receipt and verify an owned sender domain. Production scheduler/alerts, restore, payments provider, physical UAT and named approvals remain external. Production is untouched."
     ],
-    "nextCommand": "Obtain an approved Resend sender and test inbox, enable email only in staging, and record EM01-EM03 provider receipt without touching production."
+    "nextCommand": "Confirm EM01 and EM02 in lystoservicios@gmail.com, then add and verify the owned production sender domain without enabling production delivery."
   },
   "events": [
     {
@@ -2240,6 +2243,15 @@
         "T36"
       ],
       "note": "Migration 20260913161215 and 17/17 pgTAP passed on isolated Supabase staging. The protected preview ran 39/39 browser cases with zero omitted and zero synthetic identities remaining. Supabase Cron runs every minute and the last five calls returned HTTP 200. Resend remains disabled pending an approved sender and designated inbox; production was untouched."
+    },
+    {
+      "type": "resend_staging_acceptance_started",
+      "at": "2026-09-13T19:07:30.000Z",
+      "tasks": [
+        "T24",
+        "T36"
+      ],
+      "note": "A send-only Resend key was stored as a sensitive Vercel Preview variable. Resend accepted the visit confirmation and optional review messages for the user-authorized Gmail inbox (provider IDs 7dc8…1786 and 31d1…a046). Inbox receipt is not yet independently confirmed. Production was untouched."
     }
   ],
   "executionWorktree": "E:/Proyectos/GitHub/Lysto-production-readiness"

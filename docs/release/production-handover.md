@@ -17,7 +17,7 @@ La CI del runtime `67932c45` aprobó ambos jobs, incluidos Windows, lint, tipos,
 ## Trabajo entregado
 
 - Arquitectura de aplicación, autorización, almacenamiento privado, workflows del servicio, dinero, soporte, mantenimiento, notificaciones, observabilidad y consola operativa implementados o preparados según el registro. La confirmación de visita, el recordatorio opcional de reseña a las dos horas y las acciones del cliente están activos en staging.
-- Supabase Cron invoca cada minuto al worker autenticado del preview; las últimas cinco ejecuciones terminaron con HTTP 200. Resend permanece deshabilitado hasta aprobar dominio remitente y buzón de prueba.
+- Supabase Cron invoca cada minuto al worker autenticado del preview; las últimas cinco ejecuciones terminaron con HTTP 200. Resend está habilitado solo en staging y aceptó las dos plantillas autorizadas para el buzón designado; falta confirmar la bandeja y verificar un dominio remitente propio.
 - Suite E2E de siete recorridos descubierta en tres proyectos, perfil de carga seguro y matrices de staging/proveedor preparadas.
 - Runbooks de operación, incidente, recuperación, despliegue, piloto, privacidad y capacitación preparados.
 - Calendario y mapa de propiedad preparados sin inventar titulares nominales.
