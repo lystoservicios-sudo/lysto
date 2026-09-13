@@ -22,7 +22,7 @@ La suite completa detectó una expectativa antigua de texto público; se alineó
 
 ## Comprobaciones que no se ejecutaron
 
-- Integración de migraciones T15–T31 y pgTAP: no ejecutada. El fallo histórico de Docker deja de ser la ruta de trabajo porque el usuario dispuso usar exclusivamente el Supabase remoto conectado; falta resolver su referencia y autenticación antes de escribir.
+- Migraciones y pgTAP T15–T31: 58/58 migraciones remotas y 28/28 suites SQL aprobadas mediante transacciones con rollback. La comprobación posterior confirmó que no persistieron fixtures, helpers ni la extensión pgTAP.
 - Playwright E2E real: las 36 identidades fueron descubiertas, pero no se ejecutaron sin Supabase descartable o staging.
 - Carga, restore, alertas, proveedor, UAT móvil y smoke remoto: requieren los entornos y responsables pendientes.
 - Piloto: no iniciado; no existen días, servicios o conciliaciones que puedan simularse.

@@ -19,7 +19,7 @@ corepack pnpm test:tooling
 corepack pnpm build
 ```
 
-Copiar `.env.example` a `.env.local` sólo con valores del entorno autorizado. Por decisión del proyecto, las validaciones pendientes usan exclusivamente el Supabase remoto conectado, después de comprobar su identidad, entorno y backup. No iniciar Supabase local ni Docker para esta hoja de ruta. Nunca registrar credenciales o datos reales en el checkout.
+Copiar `.env.example` a `.env.local` sólo con valores del entorno autorizado. Por decisión del proyecto, la base usa exclusivamente el Supabase remoto conectado; su esquema está reconciliado y las pruebas SQL se ejecutan con rollback. No iniciar Supabase local ni Docker para esta hoja de ruta. Nunca registrar credenciales o datos reales en el checkout.
 
 ## Release
 

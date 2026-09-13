@@ -1,6 +1,6 @@
 {
   "task": "T19",
-  "status": "implementation_in_progress_database_verification_pending",
+  "status": "implemented_remote_database_verified_staging_pending",
   "updatedAt": "2026-09-12T14:47:00-03:00",
   "migration": "20260912143504_onsite_diagnosis_and_extras_guards.sql",
   "implemented": [
@@ -15,7 +15,7 @@
   ],
   "verified": { "onsiteRetryUnit": 3, "typecheck": "passed", "lint": "passed" },
   "pending": [
-    "Docker Desktop engine must be available for onsite-workflow integration and pgTAP",
+    "remote migration and pgTAP passed; authenticated onsite integration remains for isolated staging",
     "D06 approval for additional-work payment timing"
   ]
 }

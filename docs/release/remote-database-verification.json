@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "checkedAt": "2026-09-12",
+  "projectRef": "dqonlqcurvjnjgsczevu",
+  "classification": "PRODUCTION",
+  "migrations": {
+    "count": 58,
+    "last": "20260912234933",
+    "pending": 0
+  },
+  "schema": {
+    "publicTables": 65,
+    "publicTablesWithRls": 65,
+    "publicPolicies": 159
+  },
+  "auth": {
+    "passwordMinLength": 12,
+    "hibpProtection": "BLOCKED_BY_FREE_PLAN"
+  },
+  "databaseTests": {
+    "suites": 28,
+    "status": "PASS",
+    "execution": "remote transaction with forced rollback",
+    "fixtureAuthUsersAfterRun": 0,
+    "pgtapPersisted": false,
+    "testHelpersPersisted": false
+  },
+  "rpcBoundaryRepair": {
+    "closeJobPublicDefiner": true,
+    "submitReviewPublicDefiner": true,
+    "privateCloseJobExecutableByAuthenticated": false
+  },
+  "securityAdvisor": {
+    "errors": 0,
+    "warnings": {
+      "authLeakedPasswordProtection": 1,
+      "authenticatedSecurityDefinerRpc": 32,
+      "extensionInPublic": 1
+    }
+  },
+  "evidence": "docs/release/remote-supabase-audit-2026-09-12.md"
+}

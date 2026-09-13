@@ -10,29 +10,33 @@
     "mode": "remote_only",
     "setBy": "user",
     "setAt": "2026-09-12",
-    "rule": "Do not start or use local Supabase or Docker. The connected remote project is dqonlqcurvjnjgsczevu and is classified as PRODUCTION. Execute pending database validation there only after a recoverable backup and traceable owner-level CLI or database connection are available.",
+    "rule": "Do not start or use local Supabase or Docker. The connected remote project is dqonlqcurvjnjgsczevu and is classified as PRODUCTION. Remote migrations and SQL verification use the permanent owner-authorized management PAT, explicit baseline guards and transactional rollback for fixtures.",
     "supersedes": "Any task nextAction that says to wait for or use local Docker/Supabase."
   },
   "remoteSupabaseAudit": {
     "checkedAt": "2026-09-12",
     "projectRef": "dqonlqcurvjnjgsczevu",
     "classification": "PRODUCTION",
-    "availability": "ACTIVE",
-    "appliedMigrations": 7,
-    "lastMigration": "202608190007",
-    "repositoryMigrations": 56,
-    "pendingMigrations": 49,
-    "publicTables": 45,
-    "publicViews": 1,
-    "publicTablesWithRls": 45,
+    "availability": "ACTIVE_HEALTHY",
+    "appliedMigrations": 58,
+    "lastMigration": "20260912234933",
+    "repositoryMigrations": 58,
+    "pendingMigrations": 0,
+    "publicTables": 65,
+    "publicViews": 0,
+    "publicTablesWithRls": 65,
     "publicTablesWithoutRls": 0,
-    "publicPolicies": 149,
+    "publicPolicies": 159,
     "privateTables": 4,
     "authUsers": 3,
     "storageObjects": 0,
     "estimatedDomainRows": 0,
     "backup": "UNAVAILABLE_FREE_PLAN",
-    "cliAccess": "AUTHENTICATED_TO_DIFFERENT_ACCOUNT",
+    "cliAccess": "PERMANENT_MANAGEMENT_PAT_ACTIVE",
+    "passwordMinLength": 12,
+    "databaseTestSuites": 28,
+    "databaseTestStatus": "PASS_REMOTE_ROLLED_BACK",
+    "securityAdvisorErrors": 0,
     "evidence": "docs/release/remote-supabase-audit-2026-09-12.md"
   },
   "baseline": {
@@ -42,8 +46,8 @@
     "snapshotHash": "78e4627223acba17868dd509b2833c950f563bd5",
     "environment": "isolated-local-worktree"
   },
-  "currentMilestone": "REMOTE_SUPABASE_IDENTIFIED_MIGRATION_ACCESS_BLOCKED",
-  "nextTask": "T15",
+  "currentMilestone": "REMOTE_DATABASE_RECONCILED_EXTERNAL_STAGING_AND_BACKUP_BLOCKED",
+  "nextTask": "T32",
   "recommendedOrder": [
     "T00",
     "T01",
@@ -614,7 +618,7 @@
         "B04"
       ],
       "ownerRole": "Agente backend + operaciones",
-      "status": "in_progress",
+      "status": "implemented",
       "currentStep": 6,
       "completedSteps": [
         1,
@@ -629,10 +633,10 @@
       ],
       "commit": null,
       "blockedBy": [
-        "Docker Desktop cannot remove its stale dockerInference runtime socket; migration/integration/pgTAP pending",
+        "Authenticated browser and HTTP acceptance requires isolated staging; 28 remote SQL suites already pass with rollback",
         "D06: approved reschedule, cancellation and no-show policy"
       ],
-      "nextAction": "Apply migration 20260912134057 and run scheduling-capacity integration plus pgTAP when Docker recovers; continue T16 meanwhile.",
+      "nextAction": "Remote migration and SQL acceptance passed. Obtain D06 and execute the authenticated scheduling walkthrough in isolated staging.",
       "deviations": [
         "A preferred customer window remains on the service request; only job_schedule_reservations consumes professional capacity.",
         "Two-party rescheduling records both approvals and never changes quote, scope or payment fields."
@@ -652,7 +656,7 @@
         "B06"
       ],
       "ownerRole": "Agente backend + operaciones",
-      "status": "in_progress",
+      "status": "implemented",
       "currentStep": 6,
       "completedSteps": [
         1,
@@ -667,11 +671,11 @@
       ],
       "commit": null,
       "blockedBy": [
-        "Docker Desktop stale dockerInference runtime socket blocks migration/integration/pgTAP",
+        "Authenticated assignment recovery walkthrough requires isolated staging; remote migration and SQL acceptance passed",
         "D06: approved offer duration and operational exception policy",
         "T18: active checkout reconciliation before reassignment"
       ],
-      "nextAction": "Apply T15/T16 migrations and run assignment-lifecycle plus pgTAP when Docker recovers; continue T17 meanwhile.",
+      "nextAction": "Obtain D06, reconcile active checkout behavior with T18 and execute assignment recovery in isolated staging.",
       "deviations": [
         "Ranking is advisory; create_assignment_offer repeats all eligibility and capacity checks inside the write transaction.",
         "Offer expiry defaults in the UI to 30 minutes and is bounded by the database to 5–120 minutes pending D06."
@@ -691,7 +695,7 @@
         "B07"
       ],
       "ownerRole": "Agente backend",
-      "status": "in_progress",
+      "status": "implemented",
       "currentStep": 6,
       "completedSteps": [
         1,
@@ -706,10 +710,10 @@
       ],
       "commit": null,
       "blockedBy": [
-        "Docker Desktop stale dockerInference runtime socket blocks database-backed payment tests",
+        "Provider-backed payment behavior requires the isolated Mercado Pago sandbox and staging identities",
         "D11/T36: real Mercado Pago sandbox ownership and acceptance evidence"
       ],
-      "nextAction": "Run payment-concurrency, marketplace storage/ledger and pgTAP when Docker recovers; continue T18 meanwhile.",
+      "nextAction": "Database migration and SQL controls pass remotely. Complete MP01–MP12 in isolated staging after D11 identifies the official accounts.",
       "deviations": [
         "No payment_reconciliation_guards migration was generated because review found no missing schema invariant; runtime renewal was refactored instead.",
         "No real provider call, OAuth connection or payment was made during local implementation."
@@ -728,7 +732,7 @@
         "B08"
       ],
       "ownerRole": "Agente + finanzas/operaciones",
-      "status": "in_progress",
+      "status": "implemented",
       "currentStep": 6,
       "completedSteps": [
         1,
@@ -744,11 +748,11 @@
       ],
       "commit": null,
       "blockedBy": [
-        "Docker Desktop stale dockerInference runtime socket blocks migration/integration/pgTAP",
+        "Provider-backed refund and reconciliation tests require isolated staging and authorized Mercado Pago accounts",
         "D06: approved cancellation, no-show, refund and warranty economics",
         "T36: authorized Mercado Pago test refund and canonical reconciliation"
       ],
-      "nextAction": "Apply migration 20260912142037 and run financial-exceptions integration plus pgTAP when Docker recovers; continue T19 meanwhile.",
+      "nextAction": "Remote migration and SQL acceptance passed. Obtain D06 and execute authorized refund/reconciliation scenarios in staging.",
       "deviations": [
         "Ambiguous provider outcomes retain the same refund idempotency key and remain processing; no local success is inferred from an operator action.",
         "Replacement creates a linked service and preserves the original checkout beneficiary and money snapshots.",
@@ -770,7 +774,7 @@
         "B09"
       ],
       "ownerRole": "Agente full stack",
-      "status": "in_progress",
+      "status": "implemented",
       "currentStep": 6,
       "completedSteps": [
         1,
@@ -785,10 +789,10 @@
       ],
       "commit": null,
       "blockedBy": [
-        "Docker Desktop stale dockerInference runtime socket blocks migration/integration/pgTAP",
+        "Authenticated onsite workflow acceptance requires isolated staging; remote migration and SQL acceptance passed",
         "D06: approved additional-work payment timing"
       ],
-      "nextAction": "Apply migration 20260912143504 and run onsite-workflow integration plus pgTAP when Docker recovers; continue T30 meanwhile.",
+      "nextAction": "Obtain D06 and execute the onsite and additional-work walkthrough with isolated staging identities.",
       "deviations": [
         "Customer scope acceptance, rather than a professional-only button, moves the job into in_progress.",
         "Accepted extras require canonical approved payment until D06 approves another rule."
@@ -809,7 +813,7 @@
         "B09"
       ],
       "ownerRole": "Agente full stack",
-      "status": "in_progress",
+      "status": "implemented",
       "currentStep": 6,
       "completedSteps": [
         1,
@@ -824,10 +828,10 @@
       ],
       "commit": null,
       "blockedBy": [
-        "Docker Desktop stale dockerInference runtime socket blocks migration/integration/pgTAP",
+        "Browser timeout and interrupted-upload evidence requires isolated staging; remote migration and SQL acceptance passed",
         "Staging browser timeout/reload evidence requires deployed staging"
       ],
-      "nextAction": "Apply migration 20260912145546 and run job-closeout integration plus pgTAP when Docker recovers; demonstrate browser timeout recovery in staging; continue T32 meanwhile.",
+      "nextAction": "Execute closeout, timeout and interrupted-upload recovery in isolated staging; the remote RPC boundary repair and SQL suite pass.",
       "deviations": [
         "Existing legacy reports are retained without fabricated evidence; the new photo constraint is NOT VALID for historical rows but enforced for every new closeout.",
         "Corrections require a future audited amendment instead of mutating an accepted report."
@@ -844,7 +848,7 @@
         "B06"
       ],
       "ownerRole": "Agente full stack",
-      "status": "in_progress",
+      "status": "implemented",
       "currentStep": 6,
       "completedSteps": [
         1,
@@ -859,11 +863,11 @@
       ],
       "commit": null,
       "blockedBy": [
-        "Docker Desktop stale dockerInference runtime socket blocks migration/integration/pgTAP",
+        "Two-tab and authenticated confirmation evidence requires isolated staging; remote migration and SQL acceptance passed",
         "D06: approved no-response escalation policy",
         "Staging two-tab browser evidence requires deployment"
       ],
-      "nextAction": "Apply migration 20260912150943 and run customer-closeout integration plus pgTAP when Docker recovers; validate two-tab UI in staging; continue T22 meanwhile.",
+      "nextAction": "Obtain D06 and validate confirmation, dispute, review and two-tab behavior in isolated staging.",
       "deviations": [
         "No automatic confirmation by silence was added.",
         "Reviews never complete jobs or change payment state."
@@ -880,7 +884,7 @@
         "B05"
       ],
       "ownerRole": "Agente full stack",
-      "status": "in_progress",
+      "status": "implemented",
       "currentStep": 6,
       "completedSteps": [
         1,
@@ -895,11 +899,11 @@
       ],
       "commit": null,
       "blockedBy": [
-        "Docker Desktop stale dockerInference runtime socket blocks migration/integration/pgTAP",
+        "Hosting access-log redaction requires the designated platform; remote migration and SQL acceptance passed",
         "Hosting URL-log redaction requires designated staging/production platform",
         "D05/D08: fiscal-document and privacy approval"
       ],
-      "nextAction": "Apply migration 20260912151657 and run public-receipt integration plus pgTAP when Docker recovers; verify hosting access-log redaction in staging; continue T23 meanwhile.",
+      "nextAction": "Verify receipt delivery and hosting access-log redaction in isolated staging, then obtain D05/D08 approval.",
       "deviations": [
         "The public service receipt is explicitly not presented as a fiscal invoice.",
         "The broad legacy receipt view is removed; the server RPC returns an allowlisted projection."
@@ -920,7 +924,7 @@
         "B09"
       ],
       "ownerRole": "Agente full stack + soporte/calidad",
-      "status": "in_progress",
+      "status": "implemented",
       "currentStep": 6,
       "completedSteps": [
         1,
@@ -935,11 +939,11 @@
       ],
       "commit": null,
       "blockedBy": [
-        "Docker Desktop stale dockerInference runtime socket blocks migration/integration/pgTAP",
+        "Role and communication-failure walkthrough requires isolated staging; remote migration and SQL acceptance passed",
         "D02/D06: support operating hours and SLA ratification",
         "Staging role and communication-failure walkthrough requires designated environment"
       ],
-      "nextAction": "Apply migration 20260912152441 and run support-warranty integration plus pgTAP when Docker recovers; ratify D02/D06 and validate role/timeline behavior in staging; continue T25 meanwhile.",
+      "nextAction": "Ratify D02/D06 and validate support roles, SLA timeline and communication failures in isolated staging.",
       "deviations": [
         "Expired or different-problem claims remain support cases without promising warranty.",
         "Approved warranty revisits are linked to the original job with billing_policy=warranty_no_charge."
@@ -958,7 +962,7 @@
         "B10"
       ],
       "ownerRole": "Agente backend",
-      "status": "in_progress",
+      "status": "implemented",
       "currentStep": 6,
       "completedSteps": [
         1,
@@ -975,10 +979,10 @@
       ],
       "commit": null,
       "blockedBy": [
-        "Docker Desktop 4.59 cannot start because its local dockerInference socket is inaccessible; PostgreSQL integration, pgTAP and migration protocol are pending",
+        "Durable scheduler, sender and reception evidence requires the designated isolated staging environment",
         "D06/T36: approved sender, DNS, sandbox reception and durable scheduler evidence"
       ],
-      "nextAction": "Al recuperar Docker, aplicar migraciones 42-44 y ejecutar outbox-worker, pgTAP y protocolo fresh/upgrade; mientras tanto continuar T15.",
+      "nextAction": "Remote migrations and SQL acceptance passed. Configure the approved sender and scheduler in staging and demonstrate retry, suppression and dead-letter recovery.",
       "deviations": [
         "T24 remains in progress: code checks passed, but database acceptance is not inferred from unit tests."
       ]
@@ -998,7 +1002,7 @@
         "B09"
       ],
       "ownerRole": "Agente full stack",
-      "status": "in_progress",
+      "status": "implemented",
       "currentStep": 6,
       "completedSteps": [
         1,
@@ -1013,11 +1017,11 @@
       ],
       "commit": null,
       "blockedBy": [
-        "Docker Desktop stale dockerInference runtime socket blocks migration/integration/pgTAP",
+        "Real reminder delivery requires the designated isolated staging environment",
         "D12: automated commercial reminder decision",
         "Staging reminder worker execution requires designated environment"
       ],
-      "nextAction": "Apply migration 20260912153952 and run maintenance-history integration plus pgTAP when Docker recovers; validate a real reminder delivery in staging after D12; continue T26 meanwhile.",
+      "nextAction": "After D12, validate one real reminder delivery and recovery path in isolated staging; remote migration and SQL acceptance passed.",
       "deviations": [
         "Maintenance starts as a customer-confirmed draft and never creates a reservation or payment automatically.",
         "Open quality or warranty cases suppress maintenance promotion and pending reminders."
@@ -1044,7 +1048,7 @@
         "B06"
       ],
       "ownerRole": "Agente backend",
-      "status": "in_progress",
+      "status": "implemented",
       "currentStep": 6,
       "completedSteps": [
         1,
@@ -1060,10 +1064,10 @@
       ],
       "commit": null,
       "blockedBy": [
-        "Docker Desktop stale dockerInference runtime socket blocks full authenticated HTTP integration",
+        "The complete authenticated HTTP matrix requires isolated staging identities and lifecycle cleanup",
         "Full 92-method HTTP matrix requires designated staging environment"
       ],
-      "nextAction": "Run test:integration -- api-inventory with disposable Supabase when Docker recovers and execute the complete 92-method matrix in staging; continue T27 meanwhile.",
+      "nextAction": "Execute the complete 92-method matrix in isolated staging and attach the sanitized run report.",
       "deviations": [
         "The original 36-route baseline grew to 92 exported methods; the AST-generated inventory is authoritative.",
         "Ten legacy POST contracts return 410 with a canonical destination and never redirect request bodies.",
@@ -1090,7 +1094,7 @@
         "B05"
       ],
       "ownerRole": "Agente full stack",
-      "status": "in_progress",
+      "status": "implemented",
       "currentStep": 6,
       "completedSteps": [
         1,
@@ -1106,10 +1110,10 @@
       ],
       "commit": null,
       "blockedBy": [
-        "Docker Desktop stale dockerInference runtime socket blocks authenticated page integration",
+        "Authenticated page and recovery walkthrough requires isolated staging",
         "Complete mobile and reload walkthrough requires designated staging"
       ],
-      "nextAction": "Run customer-pages integration when Docker recovers and complete the mobile/reload walkthrough in staging; continue T28 meanwhile.",
+      "nextAction": "Complete the customer mobile, reload and interrupted-session walkthrough in isolated staging.",
       "deviations": [
         "Existing connected customer asset, payment, quote and maintenance surfaces were reviewed instead of duplicated.",
         "Customer history uses cursor pages of 25; the dashboard uses a bounded recent summary."
@@ -1135,7 +1139,7 @@
         "B04"
       ],
       "ownerRole": "Agente full stack",
-      "status": "in_progress",
+      "status": "implemented",
       "currentStep": 6,
       "completedSteps": [
         1,
@@ -1151,11 +1155,11 @@
       ],
       "commit": null,
       "blockedBy": [
-        "Docker Desktop stale dockerInference runtime socket blocks authenticated page integration",
+        "Authenticated page and interrupted-network walkthrough requires isolated staging",
         "D07: approved documentary expiry, renewal and reactivation policy",
         "Complete mobile and interrupted-network walkthrough requires designated staging"
       ],
-      "nextAction": "Run professional-pages integration when Docker recovers; execute mobile recovery walkthrough and D07 renewal policy in staging; continue T29 meanwhile.",
+      "nextAction": "Execute the professional mobile recovery walkthrough and the approved D07 renewal policy in isolated staging.",
       "deviations": [
         "Training remains non-persisted reference material and explicitly does not represent certification.",
         "The professional interface consumes existing canonical workflow APIs rather than duplicating mutations in page components."
@@ -1183,7 +1187,7 @@
         "B09"
       ],
       "ownerRole": "Agente full stack + operadores",
-      "status": "in_progress",
+      "status": "implemented",
       "currentStep": 6,
       "completedSteps": [
         1,
@@ -1200,12 +1204,12 @@
       ],
       "commit": null,
       "blockedBy": [
-        "Docker Desktop stale dockerInference runtime socket blocks migration/integration/pgTAP",
+        "Human operator UAT requires isolated staging and named participants; remote migration and SQL acceptance passed",
         "D02: approved staffing, SLA and escalation policy",
         "D03: approved launch catalog",
         "Human UAT with two operators, finance and quality"
       ],
-      "nextAction": "Apply migration 20260912163000 and execute admin-operations integration plus pgTAP when Docker recovers; run the documented shift-handoff UAT after D02/D03 approval; continue T31 meanwhile.",
+      "nextAction": "After D02/D03 approval, execute the documented shift-handoff UAT with two operators, finance and quality in staging.",
       "deviations": [
         "Operational reports currently expose live queue totals and page-scoped urgency/SLA measures; commercial period/zone KPIs remain gated by D01/D03/D05.",
         "No administrative mutation bypass or production configuration change was introduced."
@@ -1226,7 +1230,7 @@
         "B10"
       ],
       "ownerRole": "Agente técnico",
-      "status": "in_progress",
+      "status": "implemented",
       "currentStep": 6,
       "completedSteps": [
         1,
@@ -1243,10 +1247,10 @@
       ],
       "commit": null,
       "blockedBy": [
-        "Docker Desktop stale dockerInference runtime socket blocks migration/integration/pgTAP",
+        "Alert destinations and thresholds require the designated staging platform",
         "Staging alert destinations and thresholds require deployment environment"
       ],
-      "nextAction": "Apply migration 20260912144559 and run production-controls integration plus pgTAP when Docker recovers; wire alert destinations in staging; continue T20 meanwhile.",
+      "nextAction": "Remote migration and SQL controls pass. Wire approved alert destinations in staging and demonstrate one end-to-end alert.",
       "deviations": [
         "Receipt rate limiting is defined here and will be attached when the public receipt endpoint is implemented in T21.",
         "No production environment or alert destination was modified."
@@ -1267,7 +1271,7 @@
         "B10"
       ],
       "ownerRole": "Agente prepara; dirección/legal/contabilidad/operaciones validan",
-      "status": "in_progress",
+      "status": "implemented",
       "currentStep": 6,
       "completedSteps": [
         1,
@@ -1285,11 +1289,11 @@
       ],
       "commit": null,
       "blockedBy": [
-        "Docker Desktop stale dockerInference runtime socket blocks migration/integration/pgTAP",
+        "Human policy approval and training require named participants; remote migration and SQL acceptance passed",
         "D02/D05/D06/D08 human approvals are pending",
         "Operator and finance training/UAT requires named participants"
       ],
-      "nextAction": "Apply migration 20260912170000 and run policy-acceptance integration plus pgTAP when Docker recovers; obtain named approvals and training evidence before enabling registration or publishing a definitive version; continue T35 meanwhile.",
+      "nextAction": "Obtain named D02/D05/D06/D08 approvals and training evidence before enabling registration or publishing a definitive version.",
       "deviations": [
         "Public policy routes identify themselves as unapproved drafts and are noindex; registration remains gated by the existing approved-version configuration.",
         "No legal compliance claim or human approval was inferred."
@@ -1328,7 +1332,7 @@
       "blockedBy": [
         "D04: designated isolated restore project and provider inventory",
         "D09: approved RPO/RTO, backup retention and accountable custodians",
-        "Docker Desktop stale dockerInference runtime socket blocks even the local verifier integration"
+        "A real restore must run in a designated isolated project; production remains on a Free plan without backups"
       ],
       "nextAction": "Restore a real DB/Auth/Storage/config backup into the designated non-production target, run verify-restore with synthetic login and encryption canary, record measured RPO/RTO, then obtain D09 sign-off; continue T21 meanwhile.",
       "deviations": [
@@ -1416,7 +1420,7 @@
       ],
       "commit": null,
       "blockedBy": [
-        "Docker Desktop stale dockerInference runtime socket blocks disposable backend execution",
+        "D04 designated isolated staging identity",
         "D04 designated staging identity",
         "Physical phone and named customer/professional/operator/finance/quality UAT"
       ],
@@ -1456,7 +1460,7 @@
       "blockedBy": [
         "D01 expected capacity and D10 SLO/budget approvals",
         "D04 designated non-production staging target",
-        "Docker Desktop stale dockerInference runtime socket blocks local database load",
+        "Database load must run against designated isolated staging, never the production project",
         "Official k6 Windows installer did not complete within the bounded execution window"
       ],
       "nextAction": "Execute smoke, peak, 2x, burst and 60-minute profiles against designated staging; capture application/database metrics and recovery, reconcile provider and human costs, then obtain D10 approval; continue T34 meanwhile.",
@@ -1631,7 +1635,7 @@
         "D01-D12 and G01-G16 remain pending",
         "Capacity growth cannot be approved without observed pilot results"
       ],
-      "nextAction": "Resume T15-T31 database verification when the disposable runtime is available, then complete staging/provider acceptance and the real pilot; assign named owners and verify target general before signing the final handover.",
+      "nextAction": "Complete staging/provider acceptance and the real pilot; assign named owners, prove backup/restore and verify the general target before signing the final handover.",
       "deviations": [
         "Reconciled all 40 tasks without converting external or unexecuted evidence into completion.",
         "Prepared ownership, maintenance and handover artifacts with explicit pending assignees rather than invented names."
@@ -2063,15 +2067,20 @@
     "updateRequiredAfterImplementation": true
   },
   "checkpoint": {
-    "updatedAt": "2026-09-12T14:14:35.73Z",
+    "updatedAt": "2026-09-12T23:58:01.8909508Z",
     "branch": "codex/production-readiness",
-    "commit": "1f7eb5c40e4bd88b21fe4c3c78a4d3eaf6488403",
-    "filesChanged": [],
-    "lastVerification": "T17 local non-database checks: 40 focused payment tests, typecheck and targeted lint passed; provider traffic is proven outside renewal transactions.",
-    "unresolvedFailures": [
-      "T24, T15, T16 and T17 database verification pending because Docker Desktop cannot access its dockerInference runtime socket."
+    "commit": "6a4328898c9ef40ed9716a16bd43afffc78908ff",
+    "filesChanged": [
+      "remote Supabase migrations 8-58",
+      "remote-generated public database types",
+      "remote SQL compatibility and security tests",
+      "Supabase audit and blocker records"
     ],
-    "nextCommand": "Continue T18 financial operations; retry disposable migration and payment protocols when Docker Desktop recovers."
+    "lastVerification": "Remote project has 58/58 migrations, 65/65 public tables with RLS, 159 policies and zero security-advisor errors. All 28 SQL suites pass with forced rollback; no fixtures or pgTAP persisted.",
+    "unresolvedFailures": [
+      "Backup/restore, authenticated staging HTTP/E2E, provider payment, load and human UAT evidence remain external."
+    ],
+    "nextCommand": "Prepare and validate the isolated staging deployment, backup/restore path, provider sandbox and human UAT."
   },
   "events": [
     {
@@ -2116,6 +2125,30 @@
       "type": "remote_supabase_audited",
       "at": "2026-09-12",
       "note": "Project dqonlqcurvjnjgsczevu was identified in the authenticated dashboard as PRODUCTION and active. Read-only SQL confirmed 7/56 migrations, 45/45 public tables with RLS, 149 public policies, 3 Auth users, 0 Storage objects and 0 estimated domain rows. The Free plan has no backups and the local CLI is authenticated to another account; no mutations were performed."
+    },
+    {
+      "type": "remote_supabase_reconciled",
+      "at": "2026-09-12T23:58:01.8909508Z",
+      "tasks": [
+        "T15",
+        "T16",
+        "T17",
+        "T18",
+        "T19",
+        "T20",
+        "T21",
+        "T22",
+        "T23",
+        "T24",
+        "T25",
+        "T26",
+        "T27",
+        "T28",
+        "T29",
+        "T30",
+        "T31"
+      ],
+      "note": "Permanent management access was configured outside the repository. Migrations advanced from 7/56 to 58/58, 28 remote SQL suites passed with forced rollback, RPC boundary defects were repaired, password minimum became 12 and no test fixture or pgTAP extension persisted. Tasks moved to implemented while staging, provider and human acceptance remain pending."
     }
   ],
   "executionWorktree": "E:/Proyectos/GitHub/Lysto-production-readiness"

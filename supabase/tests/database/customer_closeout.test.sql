@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set search_path=public,extensions;
-select plan(13);
+select plan(14);
 select has_table('public','job_customer_decisions','Customer decisions are persisted separately');
 select col_is_unique('public','job_customer_decisions','job_id','One terminal decision per job');
 select has_column('public','reviews','idempotency_key','Reviews support replay protection');
@@ -11,6 +11,7 @@ select ok(has_function_privilege('authenticated','public.confirm_job_outcome(uui
 select ok(not has_function_privilege('anon','public.confirm_job_outcome(uuid,text,text,uuid)','execute'),'Anonymous cannot confirm');
 select ok(has_function_privilege('authenticated','public.submit_customer_review_transaction(uuid,integer,integer,boolean,boolean,text,uuid)','execute'),'Authenticated customer can enter guarded review');
 select ok(not has_function_privilege('anon','public.submit_customer_review_transaction(uuid,integer,integer,boolean,boolean,text,uuid)','execute'),'Anonymous cannot review');
+select ok((select p.prosecdef and array_to_string(p.proconfig,',') like '%search_path=""%' from pg_proc p where p.oid='public.submit_customer_review_transaction(uuid,integer,integer,boolean,boolean,text,uuid)'::regprocedure),'Public review submission uses a pinned definer boundary for its guarded private implementation');
 select ok(not exists(select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname='submit_customer_review_transaction' and pg_get_function_identity_arguments(p.oid) like '%p_customer_id%'),'Client-supplied customer review overload is removed');
 select ok(not has_table_privilege('authenticated','public.job_customer_decisions','insert'),'Decision writes remain transactional');
 select ok(not has_table_privilege('authenticated','public.reviews','insert'),'Review writes remain transactional');

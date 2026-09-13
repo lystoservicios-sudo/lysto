@@ -19,7 +19,7 @@
     "supabase/tests/database/operator_queue.test.sql"
   ],
   "pending": [
-    "apply migration and execute integration plus pgTAP after Docker recovery",
+    "remote migration and pgTAP passed; execute authenticated operator integration in isolated staging",
     "two-operator, finance and quality shift-handoff UAT",
     "D02 SLA and staffing approval",
     "D03 catalog approval"

@@ -25,7 +25,7 @@ begin
   if not found or v_job.customer_id<>v_customer then raise exception using errcode='P0002',message='job_not_found';end if;
   select * into v_existing from public.job_customer_decisions where job_id=v_job.id;
   if found then
-    if v_existing.decision<>p_decision or coalesce(v_existing.reason,'')<>case when p_decision='disputed' then trim(coalesce(p_reason,'')) else '' end then raise exception using errcode='40001',message='customer_decision_conflict';end if;
+    if v_existing.decision<>p_decision or coalesce(v_existing.reason,'')<>(case when p_decision='disputed' then trim(coalesce(p_reason,'')) else '' end) then raise exception using errcode='40001',message='customer_decision_conflict';end if;
     return jsonb_build_object('jobId',v_job.id,'decisionId',v_existing.id,'decision',v_existing.decision,'status',v_job.status,'idempotent',true);
   end if;
   if v_job.status<>'completed_pending_customer_confirmation' or not exists(select 1 from public.job_final_reports where job_id=v_job.id) then raise exception using errcode='40001',message='final_report_confirmation_unavailable';end if;

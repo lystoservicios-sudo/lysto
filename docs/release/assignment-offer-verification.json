@@ -1,6 +1,6 @@
 {
   "task": "T16",
-  "status": "implementation_in_progress_database_verification_pending",
+  "status": "implemented_remote_database_verified_staging_pending",
   "updatedAt": "2026-09-12T11:09:00-03:00",
   "migration": "20260912135703_assignment_offer_lifecycle.sql",
   "implemented": [
@@ -18,7 +18,7 @@
     "targetedLint": "passed"
   },
   "pending": [
-    "Docker Desktop engine must be available to apply T15/T16 migrations and run PostgreSQL integration/pgTAP",
+    "T15/T16 remote migrations and pgTAP passed; authenticated recovery integration remains for isolated staging",
     "T18: reconcile or refund any active checkout before changing the professional",
     "D06: approved offer duration and operational exception policy"
   ]

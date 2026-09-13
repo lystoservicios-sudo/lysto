@@ -22,7 +22,7 @@ select throws_ok($$update mp_split_connected_accounts set enabled=false where se
 select throws_ok($$delete from mp_split_connected_accounts where seller_id='85000000-0000-0000-0000-000000000003'$$,'P0001','seller_has_payments','Account history cannot be deleted');
 select lives_ok($$update mp_split_connected_accounts set encrypted_access_token='renewed-fixture-token' where seller_id='85000000-0000-0000-0000-000000000003'$$,'Same account can refresh its credentials');
 update marketplace_checkouts set status='rejected' where customer_id='85000000-0000-0000-0000-000000000001';
-select throws_ok($$update jobs set professional_id=null where customer_id='85000000-0000-0000-0000-000000000001'$$,'P0001','A checkout pins its professional: close this service before creating a replacement','Rejected card does not release the payee');
+select throws_ok($$update jobs set professional_id=null where customer_id='85000000-0000-0000-0000-000000000001'$$,'P0001','A checkout pins its professional: create a linked replacement service instead','Rejected card does not release the payee');
 set local role authenticated;
 select pg_temp.fixture_set_config('request.jwt.claims','{"sub":"85000000-0000-0000-0000-000000000002","app_metadata":{"app_role":"customer"}}',true);
 select is((select count(*) from marketplace_checkouts),0::bigint,'Other customers cannot read checkout amounts');

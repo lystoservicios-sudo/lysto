@@ -112,7 +112,7 @@ values
 
 insert into public.jobs (id, request_id, customer_id, status)
 values
-  ('17000000-0000-0000-0000-000000000001', '15000000-0000-0000-0000-000000000001', '12000000-0000-0000-0000-000000000001', 'pending_assignment'),
+  ('17000000-0000-0000-0000-000000000001', '15000000-0000-0000-0000-000000000001', '12000000-0000-0000-0000-000000000001', 'completed_pending_customer_confirmation'),
   ('17000000-0000-0000-0000-000000000002', '15000000-0000-0000-0000-000000000002', '12000000-0000-0000-0000-000000000002', 'pending_assignment'),
   ('17000000-0000-0000-0000-000000000003', '15000000-0000-0000-0000-000000000003', '12000000-0000-0000-0000-000000000002', 'pending_assignment'),
   ('17000000-0000-0000-0000-000000000004', '15000000-0000-0000-0000-000000000004', '12000000-0000-0000-0000-000000000002', 'in_progress'),
@@ -132,12 +132,12 @@ values
   ('19000000-0000-0000-0000-000000000002', '12000000-0000-0000-0000-000000000002', '13000000-0000-0000-0000-000000000002', '14000000-0000-0000-0000-000000000001', 'Equipo B');
 
 insert into public.job_final_reports (
-  id, job_id, equipment_id, real_diagnosis, work_done, final_state, warranty_days
+  id, job_id, equipment_id, real_diagnosis, work_done, final_state, warranty_days, after_photo_ids
 )
 values
-  ('1c000000-0000-0000-0000-000000000001', '17000000-0000-0000-0000-000000000001', '19000000-0000-0000-0000-000000000001', 'Diagnóstico válido', 'Trabajo realizado', 'resolved', 30),
-  ('1c000000-0000-0000-0000-000000000002', '17000000-0000-0000-0000-000000000002', '19000000-0000-0000-0000-000000000002', 'Diagnóstico expirado', 'Trabajo realizado', 'resolved', 15),
-  ('1c000000-0000-0000-0000-000000000003', '17000000-0000-0000-0000-000000000003', '19000000-0000-0000-0000-000000000002', 'Diagnóstico revocado', 'Trabajo realizado', 'resolved', 15);
+  ('1c000000-0000-0000-0000-000000000001', '17000000-0000-0000-0000-000000000001', '19000000-0000-0000-0000-000000000001', 'Diagnóstico válido', 'Trabajo realizado', 'resolved', 30, array['1d000000-0000-0000-0000-000000000001']::uuid[]),
+  ('1c000000-0000-0000-0000-000000000002', '17000000-0000-0000-0000-000000000002', '19000000-0000-0000-0000-000000000002', 'Diagnóstico expirado', 'Trabajo realizado', 'resolved', 15, array['1d000000-0000-0000-0000-000000000002']::uuid[]),
+  ('1c000000-0000-0000-0000-000000000003', '17000000-0000-0000-0000-000000000003', '19000000-0000-0000-0000-000000000002', 'Diagnóstico revocado', 'Trabajo realizado', 'resolved', 15, array['1d000000-0000-0000-0000-000000000003']::uuid[]);
 
 insert into public.receipts (id, job_id, final_report_id, public_token, expires_at)
 values
@@ -260,25 +260,27 @@ select throws_ok(
     'none',
     null,
     0,
-    null
+    null,
+    array['1d000000-0000-0000-0000-000000000004']::uuid[],
+    '1f000000-0000-0000-0000-000000000004'
   )$$,
-  'P0001',
-  'Only an approved assigned professional can close a job',
+  '42501',
+  'professional_required',
   'customer cannot close a job through the professional RPC'
 );
 
 select throws_ok(
   $$select public.submit_customer_review_transaction(
     '17000000-0000-0000-0000-000000000006',
-    '12000000-0000-0000-0000-000000000002',
     5,
     5,
     true,
     true,
-    'Intento ajeno'
+    'Intento ajeno',
+    '1f000000-0000-0000-0000-000000000006'
   )$$,
-  'P0001',
-  'Only the owning customer can review this job',
+  'P0002',
+  'job_not_found',
   'customer cannot review another customer job'
 );
 
@@ -325,7 +327,9 @@ select throws_ok(
     'none',
     null,
     0,
-    null
+    null,
+    array['1d000000-0000-0000-0000-000000000005']::uuid[],
+    '1f000000-0000-0000-0000-000000000005'
   )$$,
   '42501',
   null,
@@ -341,7 +345,7 @@ select is(pg_temp.receipt_count('1e000000-0000-0000-0000-000000000002'), 0::bigi
 select is(pg_temp.receipt_count('1e000000-0000-0000-0000-000000000003'), 0::bigint, 'server lookup returns no row for a revoked token');
 select is(
   pg_temp.receipt_keys('1e000000-0000-0000-0000-000000000001'),
-  array['issued_at','next_maintenance_date','professional_name','service_name','warranty_days','work_done']::text[],
+  array['confirmation_status','final_state','issued_at','next_maintenance_date','professional_name','service_name','warranty_until','work_done']::text[],
   'server lookup exposes only the minimal public receipt projection'
 );
 

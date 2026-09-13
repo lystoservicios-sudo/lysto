@@ -1,6 +1,6 @@
 {
   "task": "T18",
-  "status": "implementation_in_progress_database_and_provider_verification_pending",
+  "status": "implemented_remote_database_verified_provider_pending",
   "updatedAt": "2026-09-12T14:35:00-03:00",
   "migration": "20260912142037_financial_exception_workflows.sql",
   "implemented": [
@@ -19,7 +19,7 @@
     "lint": "passed"
   },
   "pending": [
-    "Docker Desktop engine must be available to apply the migration and run financial-exceptions integration plus pgTAP",
+    "remote migration and pgTAP passed; authenticated financial integration remains for isolated staging",
     "T36 must execute an authorized Mercado Pago test refund and reconciliation",
     "D06 must approve cancellation, no-show, refund and warranty economics"
   ],

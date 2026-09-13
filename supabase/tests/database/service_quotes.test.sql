@@ -9,7 +9,7 @@ select has_table('public', 'service_quotes', 'Immutable service quote snapshots 
 select has_table('public', 'job_extras', 'Additional faults are stored separately');
 select has_function('public', 'submit_service_quote_v2', array['uuid','integer'], 'Customer accepts a saved quote version without sending an amount');
 select has_function('public', 'propose_job_extra', array['uuid','text','text','numeric','uuid'], 'Professional proposes an additional fault');
-select has_function('public', 'decide_job_extra', array['uuid','text'], 'Customer decides on the extra');
+select has_function('public', 'decide_job_extra_v2', array['uuid','text','uuid'], 'Customer decides on the extra through an idempotent command');
 select has_function('public', 'review_service_quote_v2', array['uuid','integer','text'], 'Operations reviews a preliminary quote version');
 select has_function('public', 'get_quote_policy', array[]::text[], 'Calculator policy is versioned in the database');
 
@@ -53,14 +53,14 @@ select id,customer_id,'91000000-0000-0000-0000-000000000003','12345',130000,2340
 update public.jobs set professional_id='91000000-0000-0000-0000-000000000003',status='onsite_diagnosis' where customer_id='91000000-0000-0000-0000-000000000001';
 set local role authenticated;
 select pg_temp.fixture_set_config('request.jwt.claims','{"sub":"91000000-0000-0000-0000-000000000003","app_metadata":{"app_role":"professional"}}',true);
-select throws_ok($$select public.advance_service_job((select id from public.jobs where customer_id='91000000-0000-0000-0000-000000000001'),'arrived')$$,'P0001','Job status changed: refresh before continuing','Repeated transition cannot advance another step');
+select throws_ok($$select public.advance_service_job_v2((select id from public.jobs where customer_id='91000000-0000-0000-0000-000000000001'),'arrived','93000000-0000-0000-0000-000000000010')$$,'40001','job_status_changed','Repeated transition cannot advance another step');
 select lives_ok($$select public.propose_job_extra((select id from public.jobs where customer_id='91000000-0000-0000-0000-000000000001'),'Otra falla detectada','Cambiar capacitor de unidad exterior',50000,'93000000-0000-0000-0000-000000000001')$$,'Assigned professional records additional fault');
-select throws_ok($$select public.advance_service_job((select id from public.jobs where customer_id='91000000-0000-0000-0000-000000000001'),'onsite_diagnosis')$$,'P0001','Customer decision pending on additional work','Cannot start work with unresolved extra');
+select throws_ok($$select public.advance_service_job_v2((select id from public.jobs where customer_id='91000000-0000-0000-0000-000000000001'),'onsite_diagnosis','93000000-0000-0000-0000-000000000011')$$,'22023','diagnosis_submission_required','Onsite diagnosis cannot be skipped through the legacy status transition');
 select is((select platform_fee from public.job_extras where idempotency_key='93000000-0000-0000-0000-000000000001'),0::numeric,'Additional fault commission is zero');
 select is((select professional_amount from public.job_extras where idempotency_key='93000000-0000-0000-0000-000000000001'),50000::numeric,'Professional receives 100 percent of additional amount');
 select pg_temp.fixture_set_config('request.jwt.claims','{"sub":"91000000-0000-0000-0000-000000000001","app_metadata":{"app_role":"customer"}}',true);
-select lives_ok($$select public.decide_job_extra((select id from public.job_extras where idempotency_key='93000000-0000-0000-0000-000000000001'),'accepted')$$,'Customer accepts the additional scope');
-select lives_ok($$select public.decide_job_extra((select id from public.job_extras where idempotency_key='93000000-0000-0000-0000-000000000001'),'accepted')$$,'Retrying customer acceptance is safe');
+select lives_ok($$select public.decide_job_extra_v2((select id from public.job_extras where idempotency_key='93000000-0000-0000-0000-000000000001'),'accepted','93000000-0000-0000-0000-000000000012')$$,'Customer accepts the additional scope');
+select lives_ok($$select public.decide_job_extra_v2((select id from public.job_extras where idempotency_key='93000000-0000-0000-0000-000000000001'),'accepted','93000000-0000-0000-0000-000000000012')$$,'Retrying customer acceptance is safe');
 select is((select amount from public.price_options where request_id=(select request_id from public.service_quotes where id='92000000-0000-0000-0000-000000000001')),130000::numeric,'Initial service amount stays frozen');
 select is((select count(*) from public.payments where customer_id='91000000-0000-0000-0000-000000000001'),0::bigint,'Quote and extra acceptance do not invent payments');
 reset role;

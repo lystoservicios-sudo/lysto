@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set search_path=public,extensions;
-select plan(14);
+select plan(15);
 select has_table('private','job_closeout_commands','Closeout commands are private and durable');
 select ok((select relrowsecurity and relforcerowsecurity from pg_class where oid=to_regclass('private.job_closeout_commands')),'Closeout commands force RLS');
 select ok(not has_table_privilege('service_role','private.job_closeout_commands','select'),'Service role cannot read command payloads');
@@ -12,6 +12,7 @@ select has_column('public','job_final_reports','version','Final report exposes a
 select has_trigger('public','job_final_reports','job_final_reports_immutable','Final reports cannot be overwritten');
 select ok(has_function_privilege('authenticated','public.close_job_with_final_report(uuid,uuid,text,text,text,text,public.maintenance_option,date,integer,text,uuid[],uuid)','execute'),'Authenticated professionals can enter the guarded closeout');
 select ok(not has_function_privilege('anon','public.close_job_with_final_report(uuid,uuid,text,text,text,text,public.maintenance_option,date,integer,text,uuid[],uuid)','execute'),'Anonymous users cannot close jobs');
+select ok((select p.prosecdef and array_to_string(p.proconfig,',') like '%search_path=""%' from pg_proc p where p.oid='public.close_job_with_final_report(uuid,uuid,text,text,text,text,public.maintenance_option,date,integer,text,uuid[],uuid)'::regprocedure),'Public closeout uses a pinned definer boundary for its guarded private implementation');
 select ok(not has_function_privilege('authenticated','private.close_job_with_final_report(uuid,uuid,text,text,text,text,public.maintenance_option,date,integer,text,uuid[],uuid)','execute'),'Private implementation is unreachable');
 select ok(not exists(select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname='close_job_with_final_report' and pg_get_function_identity_arguments(p.oid) not like '%uuid[]%'),'Legacy closeout overload is removed');
 select ok(not has_table_privilege('authenticated','public.job_final_reports','update'),'Authenticated users cannot update final reports');

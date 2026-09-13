@@ -1,5 +1,5 @@
 begin;
-select plan(23);
+select plan(24);
 
 select has_table('public','job_schedule_reservations','schedule reservations exist');
 select has_table('public','job_reschedule_requests','reschedule requests exist');
@@ -22,6 +22,11 @@ select row_security_is('public','job_schedule_reservations',true,'reservation RL
 select row_security_is('public','job_reschedule_requests',true,'reschedule RLS enabled');
 select row_security_is('public','professional_absences',true,'absence RLS enabled');
 select ok((select count(*)=1 from pg_constraint where conname='job_schedule_no_professional_overlap'),'database owns overlap arbitration');
+select like(
+  (select pg_get_constraintdef(oid) from pg_constraint where conname='job_schedule_no_professional_overlap'),
+  '%tsrange((timezone(''UTC''::text, starts_at)%timezone(''UTC''::text, ends_at)%',
+  'overlap index normalizes timestamptz values to immutable UTC timestamps'
+);
 select has_trigger('public','jobs','job_schedule_release','job cancellation releases reservations');
 select unlike((select pg_get_functiondef(p.oid) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname='get_schedule_availability'),'% limit %','availability does not hide reservations behind a row limit');
 

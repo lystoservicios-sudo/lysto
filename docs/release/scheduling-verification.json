@@ -1,6 +1,6 @@
 {
   "task": "T15",
-  "status": "implementation_in_progress_database_verification_pending",
+  "status": "implemented_remote_database_verified_staging_pending",
   "updatedAt": "2026-09-12T10:55:00-03:00",
   "migration": "20260912134057_scheduling_capacity_and_reschedule.sql",
   "implemented": [
@@ -19,7 +19,7 @@
     "targetedLint": "passed"
   },
   "pending": [
-    "Docker Desktop engine must be available to apply migration and run PostgreSQL integration/pgTAP",
+    "remote migration and pgTAP passed; authenticated scheduling integration remains for isolated staging",
     "D06: operations and finance approval of reschedule, cancellation and no-show policy"
   ]
 }

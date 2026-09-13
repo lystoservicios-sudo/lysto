@@ -1,6 +1,6 @@
 {
   "task": "T24",
-  "status": "implementation_in_progress_database_verification_pending",
+  "status": "implemented_remote_database_verified_delivery_pending",
   "updatedAt": "2026-09-12T13:35:00-03:00",
   "implemented": [
     "versioned templates with authorized URLs",
@@ -17,7 +17,7 @@
     "targetedLint": "passed"
   },
   "pending": [
-    "Docker Desktop engine must be available to apply corrective migrations and run PostgreSQL integration/pgTAP",
+    "remote migrations and pgTAP passed; sender and worker integration remains for isolated staging",
     "D06/T36: approved sender, DNS, sandbox reception and durable hosting scheduler",
     "T30: production alert transport and monitoring evidence"
   ],

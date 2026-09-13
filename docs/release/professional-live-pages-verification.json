@@ -1,6 +1,6 @@
 {
   "task": "T28",
-  "status": "implemented_pending_database_verification",
+  "status": "implemented_remote_database_verified_staging_pending",
   "implementedAt": "2026-09-12T16:20:00Z",
   "routes": {
     "serverSession": ["/pro/dashboard", "/pro/trabajos", "/pro/perfil", "/pro/agenda", "/pro/equipos/[id]"],
@@ -31,7 +31,7 @@
     "suspended professional cannot open workspace"
   ],
   "blockedVerification": [
-    "Disposable Supabase integration cannot run while Docker Desktop cannot access its stale dockerInference runtime socket.",
+    "Authenticated professional-page integration requires isolated staging; remote SQL verification passed.",
     "Full mobile device, interrupted network and multi-device recovery walkthrough requires designated staging.",
     "D07 must approve the documentary renewal policy before operations can activate a renewal workflow."
   ],

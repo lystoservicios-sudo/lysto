@@ -6,7 +6,7 @@ Fecha de preparación: 2026-09-12. Estado final demostrado: **PREPARACIÓN LOCAL
 
 La implementación está en la rama local `codex/production-readiness`. El candidato definitivo debe crearse después de todos los cambios desde un checkout limpio. El Supabase remoto `dqonlqcurvjnjgsczevu` fue identificado como `PRODUCTION`, pero todavía no existe staging identificado ni un destino de hosting aprobado para el candidato.
 
-El registro canónico es `docs/plans/2026-09-10-production-progress.json`. En el cierre de preparación registra 11 tareas verificadas, 6 implementadas con verificación externa pendiente, 19 en progreso por pruebas DB/staging/proveedor y T36–T39 bloqueadas por dependencias externas. Las 40 tareas fueron trabajadas; ese contador no equivale a release.
+El registro canónico es `docs/plans/2026-09-10-production-progress.json`. Registra 11 tareas verificadas, 23 implementadas con aceptación externa pendiente, 2 en progreso por E2E/carga y T36–T39 bloqueadas por dependencias externas. Las 40 tareas fueron trabajadas; ese contador no equivale a release.
 
 ## Gates y decisión
 
@@ -23,7 +23,7 @@ La verificación local final aprobó lint, tipos, 174 pruebas de dominio, 503 pr
 
 ## Bloqueos para el piloto
 
-1. Autenticar el CLI con la cuenta propietaria del Supabase remoto ya identificado, crear un dump o backup recuperable y ejecutar allí las 49 migraciones e integraciones pendientes de T15–T31 con pgTAP. El estado inicial remoto es 7/56 migraciones, 45/45 tablas públicas con RLS, 3 usuarios Auth, 0 objetos Storage y 0 filas de negocio estimadas. No usar Supabase local ni Docker.
+1. Pasar el Supabase remoto a un plan con backup restaurable y protección HIBP; demostrar una restauración completa en un proyecto aislado. El esquema ya está en 58/58 migraciones, con 65/65 tablas públicas bajo RLS y 28 suites SQL aprobadas con rollback. No usar Supabase local ni Docker.
 2. Designar staging/hosting, project ref, dominio, secretos, remitente, scheduler y destinos de alertas; ejecutar T32, T34, T35 y T36 allí.
 3. Identificar la aplicación y cuentas Mercado Pago, completar MP01–MP12 y cualquier prueba financiera real expresamente autorizada.
 4. Resolver D01–D12, aprobar políticas, economía, soporte, RPO/RTO, capacidad y responsables/suplentes nominales.

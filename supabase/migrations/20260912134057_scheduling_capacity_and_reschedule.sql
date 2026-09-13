@@ -44,9 +44,9 @@ create table public.job_schedule_reservations (
 alter table public.job_schedule_reservations add constraint job_schedule_no_professional_overlap
   exclude using gist (
     professional_id with =,
-    tstzrange(
-      starts_at-travel_buffer_minutes*interval '1 minute',
-      ends_at+travel_buffer_minutes*interval '1 minute','[)'
+    tsrange(
+      timezone('UTC',starts_at)-travel_buffer_minutes*interval '1 minute',
+      timezone('UTC',ends_at)+travel_buffer_minutes*interval '1 minute','[)'
     ) with &&
   ) where(state in ('hold','confirmed'));
 create unique index job_schedule_one_active on public.job_schedule_reservations(job_id)

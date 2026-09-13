@@ -149,7 +149,7 @@ $$;
 select pg_temp.set_jwt('30000000-0000-0000-0000-000000000001');
 set local role authenticated;
 
-select is((select count(*) from public.professional_profiles), 1::bigint, 'operations admin can read professional records');
+select is((select count(*) from public.professional_profiles where id = '33000000-0000-0000-0000-000000000001'), 1::bigint, 'operations admin can read the fixture professional record');
 
 select throws_ok(
   $$update public.professional_profiles set status = 'under_review' where id = '33000000-0000-0000-0000-000000000001' returning id$$,
@@ -776,10 +776,11 @@ select is(
   'quality admin cannot read professional identity and approval records'
 );
 
-select results_eq(
-  $$update public.complaints set status = 'in_review' where id = '3a000000-0000-0000-0000-000000000001' returning id$$,
-  $$values ('3a000000-0000-0000-0000-000000000001'::uuid)$$,
-  'quality admin can operate quality cases'
+select throws_ok(
+  $$update public.complaints set status = 'in_review' where id = '3a000000-0000-0000-0000-000000000001'$$,
+  '42501',
+  null,
+  'quality admin cannot bypass the audited support workflow with a raw update'
 );
 
 reset role;

@@ -59,15 +59,20 @@ select is(
   'every public table has RLS enabled'
 );
 
-select is(
-  (
-    select count(*)
+select ok(
+  not exists (
+    select 1
     from pg_proc p
     join pg_namespace n on n.oid = p.pronamespace
-    where n.nspname = 'public' and p.prosecdef
+    where n.nspname = 'public'
+      and p.prosecdef
+      and (
+        p.proconfig is null
+        or array_to_string(p.proconfig, ',') not like '%search_path=%'
+        or has_function_privilege('anon', p.oid, 'execute')
+      )
   ),
-  0::bigint,
-  'no security definer function remains in the exposed public schema'
+  'public security definer RPCs pin search_path and are not anonymous'
 );
 
 select ok(
@@ -175,15 +180,11 @@ select ok(
 );
 
 select ok(
-  exists (
-    select 1
-    from pg_class c
-    join pg_namespace n on n.oid = c.relnamespace
-    where n.nspname = 'public'
-      and c.relname = 'public_receipt_view'
-      and 'security_invoker=true' = any(coalesce(c.reloptions, array[]::text[]))
-  ),
-  'public receipt view uses caller privileges'
+  to_regclass('public.public_receipt_view') is null
+  and to_regprocedure('public.lookup_public_receipt(uuid)') is not null
+  and has_function_privilege('service_role', 'public.lookup_public_receipt(uuid)', 'execute')
+  and not has_function_privilege('anon', 'public.lookup_public_receipt(uuid)', 'execute'),
+  'public receipt projection is available only through the service-role RPC'
 );
 
 select has_column('public', 'receipts', 'revoked_at', 'canonical receipts support revocation');

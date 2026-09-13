@@ -1,6 +1,6 @@
 {
   "task": "T34",
-  "status": "prepared_pending_disposable_backend_and_human_mobile_uat",
+  "status": "prepared_pending_isolated_staging_and_human_mobile_uat",
   "requiredSuites": [
     "auth-access.spec.ts",
     "customer-production.spec.ts",
@@ -22,7 +22,7 @@
   "execution": null,
   "humanUat": null,
   "pending": [
-    "Docker Desktop recovery for disposable Supabase",
+    "designated isolated staging with disposable test identities",
     "complete automated execution on the release candidate",
     "physical phone and named operator/finance/quality UAT"
   ]
