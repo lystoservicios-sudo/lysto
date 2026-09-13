@@ -23,7 +23,9 @@ No habilitar email hasta acreditar remitente, recepción sandbox, SPF, DKIM y DM
 
 ## Scheduler
 
-El scheduler del hosting debe ejecutar el worker cada minuto. El proyecto incluye un Vercel Cron en `vercel.json` que hace `GET /api/internal/outbox`; Vercel envía `Authorization: Bearer <CRON_SECRET>` y la ruta procesa un lote de cinco. La alternativa operativa es `POST /api/internal/outbox` con `Authorization: Bearer <OUTBOX_WORKER_SECRET>`, `Content-Type: application/json` y `{"batchSize":5}`. Cada request espera el lote completo, tiene presupuesto de 45 segundos y la ruta declara máximo de 60. Los cron de Vercel sólo se activan en despliegues Production del proyecto: el staging actual en Preview requiere invocación controlada o un proyecto de staging separado para demostrar frecuencia real. T36 debe aportar ejecuciones consecutivas y alertas del hosting.
+El scheduler debe ejecutar el worker cada minuto. La configuración adoptada para el plan actual usa Supabase Cron con `pg_cron` y `pg_net`: hace `GET /api/internal/outbox`, envía `Authorization: Bearer <CRON_SECRET>` y la ruta procesa un lote de cinco. La URL y los secretos viven en Supabase Vault; nunca se escriben en la migración ni en `cron.job.command`. El Preview protegido agrega el header `x-vercel-protection-bypass` desde un secreto separado de Vault. La alternativa operativa es `POST /api/internal/outbox` con `Authorization: Bearer <OUTBOX_WORKER_SECRET>`, `Content-Type: application/json` y `{"batchSize":5}`. Cada request tiene un máximo de 60 segundos. T36 debe aportar ejecuciones consecutivas, respuesta HTTP y alertas del scheduler.
+
+Vercel Hobby sólo permite cron diarios y rechaza una expresión por minuto durante el despliegue. Por eso el repositorio no declara `crons` en `vercel.json`. Si la cuenta pasa a Pro, el scheduler puede migrarse a Vercel con la misma ruta y `CRON_SECRET`; no deben quedar los dos schedulers activos a la vez.
 
 Nunca ejecutar dos schedulers con secretos distintos contra entornos mezclados. Los workers concurrentes son válidos porque PostgreSQL usa `SKIP LOCKED`; cada instancia debe tener un identificador distinto.
 
