@@ -13,7 +13,11 @@ const nextConfig: NextConfig = {
       "base-uri 'self'",
       "object-src 'none'",
       "frame-ancestors 'none'",
-      "script-src 'self' 'unsafe-inline' https://sdk.mercadopago.com",
+      [
+        "script-src 'self' 'unsafe-inline'",
+        ...(process.env.NODE_ENV === 'development' ? ["'unsafe-eval'"] : []),
+        'https://sdk.mercadopago.com'
+      ].join(' '),
       "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.mercadopago.com",
       'frame-src https://www.mercadopago.com https://*.mercadopago.com',
       "img-src 'self' data: blob: https:",

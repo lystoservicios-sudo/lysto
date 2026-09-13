@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { Client } from 'pg'
 import { createFixtureAccounts, type AccountName } from './fixtures'
 import { fixtureCookieHeader, startTestApp } from './http'
@@ -29,6 +29,9 @@ describe('versioned service quote lifecycle', () => {
     pendingApp = startTestApp()
     app = await pendingApp
   }, 300000)
+  beforeEach(async () => {
+    await database?.query("delete from private.rate_limit_buckets where key like 'quote:%'")
+  })
   afterAll(async () => {
     try {
       await (app ?? (await pendingApp?.catch(() => undefined)))?.stop()

@@ -2,7 +2,7 @@
 import { beforeEach, expect, it, vi } from 'vitest'
 import { NextRequest } from 'next/server'
 import type { SetAllCookies } from '@supabase/ssr'
-const mocks = vi.hoisted(() => ({ create: vi.fn(), getUser: vi.fn() }))
+const mocks = vi.hoisted(() => ({ create: vi.fn(), getClaims: vi.fn() }))
 vi.mock('@supabase/ssr', () => ({ createServerClient: mocks.create }))
 vi.mock('@/lib/supabase/env', () => ({
   assertPublicSupabaseEnv: () => ({ url: 'http://localhost:54321', anonKey: 'test-key' })
@@ -11,8 +11,8 @@ import { middleware } from '@/middleware'
 
 beforeEach(() => {
   vi.clearAllMocks()
-  mocks.getUser.mockResolvedValue({ data: { user: null }, error: null })
-  mocks.create.mockReturnValue({ auth: { getUser: mocks.getUser } })
+  mocks.getClaims.mockResolvedValue({ data: { claims: null }, error: null })
+  mocks.create.mockReturnValue({ auth: { getClaims: mocks.getClaims } })
 })
 it.each(['/app', '/pro/onboarding', '/pro/onboarding/' + 'a'.repeat(43)])(
   'refreshes downstream and browser cookies without losing private headers on %s',
@@ -23,16 +23,17 @@ it.each(['/app', '/pro/onboarding', '/pro/onboarding/' + 'a'.repeat(43)])(
     mocks.create.mockImplementation(
       (_url, _key, options: { cookies: { setAll: SetAllCookies } }) => ({
         auth: {
-          async getUser() {
+          async getClaims() {
             await options.cookies.setAll([
               { name: 'sb-auth', value: 'refreshed', options: { httpOnly: true, path: '/' } }
             ])
-            return { data: { user: { id: 'user' } }, error: null }
+            return { data: { claims: { sub: 'user' } }, error: null }
           }
         }
       })
     )
     const response = await middleware(request)
+    expect(mocks.getClaims).not.toHaveBeenCalled()
     expect(request.cookies.get('sb-auth')?.value).toBe('refreshed')
     expect(response.headers.get('set-cookie')).toContain('sb-auth=refreshed')
     expect(response.headers.get('cache-control')).toContain('no-store')
@@ -70,7 +71,7 @@ it('does not cache the closed public receipt or require a user login for it', as
   expect(mocks.create).not.toHaveBeenCalled()
 })
 it('fails closed without disclosing refresh errors', async () => {
-  mocks.getUser.mockRejectedValue(new Error('private infrastructure detail'))
+  mocks.getClaims.mockRejectedValue(new Error('private infrastructure detail'))
   const response = await middleware(new NextRequest('https://lysto.test/app'))
   expect(response.status).toBe(503)
   expect(JSON.stringify(await response.json())).not.toContain('private infrastructure detail')

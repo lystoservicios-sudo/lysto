@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { redactLogValue } from '@/lib/observability/logger'
 import { rateLimitKey } from '@/lib/security/rate-limit'
 import {
@@ -76,4 +76,16 @@ it('ships browser security headers with Mercado Pago compatibility', async () =>
   expect(headers['X-Frame-Options']).toBe('DENY')
   expect(headers['Content-Security-Policy']).toContain('sdk.mercadopago.com')
   expect(headers['Content-Security-Policy']).toContain("frame-ancestors 'none'")
+  expect(headers['Content-Security-Policy']).not.toContain("'unsafe-eval'")
+})
+
+it('allows the Next development runtime to hydrate local browser tests', async () => {
+  vi.stubEnv('NODE_ENV', 'development')
+  try {
+    const entries = await nextConfig.headers!()
+    const headers = Object.fromEntries(entries[0].headers.map(({ key, value }) => [key, value]))
+    expect(headers['Content-Security-Policy']).toContain("'unsafe-eval'")
+  } finally {
+    vi.unstubAllEnvs()
+  }
 })

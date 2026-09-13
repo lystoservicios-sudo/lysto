@@ -70,7 +70,7 @@ export async function middleware(request: NextRequest) {
     })
     // Refresh cookies for both the downstream server render and the browser.
     // Layouts and each API still resolve current profile/permissions themselves.
-    await supabase.auth.getUser()
+    await supabase.auth.getClaims()
     return response
   } catch {
     return withCorrelation(onboardingHeaders(apiErrorResponse(new ApiError('session_unavailable'))))

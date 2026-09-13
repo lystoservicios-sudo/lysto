@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { Client } from 'pg'
 import { createHash } from 'node:crypto'
-import { writeFileSync } from 'node:fs'
+import { mkdirSync, writeFileSync } from 'node:fs'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import sharp from 'sharp'
 import { chromium, type Page } from '@playwright/test'
@@ -209,6 +209,7 @@ describe('professional invitation and review lifecycle', () => {
       try {
         await run(page)
       } catch (error) {
+        mkdirSync('output/production-readiness', { recursive: true })
         writeFileSync(
           `output/production-readiness/t11-browser-${actor}-failure.txt`,
           await page.locator('body').innerText()

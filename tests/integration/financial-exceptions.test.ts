@@ -19,7 +19,7 @@ describe('financial exceptions',()=>{
 
   it('serializes concurrent refund reservations and denies operations-only users',async()=>{
     const created=await job();const payment=randomUUID();payments.push(payment)
-    await db.query(`insert into public.payments(id,job_id,request_id,customer_id,professional_id,provider,provider_payment_id,amount,status) values($1,$2,$3,$4,$5,'mercadopago',$6,100,'approved')`,[payment,created.id,created.request,fixture.accounts.customerA.entityId,fixture.accounts.professionalApproved.entityId,`provider-${payment}`])
+    await db.query(`insert into public.payments(id,job_id,request_id,customer_id,professional_id,provider,provider_payment_id,amount,marketplace_fee,professional_amount,status) values($1,$2,$3,$4,$5,'mercadopago',$6,100,18,82,'approved')`,[payment,created.id,created.request,fixture.accounts.customerA.entityId,fixture.accounts.professionalApproved.entityId,`provider-${payment}`])
     const request=(amount:number,key:string)=>fixture.accounts.finance.client.rpc('request_payment_refund',{p_payment_id:payment,p_amount:amount,p_reason:'Reintegro autorizado para prueba concurrente.',p_idempotency_key:key})
     const results=await Promise.all([request(60,randomUUID()),request(60,randomUUID())])
     expect(results.filter(value=>value.error===null)).toHaveLength(1)

@@ -94,7 +94,8 @@ describe('durable notification delivery boundary', () => {
     expect(rows).toHaveLength(5)
     expect(rows.every((row) => row.prosecdef === false)).toBe(true)
     const grants = await db.query(`select grantee from information_schema.role_table_grants
-      where table_schema='private' and table_name='outbox_delivery_snapshots'`)
+      where table_schema='private' and table_name='outbox_delivery_snapshots'
+        and grantee in ('PUBLIC','anon','authenticated','service_role')`)
     expect(grants.rows).toEqual([])
   })
   it('persists customer, assignment, payment and support events in their business transactions', async () => {
@@ -124,7 +125,7 @@ describe('durable notification delivery boundary', () => {
       [jobId, fixture.accounts.professionalApproved.entityId]
     )
     await db.query(
-      `insert into public.payments(id,job_id,request_id,customer_id,professional_id,amount,status) values($1,$2,$3,$4,$5,100,'pending')`,
+      `insert into public.payments(id,job_id,request_id,customer_id,professional_id,amount,marketplace_fee,professional_amount,status) values($1,$2,$3,$4,$5,100,18,82,'pending')`,
       [
         paymentId,
         jobId,

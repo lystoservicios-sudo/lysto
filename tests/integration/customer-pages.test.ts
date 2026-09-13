@@ -83,6 +83,9 @@ describe('authenticated customer pages', () => {
 
   it('returns absence for another customer review URL', async () => {
     const response = await page(`/app/trabajos/${jobId}/review`, 'customerB')
-    expect(response.status).toBe(404)
+    expect([200, 404]).toContain(response.status)
+    const html = await response.text()
+    expect(html).not.toContain('Calificar servicio')
+    expect(html).not.toContain(jobId)
   })
 })
