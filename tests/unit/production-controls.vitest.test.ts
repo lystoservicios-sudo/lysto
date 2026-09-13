@@ -86,10 +86,13 @@ it('ships browser security headers with Mercado Pago compatibility', async () =>
 
 it('allows the Next development runtime to hydrate local browser tests', async () => {
   vi.stubEnv('NODE_ENV', 'development')
+  vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'http://127.0.0.1:54321')
   try {
     const entries = await nextConfig.headers!()
     const headers = Object.fromEntries(entries[0].headers.map(({ key, value }) => [key, value]))
     expect(headers['Content-Security-Policy']).toContain("'unsafe-eval'")
+    expect(headers['Content-Security-Policy']).toContain('http://127.0.0.1:54321')
+    expect(headers['Content-Security-Policy']).toContain('ws://127.0.0.1:54321')
   } finally {
     vi.unstubAllEnvs()
   }

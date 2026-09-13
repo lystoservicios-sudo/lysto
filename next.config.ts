@@ -1,5 +1,16 @@
 import type { NextConfig } from 'next'
 
+function supabaseBrowserOrigins() {
+  try {
+    const endpoint = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? '')
+    if (!['http:', 'https:'].includes(endpoint.protocol)) return []
+    const websocketProtocol = endpoint.protocol === 'https:' ? 'wss:' : 'ws:'
+    return [endpoint.origin, `${websocketProtocol}//${endpoint.host}`]
+  } catch {
+    return []
+  }
+}
+
 const nextConfig: NextConfig = {
   distDir: process.env.LYSTO_BUILD_DIR ?? '.next',
   // Keep page-generation workers bounded on developer machines and CI runners.
@@ -18,7 +29,13 @@ const nextConfig: NextConfig = {
         ...(process.env.NODE_ENV === 'development' ? ["'unsafe-eval'"] : []),
         'https://sdk.mercadopago.com'
       ].join(' '),
-      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.mercadopago.com",
+      [
+        "connect-src 'self'",
+        'https://*.supabase.co',
+        'wss://*.supabase.co',
+        ...supabaseBrowserOrigins(),
+        'https://api.mercadopago.com'
+      ].join(' '),
       'frame-src https://www.mercadopago.com https://*.mercadopago.com',
       "img-src 'self' data: blob: https:",
       "style-src 'self' 'unsafe-inline'",

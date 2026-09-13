@@ -251,8 +251,8 @@ describe('private uploads through actual HTTP and Storage', () => {
       await page.getByRole('button', { name: /Guardar fotos/ }).click()
       await Promise.race([
         page.getByText('Guardada y verificada', { exact: true }).waitFor(),
-        page.getByRole('alert').waitFor().then(async () => {
-          throw new Error(`Equipment browser upload failed: ${await page.getByRole('alert').innerText()}`)
+        page.locator('[role="alert"]', { hasText: /\S/ }).waitFor().then(async () => {
+          throw new Error(`Equipment browser upload failed: ${await page.locator('[role="alert"]', { hasText: /\S/ }).first().innerText()}`)
         })
       ])
       await page.reload()

@@ -32,7 +32,7 @@ describe('minimal public receipt', () => {
       [equipmentId, fixture.accounts.customerA.entityId, addressId, config.category]
     )
     await db.query(
-      `insert into public.service_requests(id,customer_id,category_id,issue_type_id,status,equipment_id,address_id) values($1,$2,$3,$4,'completed',$5,$6)`,
+      `insert into public.service_requests(id,customer_id,category_id,issue_type_id,status,equipment_id,address_id) values($1,$2,$3,$4,'assigned',$5,$6)`,
       [requestId, fixture.accounts.customerA.entityId, config.category, config.issue, equipmentId, addressId]
     )
     await db.query(

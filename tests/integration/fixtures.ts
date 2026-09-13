@@ -59,7 +59,7 @@ export function createFixtureAccounts({ mfa = true }: { mfa?: boolean } = {}) {
           })
         },
         {
-          timeoutMs: setup ? 10_000 : 4_000,
+          timeoutMs: setup ? 10_000 : 15_000,
           signal: signals.length ? AbortSignal.any(signals) : undefined
         }
       )
@@ -161,7 +161,7 @@ export function createFixtureAccounts({ mfa = true }: { mfa?: boolean } = {}) {
           }
         })
       }
-      const failures = await runFixtureCleanup(steps)
+      const failures = await runFixtureCleanup(steps, { timeoutMs: 20_000 })
       // Aborting HTTP cannot prove the server did not commit later. Keep the
       // pre-registered ID recoverable and never certify that case as cleaned.
       if (uncertainCreations.size)

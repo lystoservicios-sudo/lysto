@@ -87,12 +87,24 @@ describe('authenticated professional pages', () => {
   })
 
   it('shows the empty assigned history after removing the only owned job from view', async () => {
-    const response = await page('/pro/trabajos?cursor=invalid', 'professionalApproved')
-    expect(response.status).toBeGreaterThanOrEqual(400)
+    await database.query('update public.jobs set professional_id=$1 where id=$2', [
+      fixture.accounts.professionalSuspended.entityId,
+      jobId
+    ])
+    try {
+      const response = await page('/pro/trabajos', 'professionalApproved')
+      expect(response.status).toBe(200)
+      expect(await response.text()).toContain('No hay trabajos en este estado')
+    } finally {
+      await database.query('update public.jobs set professional_id=$1 where id=$2', [
+        fixture.accounts.professionalApproved.entityId,
+        jobId
+      ])
+    }
   })
 
   it('does not open the professional workspace for a suspended profile', async () => {
     const response = await page('/pro/dashboard', 'professionalSuspended')
-    expect([302, 303, 307, 308, 401, 403]).toContain(response.status)
+    expect(response.status).toBe(404)
   })
 })

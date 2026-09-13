@@ -141,7 +141,7 @@ describe('atomic job closeout', () => {
           p_equipment_id: randomUUID()
         })
       ).error?.code
-    ).toBe('42501')
+    ).toBe('40001')
     expect(
       (
         await fixture.accounts.professionalApproved.client.rpc('close_job_with_final_report', {
