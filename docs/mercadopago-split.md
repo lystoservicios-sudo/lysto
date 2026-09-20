@@ -2,13 +2,13 @@
 
 ## Qué quedó implementado
 
-Checkout Pro usa el paquete del repositorio solicitado, fijado en `aeb07a24303edf701004ec1dbb8d4073dc8784af`. El paquete se instala desde `vendor/` con su cliente Prisma generado. Los complementos de Lysto están en `lib/payments/marketplace*.ts`; las migraciones se administran con Supabase, no con el migrador independiente del paquete.
+Los checkouts históricos conservan Checkout Pro vía Preferences y el paquete fijado en `aeb07a24303edf701004ec1dbb8d4073dc8784af`. Los nuevos checkouts siguen en Preferences hasta habilitar explícitamente Orders; entonces los que aún no tienen enlace pueden pasar a Checkout Pro vía Orders API. Ambos protocolos comparten OAuth, importes inmutables y ledger; la columna `checkout_protocol` impide confundir los recursos. Las migraciones se administran con Supabase, no con el migrador independiente del paquete.
 
 1. Finanzas configura **Comisión Lysto (%)** en `/admin/calculadora` (por ejemplo, 18 para el 18%). Cada presupuesto conserva la comisión acordada. Cambiar la configuración afecta presupuestos nuevos; no cambia importes ya aceptados.
 2. El cliente acepta el presupuesto. Operaciones propone el trabajo; el técnico lo acepta antes de habilitar el cobro.
 3. Cada técnico aprobado vincula su propia cuenta desde `/pro/mercadopago`, autorizando la aplicación de Mercado Pago de Lysto.
 4. El cliente paga desde el detalle de su trabajo. El servidor recupera precio, destinatario y comisión de los registros aceptados. No acepta estos valores desde el navegador.
-5. Mercado Pago reparte el pago. El webhook consulta el pago auténtico y valida referencia, destinatario, moneda, ambiente, importe y comisión. El retorno del navegador nunca aprueba un pago.
+5. Mercado Pago reparte el pago. El webhook firmado de tipo `order` consulta la orden auténtica; los webhooks históricos siguen consultando pagos/merchant orders. Se validan referencia, destinatario, moneda, ambiente, importe y comisión. El retorno del navegador nunca aprueba un pago.
 6. La visita requiere pago inicial aprobado. Las fallas adicionales conservan su propuesta y aceptación separadas; se pueden pagar desde el mismo trabajo con comisión Lysto igual a cero.
 
 El 30% de protección está incluido en el precio del presupuesto. No se aplica otra vez al pagar. Los cargos de Mercado Pago son del profesional y se muestran separados de la comisión Lysto. Un adicional de $50.000 tiene $0 de comisión Lysto: el profesional recibe $50.000 menos los cargos que aplique Mercado Pago. No hay una promesa de neto final fijo.
@@ -17,10 +17,11 @@ Con comisión Lysto de 18% y costo estimado de Mercado Pago de 6%, el neto profe
 
 ## Configuración para activar
 
-Aplicar, en orden, las migraciones de presupuestos y estas dos migraciones nuevas:
+Aplicar, en orden, las migraciones de presupuestos y estas migraciones de pagos:
 
 - `20260910204604_marketplace_split_checkout.sql`
 - `20260910220000_marketplace_guards.sql`
+- `20260920171628_marketplace_orders.sql` (preserva Preferences; sólo promueve checkouts sin enlace a Orders cuando se habilita el ambiente)
 
 La aplicación necesita Node.js 22.12 o posterior dentro de la rama 22. Instalar con `pnpm install --frozen-lockfile`. El servidor debe tener:
 
@@ -34,6 +35,7 @@ La aplicación necesita Node.js 22.12 o posterior dentro de la rama 22. Instalar
 | `MERCADOPAGO_WEBHOOK_SECRET` | Firma de notificaciones de esa aplicación |
 | `MERCADOPAGO_ENCRYPTION_KEY` | 32 bytes aleatorios codificados en base64, guardados de manera estable |
 | `MERCADOPAGO_DATABASE_URL` | PostgreSQL de la misma base Supabase; conexión directa o pool de sesión, sólo servidor |
+| `MERCADOPAGO_ORDERS_ENABLED=false` | Mantiene los pagos nuevos en Preferences hasta cerrar la aceptación de Orders; sólo habilitar explícitamente en el ambiente validado |
 
 Los tokens OAuth se cifran con AES-256-GCM; perder la clave de cifrado impide recuperarlos. No rotar esta clave sin un procedimiento de recifrado. La conexión PostgreSQL necesita permisos sobre el almacenamiento del paquete y las tablas privadas; las credenciales nunca van al navegador. El rol `service_role` HTTP de Supabase no tiene acceso a las tablas de tokens.
 
@@ -41,11 +43,11 @@ En la aplicación de Mercado Pago de los dueños, habilitar la modalidad marketp
 
 - Redirect OAuth: `https://TU-DOMINIO/api/mercadopago/oauth/callback`
 - Webhook: `https://TU-DOMINIO/api/mercadopago/webhook`
-- Eventos de pagos y órdenes comerciales, según la configuración disponible de la aplicación.
+- Evento `Order (Mercado Pago)` para Orders; mantener los eventos de pagos y órdenes comerciales mientras existan checkouts históricos.
 
 El cliente no debe entregar contraseñas ni tarjetas a Lysto: se ingresan en Mercado Pago. El split utiliza el token del técnico autorizado y `marketplace_fee` como importe monetario exacto para la aplicación propietaria. No requiere transferencias posteriores implementadas por Lysto.
 
-En pruebas, OAuth solicita `test_token=true` y comprueba `live_mode=false` tanto al conectar como al renovar tokens. El cobro exige un token `TEST-` y usa exclusivamente `sandbox_init_point`; no cae a una URL de producción. Si una modalidad de pruebas de Mercado Pago devuelve credenciales diferentes, la integración las rechaza y se debe revisar esa modalidad antes de habilitarla. Cambiar a `live` requiere credenciales, autorizaciones y pagos de prueba validados para esa aplicación. No reutilizar registros del ambiente de pruebas como pagos reales.
+En pruebas, OAuth solicita `test_token=true` y comprueba `live_mode=false` tanto al conectar como al renovar tokens. Preferences usa exclusivamente `sandbox_init_point`; Orders exige un ID de orden de prueba y valida el `checkout_url` canónico. La documentación actual de Orders menciona cuentas de prueba con credenciales de producción para algunos endpoints: esa modalidad debe comprobarse con la aplicación real antes de habilitar checkouts. No relajar el control de ambiente por suposición. Cambiar a `live` requiere autorización y aceptación de extremo a extremo. No reutilizar registros de prueba como pagos reales.
 
 ## Operación y recuperación
 
@@ -53,7 +55,7 @@ En pruebas, OAuth solicita `test_token=true` y comprueba `live_mode=false` tanto
 - Técnico: `/pro/mercadopago`, `/pro/pagos/mercadopago` y detalle del trabajo.
 - Finanzas: `/admin/pagos/split`. Sólo administradores con permiso `finance` o `owner` pueden consultar todos los cobros y renovar enlaces.
 - **Consultar estado en Mercado Pago** recupera datos canónicos aunque el webhook haya demorado. Las consultas manuales repetidas tienen un intervalo mínimo de 30 segundos.
-- **Renovar enlace vencido** vuelve a consultar los pagos y extiende la misma preferencia por 30 minutos. No crea una segunda preferencia. Se bloquea si hay pagos pendientes, cobrados, discrepancias o un cambio de asignación. Un intento incierto cuya preferencia no pudo recuperarse se conserva para revisión; no se cobra otra vez con una clave nueva.
+- **Renovar enlace vencido** mantiene la preferencia histórica cuando el protocolo es Preferences. Para Orders consulta la orden canónica, cancela la anterior si todavía está creada, comprueba su cancelación y sólo entonces genera una nueva orden con otra clave de idempotencia; conserva la orden anterior en el historial. Se bloquea si hay pagos pendientes, cobrados, discrepancias o un cambio de asignación. Un resultado incierto queda en revisión o se reintenta con la misma clave, nunca con una nueva a ciegas.
 - Un pago rechazado puede reintentarse con el mismo enlace mientras siga vigente. Un pago pendiente no habilita otro intento desde Lysto.
 - Dos pagos aprobados para la misma intención quedan en revisión. Los reembolsos parciales, completos y contracargos se registran con su estado auténtico. Las devoluciones se ejecutan desde Mercado Pago y se sincronizan; esta entrega no agrega un botón que emita devoluciones automáticas.
 - La cuenta y el profesional quedan ligados a los cobros emitidos, incluso después de un rechazo. Se permite renovar autorización de la misma cuenta. Cambiar el destinatario o borrar/desconectar una cuenta con historial requiere una operación administrativa de cierre/migración que preserve la conciliación; no se ofrece como cambio inmediato.
@@ -66,13 +68,14 @@ En pruebas, OAuth solicita `test_token=true` y comprueba `live_mode=false` tanto
 - OAuth ligado a usuario/profesional y cookie HttpOnly con HMAC; estado de un solo uso del paquete.
 - Ambiente OAuth validado antes de guardar tokens; URL sandbox sin alternativa de producción.
 - Vencimiento real de Checkout Pro con `expires`, `expiration_date_from` y `expiration_date_to`, y webhook configurado en la preferencia.
+- Orders API para checkouts preparados después de habilitarla: `marketplace_fee` exacto, `X-Idempotency-Key` persistente, `checkout_url`, firma de webhook, consulta canónica, cancelación y devolución por orden. Preferences permanece para los pagos existentes y para nuevos pagos mientras la activación esté apagada.
 - Intención de pago persistente, importes inmutables, clave de idempotencia estable y bloqueo temporal de creación.
 - Conciliación por `date_last_updated`, control del destinatario, cero comisión para adicionales y observación de costos/reembolsos.
 - Se ignoran acciones `mp-connect` para desconectar cuentas: la firma autentica el identificador del recurso, no el texto arbitrario `action`. La desvinculación de Lysto es una acción autenticada y protegida por la base de datos.
 
 ## Validación reproducible
 
-`pnpm test`, `pnpm lint`, `pnpm typecheck`, `pnpm build` y `pnpm exec supabase test db --local`. Si hay un servidor de desarrollo abierto, usar `LYSTO_BUILD_DIR=.next-verify` al compilar y al iniciar la revisión de producción para separar los archivos generados.
+`pnpm test`, `pnpm lint`, `pnpm typecheck`, `pnpm build` y pruebas SQL. Sin Docker, la migración puede ensayarse en una transacción sobre el staging identificado y terminar en `ROLLBACK`; eso no la aplica ni sustituye la aceptación de Mercado Pago. Si hay un servidor de desarrollo abierto, usar `LYSTO_BUILD_DIR=.next-verify` al compilar y al iniciar la revisión de producción para separar los archivos generados.
 
 Los tests de ledger con PostgreSQL se ejecutan con `LYSTO_TEST_DATABASE_URL` apuntando exclusivamente a localhost y `pnpm exec vitest run marketplace`. Los fixtures se revierten. Los demás tests de pagos corren sin credenciales externas. Para consultar el puerto local: `docker port supabase_db_lysto 5432`.
 
@@ -88,3 +91,6 @@ La ejecución remota MP01–MP12 y sus campos de evidencia se registran en `docs
 - [Notificaciones y firma](https://www.mercadopago.com.ar/developers/en/docs/your-integrations/notifications/webhooks)
 - [Búsqueda de pagos](https://www.mercadopago.com.ar/developers/es/reference/online-payments/subscriptions/search-payments/get)
 - [Paquetes externos de servidor en Next.js](https://nextjs.org/docs/app/api-reference/config/next-config-js/serverExternalPackages)
+- [Crear Orders de Checkout Pro](https://www.mercadopago.com.ar/developers/es/docs/checkout-pro-orders/create-order)
+- [Notificaciones Orders](https://www.mercadopago.com.ar/developers/es/docs/checkout-pro-orders/notifications)
+- [Reembolsar Orders](https://www.mercadopago.com.ar/developers/es/reference/online-payments/checkout-pro/refund-order/post)

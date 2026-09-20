@@ -17,6 +17,8 @@ Estado: **pendiente de D04, D06, D10 y D11**. Ejecutar con aplicación y cuentas
 | MP11 | reembolso | parcial/total, replay, timeout, fallo y excedente confirmados con proveedor | pendiente |
 | MP12 | tardío/disputa/desconexión | excepción durable preserva historial y resolución financiera | pendiente |
 
+Para Checkout Pro vía Orders, repetir MP04–MP12 con el tópico `order` y registrar por separado: creación con `marketplace_fee`, cuenta OAuth del vendedor, `checkout_url` de prueba, pago acreditado, pendiente/rechazado, firma alterada, duplicados, cancelación antes de renovar, orden histórica tardía y devolución parcial/total con `transactions.payments[].id`. Todas estas verificaciones externas siguen **pendientes**; los tests simulados y el ensayo SQL con rollback no las aprueban.
+
 Para cada fila guardar fecha, ejecutor, cuenta/aplicación saneada, ID interno, ID del proveedor parcialmente redactado, request/correlation ID, resultado esperado/observado, limitación sandbox y artefacto. La recepción en navegador no prueba pago y la aceptación HTTP del email no prueba entrega a bandeja.
 
 También verificar buzones de prueba, firma del webhook, renovación OAuth, scheduler, alertas y capacidad de detener checkouts nuevos sin detener webhooks, conciliación, devoluciones o reclamos. Un caso que el sandbox no permite queda `pending_provider`; se adjunta la prueba local relacionada sin convertirla en evidencia remota.

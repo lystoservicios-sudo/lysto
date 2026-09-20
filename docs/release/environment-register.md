@@ -25,7 +25,9 @@ Valores se administran en el gestor de secretos de cada ambiente; este registro 
 | GOOGLE_MAPS_SERVER_API_KEY, LYSTO_ROUTING_ORIGIN | Rutas/precios | Clave restringida, cuotas; origen operativo D03 |
 | PAYMENTS_PROVIDER, MERCADOPAGO_MODE | Proveedor/ambiente explícitos | Nada de fallback live; mock sólo pruebas |
 | MERCADOPAGO_MARKETPLACE_CLIENT_ID, MERCADOPAGO_MARKETPLACE_CLIENT_SECRET | Aplicación OAuth | D11; secreto servidor, cuenta titular identificada |
+| Checkout Pro Orders | Usa la misma aplicación y OAuth; no requiere otro proveedor | Aceptar creación, webhook `order`, cancelación y reembolso con cuentas de prueba antes de abrir cobros |
 | MERCADOPAGO_WEBHOOK_SECRET | Firma | Propio por ambiente; validar canónico |
+| MERCADOPAGO_ORDERS_ENABLED | Gate de Checkout Pro Orders | `false` hasta aceptación con proveedor por ambiente |
 | MERCADOPAGO_DATABASE_URL | Ledger y OAuth PostgreSQL | Mismo proyecto; rol acotado, pooling compatible |
 | MERCADOPAGO_ENCRYPTION_KEY | Cifrado de OAuth | 32 bytes base64; custodiar y recuperar; no rotar sin recifrado |
 | MERCADOPAGO_PUBLIC_KEY, MERCADOPAGO_ACCESS_TOKEN | Variables legacy/SDK | Revisar uso real antes de retirar; nunca publicar access token |

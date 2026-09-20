@@ -47,6 +47,10 @@ it('keeps every provider request outside database transactions during renewal', 
     live_mode: false,
     status: 'ready',
     preference_id: 'preference-1',
+    checkout_protocol: 'preferences' as const,
+    order_id: null,
+    order_idempotency_key: '92000000-0000-0000-0000-000000000002',
+    checkout_url: null,
     init_point: null,
     sandbox_init_point: null,
     expires_at: new Date(Date.now() - 60_000),
@@ -54,6 +58,7 @@ it('keeps every provider request outside database transactions during renewal', 
     lease_until: null,
     lease_token: null,
     review_reason: null,
+    closed_for_new_payments_at: null,
     last_error: null
   }
   state.query.mockImplementation(async (sql: string) => {

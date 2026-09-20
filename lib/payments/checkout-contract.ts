@@ -16,6 +16,14 @@ export function checkoutAmounts(total: string | number, fee: string | number) {
   return { total: decimal(amount), fee: decimal(commission), professional: decimal(amount - commission) }
 }
 
+export type CheckoutProtocol = 'preferences' | 'orders'
+export function checkoutProtocol(row: { checkout_protocol: CheckoutProtocol; preference_id: string | null; order_id: string | null }): CheckoutProtocol {
+  if (row.preference_id && row.order_id) throw new Error('checkout_identity_changed')
+  if (row.checkout_protocol === 'orders' && row.preference_id) throw new Error('checkout_identity_changed')
+  if (row.checkout_protocol === 'preferences' && row.order_id) throw new Error('checkout_identity_changed')
+  return row.checkout_protocol
+}
+
 type PreferenceBody = { date_of_expiration?: string; external_reference: string; [key: string]: unknown }
 export function buildPreferencePayload(body: PreferenceBody, origin: string, createdAt: Date) {
   const { date_of_expiration, ...rest } = body

@@ -33,7 +33,13 @@ export async function POST(request: Request) {
     if (checkout.status === 'approved')
       return privateJson({ checkoutId: checkout.id, status: checkout.status })
     const result = await createCheckoutPreference(checkout)
-    const initPoint = config.liveMode ? result.init_point : result.sandbox_init_point
+    if (result.status !== 'ready') throw new Error('checkout_review')
+    if (result.checkout_protocol === 'orders' &&
+        (!result.order_id || result.order_id.startsWith('ORDTST') === config.liveMode))
+      throw new Error('payment_mode_mismatch')
+    const initPoint = result.checkout_protocol === 'orders'
+      ? result.checkout_url
+      : config.liveMode ? result.init_point : result.sandbox_init_point
     if (!initPoint) throw new Error('invalid_provider_response')
     return privateJson({ checkoutId: result.id, status: result.status, initPoint })
   } catch (error) {

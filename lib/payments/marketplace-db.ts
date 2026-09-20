@@ -49,7 +49,11 @@ export type CheckoutRow = {
   professional_amount: string
   live_mode: boolean
   status: string
+  checkout_protocol: 'preferences' | 'orders'
   preference_id: string | null
+  order_id: string | null
+  order_idempotency_key: string
+  checkout_url: string | null
   init_point: string | null
   sandbox_init_point: string | null
   expires_at: Date
@@ -57,5 +61,6 @@ export type CheckoutRow = {
   lease_until: Date | null
   lease_token: string | null
   review_reason: string | null
+  closed_for_new_payments_at: Date | null
   last_error: string | null
 }

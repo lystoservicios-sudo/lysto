@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { handleMarketplaceWebhook } from '@/lib/payments/marketplace'
 import { InvalidWebhookSignatureError, ValidationError } from '@waltergaltieri/mercadopago-split'
+import { InvalidOrderWebhookSignatureError } from '@/lib/payments/orders'
 import {
   enforceRateLimit,
   RateLimitExceeded,
@@ -25,11 +26,12 @@ export async function POST(request: Request) {
       body: JSON.parse(text)
     })
     // An active lease is not successful delivery: let the provider retry.
-    return NextResponse.json(result, { status: result.outcome === 'in_progress' ? 503 : 200 })
+    return NextResponse.json(result, { status: 'outcome' in result && result.outcome === 'in_progress' ? 503 : 200 })
   } catch (error) {
     if (error instanceof RateLimitExceeded) return rateLimitResponse(error)
     const invalid =
       error instanceof InvalidWebhookSignatureError ||
+      error instanceof InvalidOrderWebhookSignatureError ||
       error instanceof ValidationError ||
       error instanceof SyntaxError
     return NextResponse.json(
