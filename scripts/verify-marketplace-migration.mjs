@@ -31,7 +31,13 @@ try {
   for (const suite of suites) {
     await client.query('begin')
     try {
-      await client.query(migration)
+      const state = await client.query(`select
+        exists(select 1 from supabase_migrations.schema_migrations where version=$1) as applied,
+        to_regclass($2) is not null as order_table_exists`,
+        ['20260920171628', 'private.marketplace_order_attempts'])
+      if (state.rows[0].applied !== state.rows[0].order_table_exists)
+        throw new Error('marketplace_orders_migration_history_mismatch')
+      if (!state.rows[0].applied) await client.query(migration)
       await client.query('create extension if not exists pgtap with schema extensions')
       const sql = expandSql(suite)
         .replace(/^begin;\s*$/m, '')
