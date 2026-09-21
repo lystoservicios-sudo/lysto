@@ -38,8 +38,36 @@ Ambas usan `TokenHash` y una pantalla propia de Lysto. La vista previa del corre
 - Las URLs públicas `/login`, `/registro`, `/recuperar`, `/terminos` y `/privacidad` responden `200` en `https://lystohogar.com`.
 - Google permanece deshabilitado y no se ofrece en la interfaz pública hasta contar con credenciales OAuth propias.
 
-## Bloqueo restante para abrir el registro
+## Registro de clientes activado
 
-El correo de autenticación está operativo, pero el alta pública continúa cerrada por diseño. `private.account_registration_policy` permanece deshabilitada porque no existen versiones aprobadas de términos y privacidad. Las páginas actuales se identifican como borradores pendientes de aprobación.
+El titular del proyecto aprobó expresamente la apertura del registro de clientes y la publicación de los documentos vigentes. La migración `20260921043555_activate_customer_email_registration.sql` quedó aplicada en el proyecto real y `private.get_registration_policy()` devuelve una política de producción, no de prueba:
 
-Para abrir el registro se necesita una decisión humana de D08 que identifique al prestador y responsable de datos, apruebe el texto y deje constancia de versión, fecha efectiva y aprobador. Recién entonces deben calcularse los hashes de los documentos publicados, insertar las versiones aprobadas y habilitar la política. No se debe reemplazar esa aprobación con datos inventados ni con documentos de prueba.
+- versión de términos: `2026-09-21`;
+- versión de privacidad: `2026-09-21`;
+- términos: `https://lystohogar.com/terminos`;
+- privacidad: `https://lystohogar.com/privacidad`;
+- hash de términos: `96f54f1c8f4e8d5d1a97cc3da7cc4824b8ed2502cbd76031811b210fd0047e2f`;
+- hash de privacidad: `356f64084c777590003daaeaa688374e365c89d47e93909c8e7d4ff9035d7819`.
+
+## Verificación del alta y acceso reales
+
+- `https://lystohogar.com/registro` publica el formulario de alta y muestra las dos versiones legales vigentes.
+- Se creó una cuenta descartable mediante el endpoint real de Supabase Auth; el alta fue aceptada sin sesión previa.
+- Antes de la confirmación, el inicio de sesión fue rechazado con `email_not_confirmed`, como corresponde.
+- El reenvío de confirmación fue aceptado y Auth Logs registró `/signup` y `/resend` como completados.
+- La cuenta se confirmó administrativamente solo para cerrar la comprobación sin acceder a un buzón personal.
+- Después de la confirmación, el inicio de sesión por correo y contraseña creó una sesión válida.
+- La identidad recibió exclusivamente `app_role=customer`; `bootstrap_customer_account` devolvió `ready` y `get_session_context` devolvió `customer`.
+- Google continúa deshabilitado y no se ofrece en la interfaz pública.
+- Técnicos, administradores y demás personal permanecen fuera de este registro y conservan sus flujos separados.
+
+## Publicación y controles
+
+- Cambios de activación: `fe0f2b0`.
+- Ajuste de las pruebas de base de datos al estado activo: `9868b1b`.
+- Verificación local: lint, tipos, 174 pruebas de dominio, 644 pruebas unitarias y compilación de producción, todo aprobado.
+- GitHub Actions `#46`, ejecución `35562266777`, intento 3: Quality gates (Ubuntu), Domain tests (Windows) y `Publish main to lystohogar.com`, aprobados.
+- Publicación de Vercel completada directamente con la sesión vinculada; deployment `dpl_EuoEiMdiUES3PzdevrnJKHqMzjp5`, estado `READY`, alias `https://lystohogar.com`.
+- El secreto `VERCEL_TOKEN` quedó configurado cifrado en GitHub Actions mediante un token sin vencimiento y limitado al proyecto de producción de Lysto.
+- El nombre interno histórico del proyecto en Vercel es `lysto-demo`, pero ese proyecto contiene la aplicación productiva y tiene asociados `lystohogar.com` y `www.lystohogar.com`.
+- La publicación automática desde `main` quedó verificada de extremo a extremo: el trabajo de Vercel finalizó correctamente en 2 min 39 s.
