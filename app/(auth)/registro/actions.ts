@@ -5,7 +5,6 @@ import { getRegistrationPolicy } from '@/lib/auth/account-policy'
 import { accountFormText, assertAccountMutationOrigin } from '@/lib/auth/account-server'
 import { authOrigin, registerCustomer, type AccountResult } from '@/lib/auth/account-lifecycle'
 import { enforceRateLimit, serverActionSubject } from '@/lib/security/rate-limit'
-import { requireNewRequests } from '@/lib/release/runtime-switches'
 
 export async function registerAction(
   _previous: AccountResult,
@@ -13,7 +12,6 @@ export async function registerAction(
 ): Promise<AccountResult> {
   try {
     await assertAccountMutationOrigin()
-    requireNewRequests()
     await enforceRateLimit(
       'registration',
       await serverActionSubject(accountFormText(form, 'email'))

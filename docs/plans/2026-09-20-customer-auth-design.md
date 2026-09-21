@@ -21,3 +21,7 @@ Turning on the existing request/payment switches merely to permit registration w
 ## Boundaries and verification
 
 Implement and test account-only gating, both authentication methods, redirect and role checks, and clear unavailable-provider feedback. Verify against the remote Supabase project and the deployed web UI without Docker. Production activation requires actual Google OAuth client credentials, Supabase provider and redirect configuration, and a real approved legal policy; no credentials or legal facts are fabricated. Do not claim end-to-end success without completing real email and Google sign-in tests.
+
+## Owner scope change, 2026-09-21
+
+The owner chose email-only authentication for now after confirming that no Google OAuth client exists and the available Supabase account cannot administer Lysto's project. Remove the Google option from both public pages and keep the legacy Google server action closed. Email registration/sign-in and customer-only roles remain the current target. Google can be a separately approved future activation.
