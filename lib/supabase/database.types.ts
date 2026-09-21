@@ -1433,6 +1433,8 @@ export type Database = {
       marketplace_checkouts: {
         Row: {
           amount: number
+          checkout_protocol: string
+          checkout_url: string | null
           closed_for_new_payments_at: string | null
           closure_evidence: Json | null
           created_at: string
@@ -1449,6 +1451,8 @@ export type Database = {
           lease_until: string | null
           live_mode: boolean
           marketplace_fee: number
+          order_id: string | null
+          order_idempotency_key: string
           preference_id: string | null
           preference_spec: Json | null
           professional_amount: number | null
@@ -1461,6 +1465,8 @@ export type Database = {
         }
         Insert: {
           amount: number
+          checkout_protocol?: string
+          checkout_url?: string | null
           closed_for_new_payments_at?: string | null
           closure_evidence?: Json | null
           created_at?: string
@@ -1477,6 +1483,8 @@ export type Database = {
           lease_until?: string | null
           live_mode: boolean
           marketplace_fee: number
+          order_id?: string | null
+          order_idempotency_key?: string
           preference_id?: string | null
           preference_spec?: Json | null
           professional_amount?: number | null
@@ -1489,6 +1497,8 @@ export type Database = {
         }
         Update: {
           amount?: number
+          checkout_protocol?: string
+          checkout_url?: string | null
           closed_for_new_payments_at?: string | null
           closure_evidence?: Json | null
           created_at?: string
@@ -1505,6 +1515,8 @@ export type Database = {
           lease_until?: string | null
           live_mode?: boolean
           marketplace_fee?: number
+          order_id?: string | null
+          order_idempotency_key?: string
           preference_id?: string | null
           preference_spec?: Json | null
           professional_amount?: number | null

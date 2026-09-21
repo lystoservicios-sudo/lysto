@@ -1,10 +1,15 @@
 import { describe, expect, it } from 'vitest'
-import { checkoutAmounts, buildPreferencePayload, inspectPayment } from '@/lib/payments/checkout-contract'
+import { checkoutAmounts, buildPreferencePayload, inspectPayment, checkoutProtocol } from '@/lib/payments/checkout-contract'
 
 const checkout = { id: 'c1', professional_id: 'pro1', seller_account_id: '123', amount: '301600.00', marketplace_fee: '54288.00', live_mode: false, created_at: new Date('2026-09-10T12:00:00Z'), expires_at: new Date('2026-09-10T13:00:00Z') }
 const payment = { id: 111, collector_id: 123, external_reference: 'c1', currency_id: 'ARS', transaction_amount: 301600, transaction_amount_refunded: 0, live_mode: false, status: 'approved', date_last_updated: '2026-09-10T12:10:00Z', fee_details: [{ type: 'application_fee', amount: 54288 }, { type: 'mercadopago_fee', amount: 12000 }], transaction_details: { net_received_amount: 235312 } }
 
 describe('frozen marketplace payment contract', () => {
+  it('preserves legacy preferences and rejects mixed checkout identities', () => {
+    expect(checkoutProtocol({ checkout_protocol: 'preferences', preference_id: 'pref-1', order_id: null })).toBe('preferences')
+    expect(checkoutProtocol({ checkout_protocol: 'orders', preference_id: null, order_id: 'ORD-1' })).toBe('orders')
+    expect(() => checkoutProtocol({ checkout_protocol: 'orders', preference_id: 'pref-1', order_id: 'ORD-1' })).toThrow('checkout_identity_changed')
+  })
   it('splits exactly in cents without a second markup or whole-peso rounding', () => {
     expect(checkoutAmounts('100.05', '18.01')).toEqual({ total: '100.05', fee: '18.01', professional: '82.04' })
     expect(checkoutAmounts('50000.00', '0')).toEqual({ total: '50000.00', fee: '0.00', professional: '50000.00' })

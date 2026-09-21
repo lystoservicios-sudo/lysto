@@ -40,6 +40,7 @@ export function paymentError(error: unknown) {
     checkout_busy: 'El pago se está preparando. Volvé a consultar en unos segundos.',
     checkout_pending: 'Mercado Pago está procesando el pago. Esperá la confirmación antes de intentar otro.',
     payment_mode_mismatch: 'La cuenta de Mercado Pago no corresponde al ambiente de pruebas o producción configurado.',
+    orders_not_enabled: 'Los pagos nuevos esperan la validación de Mercado Pago para este ambiente.',
     checkout_expired: 'El enlace venció. Operaciones debe revisar y renovar el pago.',
     checkout_review: 'Este pago requiere revisión. No vuelvas a pagar hasta que se resuelva.',
     oauth_invalid: 'La vinculación venció o no corresponde a esta sesión. Volvé a iniciarla.',

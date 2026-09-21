@@ -9,9 +9,10 @@ import {
 } from '@waltergaltieri/mercadopago-split'
 import { PrismaStorage } from '@waltergaltieri/mercadopago-split/prisma'
 import { marketplaceConfig } from './marketplace-config'
-import { buildPreferencePayload } from './checkout-contract'
-import { applyCanonicalPayment, claimCheckout } from './marketplace-ledger'
-import { paymentDatabase, type CheckoutRow } from './marketplace-db'
+import { buildPreferencePayload, checkoutProtocol } from './checkout-contract'
+import { buildOrderPayload, inspectCanonicalOrder, inspectCreatedOrder, orderIdempotencyKey, verifyOrderWebhookSignature } from './orders'
+import { applyCanonicalOrder, applyCanonicalPayment, claimCheckout } from './marketplace-ledger'
+import { paymentDatabase, paymentTransaction, type CheckoutRow } from './marketplace-db'
 
 let storage: PrismaStorage | undefined
 export function marketplaceStorage() {
@@ -147,13 +148,48 @@ export function marketplaceOAuthHttp() {
   })
 }
 export async function createCheckoutPreference(checkout: CheckoutRow) {
+  if (checkoutProtocol(checkout) === 'orders' && process.env.MERCADOPAGO_ORDERS_ENABLED !== 'true')
+    throw new Error('orders_not_enabled')
   const config = marketplaceConfig()
   const claim = await claimCheckout(checkout.id, config.origin)
-  if (!claim.token || !claim.spec) return claim.checkout
+  if (!claim.token) return claim.checkout
   try {
     const account = await marketplaceStorage().getConnectedAccount(checkout.professional_id)
     if (!account?.enabled || account.mercadoPagoUserId !== checkout.seller_account_id)
       throw new Error('checkout_identity_changed')
+    if (checkoutProtocol(claim.checkout) === 'orders') {
+      const accessToken = await marketplaceOAuth().getValidAccessToken(checkout.professional_id)
+      if (accessToken.startsWith('TEST-') === config.liveMode) throw new Error('payment_mode_mismatch')
+      const payload = buildOrderPayload(claim.checkout, config.origin)
+      const raw = await providerJson('/v1/orders', accessToken, 'POST', payload,
+        claim.checkout.order_idempotency_key)
+      let order: ReturnType<typeof inspectCreatedOrder>
+      try {
+        order = inspectCreatedOrder(claim.checkout, raw)
+      } catch (error) {
+        if (typeof raw.id !== 'string' || !/^ORD[A-Z0-9]{5,80}$/.test(raw.id)) throw error
+        const canonical = await providerJson(`/v1/orders/${encodeURIComponent(raw.id)}`, accessToken)
+        order = inspectCreatedOrder(claim.checkout, canonical)
+      }
+      return paymentTransaction(async db => {
+        const result = await db.query<CheckoutRow>(
+          `update public.marketplace_checkouts set order_id=$3,checkout_url=$4,
+           status=case when status='creating' then 'ready' else status end,lease_until=null,lease_token=null,updated_at=now()
+           where id=$1 and lease_token=$2 and checkout_protocol='orders' returning *`,
+          [checkout.id, claim.token, order.id, order.checkoutUrl]
+        )
+        if (!result.rows[0]) throw new Error('checkout_busy')
+        const attempt = await db.query(`insert into private.marketplace_order_attempts(order_id,checkout_id,idempotency_key)
+          values($1,$2,$3) on conflict(order_id) do update set order_id=excluded.order_id
+          where private.marketplace_order_attempts.checkout_id=excluded.checkout_id
+            and private.marketplace_order_attempts.idempotency_key=excluded.idempotency_key
+          returning order_id`,
+          [order.id,checkout.id,claim.checkout.order_idempotency_key])
+        if (!attempt.rowCount) throw new Error('checkout_identity_changed')
+        return result.rows[0]
+      })
+    }
+    if (!claim.spec) throw new Error('invalid_checkout_snapshot')
     const preference = await marketplaceGateway().payments.createPreference(claim.spec)
     const result = await paymentDatabase().query<CheckoutRow>(
       `update public.marketplace_checkouts set preference_id=$3,init_point=$4,sandbox_init_point=$5,
@@ -181,6 +217,31 @@ export async function handleMarketplaceWebhook(input: WebhookSignatureVerificati
   // The signature does NOT authenticate type/action. A forged mp-connect action
   // must never disable credentials. Account health is checked with the provider.
   if (body?.type === 'mp-connect') return { outcome: 'ignored' }
+  if (body?.type === 'order' || input.query?.type === 'order') {
+    const config = marketplaceConfig()
+    const orderId = verifyOrderWebhookSignature(input, config.webhookSecret)
+    const result = await paymentDatabase().query<CheckoutRow>(
+      `select c.* from private.marketplace_order_attempts a
+       join public.marketplace_checkouts c on c.id=a.checkout_id
+       where a.order_id=$1 and c.checkout_protocol='orders'`, [orderId])
+    const checkout = result.rows[0]
+    if (!checkout) return { outcome: 'in_progress' }
+    if (checkout.live_mode !== config.liveMode) throw new Error('payment_mode_mismatch')
+    const token = await marketplaceOAuth().getValidAccessToken(checkout.professional_id)
+    const canonical = await providerJson(`/v1/orders/${encodeURIComponent(orderId)}`, token)
+    if (checkout.order_id !== orderId) {
+      const observed = inspectCanonicalOrder(checkout, canonical)
+      if (observed.status !== 'cancelled' || observed.issues.length || observed.orderId !== orderId) {
+        await paymentDatabase().query(
+          "update public.marketplace_checkouts set status='review',review_reason='historical_order_changed',updated_at=now() where id=$1",
+          [checkout.id])
+        return { outcome: 'review' }
+      }
+      return { outcome: 'ignored' }
+    }
+    return applyCanonicalOrder(checkout.id, canonical,
+      `mp-order:${orderId}:${String(canonical.last_updated_date ?? 'unknown')}`)
+  }
   return marketplaceGateway().webhooks.handle(input)
 }
 export async function reconcileCheckout(checkout: CheckoutRow, force = false) {
@@ -190,6 +251,13 @@ export async function reconcileCheckout(checkout: CheckoutRow, force = false) {
   )
   if (!claimed.rowCount && !force) return
   const token = await marketplaceOAuth().getValidAccessToken(checkout.professional_id)
+  if (checkoutProtocol(checkout) === 'orders') {
+    if (!checkout.order_id) throw new Error('checkout_review')
+    const canonical = await providerJson(`/v1/orders/${encodeURIComponent(checkout.order_id)}`, token)
+    await applyCanonicalOrder(checkout.id, canonical,
+      `reconcile-order:${checkout.order_id}:${String(canonical.last_updated_date ?? 'unknown')}`)
+    return
+  }
   const search = await providerJson(
     `/v1/payments/search?external_reference=${encodeURIComponent(checkout.id)}&sort=date_last_updated&criteria=desc&limit=50`,
     token
@@ -218,6 +286,27 @@ export async function reconcileCheckout(checkout: CheckoutRow, force = false) {
  * persisted by an authenticated finance RPC; this function never changes local state. */
 export async function closeCheckoutAtProvider(checkout: CheckoutRow) {
   await reconcileCheckout(checkout, true)
+  if (checkoutProtocol(checkout) === 'orders') {
+    if (!checkout.order_id) throw new Error('checkout_review')
+    const token = await marketplaceOAuth().getValidAccessToken(checkout.professional_id)
+    const path = `/v1/orders/${encodeURIComponent(checkout.order_id)}`
+    let canonical = await providerJson(path, token)
+    let observed = inspectCanonicalOrder(checkout, canonical)
+    if (observed.issues.length || observed.orderId !== checkout.order_id ||
+        !['ready','cancelled','refunded'].includes(observed.status)) throw new Error('checkout_review')
+    if (observed.status === 'ready') {
+      await providerJson(`${path}/cancel`, token, 'POST', undefined,
+        orderIdempotencyKey(checkout.id, `cancel:${checkout.order_id}`))
+      canonical = await providerJson(path, token)
+      observed = inspectCanonicalOrder(checkout, canonical)
+      if (observed.issues.length || observed.status !== 'cancelled' ||
+          observed.orderId !== checkout.order_id) throw new Error('checkout_review')
+    }
+    await applyCanonicalOrder(checkout.id, canonical,
+      `close-order:${checkout.order_id}:${String(canonical.last_updated_date ?? 'unknown')}`)
+    return { providerOrderStatus: observed.status, providerOrderId: checkout.order_id,
+      verifiedAt: new Date().toISOString() }
+  }
   const observations = await paymentDatabase().query<{
     provider_status: string
     refunded_amount: string
@@ -267,6 +356,8 @@ export async function closeCheckoutAtProvider(checkout: CheckoutRow) {
 }
 
 export async function renewCheckout(checkout: CheckoutRow) {
+  if (checkout.closed_for_new_payments_at) throw new Error('checkout_review')
+  if (checkoutProtocol(checkout) === 'orders') return renewOrderCheckout(checkout)
   // Renew the SAME provider preference: never issue a second payable link after
   // an ambiguous attempt. Query the canonical payments first, even within 30s.
   await reconcileCheckout(checkout, true)
@@ -278,6 +369,7 @@ export async function renewCheckout(checkout: CheckoutRow) {
     )
     const current = result.rows[0]
     if (
+      current?.closed_for_new_payments_at ||
       !current?.preference_id ||
       !['ready', 'expired', 'rejected', 'cancelled'].includes(current.status)
     )
@@ -349,6 +441,80 @@ export async function renewCheckout(checkout: CheckoutRow) {
       "update public.marketplace_checkouts set status='review',review_reason='renewal_provider_result_uncertain',last_error='provider_request_failed',lease_until=null,lease_token=null where id=$1 and lease_token=$2",
       [claim.id, claim.leaseToken]
     )
+    throw error
+  }
+}
+
+async function renewOrderCheckout(checkout: CheckoutRow) {
+  if (process.env.MERCADOPAGO_ORDERS_ENABLED !== 'true') throw new Error('orders_not_enabled')
+  if (checkout.closed_for_new_payments_at || checkout.status === 'review') throw new Error('checkout_review')
+  await reconcileCheckout(checkout, true)
+  const claim = await paymentTransaction(async db => {
+    const result = await db.query<CheckoutRow>(
+      'select * from public.marketplace_checkouts where id=$1 for update', [checkout.id])
+    const current = result.rows[0]
+    if (!current || checkoutProtocol(current) !== 'orders' || !current.order_id ||
+        current.closed_for_new_payments_at ||
+        !['ready','expired','cancelled'].includes(current.status)) throw new Error('checkout_review')
+    const activeCase = await db.query(
+      "select 1 from private.financial_exception_cases where job_id=$1 and status in ('waiting_reconciliation','ready') limit 1",
+      [current.job_id])
+    if (activeCase.rowCount) throw new Error('checkout_review')
+    if (current.expires_at.getTime() > Date.now()) return null
+    if (current.lease_until && current.lease_until.getTime() > Date.now()) throw new Error('checkout_busy')
+    const job = await db.query(
+      "select 1 from public.jobs where id=$1 and professional_id=$2 and status::text not like 'cancelled%'",
+      [current.job_id,current.professional_id])
+    if (!job.rowCount) throw new Error('checkout_review')
+    const leaseToken = randomUUID()
+    await db.query("update public.marketplace_checkouts set lease_token=$2,lease_until=now()+interval '90 seconds' where id=$1",
+      [current.id,leaseToken])
+    return { current, leaseToken }
+  })
+  if (!claim) return
+  try {
+    const token = await marketplaceOAuth().getValidAccessToken(claim.current.professional_id)
+    const path = `/v1/orders/${encodeURIComponent(claim.current.order_id!)}`
+    let canonical = await providerJson(path, token)
+    let observed = inspectCanonicalOrder(claim.current, canonical)
+    if (observed.issues.length || observed.orderId !== claim.current.order_id ||
+        !['ready','cancelled'].includes(observed.status)) throw new Error('checkout_review')
+    if (observed.status === 'ready') {
+      await providerJson(`${path}/cancel`, token, 'POST', undefined,
+        orderIdempotencyKey(checkout.id, `cancel:${claim.current.order_id}`))
+      canonical = await providerJson(path, token)
+      observed = inspectCanonicalOrder(claim.current, canonical)
+      if (observed.issues.length || observed.orderId !== claim.current.order_id ||
+          observed.status !== 'cancelled') throw new Error('checkout_review')
+    }
+    const renewed = await paymentTransaction(async db => {
+      const row = await db.query<CheckoutRow>(
+        'select * from public.marketplace_checkouts where id=$1 for update', [checkout.id])
+      const current = row.rows[0]
+      if (!current || current.lease_token !== claim.leaseToken || current.closed_for_new_payments_at ||
+          current.order_id !== claim.current.order_id ||
+          ['approved','partially_refunded','refunded','review','pending','in_process'].includes(current.status))
+        throw new Error('checkout_review')
+      const activeCase = await db.query(
+        "select 1 from private.financial_exception_cases where job_id=$1 and status in ('waiting_reconciliation','ready') limit 1",
+        [current.job_id])
+      if (activeCase.rowCount) throw new Error('checkout_review')
+      const attempt = await db.query(
+        'update private.marketplace_order_attempts set cancelled_at=now() where order_id=$1 and checkout_id=$2 returning order_id',
+        [current.order_id,current.id])
+      if (!attempt.rowCount) throw new Error('checkout_review')
+      const result = await db.query<CheckoutRow>(`update public.marketplace_checkouts
+        set order_id=null,checkout_url=null,order_idempotency_key=$2,status='creating',
+          expires_at=now()+interval '30 minutes',last_reconciled_at=null,
+          lease_token=null,lease_until=null,last_error=null,updated_at=now()
+        where id=$1 returning *`, [current.id,randomUUID()])
+      return result.rows[0]
+    })
+    await createCheckoutPreference(renewed)
+  } catch (error) {
+    await paymentDatabase().query(
+      'update public.marketplace_checkouts set lease_token=null,lease_until=null where id=$1 and lease_token=$2',
+      [checkout.id,claim.leaseToken])
     throw error
   }
 }
