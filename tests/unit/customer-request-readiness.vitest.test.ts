@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const mocks = vi.hoisted(() => ({ user: vi.fn(), rpc: vi.fn(), from: vi.fn(), select: vi.fn(), eq: vi.fn(), is: vi.fn(), order: vi.fn(), maybeSingle: vi.fn(), bootstrap: vi.fn(), signOut: vi.fn() }))
 vi.mock('@/lib/supabase/server', () => ({ createServerSupabaseClient: async () => ({ auth: { getUser: mocks.user, signOut: mocks.signOut }, from: mocks.from, rpc: mocks.rpc }) }))
 vi.mock('@/lib/auth/account-server', () => ({ bootstrapVerifiedCustomer: mocks.bootstrap }))
+vi.mock('next/navigation', () => ({ notFound: () => { throw new Error('NOT_FOUND') } }))
 import { readCustomerSession, resolvedCustomerDestination } from '@/lib/auth/customer-session'
 const profile = { id: '11111111-1111-4111-8111-111111111111', role: 'customer', first_name: 'Ana', last_name: 'Pérez', phone: '+541122334455' }
 const address = { id: '22222222-2222-4222-8222-222222222222', street: 'San Martín', number: '932', city: 'Vicente López', province: 'Buenos Aires', property_type: 'house' }
@@ -15,6 +16,16 @@ beforeEach(() => {
   mocks.maybeSingle.mockResolvedValue({ data: profile, error: null })
 })
 describe('progressive customer readiness with fresh authority', () => {
+  it('does not sign out or onboard an authenticated staff member entering the customer app', async () => {
+    mocks.user.mockResolvedValue({ data: { user: { id: 'staff-id', email_confirmed_at: '2026-01-01', app_metadata: { app_role: 'admin' } } }, error: null })
+    await expect(resolvedCustomerDestination('/app')).rejects.toThrow('NOT_FOUND')
+    expect(mocks.signOut).not.toHaveBeenCalled()
+    expect(mocks.bootstrap).not.toHaveBeenCalled()
+  })
+  it('preserves a safe deep link when an anonymous visitor needs to log in', async () => {
+    mocks.user.mockResolvedValue({ data: { user: null }, error: null })
+    expect(await resolvedCustomerDestination('/app/solicitar/aire-acondicionado')).toBe('/login?next=%2Fapp%2Fsolicitar%2Faire-acondicionado')
+  })
   it('routes OAuth without accepted policy to completion before reading domain profiles', async () => {
     mocks.bootstrap.mockResolvedValue('incomplete')
     expect(await resolvedCustomerDestination('/app/solicitar/aire-acondicionado')).toBe('/completar-cuenta?next=%2Fapp%2Fsolicitar%2Faire-acondicionado')

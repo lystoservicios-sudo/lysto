@@ -157,12 +157,16 @@ describe('HTTP access control with real Auth sessions', () => {
     240_000
   )
 
-  it.each(['/app', '/pro/dashboard', '/admin/dashboard'])(
+  it.each([
+    ['/app', '/login'],
+    ['/pro/dashboard', '/equipo/login'],
+    ['/admin/dashboard', '/equipo/login']
+  ] as const)(
     'does not render private %s for an anonymous visitor',
-    async (path) => {
+    async (path, loginPath) => {
       const response = await request('GET', path)
       expect([303, 307, 308]).toContain(response.status)
-      expect(new URL(response.headers.get('location')!, app!.baseURL).pathname).toBe('/login')
+      expect(new URL(response.headers.get('location')!, app!.baseURL).pathname).toBe(loginPath)
       expect(response.headers.get('cache-control')).toContain('no-store')
     },
     240_000

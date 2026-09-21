@@ -53,6 +53,20 @@ describe('customer lifecycle with real Auth, email delivery and HTTP cookies', (
     if (new URL(action,app!.baseURL).origin !== app!.baseURL) throw new Error('Unexpected form action origin')
     return request(action,{method:'POST',body:data})
   }
+  async function completeCustomerProfile() {
+    const blocked = await request('/app')
+    expect(blocked.status).toBe(307)
+    expect(new URL(blocked.headers.get('location')!, app!.baseURL).pathname).toBe('/completar-perfil')
+    const completed = await submit('/completar-perfil?next=%2Fapp', {
+      street: 'Calle de Prueba', number: '123', city: 'Buenos Aires', province: 'Buenos Aires', property_type: 'house'
+    })
+    expect(completed.status).toBe(303)
+    expect(new URL(completed.headers.get('location')!, app!.baseURL).pathname).toBe('/app')
+    expect((await database.query(
+      'select a.street,a.number,a.property_type from public.customer_addresses a join public.customer_profiles cp on cp.id=a.customer_id join public.profiles p on p.id=cp.profile_id where p.auth_user_id=$1 and a.archived_at is null',
+      [authId]
+    )).rows).toEqual([expect.objectContaining({ street: 'Calle de Prueba', number: '123', property_type: 'house' })])
+  }
   async function mailbox(emailAddress: string) {
     const response = await fetch(`${mailOrigin}/api/v1/search?query=${encodeURIComponent(`to:${emailAddress}`)}`,{redirect:'error',signal:AbortSignal.timeout(10_000)})
     if (!response.ok) throw new Error('Disposable email search failed')
@@ -143,6 +157,7 @@ describe('customer lifecycle with real Auth, email delivery and HTTP cookies', (
     const response = await request('/auth/confirm',{method:'POST',body:new URLSearchParams({token_hash:confirmationToken})})
     expect(response.status).toBe(303); expect(response.headers.get('location')).toBe(app!.baseURL+'/app')
     expect(jar.size).toBeGreaterThan(0)
+    await completeCustomerProfile()
     const panel=await request('/app'); expect(panel.status).toBe(200)
     expect(await panel.text()).toContain('Cliente Real')
     expect((await database.query('select cp.id from public.customer_profiles cp join public.profiles p on p.id=cp.profile_id where p.auth_user_id=$1',[authId])).rowCount).toBe(1)
@@ -164,8 +179,9 @@ describe('customer lifecycle with real Auth, email delivery and HTTP cookies', (
     await database.query('delete from public.customer_profiles where profile_id in (select id from public.profiles where auth_user_id=$1)',[authId])
     const response = await submit('/login',{email,password})
     expect(response.status).toBe(303)
-    expect(response.headers.get('location')).toBe('/app')
+    expect(new URL(response.headers.get('location')!, app!.baseURL).pathname).toBe('/completar-perfil')
     expect((await database.query('select count(*)::int n from auth.users where email=$1',[email])).rows[0].n).toBe(1)
+    await completeCustomerProfile()
     expect((await request('/app')).status).toBe(200)
   },180_000)
   it('handles concurrent bootstrap requests with stable identity', async () => {

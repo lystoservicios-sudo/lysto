@@ -1,10 +1,12 @@
 import 'server-only'
 import { z } from 'zod'
+import { notFound } from 'next/navigation'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/lib/supabase/database.types'
 import { bootstrapVerifiedCustomer } from './account-server'
 import { customerDestination, missingCustomerFields, safeCustomerNext } from './customer-access'
+import { readTrustedRole } from './session-routing'
 
 const activeCustomer = z.object({ role: z.literal('customer'), profile_id: z.string().uuid(), customer_id: z.string().uuid(), session_active: z.literal(true), session_id: z.string().uuid() })
 
@@ -12,7 +14,9 @@ export async function readCustomerSession(client?: SupabaseClient<Database> | Aw
   const supabase = (client ?? await createServerSupabaseClient()) as unknown as SupabaseClient<Database>
   const { data: { user }, error } = await supabase.auth.getUser()
   if (error || !user) return { kind: 'anonymous' as const }
-  if (user.app_metadata.app_role !== 'customer') return { kind: 'unavailable' as const }
+  const role = readTrustedRole(user.app_metadata)
+  if (role && role !== 'customer') return { kind: 'foreign_role' as const }
+  if (role !== 'customer') return { kind: 'unavailable' as const }
   if (!user.email_confirmed_at) return { kind: 'unverified' as const }
   // OAuth identities receive domain profiles only after explicit legal acceptance.
   if (await bootstrapVerifiedCustomer(supabase, user) === 'incomplete') return { kind: 'incomplete' as const, user }
@@ -33,6 +37,7 @@ export async function resolvedCustomerDestination(next?: string, client?: Awaite
   const destination = safeCustomerNext(next)
   const session = await readCustomerSession(client)
   if (session.kind === 'anonymous') return `/login?next=${encodeURIComponent(destination)}`
+  if (session.kind === 'foreign_role') notFound()
   if (session.kind === 'unverified') return '/login?notice=confirm-email'
   if (session.kind === 'incomplete') return `/completar-cuenta?next=${encodeURIComponent(destination)}`
   if (session.kind === 'unavailable') {

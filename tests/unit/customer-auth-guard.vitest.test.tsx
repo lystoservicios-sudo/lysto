@@ -9,6 +9,11 @@ vi.mock('@/components/layout/page-shell', () => ({ AppShell: ({ children }: { ch
 import CustomerLayout from '../../app/(customer)/app/layout'
 beforeEach(() => vi.resetAllMocks())
 describe('customer app guard', () => {
+  it('propagates the foreign-role 404 before requiring a customer domain session', async () => {
+    mocks.resolve.mockRejectedValue(new Error('NOT_FOUND'))
+    await expect(CustomerLayout({ children: 'private' })).rejects.toThrow('NOT_FOUND')
+    expect(mocks.page).not.toHaveBeenCalled()
+  })
   it.each(['/login?next=%2Fapp', '/completar-cuenta?next=%2Fapp', '/completar-perfil?next=%2Fapp'])('blocks direct entry with onboarding destination %s', async (destination) => {
     mocks.resolve.mockResolvedValue(destination)
     await expect(CustomerLayout({ children: 'private' })).rejects.toThrow(`REDIRECT:${destination}`)
