@@ -10,7 +10,7 @@ Configuración y verificación del correo transaccional usado por Supabase Auth 
 - Dominio remitente: `auth.lystohogar.com`.
 - Remitente de Auth: `Lysto <no-reply@auth.lystohogar.com>`.
 - Host SMTP: `smtp.resend.com`, puerto `465`, usuario `resend`.
-- Clave de envío exclusiva creada para Supabase Auth y almacenada cifrada por Supabase.
+- Clave de envío exclusiva, limitada al dominio `auth.lystohogar.com`, creada para Supabase Auth y almacenada cifrada por Supabase.
 - Dominio marcado `Verified` por Resend.
 - DNS publicado y resuelto públicamente:
   - DKIM en `resend._domainkey.auth.lystohogar.com`.
@@ -32,6 +32,8 @@ Ambas usan `TokenHash` y una pantalla propia de Lysto. La vista previa del corre
 - Supabase confirmó la persistencia del SMTP después de recargar el panel.
 - El endpoint real de recuperación de Supabase respondió `200`.
 - Resend registró el mensaje generado por Supabase desde `no-reply@auth.lystohogar.com`.
+- La credencial final se probó antes de retirar las anteriores; las claves expuestas durante la configuración fueron revocadas y no permanecen activas.
+- La prueba final utilizó la plantilla en español y el asunto `Recuperá el acceso a Lysto`.
 - Resend conserva evidencia previa de entrega exitosa a `lystoservicios@gmail.com` desde la misma cuenta.
 - Las URLs públicas `/login`, `/registro`, `/recuperar`, `/terminos` y `/privacidad` responden `200` en `https://lystohogar.com`.
 - Google permanece deshabilitado y no se ofrece en la interfaz pública hasta contar con credenciales OAuth propias.
