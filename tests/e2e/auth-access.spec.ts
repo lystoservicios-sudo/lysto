@@ -1,4 +1,4 @@
-import { test, expect, loginAs } from './fixtures/production'
+import { test, expect, loginAs, loginCredentialsForm } from './fixtures/production'
 
 test('three roles keep independent sessions and reject foreign surfaces', async ({
   page,
@@ -14,10 +14,11 @@ test('a suspended professional cannot create an application session', async ({
   accounts
 }) => {
   const account = accounts.accounts.professionalSuspended
-  await page.goto('/login')
-  await page.getByLabel('Email').fill(account.email)
-  await page.getByLabel('Contraseña').fill(account.password)
-  await page.getByRole('button', { name: 'Ingresar' }).click()
+  await page.goto('/equipo/login')
+  const form = loginCredentialsForm(page)
+  await form.getByLabel('Email').fill(account.email)
+  await form.getByLabel('Contraseña').fill(account.password)
+  await form.getByRole('button', { name: 'Ingresar' }).click()
   await expect(page.getByText('Tu perfil técnico todavía no está aprobado por Lysto.')).toBeVisible()
-  await expect(page).toHaveURL(/\/login/)
+  await expect(page).toHaveURL(/\/equipo\/login/)
 })

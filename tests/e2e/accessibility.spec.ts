@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures/production'
+import { test, expect, loginCredentialsForm } from './fixtures/production'
 
 test('public navigation and policy links work with keyboard focus', async ({ page }) => {
   await page.goto('/')
@@ -19,5 +19,5 @@ test('mobile pages do not overflow and primary targets meet minimum height', asy
   const button = page.getByRole('button', { name: 'Ingresar' })
   await expect(button).toBeVisible()
   expect((await button.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44)
-  await expect(page.getByLabel('Email')).toHaveAttribute('type', 'email')
+  await expect(loginCredentialsForm(page).getByLabel('Email')).toHaveAttribute('type', 'email')
 })

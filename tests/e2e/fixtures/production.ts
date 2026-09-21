@@ -49,18 +49,23 @@ const destinations: Record<AccountName, string> = {
   customerA: '/app',
   customerB: '/app',
   professionalApproved: '/pro/dashboard',
-  professionalSuspended: '/login',
+  professionalSuspended: '/equipo/login',
   operations: '/admin/dashboard',
   finance: '/admin/pagos',
   quality: '/admin/calidad',
   owner: '/admin/dashboard'
 }
 
+export function loginCredentialsForm(page: Page) {
+  return page.locator('form.auth-form').filter({ has: page.locator('input[name="password"]') })
+}
+
 export async function loginAs(page: Page, account: FixtureAccount, name: AccountName) {
-  await page.goto('/login')
-  await page.getByLabel('Email').fill(account.email)
-  await page.getByLabel('Contraseña').fill(account.password)
-  await page.getByRole('button', { name: 'Ingresar' }).click()
+  await page.goto(name === 'customerA' || name === 'customerB' ? '/login' : '/equipo/login')
+  const form = loginCredentialsForm(page)
+  await form.getByLabel('Email').fill(account.email)
+  await form.getByLabel('Contraseña').fill(account.password)
+  await form.getByRole('button', { name: 'Ingresar' }).click()
   if (account.mfaSecret) {
     await expect(page).toHaveURL(/\/seguridad/, { timeout: 15_000 })
     const code = page.getByLabel('Código del autenticador')

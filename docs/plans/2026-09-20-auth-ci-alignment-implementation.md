@@ -26,3 +26,9 @@
 - Solicitar revisión independiente del cambio y resolver observaciones.
 - Integrar la rama en `main` y esperar la CI remota completa, cuyo backend es descartable.
 - Confirmar el resultado del despliegue sin activar cobros ni aplicar migraciones a la base productiva.
+
+## 5. Hallazgo de la primera CI remota
+
+- La integración de Auth y pagos pasó; el E2E falló porque el selector global `getByLabel('Email')` encuentra también el campo del formulario de ayuda de confirmación.
+- Limitar las acciones de login al formulario que contiene la contraseña y dirigir las cuentas del equipo a `/equipo/login`.
+- Repetir toda la CI remota antes de integrar a `main`.
