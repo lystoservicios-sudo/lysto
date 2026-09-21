@@ -5,7 +5,8 @@ select no_plan();
 select ok(not exists(select 1 from pg_trigger where tgname='lysto_signup_customer_profile'), 'Public web never provisions profiles on Auth insert');
 select ok(not has_function_privilege('anon','public.bootstrap_customer_account()','execute'), 'Anonymous users cannot bootstrap');
 select ok(not has_function_privilege('service_role','public.bootstrap_customer_account()','execute'), 'Service role cannot bootstrap another user');
-select is(private.get_registration_policy(),null::jsonb,'This release does not enable legal policy');
+update private.account_registration_policy set enabled=false where singleton;
+select is(private.get_registration_policy(),null::jsonb,'disabled-policy behavior remains covered after release activation');
 
 insert into auth.users(id,email,email_confirmed_at,raw_app_meta_data,raw_user_meta_data) values
 ('c3130000-0000-4000-8000-000000000001','oauth-customer@example.test',now(),'{"provider":"google","providers":["google"]}','{"given_name":"Ana","family_name":"Pérez","app_role":"admin"}'),

@@ -9,7 +9,8 @@ select has_function('public','complete_customer_registration',array['text','text
 select has_table('private','customer_registration_acceptances','registration acceptance is stored outside the exposed schema');
 select has_table('private','account_legal_documents','legal versions have a trusted catalogue');
 select has_trigger('auth','users','lysto_customer_registration_defaults','public Auth registration assigns a trusted role');
-select is(private.get_registration_policy(),null::jsonb,'registration remains disabled without approved documents');
+update private.account_registration_policy set enabled=false where singleton;
+select is(private.get_registration_policy(),null::jsonb,'registration can be disabled without changing approved documents');
 select ok(not has_schema_privilege('anon','private','usage'),'anonymous private-schema boundary is unchanged');
 select ok(not has_function_privilege('anon','public.get_registration_policy()','execute'),'anonymous clients cannot call the service reader');
 select ok(has_function_privilege('service_role','public.get_registration_policy()','execute'),'server can read only the public-facing policy');

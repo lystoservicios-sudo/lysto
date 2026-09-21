@@ -1,10 +1,11 @@
 begin;
 select plan(5);
-select is(private.get_registration_policy(),null::jsonb,'catalogue is disabled for the administrative provisioning regression');
+update private.account_registration_policy set enabled=false where singleton;
+select is(private.get_registration_policy(),null::jsonb,'administrative provisioning regression can exercise the disabled-policy path');
 select lives_ok($$insert into auth.users(id,email,email_confirmed_at,raw_app_meta_data,raw_user_meta_data) values ('75000000-0000-4000-8000-000000000001','admin-api-order@lysto.test',now(),'{}','{"fixture_run":"t07-admin-order"}')$$,'initial Auth insert may precede trusted app metadata');
 select is((select count(*)::int from public.profiles where auth_user_id='75000000-0000-4000-8000-000000000001'),0,'an account without acceptance cannot bootstrap a profile');
 update auth.users set raw_app_meta_data='{"app_role":"professional"}' where id='75000000-0000-4000-8000-000000000001';
 select is((select raw_app_meta_data->>'app_role' from auth.users where id='75000000-0000-4000-8000-000000000001'),'professional','trusted administration can set its role after initial creation');
-select throws_ok($$insert into auth.users(id,email,raw_app_meta_data,raw_user_meta_data) values ('75000000-0000-4000-8000-000000000002','partial-acceptance@lysto.test','{}','{"accepted":true}')$$,'P0001','Registration is unavailable','partial public acceptance still requires the active legal catalogue');
+select throws_ok($$insert into auth.users(id,email,raw_app_meta_data,raw_user_meta_data) values ('75000000-0000-4000-8000-000000000002','partial-acceptance@lysto.test','{}','{"accepted":true}')$$,'P0001','Registration is unavailable','partial public acceptance still requires an enabled legal catalogue');
 select * from finish();
 rollback;
