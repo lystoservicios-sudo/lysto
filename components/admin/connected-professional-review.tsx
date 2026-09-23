@@ -148,7 +148,7 @@ export function ConnectedProfessionalReview({
         <p>
           {professionalStatusLabels[application.status]} ·{' '}
           {review.eligible ? 'Documentación vigente' : 'Sin habilitación documental vigente'} ·{' '}
-          {review.readyForNewWork ? 'Listo para recibir trabajos' : 'No recibe trabajos nuevos'}
+          {(review.readyForNewWork ?? review.eligible) ? 'Listo para recibir trabajos' : 'No recibe trabajos nuevos'}
         </p>
         {review.readinessReasons && review.readinessReasons.length > 0 && <p>Falta: {review.readinessReasons.join(', ')}.</p>}
         {review.decisionReason && <p>Última resolución: {review.decisionReason}</p>}

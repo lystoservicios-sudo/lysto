@@ -37,3 +37,25 @@ it('returns an invitation link once without exposing the token in the invitation
     p_reason: 'Convocatoria para técnico de aire acondicionado'
   })
 })
+
+it('keeps the existing email invitation flow working before the token-returning migration', async () => {
+  const invitation = {
+    id: '96000000-0000-4000-8000-000000000001',
+    email: 'tecnico@example.com',
+    specialtySlug: 'aire_acondicionado',
+    status: 'queued',
+    expiresAt: '2026-10-06T12:00:00Z',
+    createdAt: '2026-09-22T12:00:00Z',
+    version: 1
+  }
+  const rpc = vi.fn().mockResolvedValue({ data: invitation, error: null })
+  const session = {
+    role: 'admin', assuranceLevel: 'aal2', permissions: ['operations'], client: { rpc }
+  } as unknown as Session
+
+  await expect(createProfessionalInvitation(session, {
+    email: invitation.email,
+    specialtySlug: invitation.specialtySlug,
+    reason: 'Convocatoria para técnico de aire acondicionado'
+  })).resolves.toEqual({ invitation, link: null })
+})

@@ -81,7 +81,7 @@ export function ConnectedProfessionalDirectory({
                     {person.eligible ? 'Documentación vigente' : 'Documentación no vigente'}
                     {!person.invited && ' · Alta previa al circuito de invitación'}
                   </td>
-                  <td>{person.readyForNewWork ? 'Puede recibir' : 'No puede recibir'}</td>
+                  <td>{(person.readyForNewWork ?? person.eligible) ? 'Puede recibir' : 'No puede recibir'}</td>
                   <td>
                     <Link className="underline" href={'/admin/profesionales/' + person.id}>
                       Ver expediente

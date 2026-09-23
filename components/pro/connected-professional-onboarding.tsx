@@ -251,7 +251,7 @@ export function ConnectedProfessionalOnboarding({ initial }: { initial: Onboardi
       )}
       {context.application.status === 'approved' && (
         <p>
-          {context.readyForNewWork
+          {(context.readyForNewWork ?? context.eligible)
             ? 'Tu revisión fue aprobada y ya podés recibir trabajos nuevos.'
             : 'Tu revisión fue aprobada, pero todavía no podés recibir trabajos nuevos.'}{' '}
           {context.eligible && (

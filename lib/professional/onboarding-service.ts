@@ -31,7 +31,7 @@ export const invitationSchema = z
   })
   .strict()
 const createdInvitationSchema = invitationSchema.extend({
-  token: z.string().regex(/^[A-Za-z0-9_-]{43}$/)
+  token: z.string().regex(/^[A-Za-z0-9_-]{43}$/).optional()
 })
 const acceptedSchema = z
   .object({ professionalId: z.string().uuid(), status: z.literal('form_started') })
@@ -64,7 +64,7 @@ export async function createProfessionalInvitation(session: Session, input: unkn
   const { token, ...invitation } = parsed.data
   return {
     invitation,
-    link: `${authOrigin(process.env.NEXT_PUBLIC_APP_URL)}/pro/onboarding/${token}`
+    link: token ? `${authOrigin(process.env.NEXT_PUBLIC_APP_URL)}/pro/onboarding/${token}` : null
   }
 }
 
