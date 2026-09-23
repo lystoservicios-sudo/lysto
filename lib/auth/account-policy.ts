@@ -27,10 +27,11 @@ export async function getRegistrationPolicy(): Promise<RegistrationPolicy | null
       ['privacidad', parsed.data.privacy_url]
     ] as const) {
       const url = new URL(value)
-      const canonicalStagingDocument =
-        process.env.APP_ENV === 'staging' &&
-        url.href === `https://lystohogar.com/${kind}`
-      if ((!canonicalStagingDocument && url.origin !== origin) || url.username || url.password || url.hash) return null
+      const canonicalExternalDocument =
+        url.href === `https://lystohogar.com/${kind}` &&
+        (process.env.APP_ENV === 'staging' ||
+          (process.env.APP_ENV === 'test' && ['localhost', '127.0.0.1', '[::1]'].includes(new URL(origin).hostname)))
+      if ((!canonicalExternalDocument && url.origin !== origin) || url.username || url.password || url.hash) return null
     }
     return { termsVersion: parsed.data.terms_version, privacyVersion: parsed.data.privacy_version, termsUrl: parsed.data.terms_url, privacyUrl: parsed.data.privacy_url, testOnly: parsed.data.test_only }
   } catch { return null }

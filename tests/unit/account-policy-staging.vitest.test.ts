@@ -47,4 +47,15 @@ describe('staging customer registration policy', () => {
     vi.stubEnv('APP_ENV', 'production')
     expect(await getRegistrationPolicy()).toBeNull()
   })
+
+  it('accepts the canonical legal pages in an isolated local test', async () => {
+    vi.stubEnv('APP_ENV', 'test')
+    vi.stubEnv('NEXT_PUBLIC_APP_URL', 'http://127.0.0.1:3100')
+    expect(await getRegistrationPolicy()).toMatchObject({ termsUrl: legal.terms_url })
+  })
+
+  it('does not extend the local-test exception to an external host', async () => {
+    vi.stubEnv('APP_ENV', 'test')
+    expect(await getRegistrationPolicy()).toBeNull()
+  })
 })
