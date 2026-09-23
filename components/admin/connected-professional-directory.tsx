@@ -38,9 +38,10 @@ export function ConnectedProfessionalDirectory({
         title="Profesionales"
         description="Postulaciones y habilitaciones registradas."
         action={
-          <Link className="adm-button adm-button-primary" href="/admin/profesionales/invitaciones">
-            Invitaciones
-          </Link>
+          <span className="flex gap-2">
+            <Link className="adm-button" href="/admin/profesionales/requisitos">Requisitos</Link>
+            <Link className="adm-button adm-button-primary" href="/admin/profesionales/invitaciones">Invitaciones</Link>
+          </span>
         }
       />
       {error && <p role="alert">{error}</p>}
@@ -63,6 +64,7 @@ export function ConnectedProfessionalDirectory({
                 <th>Profesional</th>
                 <th>Revisión</th>
                 <th>Habilitación vigente</th>
+                <th>Trabajos nuevos</th>
                 <th>Expediente</th>
               </tr>
             </thead>
@@ -76,9 +78,10 @@ export function ConnectedProfessionalDirectory({
                   </td>
                   <td>{professionalStatusLabels[person.status]}</td>
                   <td>
-                    {person.eligible ? 'Habilitado' : 'No habilitado'}
+                    {person.eligible ? 'Documentación vigente' : 'Documentación no vigente'}
                     {!person.invited && ' · Alta previa al circuito de invitación'}
                   </td>
+                  <td>{person.readyForNewWork ? 'Puede recibir' : 'No puede recibir'}</td>
                   <td>
                     <Link className="underline" href={'/admin/profesionales/' + person.id}>
                       Ver expediente

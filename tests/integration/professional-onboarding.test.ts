@@ -187,6 +187,8 @@ describe('professional invitation and review lifecycle', () => {
       )
     ).rows[0]
     expect(event).toBeTruthy()
+    expect(body.link).toBe(`${app!.baseURL}/pro/onboarding/${event.payload.invitation_token}`)
+    expect(JSON.stringify(body.invitation)).not.toContain(event.payload.invitation_token)
     return { ...body.invitation, token: event.payload.invitation_token as string }
   }
   async function inBrowser(actor: AccountName, run: (page: Page) => Promise<void>) {
@@ -527,6 +529,8 @@ describe('professional invitation and review lifecycle', () => {
       zoneIds: [zone],
       categoryIds: [category]
     })
+    expect((await request('/api/mercadopago/account', 'professionalApproved')).status).toBe(200)
+    expect((await request('/api/mercadopago/account', 'customerA')).status).toBe(403)
     expect(
       (await request('/api/professional/onboarding', 'professionalApproved', 'POST', draft)).status
     ).toBe(409)
@@ -901,7 +905,7 @@ describe('professional invitation and review lifecycle', () => {
       await page.getByRole('status').filter({ hasText: 'Revisión registrada.' }).waitFor()
       await page.reload()
       expect(
-        await page.getByText('Aprobado · Habilitación vigente', { exact: true }).isVisible()
+        await page.getByText('Aprobado · Documentación vigente · No recibe trabajos nuevos', { exact: true }).isVisible()
       ).toBe(true)
       expect(await page.getByText('Datos demostrativos.', { exact: false }).count()).toBe(0)
     })
@@ -914,6 +918,12 @@ describe('professional invitation and review lifecycle', () => {
     expect(audit.actor_profile_id).toBe(fixture.accounts.operations.profileId)
     expect(audit.metadata.from_status).toBe('under_review')
     expect(audit.metadata.to_status).toBe('approved')
+    const readiness = await database!.query(
+      'select private.professional_ready_for_new_work($1) as ready, private.professional_readiness_reasons($1) as reasons',
+      [professionalId]
+    )
+    expect(readiness.rows[0].ready).toBe(false)
+    expect(readiness.rows[0].reasons).toEqual(expect.arrayContaining(['foto', 'mercado_pago']))
     expect(
       (await request('/api/jobs/final-report', 'professionalApproved', 'POST', {})).status
     ).toBe(400)

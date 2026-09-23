@@ -1,4 +1,5 @@
 'use client'
+import Image from 'next/image'
 import { useEffect, useState } from 'react'
 import type { ProfessionalReview } from '@/lib/professional/onboarding-contracts'
 import { privateRequest, requestError } from '@/lib/http/private-client'
@@ -112,6 +113,21 @@ export function ConnectedProfessionalReview({
       setBusy(false)
     }
   }
+  async function requestRevalidation(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (busy) return
+    const form = event.currentTarget
+    const reason = new FormData(form).get('reason')
+    setBusy(true); setError(''); setMessage('')
+    try {
+      const next = await privateRequest<ProfessionalReview>('/api/admin/professionals/revalidation', 'POST', {
+        professionalId: application.professionalId, expectedVersion: application.version, reason
+      })
+      setReview(next)
+      form.reset()
+      setMessage('Se solicitó la actualización documental. El expediente anterior se conserva.')
+    } catch (failure) { setError(requestError(failure)) } finally { setBusy(false) }
+  }
   return (
     <>
       <Header
@@ -131,11 +147,21 @@ export function ConnectedProfessionalReview({
       <Panel title="Estado de la postulación">
         <p>
           {professionalStatusLabels[application.status]} ·{' '}
-          {review.eligible ? 'Habilitación vigente' : 'Sin habilitación operativa vigente'}
+          {review.eligible ? 'Documentación vigente' : 'Sin habilitación documental vigente'} ·{' '}
+          {review.readyForNewWork ? 'Listo para recibir trabajos' : 'No recibe trabajos nuevos'}
         </p>
+        {review.readinessReasons && review.readinessReasons.length > 0 && <p>Falta: {review.readinessReasons.join(', ')}.</p>}
         {review.decisionReason && <p>Última resolución: {review.decisionReason}</p>}
       </Panel>
+      {application.status === 'approved' && !review.eligible && <Panel title="Solicitar revalidación documental">
+        <p>La política vigente o un documento vencido impide la habilitación. Esta acción reabre el expediente para que el profesional corrija y vuelva a enviarlo; los trabajos existentes requieren seguimiento operativo.</p>
+        <form className="adm-form" onSubmit={event => void requestRevalidation(event)}>
+          <Field label="Motivo para el profesional"><textarea name="reason" required minLength={10} maxLength={1000} disabled={busy} /></Field>
+          <Button type="submit" disabled={busy}>Solicitar actualización</Button>
+        </form>
+      </Panel>}
       <Panel title="Información declarada">
+        {review.avatarUrl && <Image unoptimized src={review.avatarUrl} alt="Foto de perfil" width={96} height={96} className="mb-4 h-24 w-24 rounded-full object-cover" />}
         <dl className="adm-facts">
           {[
             ['Teléfono', application.phone],

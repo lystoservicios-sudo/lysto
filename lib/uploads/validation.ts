@@ -2,6 +2,7 @@ export type UploadKind =
   | 'request-photo'
   | 'request-video'
   | 'professional-document'
+  | 'professional-avatar'
   | 'job-photo'
   | 'job-document'
   | 'equipment-photo'
@@ -17,6 +18,7 @@ const maxSizes: Record<UploadKind, number> = {
   'request-photo': 10 * 1024 * 1024,
   'request-video': 50 * 1024 * 1024,
   'professional-document': 10 * 1024 * 1024,
+  'professional-avatar': 2 * 1024 * 1024,
   'job-photo': 10 * 1024 * 1024,
   'job-document': 20 * 1024 * 1024
 }
@@ -26,6 +28,7 @@ const allowedMimeTypes: Record<UploadKind, string[]> = {
   'request-photo': ['image/jpeg', 'image/png', 'image/webp'],
   'request-video': [],
   'professional-document': ['image/jpeg', 'image/png', 'image/webp'],
+  'professional-avatar': ['image/jpeg', 'image/png', 'image/webp'],
   'job-photo': ['image/jpeg', 'image/png', 'image/webp'],
   'job-document': ['image/jpeg', 'image/png', 'image/webp']
 }

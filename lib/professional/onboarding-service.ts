@@ -30,6 +30,9 @@ export const invitationSchema = z
     version: z.number().int().positive()
   })
   .strict()
+const createdInvitationSchema = invitationSchema.extend({
+  token: z.string().regex(/^[A-Za-z0-9_-]{43}$/)
+})
 const acceptedSchema = z
   .object({ professionalId: z.string().uuid(), status: z.literal('form_started') })
   .strict()
@@ -56,9 +59,13 @@ export async function createProfessionalInvitation(session: Session, input: unkn
     p_reason: data.reason
   })
   if (result.error) fail(result.error.code)
-  const parsed = invitationSchema.safeParse(result.data)
+  const parsed = createdInvitationSchema.safeParse(result.data)
   if (!parsed.success) throw new ApiError('service_unavailable')
-  return { invitation: parsed.data }
+  const { token, ...invitation } = parsed.data
+  return {
+    invitation,
+    link: `${authOrigin(process.env.NEXT_PUBLIC_APP_URL)}/pro/onboarding/${token}`
+  }
 }
 
 /** This identity may have no domain profile yet. Only invitation/onboarding RPCs may use it. */
@@ -247,6 +254,23 @@ export async function reviewProfessionalDocument(session: Session, input: unknow
     p_expires_at: data.expiresAt!
   })
   if (result.error) fail(result.error.code)
+  const parsed = professionalReviewSchema.safeParse(result.data)
+  if (!parsed.success) throw new ApiError('service_unavailable')
+  return parsed.data
+}
+
+export async function requestProfessionalRevalidation(session: Session, input: unknown) {
+  assertOperations(session)
+  const data = z.object({ professionalId: z.string().uuid(), expectedVersion: z.number().int().positive(),
+    reason: z.string().trim().min(10).max(1000) }).strict().parse(input)
+  const client = session.client as unknown as {
+    rpc(name: string, args: Record<string, unknown>): PromiseLike<{ data: unknown; error: { code?: string } | null }>
+  }
+  const result = await client.rpc('request_professional_revalidation', {
+    p_professional_id: data.professionalId, p_expected_version: data.expectedVersion,
+    p_reason: data.reason
+  })
+  if (result.error) fail(result.error.code ?? '')
   const parsed = professionalReviewSchema.safeParse(result.data)
   if (!parsed.success) throw new ApiError('service_unavailable')
   return parsed.data

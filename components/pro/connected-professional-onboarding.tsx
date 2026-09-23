@@ -1,5 +1,6 @@
 'use client'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useEffect, useState } from 'react'
 import type { OnboardingContext } from '@/lib/professional/onboarding-context'
 import {
@@ -9,6 +10,7 @@ import {
 import { requiredAirConditioningTools } from '@/lib/professional/tool-checklist'
 import { privateRequest, requestError } from '@/lib/http/private-client'
 import { MediaUploader } from '@/components/customer/media-uploader'
+import { MarketplaceAccount } from '@/components/payments/marketplace-account'
 
 export const professionalStatusLabels: Record<string, string> = {
   invited: 'Invitado',
@@ -22,10 +24,12 @@ export const professionalStatusLabels: Record<string, string> = {
 }
 export const documentLabels: Record<string, string> = {
   identity: 'Documento de identidad',
+  identity_front: 'DNI frente',
+  identity_back: 'DNI dorso',
   license: 'Matrícula',
   insurance: 'Seguro',
   tax: 'Constancia fiscal',
-  profile: 'Foto de perfil'
+  profile: 'Foto de perfil (documento privado anterior)'
 }
 const toolLabels: Record<string, string> = {
   vacuum_pump: 'Bomba de vacío',
@@ -87,6 +91,14 @@ export function ConnectedProfessionalOnboarding({ initial }: { initial: Onboardi
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const [documentUrl, setDocumentUrl] = useState<{ id: string; url: string } | null>(null)
+  const [avatarFile, setAvatarFile] = useState<File | null>(null)
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
+  useEffect(() => {
+    if (!avatarFile) { setAvatarPreview(null); return }
+    const url = URL.createObjectURL(avatarFile)
+    setAvatarPreview(url)
+    return () => URL.revokeObjectURL(url)
+  }, [avatarFile])
   const editable = ['form_started', 'rejected'].includes(context.application.status)
   const dirty = JSON.stringify(draft) !== JSON.stringify(context.application)
   const disabled = busy || uploading
@@ -176,6 +188,21 @@ export function ConnectedProfessionalOnboarding({ initial }: { initial: Onboardi
       setBusy(false)
     }
   }
+  async function uploadAvatar() {
+    if (!avatarFile || disabled) return
+    setUploading(true)
+    setError('')
+    try {
+      const response = await fetch('/api/professional/onboarding/avatar', {
+        method: 'POST', headers: { 'Content-Type': avatarFile.type }, body: avatarFile
+      })
+      if (!response.ok) throw new Error('No pudimos guardar la foto. Usá JPG, PNG o WebP de hasta 2 MB.')
+      setAvatarFile(null)
+      await reload(false)
+      setMessage('Foto de perfil guardada.')
+    } catch (failure) { setError(requestError(failure)) }
+    finally { setUploading(false) }
+  }
   const textFields = [
     ['firstName', 'Nombre'],
     ['lastName', 'Apellido'],
@@ -194,9 +221,16 @@ export function ConnectedProfessionalOnboarding({ initial }: { initial: Onboardi
           {draft.email} · <strong>{professionalStatusLabels[context.application.status]}</strong>
         </p>
         <p>
-          Completá tu información y guardá los documentos solicitados. La revisión es necesaria para
-          habilitar trabajos.
+          Completá tus datos, documentación, foto y cuenta de cobro. Operaciones revisará el expediente
+          antes de habilitar trabajos nuevos.
         </p>
+        <nav aria-label="Pasos de la postulación" className="flex flex-wrap gap-3 text-sm">
+          <a className="underline" href="#datos-profesionales">1. Datos y horarios</a>
+          <a className="underline" href="#foto-profesional">2. Foto</a>
+          <a className="underline" href="#documentos-profesionales">3. Documentos</a>
+          <a className="underline" href="#enviar-postulacion">4. Enviar a revisión</a>
+          <a className="underline" href="#cobros-profesionales">5. Mercado Pago</a>
+        </nav>
         <button
           className="underline disabled:opacity-50"
           disabled={disabled}
@@ -217,9 +251,9 @@ export function ConnectedProfessionalOnboarding({ initial }: { initial: Onboardi
       )}
       {context.application.status === 'approved' && (
         <p>
-          {context.eligible
-            ? 'Tu revisión fue aprobada y tu habilitación está vigente.'
-            : 'Tu revisión fue aprobada, pero tu habilitación ya no está vigente. Contactá a operaciones para renovar la documentación.'}{' '}
+          {context.readyForNewWork
+            ? 'Tu revisión fue aprobada y ya podés recibir trabajos nuevos.'
+            : 'Tu revisión fue aprobada, pero todavía no podés recibir trabajos nuevos.'}{' '}
           {context.eligible && (
             <Link className="underline" href="/pro/dashboard">
               Ir al panel profesional
@@ -234,7 +268,7 @@ export function ConnectedProfessionalOnboarding({ initial }: { initial: Onboardi
           postulación.
         </p>
       )}
-      <form onSubmit={save} className="space-y-5 rounded-2xl border bg-white p-5">
+      <form id="datos-profesionales" onSubmit={save} className="space-y-5 rounded-2xl border bg-white p-5">
         <fieldset disabled={!editable || disabled} className="space-y-5">
           <legend className="text-xl font-bold">Información profesional</legend>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -413,7 +447,14 @@ export function ConnectedProfessionalOnboarding({ initial }: { initial: Onboardi
           )}
         </fieldset>
       </form>
-      <section className="space-y-4 rounded-2xl border bg-white p-5">
+      <section id="foto-profesional" className="space-y-3 rounded-2xl border bg-white p-5">
+        <h2 className="text-xl font-bold">Foto de perfil</h2>
+        <p>Esta foto será pública. No subas una foto de tu DNI o de tu matrícula aquí.</p>
+        {(avatarPreview || context.avatarUrl) && <Image unoptimized src={avatarPreview || context.avatarUrl || ''} alt="Foto de perfil del profesional" width={128} height={128} className="h-32 w-32 rounded-full object-cover" />}
+        <input type="file" accept="image/jpeg,image/png,image/webp" disabled={disabled} onChange={(event) => setAvatarFile(event.target.files?.[0] ?? null)} />
+        <button type="button" className={buttonClass} disabled={!avatarFile || disabled} onClick={() => void uploadAvatar()}>Guardar foto</button>
+      </section>
+      <section id="documentos-profesionales" className="space-y-4 rounded-2xl border bg-white p-5">
         <h2 className="text-xl font-bold">Documentación y revisión</h2>
         {!context.requirements && (
           <p>
@@ -483,7 +524,7 @@ export function ConnectedProfessionalOnboarding({ initial }: { initial: Onboardi
         )}
       </section>
       {editable && (
-        <section className="space-y-4 rounded-2xl border bg-white p-5">
+        <section id="enviar-postulacion" className="space-y-4 rounded-2xl border bg-white p-5">
           <h2 className="text-xl font-bold">Enviar a revisión</h2>
           {context.legal ? (
             <label className="block">
@@ -527,6 +568,11 @@ export function ConnectedProfessionalOnboarding({ initial }: { initial: Onboardi
           </button>
         </section>
       )}
+      {context.readinessReasons && context.readinessReasons.length > 0 &&
+        <p>Para recibir trabajos nuevos falta: {context.readinessReasons.map((reason) => ({ documentos: 'documentación vigente', foto: 'foto de perfil', mercado_pago: 'cuenta de Mercado Pago' })[reason]).join(', ')}.</p>}
+      <section id="cobros-profesionales" aria-label="Vinculación de cobros" className="rounded-2xl border bg-white p-5">
+        <MarketplaceAccount onboarding />
+      </section>
     </div>
   )
 }

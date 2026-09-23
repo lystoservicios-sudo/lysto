@@ -82,13 +82,22 @@ export async function readProfessionalLiveProfile(session: Session) {
       .single(),
     session.client
       .from('profiles')
-      .select('first_name,last_name,email,phone')
+      .select('first_name,last_name,email,phone,avatar_url')
       .eq('id', session.profileId)
       .single()
   ])
   if (profile.error || identity.error || !profile.data || !identity.data)
     throw new ApiError('service_unavailable')
-  return { ...profile.data, ...identity.data }
+  const avatar = identity.data.avatar_url
+  let avatarUrl: string | null = null
+  try {
+    const storage = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL!)
+    const candidate = new URL(avatar ?? '')
+    if (candidate.origin === storage.origin &&
+      /^\/storage\/v1\/object\/public\/public-avatars\/[a-f0-9-]{36}\/[a-f0-9-]{36}\.webp$/.test(candidate.pathname))
+      avatarUrl = candidate.toString()
+  } catch { /* Legacy or external URL: never use it as a professional avatar. */ }
+  return { ...profile.data, ...identity.data, avatar_url: avatarUrl }
 }
 
 export async function readAssignedEquipment(session: Session, equipmentId: string) {

@@ -2,9 +2,28 @@
 
 Implementación verificada localmente. La hoja de ruta conserva las 40 tareas y la salida de producción sigue bloqueada por sus puertas de aceptación.
 
+## Ampliación: invitación, foto, cobros y trabajos nuevos (2026-09-22)
+
+Esta ampliación está implementada en una rama aislada. El 2026-09-22 se aplicaron y registraron sus tres migraciones en Supabase staging `obksyzasmfwcbbksesqt` tras un ensayo transaccional con rollback. Pasaron 17 comprobaciones SQL nuevas, 20 de onboarding existente, 16 de asignación y 16 de registro de clientes después del commit, sin conservar fixtures. No se utilizó Docker ni se modificó producción. La interfaz de esta rama todavía no está desplegada y la aceptación de Mercado Pago sigue pendiente.
+
+1. Operaciones/owner con MFA crea la invitación individual por correo. En esa respuesta puede copiar el enlace; al actualizar, el enlace desaparece del panel y la lista no devuelve el token. El correo y el enlace son dos vías de entrega del mismo token, con el mismo vencimiento y consumo único.
+2. En **Administración → Profesionales → Requisitos**, Operaciones crea un borrador versionado por especialidad. Puede exigir DNI como imagen única o frente y dorso, matrícula, seguro o constancia fiscal, además de vigencia, herramientas, experiencia y número de matrícula. Antes de activar ve cuántos aprobados serán afectados y documenta el motivo. No hay requisitos de producción precargados: el titular de la operación debe aprobarlos expresamente.
+3. El postulante guarda nombre, DNI/CUIL, matrícula si la política lo exige, zonas, herramientas y horarios; adjunta los documentos exactos de la política vigente. El DNI y la matrícula siguen privados. La foto pública se carga por separado: se inspecciona en cuarentena, se reprocesa sin metadatos y se vincula al perfil. Nunca usar una foto del DNI como avatar.
+4. El postulante puede vincular Mercado Pago desde el onboarding, aun antes de la aprobación documental. Lysto no recibe su contraseña. Si el entorno carece de credenciales de split, la pantalla informa que los cobros esperan configuración de Lysto.
+5. **Aprobado** significa decisión documental humana. **Listo para trabajos nuevos** requiere además documentación vigente, foto canónica y vendedor Mercado Pago habilitado. La selección de candidatos y toda asignación nueva fallan cerradas cuando falta alguno. Desvincular Mercado Pago no borra trabajos ni expediente ya existentes; cualquier cobro posterior sigue sujeto a la protección financiera del checkout.
+
+### Operación y soporte
+
+- Invitación vencida/cancelada/consumida: crear una invitación nueva al correo correcto; no reenviar el token anterior. El estado de entrega del correo no prueba recepción. No registrar enlaces completos en tickets o telemetría.
+- Documento observado: dejar motivo concreto y fecha de vencimiento cuando corresponda; el postulante corrige y vuelve a enviar. Una política nueva conserva el envío histórico, pero invalida la habilitación documental anterior cuando sus requisitos difieren.
+- Foto ausente o incorrecta: el profesional puede reemplazarla desde el expediente. Sólo la foto reprocesada y registrada por el servidor cuenta como requisito cumplido.
+- Fallo de limpieza de foto: la aplicación reintenta retirar objetos reemplazados o de cuarentena y registra `professional_avatar.cleanup_failed` si Storage continúa fallando. Operaciones debe revisar objetos huérfanos del bucket `public-avatars` y de `upload-quarantine` en un entorno autorizado antes de borrarlos; nunca eliminar una ruta que figure en `private.professional_avatars`.
+- Mercado Pago desconectado: no crear nuevas ofertas. Revisar pagos activos antes de intentar desvincular o reemplazar la cuenta. Operaciones coordina los trabajos ya asumidos; no se revoca su acceso operativo sólo por la desconexión.
+- Profesionales aprobados antes del circuito de invitación: inventariarlos y revisar manualmente documentación, foto y conexión de cobros antes de activar las nuevas reglas en producción. La compatibilidad documental legada no equivale a una nueva revisión humana.
+
 ## Operación
 
-1. Desde **Administración → Profesionales → Invitaciones**, operaciones/owner con MFA registra correo, especialidad activa y motivo. La invitación comienza **en cola de entrega**. No se muestra el token al operador ni se afirma que el correo fue enviado.
+1. Desde **Administración → Profesionales → Invitaciones**, operaciones/owner con MFA registra correo, especialidad activa y motivo. La invitación comienza **en cola de entrega**. El enlace se muestra una sola vez en la respuesta de creación para copiarlo; no reaparece en la lista ni se afirma que el correo fue enviado.
 2. El destinatario abre el enlace, registra o ingresa a su cuenta y confirma su correo. El GET no consume la invitación. **Aceptar invitación** exige correo verificado coincidente, token vigente, sesión activa y ausencia de un rol incompatible. Un perfil de cliente o administrador existente no se convierte.
 3. En `/pro/onboarding`, el profesional guarda datos personales, experiencia, herramientas, especialidades, zonas y disponibilidad. Esa superficie está separada del layout operativo aprobado. La sesión puede renovarse conservando las cookies y las cabeceras privadas.
 4. Adjunta los documentos exigidos por la política de cada especialidad mediante cuarentena, inspección y almacenamiento privado T10. Enviar requiere documentos inspeccionados, campos completos y aceptación explícita de versiones legales vigentes. Guardar un borrador no habilita trabajos.

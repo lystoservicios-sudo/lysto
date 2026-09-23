@@ -23,6 +23,7 @@ export function ConnectedProfessionalInvitations({
     [busy, setBusy] = useState(true),
     [error, setError] = useState(''),
     [message, setMessage] = useState('')
+  const [createdLink, setCreatedLink] = useState<string | null>(null)
   // Do not accept edits before hydration installs the change handlers.
   useEffect(() => {
     setBusy(false)
@@ -47,8 +48,9 @@ export function ConnectedProfessionalInvitations({
     setBusy(true)
     setError('')
     setMessage('')
+    setCreatedLink(null)
     try {
-      await privateRequest(
+      const result = await privateRequest<{ link?: string }>(
         '/api/admin/invite-professional',
         cancel ? 'PATCH' : 'POST',
         cancel
@@ -65,6 +67,7 @@ export function ConnectedProfessionalInvitations({
       )
       form.reset()
       await load()
+      if (!cancel) setCreatedLink(result.link ?? null)
       setMessage(cancel ? 'Invitación cancelada.' : 'Invitación registrada y en cola de entrega.')
     } catch (failure) {
       setError(requestError(failure))
@@ -75,6 +78,7 @@ export function ConnectedProfessionalInvitations({
   async function refresh(more = false) {
     setBusy(true)
     setError('')
+    setCreatedLink(null)
     try {
       await load(more)
     } catch (failure) {
@@ -92,6 +96,20 @@ export function ConnectedProfessionalInvitations({
       />
       {error && <p role="alert">{error}</p>}
       {message && <p role="status">{message}</p>}
+      {createdLink && (
+        <Panel title="Enlace creado">
+          <p>Copiá el enlace ahora: por seguridad no vuelve a mostrarse al actualizar la lista.</p>
+          <p><a className="underline" href={createdLink} target="_blank" rel="noopener noreferrer">Abrir enlace de invitación</a></p>
+          <Button disabled={busy} onClick={async () => {
+            try {
+              await navigator.clipboard.writeText(createdLink)
+              setMessage('Enlace copiado. Compartilo sólo con el correo invitado.')
+            } catch {
+              setError('No pudimos copiar el enlace. Abrilo y copialo desde la barra del navegador.')
+            }
+          }}>Copiar enlace</Button>
+        </Panel>
+      )}
       <Panel title="Nueva invitación">
         <form className="adm-form" onSubmit={(event) => void mutate(event)}>
           <fieldset disabled={busy}>

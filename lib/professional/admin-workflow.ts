@@ -24,6 +24,7 @@ const professionalSchema = z
       'inactive'
     ]),
     eligible: z.boolean(),
+    readyForNewWork: z.boolean().optional(),
     invited: z.boolean()
   })
   .strict()

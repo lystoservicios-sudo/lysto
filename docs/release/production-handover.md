@@ -2,6 +2,10 @@
 
 Fecha de preparación: 2026-09-12. Estado final demostrado: **PREPARACIÓN LOCAL AVANZADA; PRODUCCIÓN NO HABILITADA**.
 
+## Anexo de alta profesional (2026-09-22)
+
+La ampliación de invitaciones copiables, políticas versionadas, avatar público inspeccionado, OAuth durante la postulación y condición de preparación para trabajos nuevos tiene **esquema aplicado sólo en Supabase staging**; la interfaz aún no está desplegada. El 2026-09-22 se aplicaron y registraron cuatro migraciones, incluida la activación previa del registro de clientes, con precondiciones de proyecto, historial y ausencia de expedientes. Pasaron 69 comprobaciones SQL de onboarding, asignación y registro de clientes después del commit, revertidas por transacción. Antes de publicar en producción: comparar instalación limpia y actualización con expedientes legados, aprobar requisitos documentales por especialidad con responsable nominal, y completar MP01a/MP01–MP12 en sandbox. No activar nuevas asignaciones pagas sin comprobar la cuenta vendedora del profesional y el cambio de política sobre los aprobados actuales. El registro de clientes debe repetir confirmación, aceptación legal y acceso tras la actualización.
+
 ## Versión y destino
 
 La implementación está en la rama remota `codex/production-readiness`. El candidato runtime `67932c45e563849d5085abec5997bed220983186` está desplegado en staging protegido; el alias productivo no fue modificado. El Supabase remoto `dqonlqcurvjnjgsczevu` fue identificado como `PRODUCTION` y staging usa el proyecto aislado `obksyzasmfwcbbksesqt`.

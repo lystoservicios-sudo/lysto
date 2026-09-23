@@ -12,6 +12,7 @@ Estado: **pendiente de D04, D06, D10 y D11**. Ejecutar con aplicación y cuentas
 | ID | Caso | Evidencia esperada | Estado |
 | --- | --- | --- | --- |
 | MP01 | OAuth válido | profesional correcto, seller ID, token test cifrado, callback limpio | pendiente |
+| MP01a | OAuth durante la postulación | invitación aceptada y correo confirmado; callback vuelve a `/pro/onboarding`, vendedor coincide con el postulante, cliente/admin/anónimo rechazados | pendiente |
 | MP02 | OAuth inválido | state vencido/incorrecto/reutilizado y sesión ajena rechazados sin filtrar token | pendiente |
 | MP03 | refresh/revocación | concurrencia, vencimiento, revocación y reconexión coherentes | pendiente |
 | MP04 | checkout canónico | ARS, monto, collector, fee, referencia, URLs y doble click | pendiente |

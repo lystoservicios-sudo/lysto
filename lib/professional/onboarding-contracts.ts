@@ -90,6 +90,9 @@ export const professionalReviewSchema = z
     requirements: reviewRequirementsSchema.nullable(),
     decisionReason: z.string().nullable(),
     eligible: z.boolean(),
+    avatarUrl: z.string().url().nullable().optional(),
+    readyForNewWork: z.boolean().optional(),
+    readinessReasons: z.array(z.enum(['documentos', 'foto', 'mercado_pago'])).optional(),
     documents: z.array(
       z
         .object({

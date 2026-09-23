@@ -1,12 +1,11 @@
 import { privateJson } from '@/lib/http/api-error'
-import { getPricingSession } from '@/lib/pricing/server'
 import { marketplaceConfig, oauthBinding, paymentError, sameOrigin } from '@/lib/payments/marketplace-config'
 import { marketplaceGateway } from '@/lib/payments/marketplace'
-import { approvedProfessional } from '@/lib/payments/marketplace-session'
+import { onboardingMarketplaceProfessional } from '@/lib/payments/marketplace-session'
 export const runtime = 'nodejs'
 export async function POST(request:Request) {
   try {
-    const session=await getPricingSession(), pro=await approvedProfessional(session), config=marketplaceConfig()
+    const session=await onboardingMarketplaceProfessional(), pro=session.professionalId, config=marketplaceConfig()
     sameOrigin(request)
     const {url}=await marketplaceGateway().oauth.createAuthorizationUrl({sellerId:pro})
     const state=new URL(url).searchParams.get('state')

@@ -1,5 +1,7 @@
 'use client'
 
+import Image from 'next/image'
+
 import { useMemo, useState } from 'react'
 import { CalendarDays, CreditCard, LifeBuoy, UserRound, Wrench } from 'lucide-react'
 
@@ -173,6 +175,7 @@ export function LiveProfessionalProfile({
     last_name: string
     email: string
     phone: string | null
+    avatar_url: string | null
     status: string
     rating_avg: number | null
     jobs_completed: number
@@ -186,10 +189,32 @@ export function LiveProfessionalProfile({
     bio: string | null
   }
 }) {
+  const [avatarUrl, setAvatarUrl] = useState(profile.avatar_url)
+  const [avatarFile, setAvatarFile] = useState<File | null>(null)
+  const [avatarMessage, setAvatarMessage] = useState('')
+  const [avatarBusy, setAvatarBusy] = useState(false)
+  async function uploadAvatar() {
+    if (!avatarFile || avatarBusy) return
+    setAvatarBusy(true); setAvatarMessage('')
+    try {
+      const response = await fetch('/api/professional/onboarding/avatar', {
+        method: 'POST', headers: { 'Content-Type': avatarFile.type }, body: avatarFile
+      })
+      if (!response.ok) throw new Error('No pudimos guardar la foto. Usá JPG, PNG o WebP de hasta 2 MB.')
+      const saved: { avatarUrl: string } = await response.json()
+      setAvatarUrl(saved.avatarUrl); setAvatarFile(null); setAvatarMessage('Foto de perfil guardada.')
+    } catch (failure) { setAvatarMessage(failure instanceof Error ? failure.message : 'No pudimos guardar la foto.') }
+    finally { setAvatarBusy(false) }
+  }
   return (
     <ProPage title="Mi perfil" description="Datos operativos registrados y estado de habilitación.">
       <div className="pro-two-col">
         <ProPanel title={`${profile.first_name} ${profile.last_name}`}>
+          {avatarUrl && <Image unoptimized src={avatarUrl} alt="Mi foto de perfil" width={96} height={96} className="mb-4 h-24 w-24 rounded-full object-cover" />}
+          <p className="pro-muted">La foto de perfil es pública; no subas imágenes del DNI o la matrícula.</p>
+          <input type="file" accept="image/jpeg,image/png,image/webp" disabled={avatarBusy} onChange={event => setAvatarFile(event.target.files?.[0] ?? null)} />
+          <button type="button" className="mt-3 rounded bg-blue-700 px-4 py-2 text-white disabled:opacity-50" disabled={!avatarFile || avatarBusy} onClick={() => void uploadAvatar()}>Guardar foto</button>
+          {avatarMessage && <p role="status">{avatarMessage}</p>}
           <ProFacts
             items={[
               { label: 'Estado', value: profile.status },
@@ -222,6 +247,9 @@ export function LiveProfessionalProfile({
           </p>
           <ButtonLink href="/pro/soporte" className="mt-5" variant="secondary">
             Solicitar actualización
+          </ButtonLink>
+          <ButtonLink href="/pro/onboarding" className="mt-3" variant="secondary">
+            Ver expediente y actualizar foto
           </ButtonLink>
         </ProPanel>
       </div>
