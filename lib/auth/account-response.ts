@@ -23,7 +23,15 @@ export function accountRedirect(
   )
 }
 export function checkAccountOrigin(request: Request) {
-  return isAllowedAuthOrigin(request.headers.get('origin'), process.env.NEXT_PUBLIC_APP_URL)
+  const origin = request.headers.get('origin')
+  if (isAllowedAuthOrigin(origin, process.env.NEXT_PUBLIC_APP_URL)) return true
+  if (origin !== null && origin !== 'null') return false
+  try {
+    const referrer = request.headers.get('referer')
+    return referrer !== null && new URL(referrer).origin === authOrigin(process.env.NEXT_PUBLIC_APP_URL)
+  } catch {
+    return false
+  }
 }
 export function validAccountToken(token: string) {
   return /^[a-zA-Z0-9_-]{20,512}$/.test(token)

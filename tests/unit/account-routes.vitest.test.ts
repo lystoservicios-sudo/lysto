@@ -31,6 +31,14 @@ function post(path: string, values: Record<string, string>, requestOrigin: strin
     body: new URLSearchParams(values)
   })
 }
+
+function postWithHeaders(path: string, values: Record<string, string>, headers: HeadersInit) {
+  return new Request(origin + path, {
+    method: 'POST',
+    headers,
+    body: new URLSearchParams(values)
+  })
+}
 beforeEach(() => {
   vi.clearAllMocks()
   vi.stubEnv('NEXT_PUBLIC_APP_URL', origin)
@@ -78,6 +86,27 @@ describe('account route boundaries', () => {
       expect(fixtures.verify).not.toHaveBeenCalled()
     }
   )
+  it('accepts the same-origin referrer when the browser serializes Origin as null', async () => {
+    const response = await confirmPost(
+      postWithHeaders(
+        '/auth/confirm',
+        { token_hash: token },
+        { origin: 'null', referer: `${origin}/auth/confirm?token_hash=${token}` }
+      )
+    )
+    expect(response.headers.get('location')).toBe(origin + '/app')
+  })
+  it('rejects a foreign referrer when Origin is null', async () => {
+    const response = await confirmPost(
+      postWithHeaders(
+        '/auth/confirm',
+        { token_hash: token },
+        { origin: 'null', referer: `https://evil.test/auth/confirm?token_hash=${token}` }
+      )
+    )
+    expect(response.status).toBe(403)
+    expect(fixtures.verify).not.toHaveBeenCalled()
+  })
   it('verifies only an email token and ignores attacker-supplied type/redirect', async () => {
     const response = await confirmPost(
       post('/auth/confirm', { token_hash: token, type: 'recovery', next: 'https://evil.test' })
