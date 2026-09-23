@@ -6,7 +6,7 @@ test('an anonymous visitor cannot consume a professional invitation', async ({ p
   await page.goto(`/pro/onboarding/${'a'.repeat(43)}`)
   await expect(page.getByRole('heading', { name: 'Tu invitación profesional' })).toBeVisible()
   await page.getByRole('button', { name: 'Aceptar invitación' }).click()
-  await expect(page.getByRole('alert')).toBeVisible()
+  await expect(page.getByText('Tu sesión terminó. Volvé a iniciar sesión.')).toBeVisible()
   await expect(page).toHaveURL(new RegExp(`/pro/onboarding/${'a'.repeat(43)}$`))
 })
 
