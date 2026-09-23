@@ -1,7 +1,10 @@
-import { afterEach, expect, it, vi } from 'vitest'
-import { createProfessionalInvitation } from '@/lib/professional/onboarding-service'
+import { afterEach, beforeEach, expect, it, vi } from 'vitest'
+import { createProfessionalInvitation, resendProfessionalInvitation } from '@/lib/professional/onboarding-service'
 import type { Session } from '@/lib/auth/session'
 
+const dispatchProfessionalInvitation = vi.hoisted(() => vi.fn())
+vi.mock('@/lib/notifications/server', () => ({ dispatchProfessionalInvitation }))
+beforeEach(() => dispatchProfessionalInvitation.mockResolvedValue({ accepted: true, reason: null }))
 afterEach(() => vi.unstubAllEnvs())
 
 it('returns an invitation link once without exposing the token in the invitation summary', async () => {
@@ -30,6 +33,9 @@ it('returns an invitation link once without exposing the token in the invitation
   })
 
   expect(result.link).toBe(`https://lystohogar.com/pro/onboarding/${token}`)
+  expect(result.delivery).toEqual({ accepted: true, reason: null })
+  expect(result.invitation.status).toBe('sent')
+  expect(dispatchProfessionalInvitation).toHaveBeenCalledWith(result.invitation.id)
   expect(JSON.stringify(result.invitation)).not.toContain(token)
   expect(rpc).toHaveBeenCalledWith('create_professional_invitation', {
     p_email: 'tecnico@example.com',
@@ -38,7 +44,8 @@ it('returns an invitation link once without exposing the token in the invitation
   })
 })
 
-it('keeps the existing email invitation flow working before the token-returning migration', async () => {
+it('reports an unavailable email transport without claiming that the invitation was sent', async () => {
+  dispatchProfessionalInvitation.mockResolvedValue({ accepted: false, reason: 'email_not_configured' })
   const invitation = {
     id: '96000000-0000-4000-8000-000000000001',
     email: 'tecnico@example.com',
@@ -57,5 +64,18 @@ it('keeps the existing email invitation flow working before the token-returning 
     email: invitation.email,
     specialtySlug: invitation.specialtySlug,
     reason: 'Convocatoria para técnico de aire acondicionado'
-  })).resolves.toEqual({ invitation, link: null })
+  })).resolves.toEqual({ invitation, link: null, delivery: { accepted: false, reason: 'email_not_configured' } })
+})
+
+it('retries the same invitation without creating a duplicate', async () => {
+  const rpc = vi.fn()
+  const session = {
+    role: 'admin', assuranceLevel: 'aal2', permissions: ['owner'], client: { rpc }
+  } as unknown as Session
+  const invitationId = '96000000-0000-4000-8000-000000000001'
+  await expect(resendProfessionalInvitation(session, { invitationId })).resolves.toEqual({
+    delivery: { accepted: true, reason: null }
+  })
+  expect(dispatchProfessionalInvitation).toHaveBeenCalledWith(invitationId)
+  expect(rpc).not.toHaveBeenCalled()
 })

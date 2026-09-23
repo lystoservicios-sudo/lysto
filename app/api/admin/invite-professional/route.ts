@@ -3,6 +3,7 @@ import { privateJson } from '@/lib/http/api-error'
 import { readPrivateJsonBody } from '@/lib/http/private-json-body'
 import {
   createProfessionalInvitation,
+  resendProfessionalInvitation,
   cancelProfessionalInvitation
 } from '@/lib/professional/onboarding-service'
 
@@ -12,6 +13,11 @@ export const POST = privateRoute(
     privateJson(await createProfessionalInvitation(session, await readPrivateJsonBody(request)), {
       status: 201
     })
+)
+export const PUT = privateRoute(
+  { roles: ['admin'], permission: 'operations' },
+  async (request, session) =>
+    privateJson(await resendProfessionalInvitation(session, await readPrivateJsonBody(request)))
 )
 export const PATCH = privateRoute(
   { roles: ['admin'], permission: 'operations' },

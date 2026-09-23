@@ -49,6 +49,7 @@ export const privateHttpMethods = [
   ['POST', '/api/admin/professionals/review'],
   ['POST', '/api/admin/professionals/documents/review'],
   ['PATCH', '/api/admin/invite-professional'],
+  ['PUT', '/api/admin/invite-professional'],
   ['POST', '/api/quality/open-case'],
   ['POST', '/api/reviews/submit'],
   ['POST', '/api/uploads/sign'],

@@ -1,6 +1,6 @@
 # Inventario de API
 
-Generado desde los métodos exportados en `app/api/**/route.ts`. Total: **94 métodos**. El control automático falla si aparece o desaparece un método sin regenerar este archivo.
+Generado desde los métodos exportados en `app/api/**/route.ts`. Total: **95 métodos**. El control automático falla si aparece o desaparece un método sin regenerar este archivo.
 
 | Método | Ruta | Estado | Autoridad | Destino canónico | Prueba contractual |
 |---|---|---|---|---|---|
@@ -9,6 +9,7 @@ Generado desde los métodos exportados en `app/api/**/route.ts`. Total: **94 mé
 | `GET` | `/api/admin/audit` | Activa | Sesión: admin | `/api/admin/audit` | `tests/integration/api-inventory.test.ts` |
 | `POST` | `/api/admin/invite-professional` | Activa | Sesión: admin; permiso operations | `/api/admin/invite-professional` | `tests/integration/api-inventory.test.ts` |
 | `PATCH` | `/api/admin/invite-professional` | Activa | Sesión: admin; permiso operations | `/api/admin/invite-professional` | `tests/integration/api-inventory.test.ts` |
+| `PUT` | `/api/admin/invite-professional` | Activa | Sesión: admin; permiso operations | `/api/admin/invite-professional` | `tests/integration/api-inventory.test.ts` |
 | `GET` | `/api/admin/notifications` | Activa | Sesión: sesión; permiso operations | `/api/admin/notifications` | `tests/integration/api-inventory.test.ts` |
 | `PATCH` | `/api/admin/notifications` | Activa | Sesión: sesión; permiso operations | `/api/admin/notifications` | `tests/integration/api-inventory.test.ts` |
 | `GET` | `/api/admin/permissions` | Activa | Sesión: sesión; permiso owner | `/api/admin/permissions` | `tests/integration/api-inventory.test.ts` |

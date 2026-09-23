@@ -5,7 +5,7 @@ import { notificationOrigin } from './delivery-template'
 import { sendTransactionalEmail } from './provider'
 import { runOutboxBatch } from './worker'
 
-export async function dispatchNotifications(batchSize: number) {
+export async function dispatchNotifications(batchSize: number, invitationId?: string) {
   const appUrl = notificationOrigin(process.env.NEXT_PUBLIC_APP_URL ?? '')
   const enabled = process.env.NOTIFICATIONS_EMAIL_ENABLED === 'true'
   const from = enabled
@@ -40,6 +40,7 @@ export async function dispatchNotifications(batchSize: number) {
     appUrl,
     from,
     batchSize,
+    invitationId,
     sendEmail: apiKey
       ? async (snapshot) => {
           const { from, to, subject, text, html } = snapshot.content
@@ -54,4 +55,25 @@ export async function dispatchNotifications(batchSize: number) {
         }
       : undefined
   })
+}
+
+export async function dispatchProfessionalInvitation(invitationId: string): Promise<{
+  accepted: boolean
+  reason: 'email_not_configured' | 'delivery_failed' | null
+}> {
+  if (
+    process.env.NOTIFICATIONS_EMAIL_ENABLED !== 'true' ||
+    !process.env.RESEND_API_KEY ||
+    !process.env.NOTIFICATIONS_EMAIL_FROM ||
+    !process.env.SUPABASE_SERVICE_ROLE_KEY
+  )
+    return { accepted: false, reason: 'email_not_configured' }
+  try {
+    const result = await dispatchNotifications(1, invitationId)
+    return result.accepted === 1
+      ? { accepted: true, reason: null }
+      : { accepted: false, reason: 'delivery_failed' }
+  } catch {
+    return { accepted: false, reason: 'delivery_failed' }
+  }
 }

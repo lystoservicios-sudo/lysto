@@ -29,6 +29,7 @@ export type OutboxOptions = {
   appUrl: string
   from: string
   batchSize?: number
+  invitationId?: string
   workerId?: string
   now?: () => Date
   sendEmail?: (snapshot: DeliverySnapshot) => Promise<EmailResult>
@@ -58,12 +59,18 @@ export async function runOutboxBatch(client: OutboxRpcClient, options: OutboxOpt
     .array(claimSchema)
     .max(5)
     .parse(
-      await call('claim_outbox_events', {
-        p_worker_id: options.workerId ?? `outbox-${randomUUID()}`,
-        p_batch_size: batchSize,
-        p_lease_seconds: 120,
-        p_channels: options.sendEmail ? ['in_app', 'email'] : ['in_app']
-      })
+      options.invitationId
+        ? await call('claim_professional_invitation_event', {
+            p_invitation_id: options.invitationId,
+            p_worker_id: options.workerId ?? `outbox-${randomUUID()}`,
+            p_lease_seconds: 120
+          })
+        : await call('claim_outbox_events', {
+            p_worker_id: options.workerId ?? `outbox-${randomUUID()}`,
+            p_batch_size: batchSize,
+            p_lease_seconds: 120,
+            p_channels: options.sendEmail ? ['in_app', 'email'] : ['in_app']
+          })
     )
   const result = {
     claimed: events.length,

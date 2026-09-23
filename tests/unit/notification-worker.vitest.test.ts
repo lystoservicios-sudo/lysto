@@ -65,6 +65,21 @@ it('reuses the persisted body and awaits provider acceptance before ACK', async 
     { p_event_id: id, p_claim_token: token, p_provider_message_id: 'provider-1' }
   ])
 })
+it('claims only the requested professional invitation when delivery is immediate', async () => {
+  const invitationId = '33333333-3333-4333-8333-333333333333'
+  const db = database({ claim_professional_invitation_event: [event] })
+  const send = vi.fn(async () => ({ accepted: true as const, providerMessageId: 'provider-1' }))
+  const result = await runOutboxBatch(db, {
+    ...options,
+    invitationId,
+    sendEmail: send
+  })
+  expect(result.accepted).toBe(1)
+  expect(db.rpc.mock.calls[0]).toEqual([
+    'claim_professional_invitation_event',
+    { p_invitation_id: invitationId, p_worker_id: 'test-worker', p_lease_seconds: 120 }
+  ])
+})
 it('leaves email queued when no email transport is enabled', async () => {
   const db = database({ claim_outbox_events: [] })
   await runOutboxBatch(db, options)

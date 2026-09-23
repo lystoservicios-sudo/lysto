@@ -11,6 +11,7 @@ import {
 } from './onboarding-contracts'
 import { getRegistrationPolicy } from '@/lib/auth/account-policy'
 import { authOrigin } from '@/lib/auth/account-lifecycle'
+import { dispatchProfessionalInvitation } from '@/lib/notifications/server'
 
 export const invitationInput = z
   .object({
@@ -62,10 +63,23 @@ export async function createProfessionalInvitation(session: Session, input: unkn
   const parsed = createdInvitationSchema.safeParse(result.data)
   if (!parsed.success) throw new ApiError('service_unavailable')
   const { token, ...invitation } = parsed.data
+  const delivery = await dispatchProfessionalInvitation(invitation.id)
   return {
-    invitation,
+    invitation: delivery.accepted ? { ...invitation, status: 'sent' as const } : invitation,
+    delivery,
     link: token ? `${authOrigin(process.env.NEXT_PUBLIC_APP_URL)}/pro/onboarding/${token}` : null
   }
+}
+
+export async function resendProfessionalInvitation(session: Session, input: unknown) {
+  if (
+    session.role !== 'admin' ||
+    session.assuranceLevel !== 'aal2' ||
+    !session.permissions.some((permission) => permission === 'owner' || permission === 'operations')
+  )
+    throw new ApiError('forbidden')
+  const { invitationId } = z.object({ invitationId: z.string().uuid() }).strict().parse(input)
+  return { delivery: await dispatchProfessionalInvitation(invitationId) }
 }
 
 /** This identity may have no domain profile yet. Only invitation/onboarding RPCs may use it. */

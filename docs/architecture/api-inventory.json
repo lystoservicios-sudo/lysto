@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "generatedFrom": "app/api/**/route.ts",
-  "count": 94,
+  "count": 95,
   "entries": [
     {
       "route": "/api/admin/approve-professional",
@@ -38,6 +38,14 @@
     {
       "route": "/api/admin/invite-professional",
       "method": "PATCH",
+      "status": "active",
+      "authority": "Sesión: admin; permiso operations",
+      "canonicalDestination": "/api/admin/invite-professional",
+      "test": "tests/integration/api-inventory.test.ts"
+    },
+    {
+      "route": "/api/admin/invite-professional",
+      "method": "PUT",
       "status": "active",
       "authority": "Sesión: admin; permiso operations",
       "canonicalDestination": "/api/admin/invite-professional",

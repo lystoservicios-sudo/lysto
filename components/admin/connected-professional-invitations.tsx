@@ -5,7 +5,7 @@ import { privateRequest, requestError } from '@/lib/http/private-client'
 import { Button, Field, Header, Panel } from './admin-ui'
 
 const labels = {
-  queued: 'En cola de entrega',
+  queued: 'No enviada',
   sent: 'Enviada',
   opened: 'Aceptada',
   completed: 'Postulación aprobada',
@@ -50,7 +50,10 @@ export function ConnectedProfessionalInvitations({
     setMessage('')
     setCreatedLink(null)
     try {
-      const result = await privateRequest<{ link?: string }>(
+      const result = await privateRequest<{
+        link?: string
+        delivery?: { accepted: boolean; reason: 'email_not_configured' | 'delivery_failed' | null }
+      }>(
         '/api/admin/invite-professional',
         cancel ? 'PATCH' : 'POST',
         cancel
@@ -68,7 +71,11 @@ export function ConnectedProfessionalInvitations({
       form.reset()
       await load()
       if (!cancel) setCreatedLink(result.link ?? null)
-      setMessage(cancel ? 'Invitación cancelada.' : 'Invitación registrada y en cola de entrega.')
+      if (cancel) setMessage('Invitación cancelada.')
+      else if (result.delivery?.accepted) setMessage('Correo aceptado para envío.')
+      else setError(result.delivery?.reason === 'email_not_configured'
+        ? 'El correo no está configurado. La invitación quedó guardada, pero no se envió. No crees otra; copiá el enlace si aparece.'
+        : 'No pudimos confirmar el envío. La invitación quedó guardada, pero no la consideramos enviada. No crees otra.')
     } catch (failure) {
       setError(requestError(failure))
     } finally {
@@ -81,6 +88,26 @@ export function ConnectedProfessionalInvitations({
     setCreatedLink(null)
     try {
       await load(more)
+    } catch (failure) {
+      setError(requestError(failure))
+    } finally {
+      setBusy(false)
+    }
+  }
+  async function resend(invitation: InvitationSummary) {
+    if (busy) return
+    setBusy(true)
+    setError('')
+    setMessage('')
+    try {
+      const result = await privateRequest<{
+        delivery: { accepted: boolean; reason: 'email_not_configured' | 'delivery_failed' | null }
+      }>('/api/admin/invite-professional', 'PUT', { invitationId: invitation.id })
+      await load()
+      if (result.delivery.accepted) setMessage('Correo aceptado para envío.')
+      else setError(result.delivery.reason === 'email_not_configured'
+        ? 'El correo no está configurado. Esta invitación sigue sin enviarse.'
+        : 'No pudimos confirmar el envío. Esperá un minuto antes de reintentar esta misma invitación.')
     } catch (failure) {
       setError(requestError(failure))
     } finally {
@@ -134,7 +161,7 @@ export function ConnectedProfessionalInvitations({
             </Button>
           </fieldset>
         </form>
-        <p>La invitación queda pendiente hasta que el servicio de correo confirme la entrega.</p>
+        <p>Al crearla intentamos enviar el correo en ese momento. Solo se marca enviada cuando el proveedor lo acepta.</p>
       </Panel>
       <Panel
         title="Invitaciones registradas"
@@ -157,6 +184,11 @@ export function ConnectedProfessionalInvitations({
                 ? 'Vencida'
                 : labels[invitation.status]}
               <p>Vence: {new Date(invitation.expiresAt).toLocaleDateString('es-AR')}</p>
+              {invitation.status === 'queued' && new Date(invitation.expiresAt).getTime() > Date.now() && (
+                <Button disabled={busy} onClick={() => void resend(invitation)}>
+                  Reintentar envío a {invitation.email}
+                </Button>
+              )}
               {['queued', 'sent'].includes(invitation.status) && (
                 <Button disabled={busy} onClick={() => setSelected(invitation)}>
                   Cancelar invitación a {invitation.email}
