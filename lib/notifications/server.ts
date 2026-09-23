@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { notificationOrigin } from './delivery-template'
 import { sendTransactionalEmail } from './provider'
 import { runOutboxBatch } from './worker'
+import { logEvent } from '@/lib/observability/logger'
 
 export async function dispatchNotifications(batchSize: number, invitationId?: string) {
   const appUrl = notificationOrigin(process.env.NEXT_PUBLIC_APP_URL ?? '')
@@ -61,19 +62,34 @@ export async function dispatchProfessionalInvitation(invitationId: string): Prom
   accepted: boolean
   reason: 'email_not_configured' | 'delivery_failed' | null
 }> {
-  if (
-    process.env.NOTIFICATIONS_EMAIL_ENABLED !== 'true' ||
-    !process.env.RESEND_API_KEY ||
-    !process.env.NOTIFICATIONS_EMAIL_FROM ||
-    !process.env.SUPABASE_SERVICE_ROLE_KEY
-  )
+  const configuration = {
+    emailEnabled: process.env.NOTIFICATIONS_EMAIL_ENABLED === 'true',
+    hasResendKey: Boolean(process.env.RESEND_API_KEY),
+    hasFrom: Boolean(process.env.NOTIFICATIONS_EMAIL_FROM),
+    hasDatabaseKey: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY)
+  }
+  if (Object.values(configuration).some((ready) => !ready)) {
+    logEvent('warn', 'professional_invitation.delivery_not_configured', configuration)
     return { accepted: false, reason: 'email_not_configured' }
+  }
   try {
     const result = await dispatchNotifications(1, invitationId)
+    logEvent(result.accepted === 1 ? 'info' : 'warn', 'professional_invitation.delivery_result', {
+      claimed: result.claimed,
+      accepted: result.accepted,
+      failed: result.failed,
+      suppressed: result.suppressed,
+      lostClaims: result.lostClaims
+    })
     return result.accepted === 1
       ? { accepted: true, reason: null }
       : { accepted: false, reason: 'delivery_failed' }
-  } catch {
+  } catch (error) {
+    const rawCode = error && typeof error === 'object' && 'code' in error ? error.code : null
+    const code = typeof rawCode === 'string' && /^[A-Za-z0-9_]{1,32}$/.test(rawCode)
+      ? rawCode
+      : 'unexpected'
+    logEvent('error', 'professional_invitation.delivery_exception', { code })
     return { accepted: false, reason: 'delivery_failed' }
   }
 }

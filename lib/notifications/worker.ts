@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { z } from 'zod'
 import { renderOutboxNotification } from './delivery-template'
 import { EMAIL_RETRY_WINDOW_MS, emailSnapshotSchema, type EmailResult } from './provider'
+import { logEvent } from '@/lib/observability/logger'
 
 export type OutboxRpcClient = {
   rpc(
@@ -83,6 +84,10 @@ export async function runOutboxBatch(client: OutboxRpcClient, options: OutboxOpt
   for (const event of events) {
     const args = { p_event_id: event.id, p_claim_token: event.claim_token }
     const fail = async (code: string, retryable: boolean) => {
+      if (options.invitationId)
+        logEvent('warn', 'professional_invitation.delivery_failed', {
+          code: /^[A-Za-z0-9_]{1,64}$/.test(code) ? code : 'unexpected'
+        })
       if (retryable)
         await call('fail_outbox_event', {
           ...args,

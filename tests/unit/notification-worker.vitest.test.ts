@@ -1,5 +1,6 @@
 import { expect, it, vi } from 'vitest'
 import { runOutboxBatch } from '../../lib/notifications/worker'
+import * as logger from '../../lib/observability/logger'
 
 const id = '11111111-1111-4111-8111-111111111111',
   token = '22222222-2222-4222-8222-222222222222'
@@ -101,6 +102,22 @@ it('retries a transient provider failure through the fenced FAIL operation', asy
       p_retry_at: '2026-09-12T01:01:00.000Z'
     }
   ])
+})
+it('records a safe failure code for an immediate invitation attempt', async () => {
+  const log = vi.spyOn(logger, 'logEvent').mockImplementation(() => undefined)
+  try {
+    const db = database({ claim_professional_invitation_event: [event] })
+    await runOutboxBatch(db, {
+      ...options,
+      invitationId: '33333333-3333-4333-8333-333333333333',
+      sendEmail: async () => ({ accepted: false, retryable: false, code: 'provider_http_403' })
+    })
+    expect(log).toHaveBeenCalledWith('warn', 'professional_invitation.delivery_failed', {
+      code: 'provider_http_403'
+    })
+  } finally {
+    log.mockRestore()
+  }
 })
 it('quarantines uncertain delivery beyond the safe deduplication window', async () => {
   const db = database()
