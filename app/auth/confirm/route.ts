@@ -4,6 +4,7 @@ import {
   accountRedirect,
   checkAccountOrigin,
   confirmationPage,
+  newConfirmationCsrfToken,
   validAccountToken
 } from '@/lib/auth/account-response'
 
@@ -11,14 +12,15 @@ export const dynamic = 'force-dynamic'
 export async function GET(request: Request) {
   const token = new URL(request.url).searchParams.get('token_hash') ?? ''
   return validAccountToken(token)
-    ? confirmationPage(token)
+    ? confirmationPage(token, undefined, undefined, newConfirmationCsrfToken())
     : confirmationPage('', 'El enlace no es válido. Solicitá uno nuevo desde el registro.', 400)
 }
 export async function POST(request: Request) {
-  if (!checkAccountOrigin(request))
-    return confirmationPage('', 'No pudimos validar el origen de la solicitud.', 403)
   try {
     const form = await request.formData()
+    const csrfToken = form.get('csrf_token')
+    if (!checkAccountOrigin(request, typeof csrfToken === 'string' ? csrfToken : undefined))
+      return confirmationPage('', 'No pudimos validar el origen de la solicitud.', 403)
     const token = form.get('token_hash')
     if (typeof token !== 'string' || !validAccountToken(token))
       return confirmationPage('', 'El enlace no es válido.', 400)

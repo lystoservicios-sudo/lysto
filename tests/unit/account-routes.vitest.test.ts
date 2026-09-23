@@ -86,23 +86,22 @@ describe('account route boundaries', () => {
       expect(fixtures.verify).not.toHaveBeenCalled()
     }
   )
-  it('accepts the same-origin referrer when the browser serializes Origin as null', async () => {
+  it('accepts the confirmation nonce when the browser serializes Origin as null', async () => {
+    const preview = await confirmGet(new Request(`${origin}/auth/confirm?token_hash=${token}`))
+    const cookie = preview.headers.get('set-cookie')!
+    const csrf = (await preview.text()).match(/name="csrf_token" value="([a-zA-Z0-9_-]+)"/)![1]
     const response = await confirmPost(
       postWithHeaders(
         '/auth/confirm',
-        { token_hash: token },
-        { origin: 'null', referer: `${origin}/auth/confirm?token_hash=${token}` }
+        { token_hash: token, csrf_token: csrf },
+        { origin: 'null', cookie: cookie.split(';', 1)[0] }
       )
     )
     expect(response.headers.get('location')).toBe(origin + '/app')
   })
-  it('rejects a foreign referrer when Origin is null', async () => {
+  it('rejects a missing confirmation nonce when Origin is null', async () => {
     const response = await confirmPost(
-      postWithHeaders(
-        '/auth/confirm',
-        { token_hash: token },
-        { origin: 'null', referer: `https://evil.test/auth/confirm?token_hash=${token}` }
-      )
+      postWithHeaders('/auth/confirm', { token_hash: token }, { origin: 'null' })
     )
     expect(response.status).toBe(403)
     expect(fixtures.verify).not.toHaveBeenCalled()
