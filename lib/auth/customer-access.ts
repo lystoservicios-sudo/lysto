@@ -35,7 +35,7 @@ export function customerDestination(context: { verified: boolean; profile: Custo
     : destination
 }
 
-export const passwordSchema = z.string().min(12, 'Usá al menos 12 caracteres.').max(128, 'Usá hasta 128 caracteres.')
+export const passwordSchema = z.string().min(6, 'Usá al menos 6 caracteres.').max(12, 'Usá hasta 12 caracteres.')
 export function validateRegistration(input: { email: string; password: string; confirmPassword: string; firstName: string; lastName: string }) {
   return z.object({ email: z.string().trim().toLowerCase().email('Ingresá un email válido.'), password: passwordSchema, confirmPassword: z.string(), firstName: name, lastName: name })
     .refine((data) => data.password === data.confirmPassword, { message: 'Las contraseñas no coinciden.', path: ['confirmPassword'] }).safeParse(input)
