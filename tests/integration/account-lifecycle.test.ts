@@ -15,7 +15,7 @@ describe('customer lifecycle with real Auth, email delivery and HTTP cookies', (
   const runId = randomUUID()
   const email = `t07-customer.${runId}@lysto.test`, expiredEmail = `t07-expired.${runId}@lysto.test`
   const ownedEmails = [email,expiredEmail]
-  const password = `Initial-${randomUUID()}-aA1!`, newPassword = `Changed-${randomUUID()}-aA1!`
+  const password = 'Init-A1!2026', newPassword = `Changed-${randomUUID()}-aA1!`
   const termsVersion = `test-only-terms-${runId}`, privacyVersion = `test-only-privacy-${runId}`
   const jar = new Map<string,string>(), messageIds = new Set<string>()
   let database: Client, admin: SupabaseClient<Database>, userClient: SupabaseClient<Database>
