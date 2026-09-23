@@ -22,9 +22,15 @@ export async function getRegistrationPolicy(): Promise<RegistrationPolicy | null
     const parsed = policySchema.safeParse(data)
     if (error || !parsed.success) return null
     if (parsed.data.test_only && (process.env.APP_ENV !== 'test' || !['localhost', '127.0.0.1', '[::1]'].includes(new URL(origin).hostname))) return null
-    for (const value of [parsed.data.terms_url, parsed.data.privacy_url]) {
+    for (const [kind, value] of [
+      ['terminos', parsed.data.terms_url],
+      ['privacidad', parsed.data.privacy_url]
+    ] as const) {
       const url = new URL(value)
-      if (url.origin !== origin || url.username || url.password || url.hash) return null
+      const canonicalStagingDocument =
+        process.env.APP_ENV === 'staging' &&
+        url.href === `https://lystohogar.com/${kind}`
+      if ((!canonicalStagingDocument && url.origin !== origin) || url.username || url.password || url.hash) return null
     }
     return { termsVersion: parsed.data.terms_version, privacyVersion: parsed.data.privacy_version, termsUrl: parsed.data.terms_url, privacyUrl: parsed.data.privacy_url, testOnly: parsed.data.test_only }
   } catch { return null }

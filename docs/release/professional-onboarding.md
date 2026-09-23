@@ -1,10 +1,18 @@
 # T11 — Alta y habilitación de profesionales
 
-Implementación verificada localmente. La hoja de ruta conserva las 40 tareas y la salida de producción sigue bloqueada por sus puertas de aceptación.
+Implementación verificada localmente y en staging. La hoja de ruta conserva las 40 tareas y la salida de producción sigue bloqueada por sus puertas de aceptación.
+
+## Verificación de staging — 2026-09-23
+
+La versión `dpl_9k6zwABQq8s5xhLtGtuXj9LBsmEc` está publicada en [la vista previa protegida](https://lysto-staging-preview.vercel.app) contra Supabase staging `obksyzasmfwcbbksesqt`. Pasaron 45/45 recorridos de Playwright en Chromium escritorio, Chromium móvil y WebKit móvil; las cuentas sintéticas se limpiaron sin fallos. También pasaron lint, tipos, 174 pruebas de dominio y 680 pruebas Vitest. No se utilizó Docker ni se modificó producción.
+
+La regresión de clientes descubrió y corrigió que staging ocultaba el formulario porque sus enlaces legales oficiales están en `lystohogar.com`, mientras la aplicación de prueba usa otro origen. La excepción quedó limitada a esas dos rutas exactas sólo en staging; producción mantiene la validación de origen propio. El formulario y consentimiento ya se verificaron en el navegador. El alta por correo *no* quedó aprobada de extremo a extremo: Supabase rechazó la dirección ficticia `.test` y luego aplicó `over_email_send_rate_limit` (429) a un intento con `example.com`; no se creó usuario ni se acreditó recepción del mensaje. El error técnico queda registrado por código y estado, sin correo ni texto del proveedor.
+
+Los ensayos E2E incluyen rechazo de invitación por visitante anónimo, pero no sustituyen la recepción del correo, la aceptación de un enlace real, la revisión de documentos por Operaciones ni el OAuth de un vendedor de prueba. Esos casos siguen pendientes de aceptación externa.
 
 ## Ampliación: invitación, foto, cobros y trabajos nuevos (2026-09-22)
 
-Esta ampliación está implementada en una rama aislada. El 2026-09-22 se aplicaron y registraron sus tres migraciones en Supabase staging `obksyzasmfwcbbksesqt` tras un ensayo transaccional con rollback. Pasaron 17 comprobaciones SQL nuevas, 20 de onboarding existente, 16 de asignación y 16 de registro de clientes después del commit, sin conservar fixtures. La interfaz se publicó como vista previa Vercel `dpl_ApYRvsaJxNXH8BL8efrpd9yGkLJ3` (`https://lysto-demo-oyjks4ouu-waltergaltieris-projects.vercel.app`) y el build remoto quedó READY. No se utilizó Docker ni se modificó producción. La aceptación real de Mercado Pago sigue pendiente.
+Esta ampliación está implementada en una rama aislada. El 2026-09-22 se aplicaron y registraron sus tres migraciones en Supabase staging `obksyzasmfwcbbksesqt`, además de la migración de registro de clientes, tras un ensayo transaccional con rollback. Pasaron 17 comprobaciones SQL nuevas, 20 de onboarding existente, 16 de asignación y 16 de registro de clientes después del commit, sin conservar fixtures. La interfaz se publicó como vista previa Vercel y el build remoto quedó READY; la versión vigente se identifica arriba. No se utilizó Docker ni se modificó producción. La aceptación real de Mercado Pago sigue pendiente.
 
 1. Operaciones/owner con MFA crea la invitación individual por correo. En esa respuesta puede copiar el enlace; al actualizar, el enlace desaparece del panel y la lista no devuelve el token. El correo y el enlace son dos vías de entrega del mismo token, con el mismo vencimiento y consumo único.
 2. En **Administración → Profesionales → Requisitos**, Operaciones crea un borrador versionado por especialidad. Puede exigir DNI como imagen única o frente y dorso, matrícula, seguro o constancia fiscal, además de vigencia, herramientas, experiencia y número de matrícula. Antes de activar ve cuántos aprobados serán afectados y documenta el motivo. No hay requisitos de producción precargados: el titular de la operación debe aprobarlos expresamente.

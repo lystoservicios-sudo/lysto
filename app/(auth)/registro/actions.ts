@@ -32,7 +32,7 @@ export async function registerAction(
       await getRegistrationPolicy(),
       {
         async signUp(input) {
-          return client.auth.signUp({
+          const result = await client.auth.signUp({
             email: input.email,
             password: input.password,
             options: {
@@ -47,6 +47,12 @@ export async function registerAction(
               }
             }
           })
+          if (result.error)
+            console.warn('customer_signup_provider_error', {
+              code: result.error.code ?? 'unknown',
+              status: result.error.status ?? null
+            })
+          return result
         }
       }
     )

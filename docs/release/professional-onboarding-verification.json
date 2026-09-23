@@ -108,5 +108,32 @@
     "T28: documentary renewal/reactivation workflow"
   ],
   "originalIndexSha256": "85c6b16dcb04891642c46370bfd9c5342a21e79dea59eff11cc4fac915c84f67",
-  "codeCommit": "4613ae78f79b4b48bc5dacc3486b878be4c6efd5"
+  "codeCommit": "4613ae78f79b4b48bc5dacc3486b878be4c6efd5",
+  "completionExtension": {
+    "checkedAt": "2026-09-23",
+    "environment": "staging",
+    "supabaseProjectRef": "obksyzasmfwcbbksesqt",
+    "previewDeploymentId": "dpl_9k6zwABQq8s5xhLtGtuXj9LBsmEc",
+    "previewAlias": "https://lysto-staging-preview.vercel.app",
+    "migrationsApplied": 4,
+    "postMigrationSqlAssertionsPassed": 69,
+    "playwright": {
+      "passed": 45,
+      "failed": 0,
+      "skipped": 0,
+      "projects": ["chromium-desktop", "chromium-mobile", "webkit-mobile"],
+      "report": "output/staging-e2e/2026-09-23T03-44-09.503Z/result.json",
+      "fixtureCleanup": "cleaned"
+    },
+    "domainTestsPassed": 174,
+    "vitestTestsPassed": 680,
+    "lint": "passed",
+    "typecheck": "passed",
+    "remoteBuild": "READY",
+    "customerRegistrationForm": "verified_in_staging_browser",
+    "customerEmailConfirmation": "pending_provider_rate_limit",
+    "professionalEmailAndHumanReview": "pending_external_acceptance",
+    "mercadoPagoSandboxOAuth": "pending_provider_configuration",
+    "productionRelease": "not_authorized"
+  }
 }

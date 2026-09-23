@@ -3,6 +3,16 @@ import { Client } from 'pg'
 
 import { test, expect, loginAs } from './fixtures/production'
 
+test('customer registration shows the approved legal consent without granting a professional account', async ({ page }) => {
+  await page.goto('/registro')
+  await expect(page.getByRole('heading', { name: 'Tu hogar, en buenas manos.' })).toBeVisible()
+  await expect(page.getByRole('textbox', { name: 'Email' })).toBeVisible()
+  await expect(page.getByRole('checkbox', { name: /Leí y acepto los términos/ })).toBeVisible()
+  await expect(page.getByRole('link', { name: /términos \(2026-09-21\)/ })).toHaveAttribute('href', 'https://lystohogar.com/terminos')
+  await expect(page.getByRole('button', { name: 'Crear mi cuenta' })).toBeVisible()
+  await expect(page.getByRole('link', { name: /Crear cuenta para postularme/ })).toHaveCount(0)
+})
+
 test('customer reloads the live dashboard and empty request history', async ({
   page,
   accounts
@@ -26,6 +36,8 @@ test('customer follows visit links, sees reprogramming and submits one review', 
   page,
   accounts
 }) => {
+  // This complete two-customer journey makes several live staging round trips.
+  test.setTimeout(60_000)
   const db = new Client({ connectionString: process.env.LYSTO_TEST_DATABASE_URL })
   const addressId = randomUUID(),
     requestId = randomUUID(),

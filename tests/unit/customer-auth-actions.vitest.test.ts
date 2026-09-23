@@ -31,6 +31,20 @@ describe('customer authentication server actions', () => {
     expect(mocks.signUp.mock.calls[0][0].options.data).not.toHaveProperty('app_role')
     expect(mocks.signUp.mock.calls[0][0].options.emailRedirectTo).toBe('https://lysto.test/auth/confirm')
   })
+  it('logs only a provider error code when customer signup fails', async () => {
+    const warning = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    mocks.signUp.mockResolvedValue({
+      error: { code: 'unexpected_failure', status: 500, message: 'secret provider details' }
+    })
+    const result = await registerAction(initial, form(signup))
+    expect(result.status).toBe('error')
+    expect(warning).toHaveBeenCalledWith('customer_signup_provider_error', {
+      code: 'unexpected_failure',
+      status: 500
+    })
+    expect(JSON.stringify(warning.mock.calls)).not.toContain('secret provider details')
+    warning.mockRestore()
+  })
   it('allows customer registration while new service requests and payments are paused', async () => {
     vi.stubEnv('APP_ENV', 'production')
     vi.stubEnv('PAYMENTS_PROVIDER', 'disabled')
