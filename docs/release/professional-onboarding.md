@@ -4,11 +4,13 @@ Implementación verificada localmente y en staging. La hoja de ruta conserva las
 
 ## Verificación de staging — 2026-09-23
 
-La versión `dpl_9k6zwABQq8s5xhLtGtuXj9LBsmEc` está publicada en [la vista previa protegida](https://lysto-staging-preview.vercel.app) contra Supabase staging `obksyzasmfwcbbksesqt`. Pasaron 45/45 recorridos de Playwright en Chromium escritorio, Chromium móvil y WebKit móvil; las cuentas sintéticas se limpiaron sin fallos. También pasaron lint, tipos, 174 pruebas de dominio y 680 pruebas Vitest. No se utilizó Docker ni se modificó producción.
+La versión `dpl_9k6zwABQq8s5xhLtGtuXj9LBsmEc` está publicada en [la vista previa protegida](https://lysto-staging-preview.vercel.app) contra Supabase staging `obksyzasmfwcbbksesqt`. Pasaron 48/48 recorridos de Playwright en Chromium escritorio, Chromium móvil y WebKit móvil; las cuentas sintéticas se limpiaron sin fallos. También pasaron lint, tipos, 174 pruebas de dominio y 680 pruebas Vitest. No se utilizó Docker ni se modificó producción.
+
+La ampliación E2E comprueba que Operaciones crea un enlace de invitación que se muestra sólo una vez, desaparece de la lista al recargar y no permite transformar una cuenta de cliente con otro correo. Una ejecución anterior detectó de forma intermitente dos respuestas 400 de Next.js al iniciar sesión en WebKit móvil (`Invalid URL`, entrada `null`); la repetición completa pasó sin ese fallo. Se conserva como observación de estabilidad para seguimiento, no como aceptación de correo ni de Mercado Pago.
 
 La regresión de clientes descubrió y corrigió que staging ocultaba el formulario porque sus enlaces legales oficiales están en `lystohogar.com`, mientras la aplicación de prueba usa otro origen. La excepción quedó limitada a esas dos rutas exactas sólo en staging; producción mantiene la validación de origen propio. El formulario y consentimiento ya se verificaron en el navegador. El alta por correo *no* quedó aprobada de extremo a extremo: Supabase rechazó la dirección ficticia `.test` y luego aplicó `over_email_send_rate_limit` (429) a un intento con `example.com`; no se creó usuario ni se acreditó recepción del mensaje. El error técnico queda registrado por código y estado, sin correo ni texto del proveedor.
 
-Los ensayos E2E incluyen rechazo de invitación por visitante anónimo, pero no sustituyen la recepción del correo, la aceptación de un enlace real, la revisión de documentos por Operaciones ni el OAuth de un vendedor de prueba. Esos casos siguen pendientes de aceptación externa.
+Los ensayos E2E incluyen rechazo de invitación por visitante anónimo y por cliente con otro correo, pero no sustituyen la recepción del correo, la aceptación de un enlace real, la revisión de documentos por Operaciones ni el OAuth de un vendedor de prueba. Esos casos siguen pendientes de aceptación externa.
 
 ## Ampliación: invitación, foto, cobros y trabajos nuevos (2026-09-22)
 

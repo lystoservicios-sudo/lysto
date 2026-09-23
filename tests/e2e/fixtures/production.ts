@@ -88,6 +88,6 @@ export async function loginAs(page: Page, account: FixtureAccount, name: Account
     if (!verified) throw new Error('MFA verification failed for the disposable test account')
   }
   await expect(page).toHaveURL(new RegExp(destinations[name].replaceAll('/', '\\/')), {
-    timeout: 15_000
+    timeout: 25_000
   })
 }

@@ -118,11 +118,11 @@
     "migrationsApplied": 4,
     "postMigrationSqlAssertionsPassed": 69,
     "playwright": {
-      "passed": 45,
+      "passed": 48,
       "failed": 0,
       "skipped": 0,
       "projects": ["chromium-desktop", "chromium-mobile", "webkit-mobile"],
-      "report": "output/staging-e2e/2026-09-23T03-44-09.503Z/result.json",
+      "report": "output/staging-e2e/2026-09-23T04-18-58.813Z/result.json",
       "fixtureCleanup": "cleaned"
     },
     "domainTestsPassed": 174,
@@ -131,6 +131,8 @@
     "typecheck": "passed",
     "remoteBuild": "READY",
     "customerRegistrationForm": "verified_in_staging_browser",
+    "adminOneTimeInvitationAndEmailBinding": "verified_in_all_three_browser_projects",
+    "intermittentWebkitLogin400": "observed_in_earlier_runs_not_reproduced_in_final_48_test_run",
     "customerEmailConfirmation": "pending_provider_rate_limit",
     "professionalEmailAndHumanReview": "pending_external_acceptance",
     "mercadoPagoSandboxOAuth": "pending_provider_configuration",

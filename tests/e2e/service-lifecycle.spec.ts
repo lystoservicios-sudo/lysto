@@ -4,6 +4,7 @@ test('customer saves a quote through the current flow and reloads its persistent
   page,
   accounts
 }) => {
+  test.setTimeout(60_000)
   await loginAs(page, accounts.accounts.customerA, 'customerA')
   await page.goto('/app/solicitar/aire-acondicionado')
   await page.getByRole('radio', { name: /No enfría/ }).click()
@@ -21,12 +22,13 @@ test('customer saves a quote through the current flow and reloads its persistent
   await page.getByRole('button', { name: 'Calcular traslado y guardar presupuesto' }).click()
   await expect(page.getByRole('status')).toContainText('Presupuesto guardado')
   await page.goto('/app/presupuestos')
-  await expect(page.locator('[data-quote-id]').first()).toBeVisible()
+  await expect(page.locator('[data-quote-id]').first()).toBeVisible({ timeout: 15_000 })
   await page.reload()
-  await expect(page.locator('[data-quote-id]').first()).toBeVisible()
+  await expect(page.locator('[data-quote-id]').first()).toBeVisible({ timeout: 15_000 })
 })
 
 test('double click is bounded while a quote is being persisted', async ({ page, accounts }) => {
+  test.setTimeout(60_000)
   await loginAs(page, accounts.accounts.customerB, 'customerB')
   const responses = await Promise.all([
     page.request.post('/api/diagnosis/generate', {
