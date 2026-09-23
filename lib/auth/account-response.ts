@@ -64,7 +64,7 @@ export function confirmationPage(
     "default-src 'none'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'"
   )
   if (safeToken && safeCsrfToken) {
-    const secure = authOrigin(process.env.NEXT_PUBLIC_APP_URL).startsWith('https://') ? '; Secure' : ''
+    const secure = process.env.NEXT_PUBLIC_APP_URL?.startsWith('https://') ? '; Secure' : ''
     response.headers.set(
       'Set-Cookie',
       `${confirmationCsrfCookie}=${safeCsrfToken}; Max-Age=600; Path=/auth/confirm; HttpOnly; SameSite=Strict${secure}`
