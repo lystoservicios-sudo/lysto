@@ -22,8 +22,16 @@ describe('customer access and progressive onboarding', () => {
   })
   it('rejects weak signup credentials and mismatched passwords', () => {
     expect(validateRegistration({ email: 'ana@example.com', password: 'short', confirmPassword: 'short', firstName: 'Ana', lastName: 'Pérez' }).success).toBe(false)
-    expect(validateRegistration({ email: 'ana@example.com', password: 'una-clave-123', confirmPassword: 'diferente', firstName: 'Ana', lastName: 'Pérez' }).success).toBe(false)
-    expect(validateRegistration({ email: ' ANA@example.com ', password: 'una-clave-123', confirmPassword: 'una-clave-123', firstName: 'Ana', lastName: 'Pérez' }).success).toBe(true)
+    expect(validateRegistration({ email: 'ana@example.com', password: 'clave-123', confirmPassword: 'diferente', firstName: 'Ana', lastName: 'Pérez' }).success).toBe(false)
+    expect(validateRegistration({ email: ' ANA@example.com ', password: 'clave-123', confirmPassword: 'clave-123', firstName: 'Ana', lastName: 'Pérez' }).success).toBe(true)
+  })
+  it.each([6, 12])('accepts a customer password with %i characters', length => {
+    const password = 'a'.repeat(length)
+    expect(validateRegistration({ email: 'ana@example.com', password, confirmPassword: password, firstName: 'Ana', lastName: 'Pérez' }).success).toBe(true)
+  })
+  it.each([5, 13])('rejects a customer password with %i characters', length => {
+    const password = 'a'.repeat(length)
+    expect(validateRegistration({ email: 'ana@example.com', password, confirmPassword: password, firstName: 'Ana', lastName: 'Pérez' }).success).toBe(false)
   })
   it('retains known fields and validates genuinely missing values on the server', () => {
     const data = new FormData()

@@ -8,3 +8,4 @@
 @media(prefers-reduced-motion:reduce){.auth-page *{transition:none!important}}
 
 .auth-form .auth-consent{display:flex;align-items:flex-start;gap:12px;font-size:12px;line-height:1.65;margin:2px 0}.auth-consent input[type=checkbox]{width:20px;height:20px;min-height:20px;margin-top:1px;flex-shrink:0;accent-color:#1459eb}
+.auth-password-control{position:relative}.auth-form .auth-password-control input{padding-right:50px}.auth-password-toggle{position:absolute;right:4px;top:50%;width:40px;height:40px;transform:translateY(-50%);display:grid;place-items:center;border:0;border-radius:8px;background:transparent;color:#66788a;cursor:pointer;transition:background .2s,color .2s}.auth-password-toggle:hover{background:#f4f7fc;color:#1459eb}.auth-password-toggle:focus-visible{outline:3px solid #9cbcff;outline-offset:1px}.auth-password-toggle:disabled{cursor:not-allowed;opacity:.5}.auth-password-toggle svg{width:18px;height:18px}

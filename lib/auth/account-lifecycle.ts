@@ -4,9 +4,10 @@ export type RegistrationPolicy = { termsVersion: string; privacyVersion: string;
 export type RegistrationInput = { email: string; password: string; repeatPassword: string; firstName: string; lastName: string; phone: string; accepted: boolean; termsVersion: string; privacyVersion: string }
 export const GENERIC_REGISTRATION_MESSAGE = 'Si el correo puede registrarse, recibirás un mensaje para continuar. Si ya tenés cuenta, podés ingresar o recuperar tu contraseña.'
 export const GENERIC_RECOVERY_MESSAGE = 'Si existe una cuenta habilitada con ese correo, recibirás instrucciones para recuperar el acceso.'
-const passwordSchema = z.string().min(12).max(128)
+const registrationPasswordSchema = z.string().min(6).max(12)
+const recoveryPasswordSchema = z.string().min(12).max(128)
 const registrationSchema = z.object({
-  email: z.string().trim().toLowerCase().email().max(254), password: passwordSchema,
+  email: z.string().trim().toLowerCase().email().max(254), password: registrationPasswordSchema,
   repeatPassword: z.string(), firstName: z.string().trim().min(1).max(100),
   lastName: z.string().trim().min(1).max(100), phone: z.string().trim().max(40).refine(value => value.replace(/\D/g, '').length >= 8),
   accepted: z.literal(true), termsVersion: z.string(), privacyVersion: z.string()
@@ -14,7 +15,7 @@ const registrationSchema = z.object({
 export function validateRegistration(input: RegistrationInput, policy: RegistrationPolicy | null): { ok: boolean; message?: string; data?: RegistrationInput } {
   if (!policy) return { ok: false, message: 'El registro todavía no está habilitado. Intentá más tarde.' }
   const parsed = registrationSchema.safeParse(input)
-  if (!parsed.success || input.password !== input.repeatPassword) return { ok: false, message: 'Revisá tus datos, repetí la contraseña (12 a 128 caracteres) y aceptá los documentos.' }
+  if (!parsed.success || input.password !== input.repeatPassword) return { ok: false, message: 'Revisá tus datos, repetí la contraseña (6 a 12 caracteres) y aceptá los documentos.' }
   if (input.termsVersion !== policy.termsVersion || input.privacyVersion !== policy.privacyVersion) return { ok: false, message: 'Los documentos cambiaron. Recargá la página y revisalos antes de continuar.' }
   return { ok: true, data: parsed.data }
 }
@@ -28,7 +29,7 @@ export function authOrigin(configured: string | undefined): string {
 export function isAllowedAuthOrigin(origin: string | null, configured: string | undefined): boolean {
   try { return origin !== null && origin === authOrigin(configured) } catch { return false }
 }
-export function validRecoveryPassword(password: string, confirmation: string): boolean { return passwordSchema.safeParse(password).success && password === confirmation }
+export function validRecoveryPassword(password: string, confirmation: string): boolean { return recoveryPasswordSchema.safeParse(password).success && password === confirmation }
 export type AccountResult = { status: 'idle' | 'error' | 'success'; message: string }
 export async function registerCustomer(input: RegistrationInput, policy: RegistrationPolicy | null, gateway: { signUp: (input: RegistrationInput) => Promise<{ error: { code?: string } | null }> }): Promise<AccountResult> {
   const validation = validateRegistration(input, policy)
