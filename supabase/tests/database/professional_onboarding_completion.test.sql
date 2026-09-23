@@ -4,6 +4,13 @@ select no_plan();
 
 select has_table('private','professional_policy_versions','draft and active requirements are versioned');
 select has_table('private','professional_avatars','only server-finalized avatars count toward readiness');
+select has_table('private','professional_readiness_rollout','new assignment requirements remain off until a reviewed activation');
+select ok(not has_table_privilege('authenticated','private.professional_readiness_rollout','update'),
+  'application users cannot activate the new assignment gate');
+select is(private.professional_readiness_enforced(),false,'new assignment gate is disabled by default');
+update private.professional_readiness_rollout set enabled=true where singleton;
+select is(private.professional_readiness_enforced(),true,'reviewed activation can enable the assignment gate');
+update private.professional_readiness_rollout set enabled=false where singleton;
 select ok(not has_table_privilege('authenticated','private.professional_avatars','insert'),'browser cannot self-certify a public avatar');
 select ok(not has_function_privilege('authenticated','public.set_professional_avatar(uuid,uuid,text,text,text)','execute'),'only the inspected server pipeline can finalize an avatar');
 select ok(not has_function_privilege('anon','public.save_professional_policy_draft(uuid,jsonb)','execute'),'anonymous users cannot draft requirements');
