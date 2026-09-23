@@ -13,6 +13,13 @@ test('customer registration shows the approved legal consent without granting a 
   await expect(page.getByRole('link', { name: /Crear cuenta para postularme/ })).toHaveCount(0)
 })
 
+test('same-origin confirmation form reaches token validation', async ({ page }) => {
+  await page.goto(`/auth/confirm?token_hash=${'a'.repeat(64)}`)
+  await page.getByRole('button', { name: 'Confirmar correo' }).click()
+  await expect(page.getByText('El enlace venció o ya fue utilizado.')).toBeVisible()
+  await expect(page.getByText('No pudimos validar el origen de la solicitud.')).toHaveCount(0)
+})
+
 test('customer reloads the live dashboard and empty request history', async ({
   page,
   accounts

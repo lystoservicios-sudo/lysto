@@ -66,7 +66,7 @@ describe('account route boundaries', () => {
     expect(response.status).toBe(200)
     expect(await response.text()).toContain('method="post"')
     expect(fixtures.verify).not.toHaveBeenCalled()
-    expect(response.headers.get('referrer-policy')).toBe('no-referrer')
+    expect(response.headers.get('referrer-policy')).toBe('same-origin')
     expect(response.headers.get('cache-control')).toContain('no-store')
   })
   it.each([null, 'https://evil.test'])(
