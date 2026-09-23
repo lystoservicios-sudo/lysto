@@ -3808,6 +3808,15 @@ export type Database = {
         Args: { p_claim_token: string; p_event_id: string }
         Returns: boolean
       }
+      activate_professional_policy: {
+        Args: {
+          p_category_id: string
+          p_expected_impact: number
+          p_reason: string
+          p_version: string
+        }
+        Returns: Json
+      }
       advance_service_job: {
         Args: { p_expected_status: string; p_job_id: string }
         Returns: Json
@@ -4237,6 +4246,7 @@ export type Database = {
         Args: { p_cursor_at: string; p_cursor_id: string; p_limit: number }
         Returns: Json
       }
+      list_professional_policies: { Args: never; Returns: Json }
       list_professional_workflow: {
         Args: {
           p_before_created_at?: string
@@ -4322,6 +4332,10 @@ export type Database = {
           p_customer_id: string
           p_payload: Json
         }
+        Returns: Json
+      }
+      preview_professional_policy_activation: {
+        Args: { p_category_id: string; p_version: string }
         Returns: Json
       }
       production_readiness_probe: { Args: never; Returns: Json }
@@ -4410,6 +4424,14 @@ export type Database = {
         Args: { p_expected_version: number; p_job_id: string; p_reason: string }
         Returns: Json
       }
+      request_professional_revalidation: {
+        Args: {
+          p_expected_version: number
+          p_professional_id: string
+          p_reason: string
+        }
+        Returns: Json
+      }
       reserve_job_schedule: {
         Args: {
           p_duration_minutes: number
@@ -4485,6 +4507,10 @@ export type Database = {
         Args: { p_expected_version: number; p_input: Json }
         Returns: Json
       }
+      save_professional_policy_draft: {
+        Args: { p_category_id: string; p_policy: Json }
+        Returns: Json
+      }
       seal_outbox_delivery: {
         Args: { p_claim_token: string; p_content: Json; p_event_id: string }
         Returns: Json
@@ -4495,6 +4521,16 @@ export type Database = {
           p_permissions: Database["public"]["Enums"]["admin_permission"][]
         }
         Returns: undefined
+      }
+      set_professional_avatar: {
+        Args: {
+          p_auth_user_id: string
+          p_path: string
+          p_professional_id: string
+          p_public_url: string
+          p_sha256: string
+        }
+        Returns: string
       }
       stop_outbox_delivery: {
         Args: {
