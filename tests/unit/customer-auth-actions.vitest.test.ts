@@ -11,7 +11,7 @@ import { loginAction as staffLogin } from '../../app/(auth)/equipo/login/actions
 import { registerAction, recoverPasswordAction, googleAuthAction } from '../../app/(auth)/actions'
 const initial = { status: 'idle' as const, email: '', message: '' }
 function form(values: Record<string, string>) { const data = new FormData(); Object.entries(values).forEach(([k,v]) => data.set(k,v)); return data }
-const signup = { email: 'ANA@example.com', password: 'a-password-123', confirmPassword: 'a-password-123', firstName: 'Ana', lastName: 'Pérez', phone: '+541112345678', accepted: 'on', termsVersion: 't1', privacyVersion: 'p1' }
+const signup = { email: 'ANA@example.com', password: 'clave-123', confirmPassword: 'clave-123', firstName: 'Ana', lastName: 'Pérez', phone: '+541112345678', accepted: 'on', termsVersion: 't1', privacyVersion: 'p1' }
 beforeEach(() => {
   vi.resetAllMocks(); process.env.NEXT_PUBLIC_APP_URL = 'https://lysto.test'
   mocks.policy.mockResolvedValue({ termsVersion: 't1', privacyVersion: 'p1' })
