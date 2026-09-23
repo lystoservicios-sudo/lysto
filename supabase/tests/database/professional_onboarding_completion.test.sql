@@ -8,6 +8,8 @@ select has_table('private','professional_readiness_rollout','new assignment requ
 select ok(not has_table_privilege('authenticated','private.professional_readiness_rollout','update'),
   'application users cannot activate the new assignment gate');
 select is(private.professional_readiness_enforced(),false,'new assignment gate is disabled by default');
+select is(private.professional_readiness_reasons(gen_random_uuid()),array['documentos','foto','mercado_pago']::text[],
+  'readiness gaps remain visible while enforcement is off');
 update private.professional_readiness_rollout set enabled=true where singleton;
 select is(private.professional_readiness_enforced(),true,'reviewed activation can enable the assignment gate');
 update private.professional_readiness_rollout set enabled=false where singleton;
