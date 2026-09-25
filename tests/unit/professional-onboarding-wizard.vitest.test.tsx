@@ -41,3 +41,16 @@ it('saves the personal step before showing work settings', async () => {
     address: 'Calle Falsa 123, CABA', expectedVersion: 2
   })
 })
+
+it('does not advance from activity without a weekly availability slot', () => {
+  const saved = {
+    ...application,
+    phone: '1122334455', dni: '12345678', address: 'Calle Falsa 123, CABA',
+    zoneIds: ['96000000-0000-4000-8000-000000000002']
+  }
+  render(<ConnectedProfessionalOnboarding initial={{ ...initial, application: saved }} />)
+  fireEvent.click(screen.getByRole('button', { name: 'Guardar y continuar' }))
+  expect(screen.getByRole('alert').textContent).toContain('Agregá al menos un horario semanal')
+  expect(screen.queryByText('Foto de perfil')).toBeNull()
+  expect(mocks.request).not.toHaveBeenCalled()
+})

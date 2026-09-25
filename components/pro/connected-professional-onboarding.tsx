@@ -145,6 +145,10 @@ export function ConnectedProfessionalOnboarding({ initial }: { initial: Onboardi
       setError('Completá tu dirección antes de continuar.')
       return
     }
+    if (step === 1 && draft.availability.length === 0) {
+      setError('Agregá al menos un horario semanal antes de continuar.')
+      return
+    }
     if (!dirty) { setStep((current) => Math.min(current + 1, 4)); return }
     setBusy(true)
     setError('')
