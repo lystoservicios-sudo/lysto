@@ -12,14 +12,16 @@ import Page from '@/app/(admin)/admin/profesionales/[id]/page'
 const id = '96000000-0000-4000-8000-000000000001'
 beforeEach(() => {
   vi.clearAllMocks()
-  mocks.session.mockResolvedValue({ permissions: ['operations'], client: {} })
+  const jobs = { error: null, data: [] }
+  const client = { from: vi.fn(() => ({ select: () => ({ eq: () => ({ order: () => ({ limit: async () => jobs }) }) }) })) }
+  mocks.session.mockResolvedValue({ permissions: ['operations'], client })
   mocks.catalog.mockResolvedValue({ categories: [], zones: [] })
   mocks.review.mockResolvedValue({ application: { professionalId: id, status: 'under_review' } })
 })
 describe('actual professional review route', () => {
   it('uses the requested persistent dossier and current operations session', async () => {
     const result = await Page({ params: Promise.resolve({ id }) })
-    expect(mocks.review).toHaveBeenCalledWith({}, id)
+    expect(mocks.review).toHaveBeenCalledWith(expect.objectContaining({ from: expect.any(Function) }), id)
     expect(result.props.initial.application.professionalId).toBe(id)
   })
   it('denies finance before reading a dossier', async () => {

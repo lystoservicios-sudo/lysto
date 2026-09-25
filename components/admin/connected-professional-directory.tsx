@@ -13,7 +13,19 @@ export function ConnectedProfessionalDirectory({
 }) {
   const [page, setPage] = useState(initial),
     [busy, setBusy] = useState(false),
-    [error, setError] = useState('')
+    [error, setError] = useState(''),
+    [query, setQuery] = useState(''),
+    [statusFilter, setStatusFilter] = useState('all'),
+    [sort, setSort] = useState('recent')
+  const normalized = query.trim().toLocaleLowerCase('es-AR')
+  const visible = page.items.filter((person) => {
+    const active = person.status === 'approved'
+    return (statusFilter === 'all' || (statusFilter === 'active' ? active : !active)) &&
+      (!normalized || `${person.firstName} ${person.lastName} ${person.email} ${person.specialtySlug ?? ''}`
+        .toLocaleLowerCase('es-AR').includes(normalized))
+  }).sort((a, b) => sort === 'name'
+    ? `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`, 'es-AR')
+    : b.createdAt.localeCompare(a.createdAt))
   async function load(more = false) {
     setBusy(true)
     setError('')
@@ -36,13 +48,8 @@ export function ConnectedProfessionalDirectory({
     <>
       <Header
         title="Profesionales"
-        description="Postulaciones y habilitaciones registradas."
-        action={
-          <span className="flex gap-2">
-            <Link className="adm-button" href="/admin/profesionales/requisitos">Requisitos</Link>
-            <Link className="adm-button adm-button-primary" href="/admin/profesionales/invitaciones">Invitaciones</Link>
-          </span>
-        }
+        description="Convocados, en registro y habilitados para trabajar."
+        action={<Link className="adm-button adm-button-primary" href="/admin/profesionales/invitaciones">Añadir nuevo</Link>}
       />
       {error && <p role="alert">{error}</p>}
       <Panel
@@ -56,12 +63,34 @@ export function ConnectedProfessionalDirectory({
         <p>
           {page.total} profesionales · {page.items.length} mostrados
         </p>
+        <div className="mb-4 flex flex-wrap gap-3">
+          <label>Buscar profesionales
+            <input className="ml-2 rounded border p-2" type="search" value={query}
+              onChange={(event) => setQuery(event.target.value)} placeholder="Nombre, correo o especialidad" />
+          </label>
+          <label>Estado
+            <select className="ml-2 rounded border p-2" value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value)}>
+              <option value="all">Todos</option><option value="active">Activos</option>
+              <option value="inactive">Inactivos</option>
+            </select>
+          </label>
+          <label>Ordenar
+            <select className="ml-2 rounded border p-2" value={sort}
+              onChange={(event) => setSort(event.target.value)}>
+              <option value="recent">Más recientes</option><option value="name">Nombre</option>
+            </select>
+          </label>
+        </div>
         {!page.items.length && <p>Todavía no hay profesionales registrados.</p>}
+        {page.items.length > 0 && !visible.length && <p>No hay profesionales cargados con estos filtros.</p>}
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
               <tr>
                 <th>Profesional</th>
+                <th>Especialidad</th>
+                <th>Cuenta</th>
                 <th>Revisión</th>
                 <th>Habilitación vigente</th>
                 <th>Trabajos nuevos</th>
@@ -69,22 +98,23 @@ export function ConnectedProfessionalDirectory({
               </tr>
             </thead>
             <tbody>
-              {page.items.map((person) => (
+              {visible.map((person) => (
                 <tr key={person.id}>
                   <td className="p-3">
                     {person.firstName} {person.lastName}
                     <br />
                     {person.email}
                   </td>
+                  <td>{person.specialtySlug?.replaceAll('_', ' ') || 'Por definir'}</td>
+                  <td>{person.status === 'approved' ? 'Activo' : 'Inactivo'}</td>
                   <td>{professionalStatusLabels[person.status]}</td>
                   <td>
-                    {person.eligible ? 'Documentación vigente' : 'Documentación no vigente'}
-                    {!person.invited && ' · Alta previa al circuito de invitación'}
+                    {person.source === 'invitation' ? 'Registro sin completar' : person.eligible ? 'Documentación vigente' : 'Documentación pendiente'}
                   </td>
                   <td>{(person.readyForNewWork ?? person.eligible) ? 'Puede recibir' : 'No puede recibir'}</td>
                   <td>
                     <Link className="underline" href={'/admin/profesionales/' + person.id}>
-                      Ver expediente
+                      Ver perfil
                     </Link>
                   </td>
                 </tr>

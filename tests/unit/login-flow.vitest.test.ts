@@ -115,6 +115,15 @@ describe('login flow', () => {
     expect(fake.signOutCalls()).toBe(1)
   })
 
+  it('lets an invited professional resume onboarding without unlocking job routes', async () => {
+    const fake = createGateway({ profile: { role: 'professional',
+      professionalApproved: false, professionalOnboarding: true, assuranceLevel: 'aal1' } })
+    const result = await authenticateLogin({ email: 'tecnico@lysto.com.ar',
+      password: 'una-clave-segura', next: '/pro/onboarding' }, fake.gateway)
+    expect(result).toEqual({ ok: true, redirectTo: '/seguridad?next=%2Fpro%2Fonboarding' })
+    expect(fake.signOutCalls()).toBe(0)
+  })
+
   it.each([
     ['customer', 'aal1', '/app'],
     ['professional', 'aal1', '/seguridad?next=%2Fpro%2Fdashboard'],

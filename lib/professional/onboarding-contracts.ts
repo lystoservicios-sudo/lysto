@@ -50,6 +50,7 @@ export const onboardingInput = onboardingFields
   .strict()
 export const onboardingSchema = onboardingFields
   .extend({
+    address: z.string().trim().max(200).optional(),
     professionalId: z.string().uuid(),
     version: z.number().int().positive(),
     status: z.enum([

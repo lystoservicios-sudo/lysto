@@ -2,15 +2,16 @@ import { randomUUID } from 'node:crypto'
 import { Client } from 'pg'
 import { test, expect, loginAs } from './fixtures/production'
 
-test('an anonymous visitor cannot consume a professional invitation', async ({ page }) => {
+test('an invalid professional invitation cannot create an account', async ({ page }) => {
   await page.goto(`/pro/onboarding/${'a'.repeat(43)}`)
-  await expect(page.getByRole('heading', { name: 'Tu invitación profesional' })).toBeVisible()
-  await page.getByRole('button', { name: 'Aceptar invitación' }).click()
-  await expect(page.getByText('Tu sesión terminó. Volvé a iniciar sesión.')).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Creá tu contraseña' })).toBeVisible()
+  await page.getByLabel('Contraseña').fill('Clav3Seg!')
+  await page.getByRole('button', { name: 'Continuar' }).click()
+  await expect(page.getByRole('alert')).toBeVisible()
   await expect(page).toHaveURL(new RegExp(`/pro/onboarding/${'a'.repeat(43)}$`))
 })
 
-test('administration reveals a new invitation link once and another email cannot consume it', async ({
+test('administration reveals a new invitation link once and lists the unregistered professional', async ({
   page,
   accounts
 }) => {
@@ -21,12 +22,13 @@ test('administration reveals a new invitation link once and another email cannot
   try {
     await loginAs(page, accounts.accounts.owner, 'owner')
     await page.goto('/admin/profesionales/invitaciones')
-    await page.getByRole('textbox', { name: 'Correo del profesional' }).fill(email)
+    await page.getByRole('textbox', { name: 'Nombre' }).fill('Profesional')
+    await page.getByRole('textbox', { name: 'Apellido' }).fill('Prueba')
+    await page.getByRole('textbox', { name: 'Correo' }).fill(email)
     const specialty = page.getByRole('combobox', { name: 'Especialidad' })
     const firstSpecialty = await specialty.locator('option').nth(1).getAttribute('value')
     if (!firstSpecialty) throw new Error('No active specialty is available for the invitation')
     await specialty.selectOption(firstSpecialty)
-    await page.getByRole('textbox', { name: 'Motivo de la convocatoria' }).fill('Verificación automatizada del enlace individual')
     await page.getByRole('button', { name: 'Crear invitación' }).click()
 
     const link = page.getByRole('link', { name: 'Abrir enlace de invitación' })
@@ -38,22 +40,10 @@ test('administration reveals a new invitation link once and another email cannot
     expect(invitationUrl.pathname).toMatch(/^\/pro\/onboarding\/[A-Za-z0-9_-]{43}$/)
     expect(invitationUrl.search).toBe('')
     expect(invitationUrl.hash).toBe('')
-    await expect(page.getByText(email, { exact: true })).toBeVisible()
     await page.reload()
     await expect(page.getByRole('link', { name: 'Abrir enlace de invitación' })).toHaveCount(0)
-    await expect(page.getByText(email, { exact: true })).toBeVisible()
-
-    await page.context().clearCookies({ name: /^sb-/ })
-    await loginAs(page, accounts.accounts.customerB, 'customerB')
-    await page.goto(href!)
-    await expect(page.getByRole('heading', { name: 'Tu invitación profesional' })).toBeVisible()
-    await page.getByRole('button', { name: 'Aceptar invitación' }).click()
-    await expect(page.getByRole('alert')).toBeVisible()
-    const role = await db.query<{ role: string }>(
-      'select role from public.profiles where id=$1',
-      [accounts.accounts.customerB.profileId]
-    )
-    expect(role.rows[0]?.role).toBe('customer')
+    await page.goto('/admin/profesionales')
+    await expect(page.getByRole('row', { name: /Profesional Prueba/ })).toContainText(email)
   } finally {
     const invitation = await db.query<{ id: string }>(
       'select id from public.professional_invitations where email=$1 and created_by=$2',

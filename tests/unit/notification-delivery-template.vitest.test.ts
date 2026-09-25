@@ -17,7 +17,7 @@ describe('versioned transactional notification templates', () => {
     )
     expect(message.version).toBe('transactional-v1')
     expect(message.url).toBe(`${origin}/pro/onboarding/${token}`)
-    expect(message.subject).toBe('Tu invitación a Lysto')
+    expect(message.subject).toBe('Terminá de crear tu cuenta profesional en Lysto')
     expect(message.text).toContain(message.url)
     expect(message.html).toContain(`href="${message.url}"`)
   })

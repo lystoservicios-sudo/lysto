@@ -2445,7 +2445,10 @@ export type Database = {
           created_by: string | null
           email: string
           expires_at: string
+          first_name: string
+          flow_version: number
           id: string
+          last_name: string
           phone: string | null
           specialty_slug: string
           status: string
@@ -2460,7 +2463,10 @@ export type Database = {
           created_by?: string | null
           email: string
           expires_at?: string
+          first_name?: string
+          flow_version?: number
           id?: string
+          last_name?: string
           phone?: string | null
           specialty_slug?: string
           status?: string
@@ -2475,7 +2481,10 @@ export type Database = {
           created_by?: string | null
           email?: string
           expires_at?: string
+          first_name?: string
+          flow_version?: number
           id?: string
+          last_name?: string
           phone?: string | null
           specialty_slug?: string
           status?: string
@@ -4023,6 +4032,10 @@ export type Database = {
         Args: { p_email: string; p_reason: string; p_specialty_slug: string }
         Returns: Json
       }
+      create_professional_invitation_v2: {
+        Args: { p_email: string; p_first_name: string; p_last_name: string; p_specialty_slug: string }
+        Returns: Json
+      }
       create_service_request_from_app: {
         Args: {
           p_address_id: string
@@ -4338,6 +4351,15 @@ export type Database = {
         Args: { p_category_id: string; p_version: string }
         Returns: Json
       }
+      list_professional_workflow_v2: {
+        Args: {
+          p_before_created_at?: string
+          p_before_id?: string
+          p_limit?: number
+          p_resource: string
+        }
+        Returns: Json
+      }
       production_readiness_probe: { Args: never; Returns: Json }
       professional_invitation_matches: {
         Args: { p_email: string; p_token: string }
@@ -4365,6 +4387,9 @@ export type Database = {
       }
       prune_rate_limits: { Args: { p_limit?: number }; Returns: number }
       read_professional_onboarding: { Args: never; Returns: Json }
+      read_professional_invitation_admin: { Args: { p_id: string }; Returns: Json }
+      renew_professional_invitation: { Args: { p_id: string }; Returns: Json }
+      save_professional_address: { Args: { p_address: string; p_expected_version: number }; Returns: Json }
       record_policy_acceptance: {
         Args: {
           p_evidence?: Json

@@ -42,11 +42,11 @@ it('rejects a callback with a cookie from a different session', async () => {
   expect(mocks.complete).not.toHaveBeenCalled()
 })
 
-it('returns an applicant to onboarding after a valid callback', async () => {
+it('returns an applicant to the professional dashboard after a valid callback', async () => {
   const key = Buffer.alloc(32, 1).toString('base64')
   mocks.cookie.mockReturnValue({ value: oauthBinding('nonce-1', 'user-1', 'pro-1', key) })
   const response = await GET(new Request('https://lysto.test/api/mercadopago/oauth/callback?state=nonce-1&code=code-1'))
   expect(response.status).toBe(307)
-  expect(response.headers.get('location')).toBe('https://lysto.test/pro/onboarding?conexion=actualizada')
+  expect(response.headers.get('location')).toBe('https://lysto.test/pro/dashboard?conexion=actualizada')
   expect(mocks.complete).toHaveBeenCalledWith({ code: 'code-1', state: 'nonce-1' })
 })

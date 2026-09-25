@@ -11,6 +11,7 @@ const loginCredentialsSchema = z.object({
 export type LoginProfile = {
   role: UserRole
   professionalApproved?: boolean
+  professionalOnboarding?: boolean
   assuranceLevel: 'aal1' | 'aal2'
 }
 
@@ -65,7 +66,7 @@ export async function authenticateLogin(
     }
   }
 
-  if (profile.role === 'professional' && !profile.professionalApproved) {
+  if (profile.role === 'professional' && !profile.professionalApproved && !profile.professionalOnboarding) {
     await gateway.signOut()
     return {
       ok: false,
@@ -74,7 +75,10 @@ export async function authenticateLogin(
     }
   }
 
-  const destination = safeLocalRedirectPath(input.next, profile.role)
+  const requested = safeLocalRedirectPath(input.next, profile.role)
+  const destination = profile.role === 'professional' && profile.professionalOnboarding
+    ? (requested.startsWith('/pro/dashboard') ? '/pro/dashboard' : '/pro/onboarding')
+    : requested
   if (profile.role !== 'customer' && profile.assuranceLevel !== 'aal2') {
     return { ok: true, redirectTo: `/seguridad?next=${encodeURIComponent(destination)}` }
   }

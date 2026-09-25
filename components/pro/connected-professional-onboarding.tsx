@@ -81,6 +81,14 @@ function DocumentUpload({
 export function ConnectedProfessionalOnboarding({ initial }: { initial: OnboardingContext }) {
   const [context, setContext] = useState(initial)
   const [draft, setDraft] = useState(initial.application)
+  const [step, setStep] = useState(() => {
+    const app = initial.application
+    if (!['form_started', 'rejected'].includes(app.status)) return 4
+    if (!app.phone || !app.dni || !app.address) return 0
+    if (!app.zoneIds.length || !app.availability.length) return 1
+    if (!initial.avatarUrl || !initial.documents.length) return 2
+    return ['form_started', 'rejected'].includes(app.status) ? 3 : 4
+  })
   const [busy, setBusy] = useState(true)
   // Do not accept edits before hydration installs the change handlers.
   useEffect(() => {
@@ -103,8 +111,12 @@ export function ConnectedProfessionalOnboarding({ initial }: { initial: Onboardi
   const dirty = JSON.stringify(draft) !== JSON.stringify(context.application)
   const disabled = busy || uploading
   const requiredDocuments = [
-    ...new Set(context.requirements?.policies.flatMap((policy) => policy.requiredDocuments) ?? [])
+    ...new Set(['identity_front', 'identity_back', 'license',
+      ...(context.requirements?.policies.flatMap((policy) => policy.requiredDocuments) ?? [])])
   ]
+  const documentsReady = Boolean(context.avatarUrl && context.requirements && requiredDocuments.length &&
+    requiredDocuments.every((type) => context.documents.some((document) =>
+      document.documentType === type && document.status !== 'rejected')))
   function update<K extends keyof ProfessionalApplication>(
     key: K,
     value: ProfessionalApplication[K]
@@ -129,6 +141,11 @@ export function ConnectedProfessionalOnboarding({ initial }: { initial: Onboardi
   async function save(event: React.FormEvent) {
     event.preventDefault()
     if (disabled) return
+    if (step === 0 && (draft.address ?? '').trim().length < 5) {
+      setError('Completá tu dirección antes de continuar.')
+      return
+    }
+    if (!dirty) { setStep((current) => Math.min(current + 1, 4)); return }
     setBusy(true)
     setError('')
     setMessage('')
@@ -136,15 +153,20 @@ export function ConnectedProfessionalOnboarding({ initial }: { initial: Onboardi
       const valid = onboardingFields.strip().safeParse(draft)
       if (!valid.success)
         throw new Error('Revisá los datos y los horarios ingresados antes de guardar.')
-      const saved = await privateRequest<ProfessionalApplication>(
+      let saved = await privateRequest<ProfessionalApplication>(
         '/api/professional/onboarding',
         'POST',
         { ...valid.data, expectedVersion: draft.version }
       )
-      setDraft(saved)
-      setContext((current) => ({ ...current, application: saved }))
+      if (step === 0 && (draft.address ?? '') !== (context.application.address ?? ''))
+        saved = await privateRequest<ProfessionalApplication>('/api/professional/onboarding/address',
+          'POST', { address: draft.address, expectedVersion: saved.version })
+      const reconciled = { ...saved, address: saved.address ?? draft.address ?? '' }
+      setDraft(reconciled)
+      setContext((current) => ({ ...current, application: reconciled }))
       setMessage('Borrador guardado.')
       await reload()
+      setStep((current) => Math.min(current + 1, 4))
     } catch (failure) {
       setError(requestError(failure))
     } finally {
@@ -165,6 +187,7 @@ export function ConnectedProfessionalOnboarding({ initial }: { initial: Onboardi
       })
       await reload()
       setMessage('Postulación enviada. Podés consultar acá el resultado de la revisión.')
+      setStep(4)
     } catch (failure) {
       setError(requestError(failure))
     } finally {
@@ -203,16 +226,19 @@ export function ConnectedProfessionalOnboarding({ initial }: { initial: Onboardi
     } catch (failure) { setError(requestError(failure)) }
     finally { setUploading(false) }
   }
-  const textFields = [
+  const personalFields = [
     ['firstName', 'Nombre'],
     ['lastName', 'Apellido'],
     ['phone', 'Teléfono'],
     ['dni', 'DNI'],
-    ['cuil', 'CUIL'],
+    ['cuil', 'CUIL']
+  ] as const
+  const activityFields = [
     ['licenseNumber', 'Número de matrícula'],
     ['licenseEntity', 'Entidad que emite la matrícula'],
     ['mobilityType', 'Tipo de movilidad']
   ] as const
+  const steps = ['Datos personales y domicilio', 'Actividad y disponibilidad', 'Foto y documentos', 'Enviar a revisión', 'Mercado Pago']
   return (
     <div className="space-y-6">
       <header className="space-y-2">
@@ -225,11 +251,11 @@ export function ConnectedProfessionalOnboarding({ initial }: { initial: Onboardi
           antes de habilitar trabajos nuevos.
         </p>
         <nav aria-label="Pasos de la postulación" className="flex flex-wrap gap-3 text-sm">
-          <a className="underline" href="#datos-profesionales">1. Datos y horarios</a>
-          <a className="underline" href="#foto-profesional">2. Foto</a>
-          <a className="underline" href="#documentos-profesionales">3. Documentos</a>
-          <a className="underline" href="#enviar-postulacion">4. Enviar a revisión</a>
-          <a className="underline" href="#cobros-profesionales">5. Mercado Pago</a>
+          {steps.map((label, index) => <button key={label} type="button"
+            aria-current={step === index ? 'step' : undefined}
+            className={step === index ? 'font-bold text-blue-700' : 'underline disabled:opacity-50'}
+            disabled={disabled || index > step || (dirty && index !== step)}
+            onClick={() => setStep(index)}>{index + 1}. {label}</button>)}
         </nav>
         <button
           className="underline disabled:opacity-50"
@@ -268,11 +294,11 @@ export function ConnectedProfessionalOnboarding({ initial }: { initial: Onboardi
           postulación.
         </p>
       )}
-      <form id="datos-profesionales" onSubmit={save} className="space-y-5 rounded-2xl border bg-white p-5">
+      {step <= 1 && <form id="datos-profesionales" onSubmit={save} className="space-y-5 rounded-2xl border bg-white p-5">
         <fieldset disabled={!editable || disabled} className="space-y-5">
-          <legend className="text-xl font-bold">Información profesional</legend>
+          <legend className="text-xl font-bold">{steps[step]}</legend>
           <div className="grid gap-4 sm:grid-cols-2">
-            {textFields.map(([key, label]) => (
+            {(step === 0 ? personalFields : activityFields).map(([key, label]) => (
               <label key={key}>
                 {label}
                 <input
@@ -283,7 +309,7 @@ export function ConnectedProfessionalOnboarding({ initial }: { initial: Onboardi
                 />
               </label>
             ))}
-            <label>
+            {step === 0 && <label>
               Fecha de nacimiento
               <input
                 type="date"
@@ -291,8 +317,12 @@ export function ConnectedProfessionalOnboarding({ initial }: { initial: Onboardi
                 value={draft.birthdate}
                 onChange={(event) => update('birthdate', event.target.value)}
               />
-            </label>
-            <label>
+            </label>}
+            {step === 0 && <label>Dirección
+              <input className={inputClass} value={draft.address ?? ''} minLength={5} maxLength={200}
+                required onChange={(event) => update('address', event.target.value)} />
+            </label>}
+            {step === 1 && <label>
               Años de experiencia
               <input
                 type="number"
@@ -302,8 +332,9 @@ export function ConnectedProfessionalOnboarding({ initial }: { initial: Onboardi
                 value={draft.yearsExperience}
                 onChange={(event) => update('yearsExperience', Number(event.target.value))}
               />
-            </label>
+            </label>}
           </div>
+          {step === 1 && <>
           <label className="block">
             <input
               type="checkbox"
@@ -440,14 +471,15 @@ export function ConnectedProfessionalOnboarding({ initial }: { initial: Onboardi
               Agregar horario
             </button>
           </fieldset>
+          </>}
           {editable && (
-            <button type="submit" className={buttonClass} disabled={!dirty}>
-              Guardar borrador
+            <button type="submit" className={buttonClass}>
+              Guardar y continuar
             </button>
           )}
         </fieldset>
-      </form>
-      <section id="foto-profesional" className="space-y-3 rounded-2xl border bg-white p-5">
+      </form>}
+      {step === 2 && <><section id="foto-profesional" className="space-y-3 rounded-2xl border bg-white p-5">
         <h2 className="text-xl font-bold">Foto de perfil</h2>
         <p>Esta foto será pública. No subas una foto de tu DNI o de tu matrícula aquí.</p>
         {(avatarPreview || context.avatarUrl) && <Image unoptimized src={avatarPreview || context.avatarUrl || ''} alt="Foto de perfil del profesional" width={128} height={128} className="h-32 w-32 rounded-full object-cover" />}
@@ -523,7 +555,10 @@ export function ConnectedProfessionalOnboarding({ initial }: { initial: Onboardi
           </fieldset>
         )}
       </section>
-      {editable && (
+      {!documentsReady && <p>Para continuar, cargá tu foto de perfil y todos los documentos solicitados.</p>}
+      <button type="button" className={buttonClass} disabled={disabled || !documentsReady} onClick={() => setStep(3)}>Continuar a revisión</button>
+      </>}
+      {step === 3 && editable && (
         <section id="enviar-postulacion" className="space-y-4 rounded-2xl border bg-white p-5">
           <h2 className="text-xl font-bold">Enviar a revisión</h2>
           {context.legal ? (
@@ -570,9 +605,9 @@ export function ConnectedProfessionalOnboarding({ initial }: { initial: Onboardi
       )}
       {context.readinessReasons && context.readinessReasons.length > 0 &&
         <p>Para recibir trabajos nuevos falta: {context.readinessReasons.map((reason) => ({ documentos: 'documentación vigente', foto: 'foto de perfil', mercado_pago: 'cuenta de Mercado Pago' })[reason]).join(', ')}.</p>}
-      <section id="cobros-profesionales" aria-label="Vinculación de cobros" className="rounded-2xl border bg-white p-5">
+      {step === 4 && <section id="cobros-profesionales" aria-label="Vinculación de cobros" className="rounded-2xl border bg-white p-5">
         <MarketplaceAccount onboarding />
-      </section>
+      </section>}
     </div>
   )
 }

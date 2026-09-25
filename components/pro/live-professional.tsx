@@ -60,12 +60,20 @@ function LiveVisit({ job }: { job: ProfessionalLiveJob }) {
 export function LiveProfessionalDashboard({
   name,
   rating,
-  jobs
+  jobs,
+  pending = false
 }: {
   name: string
   rating: number | null
   jobs: ProfessionalLiveJob[]
+  pending?: boolean
 }) {
+  if (pending) return <ProPage title={`Hola, ${name}`} description="Tu espacio profesional está en revisión.">
+    <ProPanel title="Revisión pendiente">
+      <p>Ya podés ingresar a tu panel. Administración revisará la documentación antes de habilitarte para recibir trabajos.</p>
+      <ButtonLink href="/pro/onboarding" variant="secondary">Continuar mi perfil</ButtonLink>
+    </ProPanel>
+  </ProPage>
   const active = jobs.filter((job) => group(job.status) === 'active')
   return (
     <ProPage title={`Hola, ${name}`} description="Tu jornada y tus operaciones confirmadas.">

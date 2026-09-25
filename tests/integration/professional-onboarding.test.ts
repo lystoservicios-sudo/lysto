@@ -172,9 +172,9 @@ describe('professional invitation and review lifecycle', () => {
   }
   async function invite(email: string) {
     const result = await request('/api/admin/invite-professional', 'operations', 'POST', {
+      firstName: 'Profesional', lastName: 'Prueba',
       email,
-      specialtySlug: 'aire_acondicionado',
-      reason: 'Convocatoria para revisión profesional de prueba'
+      specialtySlug: 'aire_acondicionado'
     })
     expect(result.status).toBe(201)
     const body = await result.json()

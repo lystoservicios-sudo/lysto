@@ -13,6 +13,7 @@ it('returns an invitation link once without exposing the token in the invitation
   const rpc = vi.fn().mockResolvedValue({
     data: {
       id: '96000000-0000-4000-8000-000000000001',
+      firstName: 'Ana', lastName: 'Pérez',
       email: 'tecnico@example.com',
       specialtySlug: 'aire_acondicionado',
       status: 'queued',
@@ -28,8 +29,8 @@ it('returns an invitation link once without exposing the token in the invitation
   } as unknown as Session
 
   const result = await createProfessionalInvitation(session, {
+    firstName: 'Ana', lastName: 'Pérez',
     email: 'tecnico@example.com', specialtySlug: 'aire_acondicionado',
-    reason: 'Convocatoria para técnico de aire acondicionado'
   })
 
   expect(result.link).toBe(`https://lystohogar.com/pro/onboarding/${token}`)
@@ -37,10 +38,10 @@ it('returns an invitation link once without exposing the token in the invitation
   expect(result.invitation.status).toBe('sent')
   expect(dispatchProfessionalInvitation).toHaveBeenCalledWith(result.invitation.id)
   expect(JSON.stringify(result.invitation)).not.toContain(token)
-  expect(rpc).toHaveBeenCalledWith('create_professional_invitation', {
+  expect(rpc).toHaveBeenCalledWith('create_professional_invitation_v2', {
+    p_first_name: 'Ana', p_last_name: 'Pérez',
     p_email: 'tecnico@example.com',
-    p_specialty_slug: 'aire_acondicionado',
-    p_reason: 'Convocatoria para técnico de aire acondicionado'
+    p_specialty_slug: 'aire_acondicionado'
   })
 })
 
@@ -48,6 +49,7 @@ it('reports an unavailable email transport without claiming that the invitation 
   dispatchProfessionalInvitation.mockResolvedValue({ accepted: false, reason: 'email_not_configured' })
   const invitation = {
     id: '96000000-0000-4000-8000-000000000001',
+    firstName: 'Ana', lastName: 'Pérez',
     email: 'tecnico@example.com',
     specialtySlug: 'aire_acondicionado',
     status: 'queued',
@@ -61,21 +63,28 @@ it('reports an unavailable email transport without claiming that the invitation 
   } as unknown as Session
 
   await expect(createProfessionalInvitation(session, {
+    firstName: 'Ana', lastName: 'Pérez',
     email: invitation.email,
-    specialtySlug: invitation.specialtySlug,
-    reason: 'Convocatoria para técnico de aire acondicionado'
+    specialtySlug: invitation.specialtySlug
   })).resolves.toEqual({ invitation, link: null, delivery: { accepted: false, reason: 'email_not_configured' } })
 })
 
-it('retries the same invitation without creating a duplicate', async () => {
-  const rpc = vi.fn()
+it('renews the link for the same invitation before resending', async () => {
+  vi.stubEnv('NEXT_PUBLIC_APP_URL', 'https://lystohogar.com')
+  const rpc = vi.fn().mockResolvedValue({ data: {
+    id: '96000000-0000-4000-8000-000000000001', firstName: 'Ana', lastName: 'Pérez',
+    email: 'tecnico@example.com', specialtySlug: 'aire_acondicionado', status: 'queued',
+    expiresAt: '2099-10-06T12:00:00Z', createdAt: '2026-09-22T12:00:00Z', version: 2,
+    token: 'b'.repeat(43)
+  }, error: null })
   const session = {
     role: 'admin', assuranceLevel: 'aal2', permissions: ['owner'], client: { rpc }
   } as unknown as Session
   const invitationId = '96000000-0000-4000-8000-000000000001'
   await expect(resendProfessionalInvitation(session, { invitationId })).resolves.toEqual({
-    delivery: { accepted: true, reason: null }
+    delivery: { accepted: true, reason: null },
+    link: `https://lystohogar.com/pro/onboarding/${'b'.repeat(43)}`
   })
   expect(dispatchProfessionalInvitation).toHaveBeenCalledWith(invitationId)
-  expect(rpc).not.toHaveBeenCalled()
+  expect(rpc).toHaveBeenCalledWith('renew_professional_invitation', { p_id: invitationId })
 })

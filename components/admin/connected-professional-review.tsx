@@ -11,10 +11,12 @@ import { Button, Field, Header, Panel } from './admin-ui'
 
 export function ConnectedProfessionalReview({
   initial,
-  catalog
+  catalog,
+  jobs = []
 }: {
   initial: ProfessionalReview
   catalog: { categories: { id: string; name: string }[]; zones: { id: string; name: string }[] }
+  jobs?: { id: string; status: string; created_at: string }[]
 }) {
   const [review, setReview] = useState(initial),
     [busy, setBusy] = useState(true),
@@ -27,6 +29,23 @@ export function ConnectedProfessionalReview({
   const [documentUrl, setDocumentUrl] = useState<{ id: string; url: string } | null>(null)
   const application = review.application
   const reviewing = ['form_submitted', 'under_review'].includes(application.status)
+  const requiredDocuments = [...new Set([
+    'identity_front', 'identity_back', 'license',
+    ...(review.requirements?.policies.flatMap((policy) => policy.requiredDocuments) ?? [])
+  ])]
+  const missingRegistration = [
+    ...(!application.firstName || !application.lastName ? ['Nombre y apellido'] : []),
+    ...(!application.phone ? ['Teléfono'] : []),
+    ...(!application.dni || !application.cuil || !application.birthdate ? ['Identidad y datos personales'] : []),
+    ...(!application.address ? ['Domicilio'] : []),
+    ...(!application.licenseNumber || !application.licenseEntity ? ['Datos de matrícula'] : []),
+    ...(!application.categoryIds.length || !application.zoneIds.length ? ['Especialidad y zonas'] : []),
+    ...(!application.availability.length ? ['Días y horarios de trabajo'] : []),
+    ...(!review.avatarUrl ? ['Foto de perfil'] : []),
+    ...requiredDocuments.filter((type) => !review.documents.some((document) =>
+      document.documentType === type && document.status !== 'rejected'))
+      .map((type) => documentLabels[type] ?? type)
+  ]
   async function refresh() {
     const next = await privateRequest<ProfessionalReview>(
       '/api/admin/professionals/review?professionalId=' + application.professionalId
@@ -153,6 +172,12 @@ export function ConnectedProfessionalReview({
         {review.readinessReasons && review.readinessReasons.length > 0 && <p>Falta: {review.readinessReasons.join(', ')}.</p>}
         {review.decisionReason && <p>Última resolución: {review.decisionReason}</p>}
       </Panel>
+      {['form_started', 'rejected'].includes(application.status) &&
+        <Panel title="Qué falta para completar el registro">
+          {missingRegistration.length
+            ? <ul>{missingRegistration.map((item) => <li key={item}>• {item}</li>)}</ul>
+            : <p>Los datos están cargados. Falta enviar la postulación a revisión y vincular Mercado Pago.</p>}
+        </Panel>}
       {application.status === 'approved' && !review.eligible && <Panel title="Solicitar revalidación documental">
         <p>La política vigente o un documento vencido impide la habilitación. Esta acción reabre el expediente para que el profesional corrija y vuelva a enviarlo; los trabajos existentes requieren seguimiento operativo.</p>
         <form className="adm-form" onSubmit={event => void requestRevalidation(event)}>
@@ -165,6 +190,7 @@ export function ConnectedProfessionalReview({
         <dl className="adm-facts">
           {[
             ['Teléfono', application.phone],
+            ['Dirección', application.address ?? ''],
             ['DNI', application.dni],
             ['CUIL', application.cuil],
             ['Nacimiento', application.birthdate],
@@ -201,6 +227,12 @@ export function ConnectedProfessionalReview({
             </div>
           ))}
         </dl>
+      </Panel>
+      <Panel title="Trabajos vinculados">
+        {jobs.length ? <ul>{jobs.map((job) => <li key={job.id} className="border-b py-2">
+          <a className="underline" href={`/admin/calculadora/trabajos/${job.id}`}>{job.id}</a>
+          {' · '}{job.status}{' · '}{new Date(job.created_at).toLocaleDateString('es-AR')}
+        </li>)}</ul> : <p>Todavía no tiene trabajos vinculados.</p>}
       </Panel>
       <Panel title="Requisitos vigentes">
         {review.requirements ? (

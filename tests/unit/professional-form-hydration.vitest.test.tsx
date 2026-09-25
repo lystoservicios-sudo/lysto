@@ -15,6 +15,7 @@ it('keeps a server-rendered draft disabled until event handlers can preserve edi
       phone: '',
       dni: '',
       cuil: '',
+      address: '',
       birthdate: '',
       yearsExperience: 0,
       licenseNumber: '',
@@ -36,5 +37,5 @@ it('keeps a server-rendered draft disabled until event handlers can preserve edi
   }
   const element = document.createElement('div')
   element.innerHTML = renderToStaticMarkup(<ConnectedProfessionalOnboarding initial={initial} />)
-  expect(element.querySelector('textarea')?.closest('fieldset')?.disabled).toBe(true)
+  expect(element.querySelector('input[required]')?.closest('fieldset')?.disabled).toBe(true)
 })

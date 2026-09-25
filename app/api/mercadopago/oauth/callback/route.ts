@@ -12,8 +12,7 @@ export async function GET(request:Request){
     const store=await cookies()
     if(!checkOAuthBinding(store.get('lysto_mp_oauth')?.value,oauthBinding(state,session.userId,pro,config.encryptionKey)))throw new Error('oauth_invalid')
     await marketplaceGateway().oauth.completeAuthorization({code,state})
-    const destination=session.status==='approved'?'/pro/mercadopago':'/pro/onboarding'
-    const response=NextResponse.redirect(`${config.origin}${destination}?conexion=actualizada`)
+    const response=NextResponse.redirect(`${config.origin}/pro/dashboard?conexion=actualizada`)
     response.cookies.set('lysto_mp_oauth','',{httpOnly:true,secure:true,sameSite:'lax',path:'/api/mercadopago/oauth',maxAge:0})
     response.headers.set('Cache-Control','no-store');response.headers.set('Referrer-Policy','no-referrer')
     return response

@@ -19,13 +19,13 @@ import { FormFeedback } from '@/components/customer/states'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils/cn'
 
-export function ProWorkspace({ children }: { children: ReactNode }) {
+export function ProWorkspace({ children, pending = false }: { children: ReactNode; pending?: boolean }) {
   const pathname = usePathname()
   const onboarding = pathname.startsWith('/pro/onboarding/')
   return (
     <div className="pro-workspace">
       {children}
-      {!onboarding && (
+      {!onboarding && !pending && (
         <nav className="pro-bottom-nav" aria-label="Navegación profesional móvil">
           {(
             [

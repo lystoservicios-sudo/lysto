@@ -26,9 +26,9 @@ describe('professional production route contracts', () => {
     )
   })
 
-  it('loads dashboard, jobs, profile and equipment with the approved session', () => {
+  it('opens the dashboard for onboarding while keeping jobs, profile and equipment behind approval', () => {
+    expect(read('app/(professional)/pro/dashboard/page.tsx')).toContain('requireProfessionalWorkspaceSession()')
     for (const file of [
-      'app/(professional)/pro/dashboard/page.tsx',
       'app/(professional)/pro/trabajos/page.tsx',
       'app/(professional)/pro/perfil/page.tsx',
       'app/(professional)/pro/equipos/[id]/page.tsx'

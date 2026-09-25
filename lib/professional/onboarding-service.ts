@@ -7,6 +7,7 @@ import {
   onboardingInput,
   onboardingSchema,
   professionalReviewSchema,
+  type ProfessionalApplication,
   type ProfessionalReview
 } from './onboarding-contracts'
 import { getRegistrationPolicy } from '@/lib/auth/account-policy'
@@ -15,14 +16,17 @@ import { dispatchProfessionalInvitation } from '@/lib/notifications/server'
 
 export const invitationInput = z
   .object({
+    firstName: z.string().trim().min(1).max(100),
+    lastName: z.string().trim().min(1).max(100),
     email: z.string().trim().toLowerCase().email().max(254),
-    specialtySlug: z.string().min(1).max(100),
-    reason: z.string().trim().min(10).max(1000)
+    specialtySlug: z.string().min(1).max(100)
   })
   .strict()
 export const invitationSchema = z
   .object({
     id: z.string().uuid(),
+    firstName: z.string().optional(),
+    lastName: z.string().optional(),
     email: z.string().email(),
     specialtySlug: z.string(),
     status: z.enum(['queued', 'sent', 'opened', 'completed', 'expired', 'cancelled']),
@@ -46,6 +50,12 @@ function fail(code: string): never {
     throw new ApiError('invalid_input')
   throw new ApiError('service_unavailable')
 }
+async function withProfessionalAddress(client: Session['client'], application: ProfessionalApplication) {
+  const address = await client.from('professional_profiles').select('base_location')
+    .eq('id', application.professionalId).single()
+  if (address.error || !address.data) throw new ApiError('service_unavailable')
+  return { ...application, address: address.data.base_location ?? '' }
+}
 export async function createProfessionalInvitation(session: Session, input: unknown) {
   if (
     session.role !== 'admin' ||
@@ -54,10 +64,11 @@ export async function createProfessionalInvitation(session: Session, input: unkn
   )
     throw new ApiError('forbidden')
   const data = invitationInput.parse(input)
-  const result = await session.client.rpc('create_professional_invitation', {
+  const result = await session.client.rpc('create_professional_invitation_v2', {
+    p_first_name: data.firstName,
+    p_last_name: data.lastName,
     p_email: data.email,
-    p_specialty_slug: data.specialtySlug,
-    p_reason: data.reason
+    p_specialty_slug: data.specialtySlug
   })
   if (result.error) fail(result.error.code)
   const parsed = createdInvitationSchema.safeParse(result.data)
@@ -79,7 +90,15 @@ export async function resendProfessionalInvitation(session: Session, input: unkn
   )
     throw new ApiError('forbidden')
   const { invitationId } = z.object({ invitationId: z.string().uuid() }).strict().parse(input)
-  return { delivery: await dispatchProfessionalInvitation(invitationId) }
+  const result = await session.client.rpc('renew_professional_invitation', { p_id: invitationId })
+  if (result.error) fail(result.error.code)
+  const parsed = createdInvitationSchema.safeParse(result.data)
+  if (!parsed.success || !parsed.data.token) throw new ApiError('service_unavailable')
+  const delivery = await dispatchProfessionalInvitation(invitationId)
+  return {
+    delivery,
+    link: `${authOrigin(process.env.NEXT_PUBLIC_APP_URL)}/pro/onboarding/${parsed.data.token}`
+  }
 }
 
 /** This identity may have no domain profile yet. Only invitation/onboarding RPCs may use it. */
@@ -112,7 +131,7 @@ export async function readProfessionalOnboarding() {
   if (result.error) fail(result.error.code)
   const parsed = onboardingSchema.safeParse(result.data)
   if (!parsed.success) throw new ApiError('service_unavailable')
-  return parsed.data
+  return withProfessionalAddress(client, parsed.data)
 }
 export async function saveProfessionalOnboarding(input: unknown) {
   const data = onboardingInput.parse(input)
@@ -160,6 +179,29 @@ export async function readProfessionalReview(client: Session['client'], professi
   )
   if (result.error) fail(result.error.code)
   const parsed = professionalReviewSchema.safeParse(result.data)
+  if (!parsed.success) throw new ApiError('service_unavailable')
+  return { ...parsed.data, application: await withProfessionalAddress(client, parsed.data.application) }
+}
+export async function saveProfessionalAddress(input: unknown) {
+  const data = z.object({ address: z.string().trim().min(5).max(200),
+    expectedVersion: z.number().int().positive() }).strict().parse(input)
+  const client = await onboardingIdentity()
+  const result = await client.rpc('save_professional_address', {
+    p_address: data.address, p_expected_version: data.expectedVersion
+  })
+  if (result.error) fail(result.error.code)
+  const parsed = onboardingSchema.safeParse(result.data)
+  if (!parsed.success) throw new ApiError('service_unavailable')
+  return withProfessionalAddress(client, parsed.data)
+}
+export async function readProfessionalInvitationAdmin(session: Session, invitationId: string) {
+  if (session.role !== 'admin' || session.assuranceLevel !== 'aal2' ||
+    !session.permissions.some((permission) => permission === 'owner' || permission === 'operations'))
+    throw new ApiError('forbidden')
+  const id = z.string().uuid().parse(invitationId)
+  const result = await session.client.rpc('read_professional_invitation_admin', { p_id: id })
+  if (result.error) fail(result.error.code)
+  const parsed = invitationSchema.safeParse(result.data)
   if (!parsed.success) throw new ApiError('service_unavailable')
   return parsed.data
 }

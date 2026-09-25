@@ -144,10 +144,16 @@ export function renderOutboxNotification(raw: unknown, baseUrl: string): Rendere
   }
   if (event === 'professional.invited') {
     allow('professional')
-    subject = 'Tu invitación a Lysto'
+    subject = 'Terminá de crear tu cuenta profesional en Lysto'
     body =
-      'Te invitamos a iniciar tu postulación profesional. Abrí el enlace para consultar los pasos y verificar tu cuenta.'
+      'Te invitamos a trabajar con Lysto. Creá tu contraseña y completá tu perfil profesional desde el botón. Si no esperabas esta invitación, podés ignorar este correo.'
     path = `/pro/onboarding/${context.invitationToken}`
+    const url = new URL(path, origin).href
+    return {
+      version: 'transactional-v1', subject, url,
+      text: `${body}\n\nTerminar de crear mi cuenta: ${url}`,
+      html: emailShell(subject, `<p>${escapeHtml(body)}</p><p>${button('Terminar de crear mi cuenta', url)}</p>`)
+    }
   } else if (event === 'professional.application.submitted') {
     allow('operations')
     subject = 'Postulación profesional para revisar'

@@ -38,6 +38,7 @@ export type Session = {
   customerId?: string
   professionalId?: string
   professionalStatus?: string
+  professionalEligible?: boolean
   adminProfileId?: string
   permissions: AdminPermission[]
   sessionId: string
@@ -94,6 +95,7 @@ async function loadSession(forEnrollment = false): Promise<Session> {
     customerId: current.customer_id ?? undefined,
     professionalId: current.professional_id ?? undefined,
     professionalStatus: current.professional_status ?? undefined,
+    professionalEligible: current.professional_eligible,
     adminProfileId: current.admin_profile_id ?? undefined,
     permissions: current.permissions,
     sessionId: current.session_id,
@@ -141,6 +143,20 @@ export async function requirePageSession(role: UserRole): Promise<Session> {
       redirect(`/equipo/login?next=${encodeURIComponent(destination)}`)
     }
     if (error instanceof ApiError && error.code === 'mfa_required') redirect('/seguridad')
+    if (error instanceof ApiError && error.status === 403) notFound()
+    throw error
+  }
+}
+
+/** Read-only professional workspace during onboarding; job operations keep requireSession. */
+export async function requireProfessionalWorkspaceSession(): Promise<Session> {
+  try {
+    const session = await loadSession(true)
+    if (session.role !== 'professional' || !session.professionalId) throw new ApiError('forbidden')
+    return session
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 401)
+      redirect('/equipo/login?next=%2Fpro%2Fdashboard')
     if (error instanceof ApiError && error.status === 403) notFound()
     throw error
   }

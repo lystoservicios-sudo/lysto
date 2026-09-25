@@ -13,6 +13,8 @@ const professionalSchema = z
     firstName: z.string(),
     lastName: z.string(),
     email: z.string().email(),
+    source: z.enum(['profile', 'invitation']).optional(),
+    specialtySlug: z.string().optional(),
     status: z.enum([
       'invited',
       'form_started',
@@ -59,7 +61,8 @@ export async function listProfessionalWorkflow(
   } catch {
     throw new ApiError('invalid_input')
   }
-  const result = await session.client.rpc('list_professional_workflow', {
+  const result = await session.client.rpc(resource === 'professionals'
+    ? 'list_professional_workflow_v2' : 'list_professional_workflow', {
     p_resource: resource,
     p_limit: page.pageSize,
     p_before_created_at: (page.cursor?.createdAt ?? null)!,

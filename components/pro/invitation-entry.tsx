@@ -6,48 +6,21 @@ import { privateRequest, requestError } from '@/lib/http/private-client'
 
 export function InvitationEntry({ token }: { token?: string }) {
   const router = useRouter()
-  const [register, setRegister] = useState(false)
   const [busy, setBusy] = useState(true)
-  // Do not accept edits before hydration installs the change handlers.
-  useEffect(() => {
-    setBusy(false)
-  }, [])
-  const [message, setMessage] = useState('')
   const [error, setError] = useState('')
-  async function authenticate(event: React.FormEvent<HTMLFormElement>) {
+  const [existingPassword, setExistingPassword] = useState(false)
+  useEffect(() => setBusy(false), [])
+
+  async function continueRegistration(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (busy) return
-    const values = new FormData(event.currentTarget)
-    setBusy(true)
-    setError('')
-    setMessage('')
-    try {
-      const result = await privateRequest<{ message: string }>(
-        '/api/professional/onboarding/' + (register ? 'register' : 'login'),
-        'POST',
-        {
-          token,
-          email: values.get('email'),
-          password: values.get('password'),
-          ...(register ? { repeatPassword: values.get('repeatPassword') } : {})
-        }
-      )
-      setMessage(result.message)
-      if (!register && !token) {
-        router.refresh()
-      }
-    } catch (failure) {
-      setError(requestError(failure))
-    } finally {
-      setBusy(false)
-    }
-  }
-  async function accept() {
-    if (busy) return
+    if (!token || busy) return
     setBusy(true)
     setError('')
     try {
-      await privateRequest('/api/professional/onboarding/accept', 'POST', { token })
+      const values = new FormData(event.currentTarget)
+      await privateRequest('/api/professional/onboarding/register', 'POST', {
+        token, password: values.get('password'), existingPassword
+      })
       router.replace('/pro/onboarding')
       router.refresh()
     } catch (failure) {
@@ -56,104 +29,35 @@ export function InvitationEntry({ token }: { token?: string }) {
       setBusy(false)
     }
   }
-  return (
-    <section className="space-y-5 rounded-2xl border bg-white p-6">
-      <h1 className="text-2xl font-bold">
-        {token ? 'Tu invitación profesional' : 'Tu postulación profesional'}
-      </h1>
-      <p>
-        Ingresá con el correo que recibió la invitación. Si todavía no tenés cuenta, registrate y
-        confirmá tu correo antes de volver a este enlace.
-      </p>
-      <form onSubmit={authenticate} className="space-y-4">
-        <fieldset disabled={busy} className="space-y-4">
-          <legend className="font-semibold">
-            {register ? 'Crear cuenta para postularme' : 'Iniciar sesión'}
-          </legend>
-          <label className="block">
-            Correo invitado
-            <input
-              className="block w-full rounded border p-3"
-              name="email"
-              type="email"
-              autoComplete="email"
-              maxLength={254}
-              required
-            />
-          </label>
-          <label className="block">
-            Contraseña
-            <input
-              className="block w-full rounded border p-3"
-              name="password"
-              type="password"
-              autoComplete={register ? 'new-password' : 'current-password'}
-              minLength={register ? 12 : 1}
-              maxLength={128}
-              required
-            />
-          </label>
-          {register && (
-            <label className="block">
-              Repetir contraseña
-              <input
-                className="block w-full rounded border p-3"
-                name="repeatPassword"
-                type="password"
-                autoComplete="new-password"
-                minLength={12}
-                maxLength={128}
-                required
-              />
-            </label>
-          )}
-          <button className="rounded bg-blue-700 px-4 py-3 font-semibold text-white" type="submit">
-            {register ? 'Registrarme' : 'Ingresar'}
-          </button>
-          {token && (
-            <button
-              className="ml-3 underline"
-              type="button"
-              onClick={() => {
-                setRegister(!register)
-                setError('')
-                setMessage('')
-              }}
-            >
-              {register ? 'Ya tengo cuenta' : 'Crear cuenta'}
-            </button>
-          )}
-        </fieldset>
-      </form>
-      <p>
-        Con la sesión iniciada y el correo confirmado, aceptá la invitación para abrir tu
-        postulación. La habilitación para trabajar requiere revisión posterior.
-      </p>
-      {token ? (
-        <button
-          disabled={busy}
-          onClick={accept}
-          className="rounded bg-blue-700 px-4 py-3 font-semibold text-white disabled:opacity-50"
-        >
-          Aceptar invitación
-        </button>
-      ) : (
-        <p>
-          Si confirmaste tu correo y todavía no aceptaste la invitación, abrí de nuevo el enlace del
-          mensaje original.
-        </p>
-      )}
-      <p>
-        <Link className="underline" href="/pro/onboarding">
-          Ya acepté: continuar mi postulación
-        </Link>
-      </p>
-      {message && <p role="status">{message}</p>}
-      {error && (
-        <p role="alert" className="text-red-800">
-          {error}
-        </p>
-      )}
-    </section>
-  )
+
+  if (!token) return <section className="space-y-4 rounded-2xl border bg-white p-6">
+    <h1 className="text-2xl font-bold">Continuar mi registro profesional</h1>
+    <p>Ingresá con tu correo y contraseña para retomar el paso donde quedaste.</p>
+    <Link className="inline-block rounded bg-blue-700 px-4 py-3 font-semibold text-white" href="/equipo/login?next=%2Fpro%2Fonboarding">Iniciar sesión</Link>
+    <p>Si no llegaste a crear una contraseña, pedí a administración una nueva invitación.</p>
+  </section>
+
+  return <section className="space-y-5 rounded-2xl border bg-white p-6">
+    <p className="text-sm font-semibold text-blue-700">Invitación profesional · paso 1</p>
+    <h1 className="text-2xl font-bold">Creá tu contraseña</h1>
+    <p>Usá entre 8 y 12 caracteres. Al continuar aceptás la invitación y empezás a completar tu perfil.</p>
+    <form onSubmit={(event) => void continueRegistration(event)} className="space-y-4">
+      <fieldset disabled={busy} className="space-y-4">
+        <label className="block">
+          <input type="checkbox" checked={existingPassword}
+            onChange={(event) => setExistingPassword(event.target.checked)} />{' '}
+          Ya había creado una contraseña con una invitación anterior
+        </label>
+        <label className="block">Contraseña
+          <input className="block w-full rounded border p-3" name="password" type="password"
+            autoComplete={existingPassword ? 'current-password' : 'new-password'}
+            minLength={existingPassword ? 1 : 8} maxLength={existingPassword ? 128 : 12} required />
+        </label>
+        {existingPassword && <p>Usá la contraseña que ya tenías. Si nunca la creaste, desmarcá esta opción y elegí una de 8 a 12 caracteres.</p>}
+        <button className="rounded bg-blue-700 px-4 py-3 font-semibold text-white disabled:opacity-50"
+          type="submit">Continuar</button>
+      </fieldset>
+    </form>
+    {error && <p role="alert" className="text-red-800">{error}</p>}
+  </section>
 }

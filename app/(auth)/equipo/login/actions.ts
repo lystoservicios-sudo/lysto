@@ -71,6 +71,9 @@ export async function loginAction(
           professionalApproved:
             context.data.role !== 'professional' ||
             (context.data.professional_status === 'approved' && context.data.professional_eligible),
+          professionalOnboarding: context.data.role === 'professional' &&
+            ['form_started', 'form_submitted', 'under_review', 'rejected'].includes(
+              context.data.professional_status ?? ''),
           assuranceLevel: context.data.aal
         }
       },
