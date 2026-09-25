@@ -54,3 +54,47 @@ it('does not advance from activity without a weekly availability slot', () => {
   expect(screen.queryByText('Foto de perfil')).toBeNull()
   expect(mocks.request).not.toHaveBeenCalled()
 })
+
+it('keeps the Mercado Pago step free of work-readiness warnings', () => {
+  render(<ConnectedProfessionalOnboarding initial={{
+    ...initial,
+    application: { ...application, status: 'form_submitted' },
+    readinessReasons: ['documentos', 'mercado_pago']
+  }} />)
+  expect(screen.getByText('Vincular Mercado Pago')).toBeTruthy()
+  expect(screen.queryByText(/Para recibir trabajos nuevos falta/)).toBeNull()
+  expect(screen.queryByText(/Operaciones revisará el expediente/)).toBeNull()
+  expect(screen.queryByRole('button', { name: /Recargar datos guardados/ })).toBeNull()
+})
+
+it('does not keep the submission confirmation above the Mercado Pago action', async () => {
+  const ready: OnboardingContext = {
+    ...initial,
+    application: {
+      ...application, phone: '1122334455', dni: '12345678', address: 'Calle Falsa 123, CABA',
+      zoneIds: ['96000000-0000-4000-8000-000000000002'],
+      availability: [{ weekday: 1, startTime: '09:00', endTime: '17:00' }]
+    },
+    avatarUrl: 'https://example.com/avatar.jpg',
+    documents: [{
+      id: '96000000-0000-4000-8000-000000000003', documentType: 'identity_front',
+      status: 'pending', version: 1, expiresAt: null, reviewedBy: null, reviewedAt: null,
+      reason: null, inSubmission: false, createdAt: '2026-09-25T00:00:00Z'
+    }],
+    requirements: { testOnly: false, policies: [] },
+    legal: {
+      termsVersion: 'v1', privacyVersion: 'v1', termsUrl: 'https://example.com/terms',
+      privacyUrl: 'https://example.com/privacy', testOnly: false
+    }
+  }
+  mocks.request.mockImplementation(async (url: string) => url === '/api/professional/onboarding/submit'
+    ? { ...ready.application, status: 'form_submitted' }
+    : { ...ready, application: { ...ready.application, status: 'form_submitted' } })
+
+  render(<ConnectedProfessionalOnboarding initial={ready} />)
+  fireEvent.click(screen.getByRole('checkbox', { name: /Leí y acepto los términos/ }))
+  fireEvent.click(screen.getByRole('button', { name: 'Enviar postulación' }))
+
+  await waitFor(() => expect(screen.getByText('Vincular Mercado Pago')).toBeTruthy())
+  expect(screen.queryByText(/Postulación enviada/)).toBeNull()
+})

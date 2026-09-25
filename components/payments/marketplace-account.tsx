@@ -10,6 +10,19 @@ export function MarketplaceAccount({ onboarding = false }: { onboarding?: boolea
   useEffect(()=>{let active=true;fetch('/api/mercadopago/account').then(async r=>{const b=await paymentResponse(r);if(active){setAccount(b);setMessage('')}}).catch(e=>{if(active)setMessage(e.message)});return()=>{active=false}},[])
   async function connect(){setBusy(true);try{const r=await fetch('/api/mercadopago/oauth/authorize',{method:'POST'});const b=await paymentResponse(r);window.location.assign(b.url)}catch(e){setMessage(e instanceof Error?e.message:'No se pudo conectar.');setBusy(false)}}
   async function disconnect(){setBusy(true);try{const r=await fetch('/api/mercadopago/account',{method:'DELETE'});await paymentResponse(r);setAccount(a=>a?{...a,linked:false}:a);setMessage('Conexión desactivada en Lysto. Podés revisar los permisos otorgados desde tu cuenta de Mercado Pago.')}catch(e){setMessage(e instanceof Error?e.message:'No se pudo desconectar.')}finally{setBusy(false)}}
+  if (onboarding) return (
+    <div className="mx-auto max-w-3xl space-y-5">
+      <h2 className="text-2xl font-black">Vinculá tu cuenta de Mercado Pago</h2>
+      <p>Al continuar, iniciá sesión en Mercado Pago y aceptá la autorización. Lysto nunca te pide la contraseña y la cuenta queda asociada únicamente a este perfil profesional.</p>
+      {account?.linked
+        ? <ButtonLink href="/pro/dashboard">Ir al panel profesional</ButtonLink>
+        : <Button disabled={busy || !account?.configured} onClick={() => void connect()}>
+          {busy ? 'Procesando…' : 'Vincular cuenta con Mercado Pago'}
+        </Button>}
+      {account?.configured === false && <p role="alert">La vinculación todavía no está disponible. Lysto debe terminar la configuración de Mercado Pago.</p>}
+      {message && <p role="status">{message}</p>}
+    </div>
+  )
   return <div className="mx-auto max-w-3xl space-y-5"><div><p className="text-sm font-semibold text-blue-700">Cobros del profesional</p>{onboarding?<h2 className="mt-2 text-2xl font-black">Tu cuenta de Mercado Pago</h2>:<h1 className="mt-2 text-3xl font-black">Tu cuenta de Mercado Pago</h1>}<p className="mt-3 text-slate-600">Vinculá la cuenta donde vas a recibir los pagos de tus trabajos.</p></div>
     <Card className="space-y-4 p-6"><h2 className="text-xl font-bold">{account?.linked?'Cuenta vinculada':'Conectar cuenta'}</h2>{account?.configured===false?<p>Los pagos están pendientes de configuración por parte de Lysto.</p>:null}{account?.configured?<><p>{account.mode==='test'?'Ambiente de pruebas: no usar cuentas ni dinero reales.':'Ambiente de producción.'}</p>{account.linked?<p>Cuenta de Mercado Pago: <strong>{account.accountId}</strong></p>:null}<Button disabled={busy} onClick={()=>void connect()}>{busy?'Procesando…':account.linked?'Renovar autorización de esta cuenta':'Conectar con Mercado Pago'}</Button>{account.linked?<Button variant="ghost" disabled={busy} onClick={()=>void disconnect()}>Desconectar de Lysto</Button>:null}</>:null}<p className="text-sm text-slate-600">La autorización se realiza en Mercado Pago. Lysto no te pide la contraseña. Si ya hay pagos asociados, la cuenta queda ligada a ese historial; podés renovar su autorización, pero no reemplazar al destinatario.</p>{message?<p role="status" className="text-sm text-blue-900">{message}</p>:null}</Card>
     <Card className="space-y-3 p-6"><h2 className="text-xl font-bold">Cómo se reparte cada pago</h2><p className="text-sm text-slate-600">Antes de aceptar un trabajo vas a ver el precio y la comisión Lysto. Mercado Pago descuenta sus propios cargos de tu parte. En las fallas adicionales aceptadas por el cliente, la comisión Lysto es $0.</p>{!onboarding?<ButtonLink href="/pro/pagos/mercadopago" variant="secondary">Ver cobros y estados</ButtonLink>:null}</Card></div>

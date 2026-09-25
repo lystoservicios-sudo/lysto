@@ -250,10 +250,10 @@ export function ConnectedProfessionalOnboarding({ initial }: { initial: Onboardi
         <p>
           {draft.email} · <strong>{professionalStatusLabels[context.application.status]}</strong>
         </p>
-        <p>
+        {step !== 4 && <p>
           Completá tus datos, documentación, foto y cuenta de cobro. Operaciones revisará el expediente
           antes de habilitar trabajos nuevos.
-        </p>
+        </p>}
         <nav aria-label="Pasos de la postulación" className="flex flex-wrap gap-3 text-sm">
           {steps.map((label, index) => <button key={label} type="button"
             aria-current={step === index ? 'step' : undefined}
@@ -261,15 +261,15 @@ export function ConnectedProfessionalOnboarding({ initial }: { initial: Onboardi
             disabled={disabled || index > step || (dirty && index !== step)}
             onClick={() => setStep(index)}>{index + 1}. {label}</button>)}
         </nav>
-        <button
+        {step !== 4 && <button
           className="underline disabled:opacity-50"
           disabled={disabled}
           onClick={() => void reload()}
         >
           Recargar datos guardados{dirty ? ' (descartar cambios locales)' : ''}
-        </button>
+        </button>}
       </header>
-      {message && (
+      {message && step !== 4 && (
         <p role="status" className="rounded bg-green-50 p-3">
           {message}
         </p>
@@ -607,7 +607,7 @@ export function ConnectedProfessionalOnboarding({ initial }: { initial: Onboardi
           </button>
         </section>
       )}
-      {context.readinessReasons && context.readinessReasons.length > 0 &&
+      {step !== 4 && context.readinessReasons && context.readinessReasons.length > 0 &&
         <p>Para recibir trabajos nuevos falta: {context.readinessReasons.map((reason) => ({ documentos: 'documentación vigente', foto: 'foto de perfil', mercado_pago: 'cuenta de Mercado Pago' })[reason]).join(', ')}.</p>}
       {step === 4 && <section id="cobros-profesionales" aria-label="Vinculación de cobros" className="rounded-2xl border bg-white p-5">
         <MarketplaceAccount onboarding />
