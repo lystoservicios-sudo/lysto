@@ -140,7 +140,6 @@ export const serverEnvSchema = z
       'MERCADOPAGO_MODE',
       'MERCADOPAGO_DATABASE_URL',
       'MERCADOPAGO_ENCRYPTION_KEY',
-      'MERCADOPAGO_WEBHOOK_SECRET',
       'MERCADOPAGO_MARKETPLACE_CLIENT_ID',
       'MERCADOPAGO_MARKETPLACE_CLIENT_SECRET'
     ])
@@ -232,7 +231,7 @@ export const serverEnvSchema = z
               mode: env.MERCADOPAGO_MODE as 'test' | 'live',
               databaseUrl: env.MERCADOPAGO_DATABASE_URL as string,
               encryptionKey: env.MERCADOPAGO_ENCRYPTION_KEY as string,
-              webhookSecret: env.MERCADOPAGO_WEBHOOK_SECRET as string,
+              webhookSecret: env.MERCADOPAGO_WEBHOOK_SECRET,
               marketplaceClientId: env.MERCADOPAGO_MARKETPLACE_CLIENT_ID as string,
               marketplaceClientSecret: env.MERCADOPAGO_MARKETPLACE_CLIENT_SECRET as string
             }

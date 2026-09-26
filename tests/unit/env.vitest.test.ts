@@ -101,6 +101,18 @@ describe('parseServerEnv', () => {
     expect(parsed.payments.provider).toBe('mercadopago_split')
     expect(JSON.stringify(redactEnvForLogs(parsed))).not.toContain('private-')
   })
+  it('allows canonical API reconciliation without a provider webhook signature', () => {
+    const parsed = parseServerEnv({
+      ...serverEnv,
+      PAYMENTS_PROVIDER: 'mercadopago_split',
+      MERCADOPAGO_MODE: 'live',
+      MERCADOPAGO_DATABASE_URL: 'postgres://private-db',
+      MERCADOPAGO_ENCRYPTION_KEY: 'private-cipher-key',
+      MERCADOPAGO_MARKETPLACE_CLIENT_ID: '123',
+      MERCADOPAGO_MARKETPLACE_CLIENT_SECRET: 'private-client-secret'
+    })
+    expect(parsed.payments).toMatchObject({ provider: 'mercadopago_split', mode: 'live' })
+  })
   it('requires the Supabase service role key', () => {
     expect(() => parseServerEnv(publicEnv)).toThrow(/SUPABASE_SERVICE_ROLE_KEY/)
   })

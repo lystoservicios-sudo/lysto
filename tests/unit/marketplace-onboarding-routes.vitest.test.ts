@@ -1,10 +1,11 @@
 // @vitest-environment node
 import { beforeEach, expect, it, vi } from 'vitest'
-const mocks = vi.hoisted(() => ({ actor: vi.fn(), create: vi.fn(), complete: vi.fn(), cookie: vi.fn() }))
+const mocks = vi.hoisted(() => ({ actor: vi.fn(), create: vi.fn(), complete: vi.fn(), cookie: vi.fn(), gateway: vi.fn(), oauth: vi.fn() }))
 vi.mock('@/lib/payments/marketplace-session', () => ({ onboardingMarketplaceProfessional: mocks.actor }))
-vi.mock('@/lib/payments/marketplace', () => ({ marketplaceGateway: () => ({ oauth: {
-  createAuthorizationUrl: mocks.create, completeAuthorization: mocks.complete
-} }) }))
+vi.mock('@/lib/payments/marketplace', () => ({
+  marketplaceGateway: mocks.gateway,
+  marketplaceOAuth: mocks.oauth
+}))
 vi.mock('next/headers', () => ({ cookies: async () => ({ get: mocks.cookie }) }))
 import { POST } from '@/app/api/mercadopago/oauth/authorize/route'
 import { GET } from '@/app/api/mercadopago/oauth/callback/route'
@@ -23,6 +24,18 @@ beforeEach(() => {
   mocks.actor.mockResolvedValue({ userId: 'user-1', professionalId: 'pro-1', status: 'form_started' })
   mocks.create.mockResolvedValue({ url: 'https://www.mercadopago.com.ar/authorization?state=nonce-1' })
   mocks.complete.mockResolvedValue(undefined)
+  mocks.gateway.mockReturnValue({ oauth: { createAuthorizationUrl: mocks.create, completeAuthorization: mocks.complete } })
+  mocks.oauth.mockReturnValue({ createAuthorizationUrl: mocks.create, completeAuthorization: mocks.complete })
+})
+
+it('starts OAuth without a webhook signature and without constructing the webhook gateway', async () => {
+  vi.stubEnv('MERCADOPAGO_WEBHOOK_SECRET', '')
+  const response = await POST(new Request('https://lysto.test/api/mercadopago/oauth/authorize', {
+    method: 'POST', headers: { Origin: 'https://lysto.test' }
+  }))
+  expect(response.status).toBe(200)
+  expect(mocks.oauth).toHaveBeenCalledOnce()
+  expect(mocks.gateway).not.toHaveBeenCalled()
 })
 
 it('authorizes only the bound applicant and binds the provider state to that session', async () => {

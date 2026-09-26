@@ -11,6 +11,7 @@ export type RateLimitCategory =
   | 'quote'
   | 'receipt'
   | 'private_mutation'
+  | 'payment_reconcile'
   | 'webhook'
 const policies: Record<RateLimitCategory, { limit: number; windowSeconds: number }> = {
   auth: { limit: 10, windowSeconds: 300 },
@@ -19,6 +20,7 @@ const policies: Record<RateLimitCategory, { limit: number; windowSeconds: number
   quote: { limit: 20, windowSeconds: 300 },
   receipt: { limit: 30, windowSeconds: 300 },
   private_mutation: { limit: 60, windowSeconds: 60 },
+  payment_reconcile: { limit: 10, windowSeconds: 60 },
   webhook: { limit: 300, windowSeconds: 60 }
 }
 export function rateLimitKey(category: RateLimitCategory, subject: string, secret: string) {

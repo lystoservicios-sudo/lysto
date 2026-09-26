@@ -20,7 +20,7 @@
 
 ### Task 2: Aviso IPN y conciliación canónica
 
-**Files:** `lib/payments/checkout-contract.ts`, `lib/payments/marketplace.ts`, `app/api/mercadopago/ipn/route.ts`, `components/payments/payment-panel.tsx`, tests de contrato, API y ledger.
+**Files:** `lib/payments/checkout-contract.ts`, `lib/payments/marketplace.ts`, `app/api/mercadopago/webhook/route.ts`, `components/payments/payment-panel.tsx`, tests de contrato, API y ledger.
 
 1. Escribir tests fallidos para URL IPN/HMAC, parámetros duplicados, cuerpo grande, tema desconocido, firma incorrecta, recurso ajeno, idempotencia y conciliación al volver del checkout.
 2. Implementar la URL por checkout y el receptor IPN con validación estricta, rate limit y consulta al API con token del vendedor. Reusar `inspectPayment` y `applyCanonicalPayment`; no aceptar estados del mensaje entrante.
@@ -32,7 +32,7 @@
 **Files:** `supabase/migrations/20260920171628_marketplace_orders.sql`, Vercel Production, Supabase Production.
 
 1. Verificar tablas, columnas y ausencia de checkouts; aplicar la migración pendiente de forma transaccional y registrarla. Confirmar columnas y `checkout_protocol='preferences'`; no activar `MERCADOPAGO_ORDERS_ENABLED`.
-2. Configurar `MERCADOPAGO_MODE=live` y `PAYMENTS_PROVIDER=mercadopago_split` en Vercel, sin inventar firma de Webhooks. Mantener nuevos cobros apagados hasta comprobación funcional.
+2. Configurar `MERCADOPAGO_MODE=live` y `PAYMENTS_PROVIDER=mercadopago_split` en Vercel, sin inventar firma de Webhooks. Habilitar nuevos cobros únicamente después de alinear la base y superar las pruebas automatizadas; registrar que esto aún no equivale a una prueba de pago real.
 3. Verificar conexión y permisos de `lysto_marketplace` desde el runtime desplegado.
 
 ### Task 4: Verificación y publicación

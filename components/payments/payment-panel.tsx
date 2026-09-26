@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { paymentResponse } from './payment-response'
 import { Card } from '@/components/ui/card'
 import { Button, ButtonLink } from '@/components/ui/button'
@@ -42,6 +42,7 @@ export function PaymentPanel({
     [message, setMessage] = useState('Cargando pagos…'),
     [busy, setBusy] = useState(false),
     [revision, setRevision] = useState(0)
+  const checkedReturn = useRef(false)
   useEffect(() => {
     let active = true
     fetch(`/api/mercadopago/checkouts${jobId ? `?jobId=${encodeURIComponent(jobId)}` : ''}`)
@@ -60,6 +61,28 @@ export function PaymentPanel({
       active = false
     }
   }, [jobId, revision])
+  useEffect(() => {
+    if (checkedReturn.current || !jobId || rows.length === 0) return
+    const url = new URL(window.location.href)
+    if (!['retorno', 'pendiente', 'reintentar'].includes(url.searchParams.get('pago') ?? '')) return
+    const requestedId = url.searchParams.get('checkout')
+    const checkout = requestedId
+      ? rows.find((row) => row.id === requestedId)
+      : rows.find((row) => !['approved', 'refunded', 'partially_refunded'].includes(row.status))
+    if (!checkout) return
+    checkedReturn.current = true
+    url.searchParams.delete('pago')
+    url.searchParams.delete('checkout')
+    window.history.replaceState(window.history.state, '', url.pathname + url.search + url.hash)
+    setMessage('Verificando el pago con Mercado Pago…')
+    void fetch('/api/mercadopago/checkouts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ checkoutId: checkout.id, action: 'reconcile_return' })
+    }).then(paymentResponse)
+      .then(() => setRevision((n) => n + 1))
+      .catch((error) => setMessage(error instanceof Error ? error.message : 'No se pudo verificar el pago.'))
+  }, [jobId, rows])
   async function pay(extraId?: string) {
     setBusy(true)
     try {

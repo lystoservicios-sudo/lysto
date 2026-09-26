@@ -9,17 +9,24 @@ export function marketplaceConfig() {
   const encryptionKey = process.env.MERCADOPAGO_ENCRYPTION_KEY
   const origin = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '')
   const mode = process.env.MERCADOPAGO_MODE
-  if (process.env.PAYMENTS_PROVIDER !== 'mercadopago_split' || !clientId || !clientSecret || !webhookSecret || !encryptionKey || !origin || !process.env.MERCADOPAGO_DATABASE_URL || !['test','live'].includes(mode ?? '')) throw new Error('payments_not_configured')
+  if (process.env.PAYMENTS_PROVIDER !== 'mercadopago_split' || !clientId || !clientSecret || !encryptionKey || !origin || !process.env.MERCADOPAGO_DATABASE_URL || !['test','live'].includes(mode ?? '')) throw new Error('payments_not_configured')
   const parsed = new URL(origin)
   if (parsed.protocol !== 'https:' || parsed.username || parsed.password || parsed.pathname !== '/') throw new Error('payments_https_required')
   if (Buffer.from(encryptionKey, 'base64').length !== 32) throw new Error('payments_not_configured')
-  return { clientId, clientSecret, webhookSecret, encryptionKey, origin, liveMode: mode === 'live', redirectUri: `${origin}/api/mercadopago/oauth/callback` }
+  return { clientId, clientSecret, webhookSecret: webhookSecret || undefined, encryptionKey, origin, liveMode: mode === 'live', redirectUri: `${origin}/api/mercadopago/oauth/callback` }
 }
 export function oauthBinding(state: string, userId: string, professionalId: string, key: string) {
   return createHmac('sha256', key).update(JSON.stringify([state,userId,professionalId])).digest('hex')
 }
 export function checkOAuthBinding(actual: string | undefined, expected: string) {
   return Boolean(actual && /^[a-f0-9]{64}$/.test(actual) && timingSafeEqual(Buffer.from(actual,'hex'),Buffer.from(expected,'hex')))
+}
+export function ipnToken(checkoutId: string, key: string) {
+  return createHmac('sha256', Buffer.from(key, 'base64')).update(`lysto-ipn-v1:${checkoutId}`).digest('hex')
+}
+export function checkIpnToken(checkoutId: string, actual: string, key: string) {
+  const expected = ipnToken(checkoutId, key)
+  return /^[a-f0-9]{64}$/.test(actual) && timingSafeEqual(Buffer.from(actual, 'hex'), Buffer.from(expected, 'hex'))
 }
 export function sameOrigin(request: Request) {
   const origin = request.headers.get('origin')

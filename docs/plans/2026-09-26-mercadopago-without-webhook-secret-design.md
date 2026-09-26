@@ -24,7 +24,7 @@ El objetivo es que un profesional vincule su cuenta por OAuth y que Checkout Pro
 ## Esquema, despliegue y pruebas
 
 - Aplicar la migración pendiente a producción y marcarla en `supabase_migrations.schema_migrations`. `MERCADOPAGO_ORDERS_ENABLED` permanece desactivado, por lo que todo checkout nuevo sigue usando Preferences.
-- Agregar `MERCADOPAGO_MODE=live`; habilitar `PAYMENTS_PROVIDER=mercadopago_split` solo después de que el código y la base estén alineados. Mantener `LYSTO_ALLOW_NEW_CHECKOUTS` apagado hasta verificar OAuth y la conciliación.
+- Agregar `MERCADOPAGO_MODE=live`; habilitar `PAYMENTS_PROVIDER=mercadopago_split` solo después de que el código y la base estén alineados. La activación de `LYSTO_ALLOW_NEW_CHECKOUTS` permite una prueba controlada una vez superadas las verificaciones automatizadas, pero no demuestra que OAuth ni un split real hayan sido aceptados por Mercado Pago.
 - Probar primero los casos de IPN inválido, repetido, pago ajeno, referencia/monto incorrectos y pago real canónico simulado; luego compilar, probar y verificar la conexión en producción sin exponer secretos. Una transacción real de prueba necesita intervención del usuario y no se ejecutará automáticamente.
 
 ## Referencias

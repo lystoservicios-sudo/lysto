@@ -16,6 +16,20 @@ export function checkoutAmounts(total: string | number, fee: string | number) {
   return { total: decimal(amount), fee: decimal(commission), professional: decimal(amount - commission) }
 }
 
+export function checkoutBackUrls(origin: string, jobId: string, checkoutId: string) {
+  const destination = new URL(`/app/trabajos/${jobId}`, origin)
+  destination.searchParams.set('checkout', checkoutId)
+  const withResult = (result: string) => {
+    destination.searchParams.set('pago', result)
+    return destination.toString()
+  }
+  return {
+    success: withResult('retorno'),
+    pending: withResult('pendiente'),
+    failure: withResult('reintentar')
+  }
+}
+
 export type CheckoutProtocol = 'preferences' | 'orders'
 export function checkoutProtocol(row: { checkout_protocol: CheckoutProtocol; preference_id: string | null; order_id: string | null }): CheckoutProtocol {
   if (row.preference_id && row.order_id) throw new Error('checkout_identity_changed')
@@ -25,11 +39,11 @@ export function checkoutProtocol(row: { checkout_protocol: CheckoutProtocol; pre
 }
 
 type PreferenceBody = { date_of_expiration?: string; external_reference: string; [key: string]: unknown }
-export function buildPreferencePayload(body: PreferenceBody, origin: string, createdAt: Date) {
+export function buildPreferencePayload(body: PreferenceBody, origin: string, createdAt: Date, notificationUrl = `${origin}/api/mercadopago/webhook`) {
   const { date_of_expiration, ...rest } = body
   if (!date_of_expiration || !Number.isFinite(Date.parse(date_of_expiration))) throw new Error('payment_expiry_required')
   return { ...rest, expires: true, expiration_date_from: createdAt.toISOString(), expiration_date_to: date_of_expiration,
-    notification_url: `${origin}/api/mercadopago/webhook` }
+    notification_url: notificationUrl }
 }
 
 const identifier = z.union([z.string().min(1), z.number().int().nonnegative()]).transform(String)

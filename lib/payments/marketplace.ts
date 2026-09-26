@@ -3,12 +3,14 @@ import {
   createMercadoPagoSplit,
   MercadoPagoOAuthHttpClient,
   OAuthManager,
+  SplitPaymentClient,
   TokenCipher,
   type PaymentWebhookEvent,
+  type MercadoPagoPreferenceClientFactory,
   type WebhookSignatureVerificationInput
 } from '@waltergaltieri/mercadopago-split'
 import { PrismaStorage } from '@waltergaltieri/mercadopago-split/prisma'
-import { marketplaceConfig } from './marketplace-config'
+import { checkIpnToken, ipnToken, marketplaceConfig } from './marketplace-config'
 import { buildPreferencePayload, checkoutProtocol } from './checkout-contract'
 import { buildOrderPayload, inspectCanonicalOrder, inspectCreatedOrder, orderIdempotencyKey, verifyOrderWebhookSignature } from './orders'
 import { applyCanonicalOrder, applyCanonicalPayment, claimCheckout } from './marketplace-ledger'
@@ -49,8 +51,30 @@ export async function providerJson(
   if (text.length > 1_000_000) throw new Error('invalid_provider_response')
   return JSON.parse(text) as Record<string, unknown>
 }
+const preferenceClientFactory: MercadoPagoPreferenceClientFactory = ({ accessToken }) => ({
+  create: async ({ body, requestOptions }) => {
+    const config = marketplaceConfig()
+    if (accessToken.startsWith('TEST-') === config.liveMode)
+      throw new Error('payment_mode_mismatch')
+    const createdAt = new Date(String(body.metadata?.lysto_created_at))
+    if (!Number.isFinite(createdAt.getTime())) throw new Error('invalid_checkout_snapshot')
+    const origin = new URL(body.back_urls!.success!).origin
+    const checkoutId = String(body.external_reference)
+    const notificationUrl = config.webhookSecret
+      ? `${origin}/api/mercadopago/webhook`
+      : `${origin}/api/mercadopago/webhook?source_news=ipn&checkout=${encodeURIComponent(checkoutId)}&token=${ipnToken(checkoutId, config.encryptionKey)}`
+    const payload = buildPreferencePayload({ ...body }, origin, createdAt, notificationUrl)
+    return providerJson('/checkout/preferences', accessToken, 'POST', payload, requestOptions.idempotencyKey)
+  }
+})
+
+export function marketplacePreferenceClient() {
+  return new SplitPaymentClient({ oauth: marketplaceOAuth(), preferenceClientFactory })
+}
+
 export function marketplaceGateway() {
   const config = marketplaceConfig()
+  if (!config.webhookSecret) throw new Error('payments_webhook_not_configured')
   // Each handler gets its own canonical resource map. No data is taken from an
   // unsigned notification body or from another concurrent request's callback.
   const canonical = new Map<string, Record<string, unknown>>()
@@ -68,6 +92,7 @@ export function marketplaceGateway() {
   }
   const split = createMercadoPagoSplit({
     ...config,
+    webhookSecret: config.webhookSecret,
     storage: marketplaceStorage(),
     oauthHttpClient: marketplaceOAuthHttp(),
     callbacks: {
@@ -93,26 +118,7 @@ export function marketplaceGateway() {
         }
       }
     },
-    preferenceClientFactory: ({ accessToken }) => ({
-      create: async ({ body, requestOptions }) => {
-        if (accessToken.startsWith('TEST-') === config.liveMode)
-          throw new Error('payment_mode_mismatch')
-        const createdAt = new Date(String(body.metadata?.lysto_created_at))
-        if (!Number.isFinite(createdAt.getTime())) throw new Error('invalid_checkout_snapshot')
-        const payload = buildPreferencePayload(
-          { ...body },
-          new URL(body.back_urls!.success!).origin,
-          createdAt
-        )
-        return providerJson(
-          '/checkout/preferences',
-          accessToken,
-          'POST',
-          payload,
-          requestOptions.idempotencyKey
-        )
-      }
-    }),
+    preferenceClientFactory,
     webhookResourceClientFactory: ({ accessToken }) => ({
       getPayment: ({ id }) => getPayment(id, accessToken),
       getMerchantOrder: ({ merchantOrderId }) =>
@@ -190,7 +196,7 @@ export async function createCheckoutPreference(checkout: CheckoutRow) {
       })
     }
     if (!claim.spec) throw new Error('invalid_checkout_snapshot')
-    const preference = await marketplaceGateway().payments.createPreference(claim.spec)
+    const preference = await marketplacePreferenceClient().createPreference(claim.spec)
     const result = await paymentDatabase().query<CheckoutRow>(
       `update public.marketplace_checkouts set preference_id=$3,init_point=$4,sandbox_init_point=$5,
       status=case when status='creating' then 'ready' else status end,lease_until=null,lease_token=null,updated_at=now() where id=$1 and lease_token=$2 returning *`,
@@ -219,6 +225,7 @@ export async function handleMarketplaceWebhook(input: WebhookSignatureVerificati
   if (body?.type === 'mp-connect') return { outcome: 'ignored' }
   if (body?.type === 'order' || input.query?.type === 'order') {
     const config = marketplaceConfig()
+    if (!config.webhookSecret) throw new Error('payments_webhook_not_configured')
     const orderId = verifyOrderWebhookSignature(input, config.webhookSecret)
     const result = await paymentDatabase().query<CheckoutRow>(
       `select c.* from private.marketplace_order_attempts a
@@ -244,19 +251,46 @@ export async function handleMarketplaceWebhook(input: WebhookSignatureVerificati
   }
   return marketplaceGateway().webhooks.handle(input)
 }
+
+export async function handleMarketplaceIpn(input: {
+  checkoutId: string
+  token: string
+  topic: 'payment' | 'merchant_order'
+  resourceId: string
+}) {
+  const config = marketplaceConfig()
+  if (!checkIpnToken(input.checkoutId, input.token, config.encryptionKey))
+    throw new Error('invalid_notification')
+  const result = await paymentDatabase().query<CheckoutRow>(
+    'select * from public.marketplace_checkouts where id=$1', [input.checkoutId])
+  const checkout = result.rows[0]
+  if (!checkout || checkoutProtocol(checkout) !== 'preferences') return { outcome: 'ignored' }
+  if (checkout.live_mode !== config.liveMode) throw new Error('payment_mode_mismatch')
+  if (input.topic === 'merchant_order') {
+    await reconcileCheckout(checkout, true)
+    return { outcome: 'processed' }
+  }
+  const accessToken = await marketplaceOAuth().getValidAccessToken(checkout.professional_id)
+  const canonical = await providerJson(`/v1/payments/${encodeURIComponent(input.resourceId)}`, accessToken)
+  if (String(canonical.id) !== input.resourceId) throw new Error('invalid_provider_response')
+  if (canonical.external_reference !== checkout.id) return { outcome: 'ignored' }
+  const applied = await applyCanonicalPayment(checkout.id, canonical,
+    `ipn:${input.resourceId}:${String(canonical.date_last_updated ?? 'unknown')}`)
+  return { outcome: applied.status }
+}
 export async function reconcileCheckout(checkout: CheckoutRow, force = false) {
   const claimed = await paymentDatabase().query(
     "update public.marketplace_checkouts set last_reconciled_at=now() where id=$1 and (last_reconciled_at is null or last_reconciled_at < now()-interval '30 seconds') returning id",
     [checkout.id]
   )
-  if (!claimed.rowCount && !force) return
+  if (!claimed.rowCount && !force) return false
   const token = await marketplaceOAuth().getValidAccessToken(checkout.professional_id)
   if (checkoutProtocol(checkout) === 'orders') {
     if (!checkout.order_id) throw new Error('checkout_review')
     const canonical = await providerJson(`/v1/orders/${encodeURIComponent(checkout.order_id)}`, token)
     await applyCanonicalOrder(checkout.id, canonical,
       `reconcile-order:${checkout.order_id}:${String(canonical.last_updated_date ?? 'unknown')}`)
-    return
+    return true
   }
   const search = await providerJson(
     `/v1/payments/search?external_reference=${encodeURIComponent(checkout.id)}&sort=date_last_updated&criteria=desc&limit=50`,
@@ -280,6 +314,7 @@ export async function reconcileCheckout(checkout: CheckoutRow, force = false) {
       `reconcile:${String(raw.id)}:${String(raw.date_last_updated)}`
     )
   }
+  return true
 }
 
 /** Close a preference only after a fresh payment search. The returned evidence is

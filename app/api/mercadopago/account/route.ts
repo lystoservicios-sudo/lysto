@@ -1,6 +1,6 @@
 import { privateJson } from '@/lib/http/api-error'
 import { marketplaceConfig, paymentError, sameOrigin } from '@/lib/payments/marketplace-config'
-import { marketplaceGateway, marketplaceStorage } from '@/lib/payments/marketplace'
+import { marketplaceOAuth, marketplaceStorage } from '@/lib/payments/marketplace'
 import { onboardingMarketplaceProfessional } from '@/lib/payments/marketplace-session'
 import { paymentDatabase } from '@/lib/payments/marketplace-db'
 export const runtime='nodejs'
@@ -18,7 +18,7 @@ export async function DELETE(request:Request){
     sameOrigin(request)
     const active=await paymentDatabase().query("select 1 from public.marketplace_checkouts where professional_id=$1 limit 1",[pro])
     if(active.rowCount)throw new Error('seller_has_payments')
-    await marketplaceGateway().oauth.unlinkSeller(pro)
+    await marketplaceOAuth().unlinkSeller(pro)
     return privateJson({linked:false})
   }catch(error){return paymentError(error)}
 }

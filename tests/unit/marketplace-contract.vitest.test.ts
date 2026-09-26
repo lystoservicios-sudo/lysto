@@ -23,6 +23,12 @@ describe('frozen marketplace payment contract', () => {
     expect(payload.notification_url).toBe('https://lysto.test/api/mercadopago/webhook')
     expect(payload).not.toHaveProperty('date_of_expiration')
   })
+  it('uses a checkout-specific IPN URL when supplied without changing the payment snapshot', () => {
+    const url = 'https://lysto.test/api/mercadopago/webhook?source_news=ipn&checkout=c1&token=abc'
+    const payload = buildPreferencePayload({ external_reference: 'c1', date_of_expiration: checkout.expires_at.toISOString() }, 'https://lysto.test', checkout.created_at, url)
+    expect(payload.notification_url).toBe(url)
+    expect(payload.external_reference).toBe('c1')
+  })
   it('uses provider fees as observed costs, not another Lysto charge', () => {
     expect(inspectPayment(checkout, payment)).toMatchObject({ issues: [], status: 'approved', providerFee: '12000.00', netReceived: '235312.00' })
   })

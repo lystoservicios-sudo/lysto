@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { handleMarketplaceWebhook } from '@/lib/payments/marketplace'
+import { handleMarketplaceIpn, handleMarketplaceWebhook } from '@/lib/payments/marketplace'
 import { InvalidWebhookSignatureError, ValidationError } from '@waltergaltieri/mercadopago-split'
 import { InvalidOrderWebhookSignatureError } from '@/lib/payments/orders'
 import {
@@ -20,6 +20,25 @@ export async function POST(request: Request) {
     if ([...new Set(params.keys())].some((key) => params.getAll(key).length > 1))
       return NextResponse.json({ error: 'Invalid query' }, { status: 400 })
     await enforceRateLimit('webhook', requestSubject(request))
+    if (params.get('source_news') === 'ipn') {
+      const checkoutId = params.get('checkout') ?? ''
+      const token = params.get('token') ?? ''
+      const topic = params.get('topic') ?? ''
+      const resourceId = params.get('id') ?? ''
+      if (
+        !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(checkoutId) ||
+        !/^[0-9a-f]{64}$/.test(token) ||
+        (topic !== 'payment' && topic !== 'merchant_order') ||
+        !/^\d{1,40}$/.test(resourceId)
+      ) return NextResponse.json({ received: false, error: 'Invalid notification' }, { status: 400 })
+      const result = await handleMarketplaceIpn({
+        checkoutId,
+        token,
+        topic,
+        resourceId
+      })
+      return NextResponse.json(result)
+    }
     const result = await handleMarketplaceWebhook({
       headers: Object.fromEntries(request.headers),
       query: Object.fromEntries(params),
@@ -33,6 +52,7 @@ export async function POST(request: Request) {
       error instanceof InvalidWebhookSignatureError ||
       error instanceof InvalidOrderWebhookSignatureError ||
       error instanceof ValidationError ||
+      (error instanceof Error && error.message === 'invalid_notification') ||
       error instanceof SyntaxError
     return NextResponse.json(
       {
