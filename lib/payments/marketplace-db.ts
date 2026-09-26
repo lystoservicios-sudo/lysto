@@ -1,4 +1,5 @@
 import { Pool, type PoolClient } from 'pg'
+import { trustedMarketplaceDatabaseUrl } from './marketplace-database-tls'
 
 let pool: Pool | undefined
 export async function closePaymentDatabaseForTests() {
@@ -11,7 +12,7 @@ export function paymentDatabase() {
   const connectionString = process.env.MERCADOPAGO_DATABASE_URL
   if (!connectionString) throw new Error('payments_not_configured')
   return (pool ??= new Pool({
-    connectionString,
+    connectionString: trustedMarketplaceDatabaseUrl(connectionString),
     max: 4,
     connectionTimeoutMillis: 10000,
     idleTimeoutMillis: 30000,

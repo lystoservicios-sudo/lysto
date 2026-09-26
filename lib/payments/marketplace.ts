@@ -15,12 +15,13 @@ import { buildPreferencePayload, checkoutProtocol } from './checkout-contract'
 import { buildOrderPayload, inspectCanonicalOrder, inspectCreatedOrder, orderIdempotencyKey, verifyOrderWebhookSignature } from './orders'
 import { applyCanonicalOrder, applyCanonicalPayment, claimCheckout } from './marketplace-ledger'
 import { paymentDatabase, paymentTransaction, type CheckoutRow } from './marketplace-db'
+import { trustedMarketplaceDatabaseUrl } from './marketplace-database-tls'
 
 let storage: PrismaStorage | undefined
 export function marketplaceStorage() {
   const databaseUrl = process.env.MERCADOPAGO_DATABASE_URL
   if (!databaseUrl) throw new Error('payments_not_configured')
-  return (storage ??= new PrismaStorage({ databaseUrl }))
+  return (storage ??= new PrismaStorage({ databaseUrl: trustedMarketplaceDatabaseUrl(databaseUrl) }))
 }
 export async function providerJson(
   path: string,
