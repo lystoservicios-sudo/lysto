@@ -12,6 +12,8 @@ it('accepts an invitation by setting an 8–12 character password without anothe
   mocks.request.mockResolvedValue({ professionalId: '96000000-0000-4000-8000-000000000001' })
   render(<InvitationEntry token={token} />)
   await waitFor(() => expect(screen.getByRole('button', { name: 'Continuar' }).hasAttribute('disabled')).toBe(false))
+  expect(screen.getByRole('heading', { name: 'Creá tu contraseña' })).toBeTruthy()
+  expect(screen.getByText(/Invitación profesional/)).toBeTruthy()
   const password = screen.getByLabelText('Contraseña') as HTMLInputElement
   expect(password.minLength).toBe(8)
   expect(password.maxLength).toBe(12)

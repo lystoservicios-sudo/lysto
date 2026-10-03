@@ -43,8 +43,8 @@ const toolLabels: Record<string, string> = {
   safety_equipment: 'Elementos de seguridad'
 }
 const weekdays = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
-const inputClass = 'block w-full rounded border border-slate-300 bg-white p-3 disabled:bg-slate-100'
-const buttonClass = 'rounded bg-blue-700 px-4 py-3 font-semibold text-white disabled:opacity-50'
+const inputClass = 'mt-2 block min-h-12 w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 outline-none transition placeholder:text-slate-400 focus:border-blue-600 focus:bg-white focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-100'
+const buttonClass = 'inline-flex min-h-12 items-center justify-center rounded-2xl bg-lysto-blueDark px-5 font-semibold text-white shadow-soft transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50'
 
 function DocumentUpload({
   professionalId,
@@ -59,8 +59,8 @@ function DocumentUpload({
 }) {
   const [files, setFiles] = useState<File[]>([])
   return (
-    <section className="space-y-3 rounded-xl border p-4">
-      <h3 className="font-semibold">{documentLabels[documentType] ?? documentType}</h3>
+    <section className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5">
+      <h3 className="font-semibold text-slate-900">{documentLabels[documentType] ?? documentType}</h3>
       <MediaUploader
         files={files}
         onFilesChange={setFiles}
@@ -245,37 +245,57 @@ export function ConnectedProfessionalOnboarding({ initial }: { initial: Onboardi
   const steps = ['Datos personales y domicilio', 'Actividad y disponibilidad', 'Foto y documentos', 'Enviar a revisión', 'Mercado Pago']
   return (
     <div className="space-y-6">
-      <header className="space-y-2">
-        <h1 className="text-3xl font-bold">Mi postulación</h1>
-        <p>
-          {draft.email} · <strong>{professionalStatusLabels[context.application.status]}</strong>
-        </p>
-        {step !== 4 && <p>
-          Completá tus datos, documentación, foto y cuenta de cobro. Operaciones revisará el expediente
-          antes de habilitar trabajos nuevos.
-        </p>}
-        <nav aria-label="Pasos de la postulación" className="flex flex-wrap gap-3 text-sm">
-          {steps.map((label, index) => <button key={label} type="button"
-            aria-current={step === index ? 'step' : undefined}
-            className={step === index ? 'font-bold text-blue-700' : 'underline disabled:opacity-50'}
-            disabled={disabled || index > step || (dirty && index !== step)}
-            onClick={() => setStep(index)}>{index + 1}. {label}</button>)}
-        </nav>
-        {step !== 4 && <button
-          className="underline disabled:opacity-50"
-          disabled={disabled}
-          onClick={() => void reload()}
-        >
-          Recargar datos guardados{dirty ? ' (descartar cambios locales)' : ''}
-        </button>}
+      <header className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-card">
+        <div className="p-6 sm:p-8">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <p className="text-sm font-semibold text-blue-700">Tu perfil profesional</p>
+              <h1 className="mt-1 text-3xl font-black tracking-tight sm:text-4xl">Mi postulación</h1>
+              <p className="mt-2 text-sm text-slate-600">{draft.email}</p>
+            </div>
+            <span className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-900">
+              <span aria-hidden="true" className={`h-2 w-2 rounded-full ${context.application.status === 'approved' ? 'bg-emerald-500' : context.application.status === 'rejected' ? 'bg-red-500' : 'bg-amber-500'}`} />
+              {professionalStatusLabels[context.application.status]}
+            </span>
+          </div>
+          {step !== 4 && <p className="mt-5 max-w-3xl leading-7 text-slate-600">
+            Completá tus datos, documentación, foto y cuenta de cobro. Operaciones revisará el expediente antes de habilitar trabajos nuevos.
+          </p>}
+        </div>
+        <div className="border-t border-slate-100 bg-slate-50/70 px-5 py-5 sm:px-8">
+          <div className="mb-3 flex items-center justify-between text-sm">
+            <span className="font-semibold text-slate-800">Etapa actual</span>
+            <span className="text-slate-500">Paso {step + 1} de {steps.length}</span>
+          </div>
+          <div role="progressbar" aria-label="Paso actual de la postulación" aria-valuemin={1} aria-valuemax={steps.length} aria-valuenow={step + 1} className="mb-4 h-2 overflow-hidden rounded-full bg-slate-200">
+            <div className="h-full rounded-full bg-lysto-blue transition-all duration-300" style={{ width: `${((step + 1) / steps.length) * 100}%` }} />
+          </div>
+          <nav aria-label="Pasos de la postulación" className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+            {steps.map((label, index) => <button key={label} type="button"
+              aria-current={step === index ? 'step' : undefined}
+              className={`flex min-h-12 items-center gap-2 rounded-xl px-2 py-2 text-left text-xs leading-4 transition sm:px-3 ${step === index ? 'bg-white font-bold text-blue-800 shadow-sm ring-1 ring-blue-100' : index < step ? 'text-slate-700 hover:bg-white' : 'text-slate-400'}`}
+              disabled={disabled || index > step || (dirty && index !== step)}
+              onClick={() => setStep(index)}>
+              <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${step === index ? 'bg-lysto-blueDark text-white' : index < step ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-500'}`}>{index < step ? '✓' : index + 1}</span>
+              <span>{label}</span>
+            </button>)}
+          </nav>
+          {step !== 4 && <button
+            className="mt-4 text-sm font-medium text-slate-500 underline decoration-slate-300 underline-offset-4 transition hover:text-blue-700"
+            disabled={disabled}
+            onClick={() => void reload()}
+          >
+            Recargar datos guardados{dirty ? ' (descartar cambios locales)' : ''}
+          </button>}
+        </div>
       </header>
       {message && step !== 4 && (
-        <p role="status" className="rounded bg-green-50 p-3">
+        <p role="status" className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
           {message}
         </p>
       )}
       {error && (
-        <p role="alert" className="rounded bg-red-50 p-3 text-red-900">
+        <p role="alert" className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-900">
           {error}
         </p>
       )}
@@ -298,12 +318,13 @@ export function ConnectedProfessionalOnboarding({ initial }: { initial: Onboardi
           postulación.
         </p>
       )}
-      {step <= 1 && <form id="datos-profesionales" onSubmit={save} className="space-y-5 rounded-2xl border bg-white p-5">
+      {step <= 1 && <form id="datos-profesionales" onSubmit={save} className="space-y-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-card sm:p-8">
         <fieldset disabled={!editable || disabled} className="space-y-5">
-          <legend className="text-xl font-bold">{steps[step]}</legend>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <legend className="text-xl font-bold tracking-tight text-slate-950">{steps[step]}</legend>
+          <p className="-mt-3 border-b border-slate-100 pb-4 text-sm leading-6 text-slate-600">{step === 0 ? 'Contanos quién sos y dónde podemos ubicarte.' : 'Definí qué trabajos realizás, dónde y en qué horarios.'}</p>
+          <div className="grid gap-x-5 gap-y-4 sm:grid-cols-2">
             {(step === 0 ? personalFields : activityFields).map(([key, label]) => (
-              <label key={key}>
+              <label key={key} className="block text-sm font-medium text-slate-700">
                 {label}
                 <input
                   className={inputClass}
@@ -313,7 +334,7 @@ export function ConnectedProfessionalOnboarding({ initial }: { initial: Onboardi
                 />
               </label>
             ))}
-            {step === 0 && <label>
+            {step === 0 && <label className="block text-sm font-medium text-slate-700">
               Fecha de nacimiento
               <input
                 type="date"
@@ -322,7 +343,7 @@ export function ConnectedProfessionalOnboarding({ initial }: { initial: Onboardi
                 onChange={(event) => update('birthdate', event.target.value)}
               />
             </label>}
-            {step === 0 && <label>Dirección
+            {step === 0 && <label className="block text-sm font-medium text-slate-700">Dirección
               <input className={inputClass} value={draft.address ?? ''} minLength={5} maxLength={200}
                 required onChange={(event) => update('address', event.target.value)} />
             </label>}
@@ -339,7 +360,7 @@ export function ConnectedProfessionalOnboarding({ initial }: { initial: Onboardi
             </label>}
           </div>
           {step === 1 && <>
-          <label className="block">
+          <label className="block space-y-2 text-sm font-medium text-slate-700">
             <input
               type="checkbox"
               checked={draft.hasMobility}
@@ -360,13 +381,13 @@ export function ConnectedProfessionalOnboarding({ initial }: { initial: Onboardi
           {(['categories', 'zones'] as const).map((resource) => {
             const key = resource === 'categories' ? 'categoryIds' : 'zoneIds'
             return (
-              <fieldset key={resource} className="space-y-2">
-                <legend className="font-semibold">
+              <fieldset key={resource} className="space-y-2 rounded-2xl border border-slate-200 p-4 sm:p-5">
+                <legend className="px-1 font-semibold text-slate-900">
                   {resource === 'categories' ? 'Especialidades' : 'Zonas de trabajo'}
                 </legend>
                 {context.catalog[resource].map((item) => (
-                  <label className="block" key={item.id}>
-                    <input
+                  <label className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-50" key={item.id}>
+                    <input className="h-4 w-4 accent-blue-700"
                       type="checkbox"
                       checked={draft[key].includes(item.id)}
                       onChange={(event) =>
@@ -384,11 +405,11 @@ export function ConnectedProfessionalOnboarding({ initial }: { initial: Onboardi
               </fieldset>
             )
           })}
-          <fieldset className="space-y-2">
-            <legend className="font-semibold">Herramientas disponibles</legend>
+          <fieldset className="space-y-2 rounded-2xl border border-slate-200 p-4 sm:p-5">
+            <legend className="px-1 font-semibold text-slate-900">Herramientas disponibles</legend>
             {requiredAirConditioningTools.map((tool) => (
-              <label key={tool} className="block">
-                <input
+              <label key={tool} className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-50">
+                <input className="h-4 w-4 accent-blue-700"
                   type="checkbox"
                   checked={draft.tools.includes(tool)}
                   onChange={(event) =>
@@ -404,11 +425,11 @@ export function ConnectedProfessionalOnboarding({ initial }: { initial: Onboardi
               </label>
             ))}
           </fieldset>
-          <fieldset className="space-y-3">
-            <legend className="font-semibold">Disponibilidad semanal</legend>
+          <fieldset className="space-y-3 rounded-2xl border border-slate-200 p-4 sm:p-5">
+            <legend className="px-1 font-semibold text-slate-900">Disponibilidad semanal</legend>
             {draft.availability.map((slot, index) => (
-              <div key={index} className="flex flex-wrap items-end gap-3">
-                <label>
+              <div key={index} className="flex flex-wrap items-end gap-3 rounded-xl bg-slate-50 p-3">
+                <label className="text-sm font-medium text-slate-700">
                   Día {index + 1}
                   <select
                     className={inputClass}
@@ -430,7 +451,7 @@ export function ConnectedProfessionalOnboarding({ initial }: { initial: Onboardi
                   </select>
                 </label>
                 {(['startTime', 'endTime'] as const).map((key) => (
-                  <label key={key}>
+                <label key={key} className="text-sm font-medium text-slate-700">
                     {key === 'startTime' ? 'Desde' : 'Hasta'} {index + 1}
                     <input
                       className={inputClass}
@@ -449,7 +470,7 @@ export function ConnectedProfessionalOnboarding({ initial }: { initial: Onboardi
                 ))}
                 <button
                   type="button"
-                  className="p-3 underline"
+                  className="min-h-11 rounded-xl px-3 text-sm font-medium text-slate-500 underline underline-offset-4 hover:text-red-700"
                   onClick={() =>
                     update(
                       'availability',
@@ -463,7 +484,7 @@ export function ConnectedProfessionalOnboarding({ initial }: { initial: Onboardi
             ))}
             <button
               type="button"
-              className="underline"
+              className="min-h-11 rounded-xl px-3 text-sm font-semibold text-blue-700 underline underline-offset-4 hover:text-blue-900"
               disabled={draft.availability.length >= 50}
               onClick={() =>
                 update('availability', [
@@ -483,15 +504,15 @@ export function ConnectedProfessionalOnboarding({ initial }: { initial: Onboardi
           )}
         </fieldset>
       </form>}
-      {step === 2 && <><section id="foto-profesional" className="space-y-3 rounded-2xl border bg-white p-5">
-        <h2 className="text-xl font-bold">Foto de perfil</h2>
-        <p>Esta foto será pública. No subas una foto de tu DNI o de tu matrícula aquí.</p>
+      {step === 2 && <><section id="foto-profesional" className="space-y-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-card sm:p-8">
+        <div><p className="text-xs font-bold uppercase tracking-wider text-blue-700">Tu identidad en Lysto</p><h2 className="mt-1 text-xl font-bold tracking-tight">Foto de perfil</h2></div>
+        <p className="max-w-2xl text-sm leading-6 text-slate-600">Esta foto será pública para que los clientes puedan reconocerte. No subas una foto de tu DNI o de tu matrícula aquí.</p>
         {(avatarPreview || context.avatarUrl) && <Image unoptimized src={avatarPreview || context.avatarUrl || ''} alt="Foto de perfil del profesional" width={128} height={128} className="h-32 w-32 rounded-full object-cover" />}
         <input type="file" accept="image/jpeg,image/png,image/webp" disabled={disabled} onChange={(event) => setAvatarFile(event.target.files?.[0] ?? null)} />
         <button type="button" className={buttonClass} disabled={!avatarFile || disabled} onClick={() => void uploadAvatar()}>Guardar foto</button>
       </section>
-      <section id="documentos-profesionales" className="space-y-4 rounded-2xl border bg-white p-5">
-        <h2 className="text-xl font-bold">Documentación y revisión</h2>
+      <section id="documentos-profesionales" className="space-y-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-card sm:p-8">
+        <div><p className="text-xs font-bold uppercase tracking-wider text-blue-700">Credenciales del oficio</p><h2 className="mt-1 text-xl font-bold tracking-tight">Documentación y revisión</h2></div>
         {!context.requirements && (
           <p>
             Los requisitos de las especialidades elegidas todavía no están habilitados. Podés
@@ -512,7 +533,7 @@ export function ConnectedProfessionalOnboarding({ initial }: { initial: Onboardi
         {context.documents.length === 0 && <p>Todavía no hay documentos guardados.</p>}
         <ul className="space-y-3">
           {context.documents.map((document) => (
-            <li key={document.id} className="rounded border p-3">
+            <li key={document.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
               <strong>{documentLabels[document.documentType] ?? document.documentType}</strong> ·{' '}
               {
                 { pending: 'Pendiente de revisión', approved: 'Aprobado', rejected: 'Observado' }[
@@ -559,15 +580,15 @@ export function ConnectedProfessionalOnboarding({ initial }: { initial: Onboardi
           </fieldset>
         )}
       </section>
-      {!documentsReady && <p>Para continuar, cargá tu foto de perfil y todos los documentos solicitados.</p>}
+      {!documentsReady && <p className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950">Para continuar, cargá tu foto de perfil y todos los documentos solicitados.</p>}
       <button type="button" className={buttonClass} disabled={disabled || !documentsReady} onClick={() => setStep(3)}>Continuar a revisión</button>
       </>}
       {step === 3 && editable && (
-        <section id="enviar-postulacion" className="space-y-4 rounded-2xl border bg-white p-5">
-          <h2 className="text-xl font-bold">Enviar a revisión</h2>
+        <section id="enviar-postulacion" className="space-y-5 rounded-3xl border border-slate-200 bg-white p-6 shadow-card sm:p-8">
+          <div><p className="text-xs font-bold uppercase tracking-wider text-blue-700">Última revisión</p><h2 className="mt-1 text-xl font-bold tracking-tight">Enviar a revisión</h2><p className="mt-1 text-sm leading-6 text-slate-600">Confirmá tus datos y la documentación para que Operaciones pueda revisar tu perfil.</p></div>
           {context.legal ? (
             <label className="block">
-              <input
+              <input className="mt-1 h-4 w-4 accent-blue-700"
                 type="checkbox"
                 checked={accepted}
                 disabled={disabled}
@@ -596,7 +617,7 @@ export function ConnectedProfessionalOnboarding({ initial }: { initial: Onboardi
           ) : (
             <p>El envío está pendiente de la habilitación de los documentos legales.</p>
           )}
-          {dirty && <p>Guardá los cambios antes de enviar.</p>}
+          {dirty && <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-950">Guardá los cambios antes de enviar.</p>}
           <button
             type="button"
             className={buttonClass}
@@ -608,8 +629,8 @@ export function ConnectedProfessionalOnboarding({ initial }: { initial: Onboardi
         </section>
       )}
       {step !== 4 && context.readinessReasons && context.readinessReasons.length > 0 &&
-        <p>Para recibir trabajos nuevos falta: {context.readinessReasons.map((reason) => ({ documentos: 'documentación vigente', foto: 'foto de perfil', mercado_pago: 'cuenta de Mercado Pago' })[reason]).join(', ')}.</p>}
-      {step === 4 && <section id="cobros-profesionales" aria-label="Vinculación de cobros" className="rounded-2xl border bg-white p-5">
+        <p className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">Para recibir trabajos nuevos falta: {context.readinessReasons.map((reason) => ({ documentos: 'documentación vigente', foto: 'foto de perfil', mercado_pago: 'cuenta de Mercado Pago' })[reason]).join(', ')}.</p>}
+      {step === 4 && <section id="cobros-profesionales" aria-label="Vinculación de cobros" className="rounded-3xl border border-slate-200 bg-white p-6 shadow-card sm:p-8">
         <MarketplaceAccount onboarding />
       </section>}
     </div>

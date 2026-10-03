@@ -27,13 +27,16 @@ it('saves the personal step before showing work settings', async () => {
       ? { ...application, phone: '1122334455', dni: '12345678', address: 'Calle Falsa 123, CABA', version: 3 }
       : { ...initial, application: { ...application, phone: '1122334455', dni: '12345678', address: 'Calle Falsa 123, CABA', version: 3 } })
   render(<ConnectedProfessionalOnboarding initial={initial} />)
-  expect(screen.getByText('Datos personales y domicilio')).toBeTruthy()
+  expect(screen.getByRole('group', { name: 'Datos personales y domicilio' })).toBeTruthy()
+  expect(screen.getByRole('progressbar').getAttribute('aria-valuenow')).toBe('1')
+  expect(screen.getByText('Paso 1 de 5')).toBeTruthy()
+  expect(screen.getByRole('navigation', { name: 'Pasos de la postulación' }).tagName).toBe('NAV')
   expect(screen.queryByText('Herramientas disponibles')).toBeNull()
   fireEvent.change(screen.getByLabelText('Teléfono'), { target: { value: '1122334455' } })
   fireEvent.change(screen.getByLabelText('DNI'), { target: { value: '12345678' } })
   fireEvent.change(screen.getByLabelText('Dirección'), { target: { value: 'Calle Falsa 123, CABA' } })
   fireEvent.click(screen.getByRole('button', { name: 'Guardar y continuar' }))
-  await waitFor(() => expect(screen.getByText('Actividad y disponibilidad')).toBeTruthy())
+  await waitFor(() => expect(screen.getByRole('group', { name: 'Actividad y disponibilidad' })).toBeTruthy())
   expect(mocks.request).toHaveBeenCalledWith('/api/professional/onboarding', 'POST', expect.objectContaining({
     phone: '1122334455', dni: '12345678', expectedVersion: 1
   }))
