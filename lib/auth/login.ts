@@ -83,7 +83,13 @@ export async function authenticateLogin(
       ? '/pro/onboarding'
       : requested.startsWith('/pro/onboarding') ? '/pro/dashboard' : requested
     : requested
-  if (profile.role !== 'customer' && profile.assuranceLevel !== 'aal2') {
+  const mustCompleteProfessionalOnboarding =
+    profile.role === 'professional' && profile.professionalOnboarding
+  if (
+    profile.role !== 'customer' &&
+    profile.assuranceLevel !== 'aal2' &&
+    !mustCompleteProfessionalOnboarding
+  ) {
     return { ok: true, redirectTo: `/seguridad?next=${encodeURIComponent(destination)}` }
   }
 

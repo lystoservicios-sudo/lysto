@@ -126,7 +126,7 @@ describe('login flow', () => {
       professionalApproved: false, professionalOnboarding: true, assuranceLevel: 'aal1' } })
     const result = await authenticateLogin({ email: 'tecnico@lysto.com.ar',
       password: 'una-clave-segura', next: '/pro/dashboard' }, fake.gateway)
-    expect(result).toEqual({ ok: true, redirectTo: '/seguridad?next=%2Fpro%2Fonboarding' })
+    expect(result).toEqual({ ok: true, redirectTo: '/pro/onboarding' })
     expect(fake.signOutCalls()).toBe(0)
   })
 
