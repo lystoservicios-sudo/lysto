@@ -38,4 +38,13 @@ describe('login server action contract', () => {
     const source = readFileSync('app/(auth)/equipo/login/actions.ts', 'utf8')
     expect(source).toContain("accepted.error.code === 'P0002' ? 'invalid_professional_invitation' : 'unexpected'")
   })
+
+  it('runs the public invitation RPC wrapper with the privileges needed for its private function', () => {
+    const migration = readFileSync(
+      'supabase/migrations/20261003181422_professional_invitation_auth_resume.sql',
+      'utf8'
+    )
+    const wrapper = migration.slice(migration.indexOf('create or replace function public.accept_professional_invitation'))
+    expect(wrapper).toMatch(/language sql security definer set search_path=''/)
+  })
 })

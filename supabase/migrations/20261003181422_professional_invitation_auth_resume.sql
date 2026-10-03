@@ -116,6 +116,9 @@ end;
 $$;
 
 create or replace function public.accept_professional_invitation(p_token text) returns jsonb
-language sql security invoker set search_path='' as $$
+language sql security definer set search_path='' as $$
   select private.accept_professional_invitation(p_token);
 $$;
+
+revoke all on function public.accept_professional_invitation(text) from public, anon;
+grant execute on function public.accept_professional_invitation(text) to authenticated;
