@@ -23,4 +23,19 @@ describe('login server action contract', () => {
     expect(lookup).toBeGreaterThan(accept)
     expect(source).toContain("trustedRole !== 'professional'")
   })
+
+  it('resumes a provisioned professional invitation after password login even without the original token', () => {
+    const source = readFileSync('app/(auth)/equipo/login/actions.ts', 'utf8')
+    const accept = source.indexOf("rpc('accept_professional_invitation'")
+    const roleCheck = source.indexOf("trustedRole === 'professional'")
+    expect(roleCheck).toBeGreaterThan(-1)
+    expect(accept).toBeGreaterThan(roleCheck)
+    expect(source).toContain('p_token: invitationToken')
+    expect(source).not.toMatch(/if\s*\(invitationToken\)\s*\{[^}]*accept_professional_invitation/s)
+  })
+
+  it('does not label every invitation acceptance failure as an expired invitation', () => {
+    const source = readFileSync('app/(auth)/equipo/login/actions.ts', 'utf8')
+    expect(source).toContain("accepted.error.code === 'P0002' ? 'invalid_professional_invitation' : 'unexpected'")
+  })
 })

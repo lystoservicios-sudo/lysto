@@ -60,22 +60,27 @@ export async function loginAction(
           await supabase.auth.signOut({ scope: 'local' })
           return { ok: false, reason: 'unexpected' }
         }
-        if (invitationToken) {
-          if (trustedRole !== 'professional') {
-            await supabase.auth.signOut({ scope: 'local' })
-            return { ok: false, reason: 'invalid_professional_invitation' }
-          }
+        if (invitationToken && trustedRole !== 'professional') {
+          await supabase.auth.signOut({ scope: 'local' })
+          return { ok: false, reason: 'invalid_professional_invitation' }
+        }
+        if (trustedRole === 'professional') {
           const accepted = await supabase.rpc('accept_professional_invitation', {
             p_token: invitationToken
           })
           if (accepted.error) {
             await supabase.auth.signOut({ scope: 'local' })
-            return { ok: false, reason: 'invalid_professional_invitation' }
+            return {
+              ok: false,
+              reason: accepted.error.code === 'P0002' ? 'invalid_professional_invitation' : 'unexpected'
+            }
           }
-          const refreshed = await supabase.auth.refreshSession()
-          if (refreshed.error || !refreshed.data.session) {
-            await supabase.auth.signOut({ scope: 'local' })
-            return { ok: false, reason: 'unexpected' }
+          if (accepted.data) {
+            const refreshed = await supabase.auth.refreshSession()
+            if (refreshed.error || !refreshed.data.session) {
+              await supabase.auth.signOut({ scope: 'local' })
+              return { ok: false, reason: 'unexpected' }
+            }
           }
         }
         const prepared = await bootstrapVerifiedCustomer(supabase, data.user)

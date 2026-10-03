@@ -19,7 +19,7 @@ export function ConnectedProfessionalInvitationDetail({ invitation }: { invitati
     } catch (failure) { setError(requestError(failure)) }
     finally { setBusy(false) }
   }
-  const expired = new Date(invitation.expiresAt).getTime() <= Date.now()
+  const expired = invitation.expiresAt !== null && new Date(invitation.expiresAt).getTime() <= Date.now()
   return <>
     <Header title={`${invitation.firstName || ''} ${invitation.lastName || ''}`.trim() || invitation.email}
       description={invitation.email} back={{ href: '/admin/profesionales', label: 'Profesionales' }} />
@@ -28,7 +28,9 @@ export function ConnectedProfessionalInvitationDetail({ invitation }: { invitati
     <Panel title="Estado de la convocatoria">
       <p>{expired ? 'Invitación vencida' : invitation.status === 'sent' ? 'Invitación enviada' : 'Invitación pendiente de envío'}</p>
       <p>Especialidad: {invitation.specialtySlug.replaceAll('_', ' ')}</p>
-      <p>Vence: {new Date(invitation.expiresAt).toLocaleDateString('es-AR')}</p>
+      {invitation.expiresAt
+        ? <p>Vence: {new Date(invitation.expiresAt).toLocaleDateString('es-AR')}</p>
+        : <p>El acceso no vence. Puede retomar el registro iniciando sesión.</p>}
       {['queued', 'sent', 'expired'].includes(invitation.status) &&
         <Button disabled={busy} onClick={() => void resend()}>Reenviar invitación</Button>}
     </Panel>

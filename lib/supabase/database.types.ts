@@ -3808,7 +3808,7 @@ export type Database = {
     }
     Functions: {
       accept_professional_invitation: {
-        Args: { p_token: string }
+        Args: { p_token: string | null }
         Returns: Json
       }
       bind_professional_invitation_auth_user: {

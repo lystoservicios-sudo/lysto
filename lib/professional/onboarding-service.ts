@@ -34,7 +34,7 @@ export const invitationSchema = z
     email: z.string().email(),
     specialtySlug: z.string(),
     status: z.enum(['queued', 'sent', 'opened', 'completed', 'expired', 'cancelled']),
-    expiresAt: z.string().datetime({ offset: true }),
+    expiresAt: z.string().datetime({ offset: true }).nullable(),
     createdAt: z.string().datetime({ offset: true }),
     version: z.number().int().positive()
   })
