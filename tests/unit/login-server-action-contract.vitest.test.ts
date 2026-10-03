@@ -15,4 +15,12 @@ describe('login server action contract', () => {
     expect(source).not.toContain(".from('profiles')")
     expect(source).not.toContain(".from('professional_profiles')")
   })
+  it('accepts a professional invitation token after authentication and before profile lookup', () => {
+    const source = readFileSync('app/(auth)/equipo/login/actions.ts', 'utf8')
+    const accept = source.indexOf("rpc('accept_professional_invitation'")
+    const lookup = source.indexOf("rpc('get_session_context')")
+    expect(accept).toBeGreaterThan(-1)
+    expect(lookup).toBeGreaterThan(accept)
+    expect(source).toContain("trustedRole !== 'professional'")
+  })
 })

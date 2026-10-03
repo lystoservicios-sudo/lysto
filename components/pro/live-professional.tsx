@@ -61,17 +61,20 @@ export function LiveProfessionalDashboard({
   name,
   rating,
   jobs,
-  pending = false
+  pending = false,
+  canChangePassword = false
 }: {
   name: string
   rating: number | null
   jobs: ProfessionalLiveJob[]
   pending?: boolean
+  canChangePassword?: boolean
 }) {
   if (pending) return <ProPage title={`Hola, ${name}`} description="Tu espacio profesional está en revisión.">
     <ProPanel title="Revisión pendiente">
       <p>Ya podés ingresar a tu panel. Administración revisará la documentación antes de habilitarte para recibir trabajos.</p>
       <ButtonLink href="/pro/onboarding" variant="secondary">Continuar mi perfil</ButtonLink>
+      {canChangePassword && <ButtonLink href="/pro/seguridad" className="mt-3" variant="secondary">Cambiar contraseña</ButtonLink>}
     </ProPanel>
   </ProPage>
   const active = jobs.filter((job) => group(job.status) === 'active')
@@ -176,7 +179,8 @@ export function LiveProfessionalJobs({ jobs }: { jobs: ProfessionalLiveJob[] }) 
 }
 
 export function LiveProfessionalProfile({
-  profile
+  profile,
+  canChangePassword = false
 }: {
   profile: {
     first_name: string
@@ -196,6 +200,7 @@ export function LiveProfessionalProfile({
     license_expires_at: string | null
     bio: string | null
   }
+  canChangePassword?: boolean
 }) {
   const [avatarUrl, setAvatarUrl] = useState(profile.avatar_url)
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
@@ -247,6 +252,7 @@ export function LiveProfessionalProfile({
               }
             ]}
           />
+          {canChangePassword && <ButtonLink href="/pro/seguridad" className="mt-5" variant="secondary">Cambiar contraseña</ButtonLink>}
         </ProPanel>
         <ProPanel title="Documentación">
           <p className="pro-muted">

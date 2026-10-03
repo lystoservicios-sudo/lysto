@@ -14,7 +14,6 @@ export function ConnectedProfessionalInvitations({
   const [busy, setBusy] = useState(true)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
-  const [createdLink, setCreatedLink] = useState<string | null>(null)
   useEffect(() => setBusy(false), [])
 
   async function create(event: React.FormEvent<HTMLFormElement>) {
@@ -25,10 +24,8 @@ export function ConnectedProfessionalInvitations({
     setBusy(true)
     setError('')
     setMessage('')
-    setCreatedLink(null)
     try {
       const result = await privateRequest<{
-        link?: string
         delivery?: { accepted: boolean; reason: 'email_not_configured' | 'delivery_failed' | null }
       }>('/api/admin/invite-professional', 'POST', {
         firstName: values.get('firstName'),
@@ -37,11 +34,10 @@ export function ConnectedProfessionalInvitations({
         specialtySlug: values.get('specialtySlug')
       })
       form.reset()
-      setCreatedLink(result.link ?? null)
-      if (result.delivery?.accepted) setMessage('Invitación enviada. El proveedor aceptó el correo.')
+      if (result.delivery?.accepted) setMessage('Invitación enviada con el acceso provisorio. El proveedor aceptó el correo.')
       else setError(result.delivery?.reason === 'email_not_configured'
-        ? 'El correo no está configurado. La invitación quedó guardada; usá el enlace o reintentá desde el expediente.'
-        : 'No pudimos confirmar el envío. La invitación quedó guardada; reintentá desde el expediente.')
+        ? 'El correo no está configurado. La invitación quedó pendiente; configurá el envío y reenviá desde su expediente.'
+        : 'No pudimos confirmar el envío. La invitación quedó pendiente; reenviá desde su expediente para generar una clave nueva.')
     } catch (failure) {
       setError(requestError(failure))
     } finally {
@@ -54,14 +50,6 @@ export function ConnectedProfessionalInvitations({
       back={{ href: '/admin/profesionales', label: 'Profesionales' }} />
     {error && <p role="alert">{error}</p>}
     {message && <p role="status">{message}</p>}
-    {createdLink && <Panel title="Enlace de invitación">
-      <p>Compartilo solo con el profesional invitado. Este enlace no vuelve a mostrarse.</p>
-      <p><a className="underline" href={createdLink} target="_blank" rel="noopener noreferrer">Abrir enlace de invitación</a></p>
-      <Button disabled={busy} onClick={async () => {
-        try { await navigator.clipboard.writeText(createdLink); setMessage('Enlace copiado.') }
-        catch { setError('No pudimos copiar el enlace. Abrilo y copialo desde la barra del navegador.') }
-      }}>Copiar enlace</Button>
-    </Panel>}
     <Panel title="Nuevo profesional">
       <form className="adm-form" onSubmit={(event) => void create(event)}>
         <fieldset disabled={busy}>

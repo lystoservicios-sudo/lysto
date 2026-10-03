@@ -5,10 +5,18 @@ vi.mock('@/lib/supabase/server', () => ({ createServerSupabaseClient: async () =
 vi.mock('next/headers', () => ({ headers: async () => new Headers({ 'x-lysto-path': mocks.path }) }))
 vi.mock('next/navigation', () => ({ redirect: (path: string) => { throw new Error(`REDIRECT:${path}`) }, notFound: () => { throw new Error('NOT_FOUND') } }))
 import { requirePageSession } from '@/lib/auth/session'
+import { professionalInvitationToken } from '@/lib/auth/session-routing'
 import StaffLoginPage from '@/app/(auth)/equipo/login/page'
 beforeEach(() => { vi.resetAllMocks(); mocks.getClaims.mockResolvedValue({ data: { claims: null }, error: { code: 'bad_jwt' } }); mocks.path = '/admin/pagos' })
 
 describe('staff session recovery keeps the correct login surface', () => {
+  it('accepts only the exact token-bearing professional onboarding destination', () => {
+    const token = 'a'.repeat(43)
+    expect(professionalInvitationToken(`/pro/onboarding/${token}`)).toBe(token)
+    expect(professionalInvitationToken(`/pro/onboarding/${token}?extra=1`)).toBeNull()
+    expect(professionalInvitationToken(`/pro/onboarding/${'a'.repeat(42)}`)).toBeNull()
+    expect(professionalInvitationToken('/admin/dashboard')).toBeNull()
+  })
   it.each([
     ['admin', '/admin/pagos', '/equipo/login?next=%2Fadmin%2Fpagos'],
     ['professional', '/pro/agenda', '/equipo/login?next=%2Fpro%2Fagenda'],

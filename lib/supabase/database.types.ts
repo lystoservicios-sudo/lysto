@@ -2450,6 +2450,7 @@ export type Database = {
           id: string
           last_name: string
           phone: string | null
+          provisioned_auth_user_id: string | null
           specialty_slug: string
           status: string
           token_hash: string
@@ -2468,6 +2469,7 @@ export type Database = {
           id?: string
           last_name?: string
           phone?: string | null
+          provisioned_auth_user_id?: string | null
           specialty_slug?: string
           status?: string
           token_hash: string
@@ -2486,6 +2488,7 @@ export type Database = {
           id?: string
           last_name?: string
           phone?: string | null
+          provisioned_auth_user_id?: string | null
           specialty_slug?: string
           status?: string
           token_hash?: string
@@ -2563,6 +2566,7 @@ export type Database = {
           id: string
           internal_score: number
           invitation_id: string | null
+          onboarding_completed_at: string | null
           jobs_completed: number
           license_entity: string | null
           license_expires_at: string | null
@@ -2589,6 +2593,7 @@ export type Database = {
           id?: string
           internal_score?: number
           invitation_id?: string | null
+          onboarding_completed_at?: string | null
           jobs_completed?: number
           license_entity?: string | null
           license_expires_at?: string | null
@@ -2615,6 +2620,7 @@ export type Database = {
           id?: string
           internal_score?: number
           invitation_id?: string | null
+          onboarding_completed_at?: string | null
           jobs_completed?: number
           license_entity?: string | null
           license_expires_at?: string | null
@@ -3805,6 +3811,10 @@ export type Database = {
         Args: { p_token: string }
         Returns: Json
       }
+      bind_professional_invitation_auth_user: {
+        Args: { p_auth_user_id: string; p_invitation_id: string }
+        Returns: undefined
+      }
       ack_outbox_event: {
         Args: {
           p_claim_token: string
@@ -4036,6 +4046,11 @@ export type Database = {
         Args: { p_email: string; p_first_name: string; p_last_name: string; p_specialty_slug: string }
         Returns: Json
       }
+      mark_professional_invitation_sent: {
+        Args: { p_invitation_id: string }
+        Returns: Json
+      }
+      professional_password_change_ready: { Args: never; Returns: boolean }
       create_service_request_from_app: {
         Args: {
           p_address_id: string

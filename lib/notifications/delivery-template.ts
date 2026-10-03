@@ -74,6 +74,29 @@ export type RenderedNotice = {
   url: string
 }
 
+/** Invitation credentials are rendered for synchronous delivery only; never seal this in the outbox. */
+export function renderProfessionalTemporaryInvitation(
+  input: { email: string; invitationToken: string; temporaryPassword: string },
+  baseUrl: string
+): RenderedNotice {
+  const email = z.string().email().max(254).parse(input.email)
+  const invitationToken = z.string().regex(/^[A-Za-z0-9_-]{43}$/).parse(input.invitationToken)
+  const temporaryPassword = z.string().regex(/^\d{7}$/).parse(input.temporaryPassword)
+  const origin = notificationOrigin(baseUrl)
+  const login = new URL('/equipo/login', origin)
+  login.searchParams.set('next', `/pro/onboarding/${invitationToken}`)
+  const url = login.href
+  const subject = 'Tu acceso para completar tu cuenta profesional en Lysto'
+  const body = 'Te invitamos a sumarte a Lysto como profesional. Ingresá con estos datos para completar tu perfil técnico.'
+  return {
+    version: 'transactional-v1',
+    subject,
+    url,
+    text: `${subject}\n\n${body}\n\nEmail: ${email}\nContraseña provisoria: ${temporaryPassword}\n\nIngresar y completar mi perfil: ${url}\n\nLa contraseña es provisoria. No la compartas.`,
+    html: emailShell(subject, `<h1 style="margin:0 0 12px;font-size:28px;line-height:1.2">${escapeHtml(subject)}</h1><p style="line-height:1.6;color:#334155">${escapeHtml(body)}</p><div style="border-radius:14px;background:#eff6ff;padding:18px"><p><strong>Email:</strong> ${escapeHtml(email)}</p><p><strong>Contraseña provisoria:</strong> ${escapeHtml(temporaryPassword)}</p></div><p>${button('Ingresar y completar mi perfil', url)}</p><p style="color:#64748b;font-size:13px">La contraseña es provisoria. No la compartas.</p>`)
+  }
+}
+
 const escapeHtml = (text: string) =>
   text.replace(
     /[&<>"']/g,

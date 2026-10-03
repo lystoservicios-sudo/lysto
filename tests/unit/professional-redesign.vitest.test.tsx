@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { afterEach, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { ConnectedProfessionalInvitations } from '@/components/admin/connected-professional-invitations'
 import { ConnectedProfessionalDirectory } from '@/components/admin/connected-professional-directory'
 import { createProfessionalInvitation } from '@/lib/professional/onboarding-service'
@@ -7,17 +7,31 @@ import type { Session } from '@/lib/auth/session'
 import { ConnectedProfessionalInvitationDetail } from '@/components/admin/connected-professional-invitation-detail'
 
 const mocks = vi.hoisted(() => ({ request: vi.fn() }))
+const authMocks = vi.hoisted(() => ({ createUser: vi.fn(), deleteUser: vi.fn(), updateUserById: vi.fn() }))
+const mailMocks = vi.hoisted(() => ({ send: vi.fn() }))
 vi.mock('@/lib/http/private-client', () => ({
   privateRequest: mocks.request,
   requestError: (error: unknown) => String(error)
 }))
-afterEach(() => { cleanup(); mocks.request.mockReset() })
+vi.mock('@supabase/supabase-js', () => ({ createClient: () => ({ auth: { admin: authMocks } }) }))
+vi.mock('@/lib/supabase/env', () => ({ assertPublicSupabaseEnv: () => ({ url: 'https://example.supabase.co' }) }))
+vi.mock('@/lib/professional/temporary-password', () => ({ generateTemporaryProfessionalPassword: () => '4827163' }))
+vi.mock('@/lib/notifications/server', () => ({ sendProfessionalTemporaryInvitation: mailMocks.send }))
+afterEach(() => { cleanup(); mocks.request.mockReset(); vi.unstubAllEnvs() })
+beforeEach(() => {
+  vi.stubEnv('SUPABASE_SERVICE_ROLE_KEY', 'server-only-test-key')
+  authMocks.createUser.mockResolvedValue({ data: { user: { id: '96000000-0000-4000-8000-000000000003' } }, error: null })
+  authMocks.deleteUser.mockResolvedValue({ error: null })
+  authMocks.updateUserById.mockResolvedValue({ error: null })
+  mailMocks.send.mockResolvedValue({ accepted: true, reason: null })
+})
 
 it('passes the invited names to the invitation RPC without a reason', async () => {
   const rpc = vi.fn().mockResolvedValue({ data: {
     id: '96000000-0000-4000-8000-000000000001', firstName: 'Ana', lastName: 'Pérez',
     email: 'ana@example.com', specialtySlug: 'aire_acondicionado', status: 'queued',
-    expiresAt: '2026-10-06T12:00:00Z', createdAt: '2026-09-22T12:00:00Z', version: 1
+    expiresAt: '2026-10-06T12:00:00Z', createdAt: '2026-09-22T12:00:00Z', version: 2,
+    token: 'a'.repeat(43)
   }, error: null })
   const session = { role: 'admin', assuranceLevel: 'aal2', permissions: ['operations'], client: { rpc } } as unknown as Session
   await createProfessionalInvitation(session, { firstName: 'Ana', lastName: 'Pérez', email: 'ana@example.com', specialtySlug: 'aire_acondicionado' })
@@ -67,6 +81,6 @@ it('shows exactly what is missing when an invited professional has not accepted'
     email: 'ana@example.com', specialtySlug: 'aire_acondicionado', status: 'sent',
     expiresAt: '2026-12-06T12:00:00Z', createdAt: '2026-09-22T12:00:00Z', version: 1
   }} />)
-  expect(screen.getByText(/Todavía no creó su contraseña/)).toBeTruthy()
+  expect(screen.getByText(/Todavía no completó su invitación/)).toBeTruthy()
   expect(screen.getByText(/Trabajos: ninguno/)).toBeTruthy()
 })

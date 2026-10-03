@@ -5,10 +5,12 @@ const fixtures = vi.hoisted(() => ({
   signOut: vi.fn(),
   update: vi.fn(),
   getUser: vi.fn(),
-  bootstrap: vi.fn()
+  bootstrap: vi.fn(),
+  rpc: vi.fn()
 }))
 vi.mock('@/lib/supabase/server', () => ({
   createServerSupabaseClient: async () => ({
+    rpc: fixtures.rpc,
     auth: {
       verifyOtp: fixtures.verify,
       signOut: fixtures.signOut,
@@ -50,6 +52,7 @@ beforeEach(() => {
   fixtures.signOut.mockResolvedValue({ error: null })
   fixtures.update.mockResolvedValue({ error: null })
   fixtures.getUser.mockResolvedValue({ data: { user: { id: 'user' } }, error: null })
+  fixtures.rpc.mockResolvedValue({ data: true, error: null })
 })
 describe('account route boundaries', () => {
   it('routes an invitation registration to bounded onboarding without bootstrapping a customer', async () => {

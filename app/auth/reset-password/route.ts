@@ -11,6 +11,15 @@ export async function POST(request: Request) {
     const client = await createServerSupabaseClient()
     const { data, error } = await client.auth.verifyOtp({ token_hash:token,type:'recovery' })
     if (error || !data.user) return accountResponse(new Response('El enlace venció o ya fue utilizado. Solicitá otro desde Recuperar acceso.',{status:400}))
+    const passwordReady = await client.rpc('professional_password_change_ready')
+    if (passwordReady.error) {
+      await client.auth.signOut({ scope: 'local' })
+      return accountResponse(new Response('No pudimos verificar si tu cuenta está lista para cambiar la contraseña. Intentá nuevamente.',{status:503}))
+    }
+    if (passwordReady.data !== true) {
+      await client.auth.signOut({ scope: 'local' })
+      return accountResponse(new Response('Primero completá el alta técnica con tu clave provisoria. Después vas a poder cambiar la contraseña.',{status:403}))
+    }
     const updated = await client.auth.updateUser({password})
     if (updated.error) {
       await client.auth.signOut({scope:'local'})

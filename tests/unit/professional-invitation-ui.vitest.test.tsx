@@ -17,7 +17,7 @@ it('retries an unsent invitation from its expediente without creating another', 
   render(<ConnectedProfessionalInvitationDetail invitation={invitation} />)
   await waitFor(() => expect(screen.getByRole('button', { name: 'Reenviar invitación' }).hasAttribute('disabled')).toBe(false))
   fireEvent.click(screen.getByRole('button', { name: 'Reenviar invitación' }))
-  await waitFor(() => expect(screen.getByRole('status').textContent).toContain('aceptada'))
+  await waitFor(() => expect(screen.getByRole('status').textContent).toContain('nueva clave provisoria'))
   expect(mocks.request).toHaveBeenCalledWith('/api/admin/invite-professional', 'PUT', { invitationId: invitation.id })
   expect(mocks.request).not.toHaveBeenCalledWith('/api/admin/invite-professional', 'POST', expect.anything())
 })

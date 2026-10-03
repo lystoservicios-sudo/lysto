@@ -61,3 +61,10 @@ export function safeLocalRedirectPath(candidate: unknown, role: UserRole): strin
   } catch { return fallback }
   return fallback
 }
+
+/** Accept only the token-bearing destination used by a professional invitation email. */
+export function professionalInvitationToken(candidate: unknown): string | null {
+  if (typeof candidate !== 'string') return null
+  const match = /^\/pro\/onboarding\/([A-Za-z0-9_-]{43})$/.exec(candidate)
+  return match?.[1] ?? null
+}

@@ -83,6 +83,12 @@ describe('login flow', () => {
     })
   })
 
+  it('explains when a professional invitation link is expired or invalid', async () => {
+    const fake = createGateway({ signIn: async () => ({ ok: false, reason: 'invalid_professional_invitation' }) })
+    await expect(authenticateLogin({ email: 'tecnico@lysto.com.ar', password: '4827163' }, fake.gateway))
+      .resolves.toMatchObject({ ok: false, message: 'La invitación venció o ya no es válida. Pedí a administración que te envíe otra.' })
+  })
+
   it('closes the session when the authenticated user has no Lysto profile', async () => {
     const fake = createGateway({ profile: null })
 
@@ -115,13 +121,21 @@ describe('login flow', () => {
     expect(fake.signOutCalls()).toBe(1)
   })
 
-  it('lets an invited professional resume onboarding without unlocking job routes', async () => {
+  it('always resumes an incomplete professional onboarding even from a dashboard login', async () => {
     const fake = createGateway({ profile: { role: 'professional',
       professionalApproved: false, professionalOnboarding: true, assuranceLevel: 'aal1' } })
     const result = await authenticateLogin({ email: 'tecnico@lysto.com.ar',
-      password: 'una-clave-segura', next: '/pro/onboarding' }, fake.gateway)
+      password: 'una-clave-segura', next: '/pro/dashboard' }, fake.gateway)
     expect(result).toEqual({ ok: true, redirectTo: '/seguridad?next=%2Fpro%2Fonboarding' })
     expect(fake.signOutCalls()).toBe(0)
+  })
+
+  it('sends a setup-complete professional to the dashboard after an old invitation link is reused', async () => {
+    const fake = createGateway({ profile: { role: 'professional',
+      professionalApproved: true, professionalOnboarding: false, assuranceLevel: 'aal2' } })
+    const result = await authenticateLogin({ email: 'tecnico@lysto.com.ar',
+      password: 'una-clave-segura', next: '/pro/onboarding/unused-token' }, fake.gateway)
+    expect(result).toEqual({ ok: true, redirectTo: '/pro/dashboard' })
   })
 
   it.each([

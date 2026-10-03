@@ -8,6 +8,7 @@ import {
 export default async function Page() {
   const session = await requireProfessionalWorkspaceSession()
   const pending = session.professionalStatus !== 'approved' || !session.professionalEligible
+  const passwordChange = await session.client.rpc('professional_password_change_ready')
   const [profile, jobs] = await Promise.all([
     readProfessionalLiveProfile(session),
     pending ? Promise.resolve({ items: [] }) : listProfessionalJobsLive(session, { pageSize: 50 })
@@ -18,6 +19,7 @@ export default async function Page() {
       rating={profile.rating_avg}
       jobs={jobs.items}
       pending={pending}
+      canChangePassword={!passwordChange.error && passwordChange.data === true}
     />
   )
 }

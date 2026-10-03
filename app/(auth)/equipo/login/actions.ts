@@ -6,7 +6,7 @@ import { z } from 'zod'
 import { authenticateLogin, type LoginGateway, type LoginProfile } from '@/lib/auth/login'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { assertAccountMutationOrigin, bootstrapVerifiedCustomer } from '@/lib/auth/account-server'
-import { readTrustedRole } from '@/lib/auth/session-routing'
+import { professionalInvitationToken, readTrustedRole } from '@/lib/auth/session-routing'
 import { enforceRateLimit, serverActionSubject } from '@/lib/security/rate-limit'
 
 const loginContextSchema = z.object({
@@ -35,6 +35,8 @@ export async function loginAction(
     email: textValue(formData, 'email'),
     password: textValue(formData, 'password')
   }
+  const next = textValue(formData, 'next')
+  const invitationToken = professionalInvitationToken(next)
 
   let destination: string | null = null
 
@@ -58,6 +60,24 @@ export async function loginAction(
           await supabase.auth.signOut({ scope: 'local' })
           return { ok: false, reason: 'unexpected' }
         }
+        if (invitationToken) {
+          if (trustedRole !== 'professional') {
+            await supabase.auth.signOut({ scope: 'local' })
+            return { ok: false, reason: 'invalid_professional_invitation' }
+          }
+          const accepted = await supabase.rpc('accept_professional_invitation', {
+            p_token: invitationToken
+          })
+          if (accepted.error) {
+            await supabase.auth.signOut({ scope: 'local' })
+            return { ok: false, reason: 'invalid_professional_invitation' }
+          }
+          const refreshed = await supabase.auth.refreshSession()
+          if (refreshed.error || !refreshed.data.session) {
+            await supabase.auth.signOut({ scope: 'local' })
+            return { ok: false, reason: 'unexpected' }
+          }
+        }
         const prepared = await bootstrapVerifiedCustomer(supabase, data.user)
         return { ok: true, userId: data.user.id, accountIncomplete: prepared === 'incomplete' }
       },
@@ -66,14 +86,20 @@ export async function loginAction(
         const { data, error } = await supabase.rpc('get_session_context')
         const context = loginContextSchema.safeParse(data)
         if (error || !context.success || context.data.role !== trustedRole) return null
+        const setup = context.data.role === 'professional'
+          ? await supabase.rpc('professional_password_change_ready')
+          : null
+        const setupComplete = setup?.data === true
         return {
           role: context.data.role,
           professionalApproved:
             context.data.role !== 'professional' ||
-            (context.data.professional_status === 'approved' && context.data.professional_eligible),
+            (context.data.professional_status === 'approved' && context.data.professional_eligible) ||
+            (['form_submitted', 'under_review'].includes(context.data.professional_status ?? '') && setupComplete),
           professionalOnboarding: context.data.role === 'professional' &&
-            ['form_started', 'form_submitted', 'under_review', 'rejected'].includes(
-              context.data.professional_status ?? ''),
+            (context.data.professional_status === 'rejected' ||
+              (['form_started', 'form_submitted', 'under_review'].includes(
+                context.data.professional_status ?? '') && !setupComplete)),
           assuranceLevel: context.data.aal
         }
       },
@@ -84,7 +110,7 @@ export async function loginAction(
     }
 
     const result = await authenticateLogin(
-      { ...credentials, next: textValue(formData, 'next') },
+      { ...credentials, next },
       gateway
     )
     if (!result.ok) {

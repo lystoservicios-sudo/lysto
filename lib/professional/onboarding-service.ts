@@ -1,7 +1,10 @@
 import 'server-only'
+import { createClient } from '@supabase/supabase-js'
 import { z } from 'zod'
 import type { Session } from '@/lib/auth/session'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { assertPublicSupabaseEnv } from '@/lib/supabase/env'
+import type { Database } from '@/lib/supabase/database.types'
 import { ApiError } from '@/lib/http/api-error'
 import {
   onboardingInput,
@@ -12,7 +15,8 @@ import {
 } from './onboarding-contracts'
 import { getRegistrationPolicy } from '@/lib/auth/account-policy'
 import { authOrigin } from '@/lib/auth/account-lifecycle'
-import { dispatchProfessionalInvitation } from '@/lib/notifications/server'
+import { sendProfessionalTemporaryInvitation } from '@/lib/notifications/server'
+import { generateTemporaryProfessionalPassword } from './temporary-password'
 
 export const invitationInput = z
   .object({
@@ -36,8 +40,24 @@ export const invitationSchema = z
   })
   .strict()
 const createdInvitationSchema = invitationSchema.extend({
-  token: z.string().regex(/^[A-Za-z0-9_-]{43}$/).optional()
+  token: z.string().regex(/^[A-Za-z0-9_-]{43}$/),
+  provisionedAuthUserId: z.string().uuid().optional()
 })
+function publicInvitation(
+  value: z.infer<typeof createdInvitationSchema>
+): z.infer<typeof invitationSchema> {
+  return {
+    id: value.id,
+    firstName: value.firstName,
+    lastName: value.lastName,
+    email: value.email,
+    specialtySlug: value.specialtySlug,
+    status: value.status,
+    expiresAt: value.expiresAt,
+    createdAt: value.createdAt,
+    version: value.version
+  }
+}
 const acceptedSchema = z
   .object({ professionalId: z.string().uuid(), status: z.literal('form_started') })
   .strict()
@@ -49,6 +69,45 @@ function fail(code: string): never {
   if (['22023', '22P02', '23514', '23502', '22007', '22008'].includes(code))
     throw new ApiError('invalid_input')
   throw new ApiError('service_unavailable')
+}
+function invitationAdminClient() {
+  const { url } = assertPublicSupabaseEnv()
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!key) throw new ApiError('service_unavailable')
+  return createClient<Database>(url, key, {
+    auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false }
+  })
+}
+async function cancelUnprovisionedInvitation(
+  session: Session,
+  invitationId: string,
+  expectedVersion: number,
+  reason: string
+) {
+  await session.client.rpc('cancel_professional_invitation', {
+    p_id: invitationId,
+    p_expected_version: expectedVersion,
+    p_reason: `No se pudo completar el alta de acceso: ${reason}`
+  })
+}
+async function sendInvitationCredentials(
+  session: Session,
+  invitation: z.infer<typeof invitationSchema>,
+  token: string,
+  password: string
+) {
+  const delivery = await sendProfessionalTemporaryInvitation({
+    email: invitation.email,
+    invitationToken: token,
+    temporaryPassword: password
+  })
+  if (delivery.accepted) {
+    const marked = await session.client.rpc('mark_professional_invitation_sent', {
+      p_invitation_id: invitation.id
+    })
+    if (marked.error) return { accepted: false, reason: 'delivery_failed' as const }
+  }
+  return delivery
 }
 async function withProfessionalAddress(client: Session['client'], application: ProfessionalApplication) {
   const address = await client.from('professional_profiles').select('base_location')
@@ -72,14 +131,41 @@ export async function createProfessionalInvitation(session: Session, input: unkn
   })
   if (result.error) fail(result.error.code)
   const parsed = createdInvitationSchema.safeParse(result.data)
-  if (!parsed.success) throw new ApiError('service_unavailable')
-  const { token, ...invitation } = parsed.data
-  const delivery = await dispatchProfessionalInvitation(invitation.id)
-  return {
-    invitation: delivery.accepted ? { ...invitation, status: 'sent' as const } : invitation,
-    delivery,
-    link: token ? `${authOrigin(process.env.NEXT_PUBLIC_APP_URL)}/pro/onboarding/${token}` : null
+  if (!parsed.success || !parsed.data.token) throw new ApiError('service_unavailable')
+  const { token } = parsed.data
+  const invitation = publicInvitation(parsed.data)
+  const temporaryPassword = generateTemporaryProfessionalPassword()
+  const admin = invitationAdminClient()
+  const created = await admin.auth.admin.createUser({
+    email: invitation.email,
+    password: temporaryPassword,
+    email_confirm: true,
+    user_metadata: { first_name: invitation.firstName, last_name: invitation.lastName },
+    app_metadata: { app_role: 'professional', signup_source: 'professional_invitation' }
+  })
+  if (created.error || !created.data.user) {
+    await cancelUnprovisionedInvitation(session, invitation.id, invitation.version, 'auth_identity_create_failed')
+    if (created.error?.code === 'weak_password') throw new ApiError('invalid_input')
+    if (['email_exists', 'user_already_exists'].includes(created.error?.code ?? ''))
+      throw new ApiError('conflict')
+    throw new ApiError('service_unavailable')
   }
+  const bound = await session.client.rpc('bind_professional_invitation_auth_user', {
+    p_invitation_id: invitation.id,
+    p_auth_user_id: created.data.user.id
+  })
+  if (bound.error) {
+    await admin.auth.admin.deleteUser(created.data.user.id)
+    await cancelUnprovisionedInvitation(session, invitation.id, invitation.version, 'auth_identity_bind_failed')
+    fail(bound.error.code)
+  }
+  const delivery = await sendInvitationCredentials(
+    session,
+    invitation,
+    token,
+    temporaryPassword
+  )
+  return { invitation: delivery.accepted ? { ...invitation, status: 'sent' as const } : invitation, delivery }
 }
 
 export async function resendProfessionalInvitation(session: Session, input: unknown) {
@@ -93,12 +179,16 @@ export async function resendProfessionalInvitation(session: Session, input: unkn
   const result = await session.client.rpc('renew_professional_invitation', { p_id: invitationId })
   if (result.error) fail(result.error.code)
   const parsed = createdInvitationSchema.safeParse(result.data)
-  if (!parsed.success || !parsed.data.token) throw new ApiError('service_unavailable')
-  const delivery = await dispatchProfessionalInvitation(invitationId)
-  return {
-    delivery,
-    link: `${authOrigin(process.env.NEXT_PUBLIC_APP_URL)}/pro/onboarding/${parsed.data.token}`
-  }
+  if (!parsed.success || !parsed.data.token || !parsed.data.provisionedAuthUserId)
+    throw new ApiError('service_unavailable')
+  const { token, provisionedAuthUserId } = parsed.data
+  const invitation = publicInvitation(parsed.data)
+  const temporaryPassword = generateTemporaryProfessionalPassword()
+  const admin = invitationAdminClient()
+  const updated = await admin.auth.admin.updateUserById(provisionedAuthUserId, { password: temporaryPassword })
+  if (updated.error) return { delivery: { accepted: false, reason: 'delivery_failed' as const } }
+  const delivery = await sendInvitationCredentials(session, invitation, token, temporaryPassword)
+  return { delivery }
 }
 
 /** This identity may have no domain profile yet. Only invitation/onboarding RPCs may use it. */

@@ -17,7 +17,7 @@ export type LoginProfile = {
 
 type SignInResult =
   | { ok: true; userId: string; accountIncomplete?: boolean }
-  | { ok: false; reason: 'invalid_credentials' | 'unexpected' }
+  | { ok: false; reason: 'invalid_credentials' | 'invalid_professional_invitation' | 'unexpected' }
 
 export interface LoginGateway {
   signIn(credentials: { email: string; password: string }): Promise<SignInResult>
@@ -50,7 +50,9 @@ export async function authenticateLogin(
       email,
       message: signIn.reason === 'invalid_credentials'
         ? 'El email o la contraseña no son correctos.'
-        : 'No pudimos iniciar sesión. Intentá nuevamente.'
+        : signIn.reason === 'invalid_professional_invitation'
+          ? 'La invitación venció o ya no es válida. Pedí a administración que te envíe otra.'
+          : 'No pudimos iniciar sesión. Intentá nuevamente.'
     }
   }
 
@@ -76,8 +78,10 @@ export async function authenticateLogin(
   }
 
   const requested = safeLocalRedirectPath(input.next, profile.role)
-  const destination = profile.role === 'professional' && profile.professionalOnboarding
-    ? (requested.startsWith('/pro/dashboard') ? '/pro/dashboard' : '/pro/onboarding')
+  const destination = profile.role === 'professional'
+    ? profile.professionalOnboarding
+      ? '/pro/onboarding'
+      : requested.startsWith('/pro/onboarding') ? '/pro/dashboard' : requested
     : requested
   if (profile.role !== 'customer' && profile.assuranceLevel !== 'aal2') {
     return { ok: true, redirectTo: `/seguridad?next=${encodeURIComponent(destination)}` }

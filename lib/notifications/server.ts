@@ -1,8 +1,9 @@
 import 'server-only'
+import { randomUUID } from 'node:crypto'
 import { createClient } from '@supabase/supabase-js'
 import { z } from 'zod'
-import { notificationOrigin } from './delivery-template'
-import { sendTransactionalEmail } from './provider'
+import { notificationOrigin, renderProfessionalTemporaryInvitation } from './delivery-template'
+import { emailSnapshotSchema, sendTransactionalEmail } from './provider'
 import { runOutboxBatch } from './worker'
 import { logEvent } from '@/lib/observability/logger'
 
@@ -90,6 +91,41 @@ export async function dispatchProfessionalInvitation(invitationId: string): Prom
       ? rawCode
       : 'unexpected'
     logEvent('error', 'professional_invitation.delivery_exception', { code })
+    return { accepted: false, reason: 'delivery_failed' }
+  }
+}
+
+/** Synchronous-only secret delivery: its body must never be sealed into the outbox. */
+export async function sendProfessionalTemporaryInvitation(input: {
+  email: string
+  invitationToken: string
+  temporaryPassword: string
+}): Promise<{ accepted: boolean; reason: 'email_not_configured' | 'delivery_failed' | null }> {
+  const enabled = process.env.NOTIFICATIONS_EMAIL_ENABLED === 'true'
+  if (!enabled || !process.env.RESEND_API_KEY || !process.env.NOTIFICATIONS_EMAIL_FROM)
+    return { accepted: false, reason: 'email_not_configured' }
+  if (process.env.APP_ENV === 'test') throw new Error('real_email_disabled_in_tests')
+  try {
+    const from = z.string()
+      .regex(/^(?:[^<>\r\n]+ <)?[^<>\s@]+@[^<>\s@]+\.[^<>\s@]+>?$/)
+      .parse(process.env.NOTIFICATIONS_EMAIL_FROM)
+    const message = renderProfessionalTemporaryInvitation(input, process.env.NEXT_PUBLIC_APP_URL ?? '')
+    const content = emailSnapshotSchema.parse({
+      from,
+      to: input.email,
+      subject: message.subject,
+      text: message.text,
+      html: message.html
+    })
+    const result = await sendTransactionalEmail(content, {
+      apiKey: z.string().min(1).parse(process.env.RESEND_API_KEY),
+      idempotencyKey: `pro-invite-${randomUUID()}`,
+      firstAttemptAt: new Date().toISOString()
+    })
+    return result.accepted
+      ? { accepted: true, reason: null }
+      : { accepted: false, reason: 'delivery_failed' }
+  } catch {
     return { accepted: false, reason: 'delivery_failed' }
   }
 }
