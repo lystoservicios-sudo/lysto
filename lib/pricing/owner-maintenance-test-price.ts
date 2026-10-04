@@ -55,3 +55,14 @@ export function applyOwnerMaintenanceTestPrice<T extends QuoteAmounts>(quote: T,
     specialPricing: { kind: 'owner_maintenance_test' as const, amount: OWNER_MAINTENANCE_TEST_PRICE }
   }
 }
+
+export function previewOwnerMaintenanceTestPrice<T extends QuoteAmounts>(
+  quote: T,
+  ownerTestCustomer: boolean,
+  issue: string
+) {
+  return applyOwnerMaintenanceTestPrice(
+    quote,
+    ownerTestCustomer && issue === 'mantenimiento'
+  )
+}

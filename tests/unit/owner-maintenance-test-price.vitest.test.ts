@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
   applyOwnerMaintenanceTestPrice,
-  isOwnerMaintenanceTestCustomer
+  isOwnerMaintenanceTestCustomer,
+  previewOwnerMaintenanceTestPrice
 } from '@/lib/pricing/owner-maintenance-test-price'
 
 const quote = {
@@ -46,5 +47,15 @@ describe('owner maintenance test price', () => {
 
   it('leaves every other quote unchanged', () => {
     expect(applyOwnerMaintenanceTestPrice(quote, false)).toEqual(quote)
+  })
+
+  it('shows the special amount in the owner preview only for maintenance', () => {
+    expect(previewOwnerMaintenanceTestPrice(quote, true, 'mantenimiento')).toMatchObject({
+      total: 1000,
+      platformFee: 180,
+      professionalAmount: 820
+    })
+    expect(previewOwnerMaintenanceTestPrice(quote, true, 'no_enfria')).toEqual(quote)
+    expect(previewOwnerMaintenanceTestPrice(quote, false, 'mantenimiento')).toEqual(quote)
   })
 })
