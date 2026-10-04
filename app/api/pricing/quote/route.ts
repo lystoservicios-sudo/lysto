@@ -22,6 +22,7 @@ import {
 import { requireNewRequests } from '@/lib/release/runtime-switches'
 import {
   applyOwnerMaintenanceTestPrice,
+  confirmNoMaterialsForOwnerTest,
   isOwnerMaintenanceTestCustomer
 } from '@/lib/pricing/owner-maintenance-test-price'
 
@@ -125,10 +126,14 @@ export async function POST(request: Request) {
           'Traslado pendiente de verificación. El importe mostrado todavía no lo incluye.'
       }
     }
-    const input = quoteInputSchema.parse({ ...body, route })
+    const calculatedInput = quoteInputSchema.parse({ ...body, route })
     const { data: identity } =
       session.role === 'customer' ? await session.client.auth.getUser() : { data: { user: null } }
-    const ownerTestPrice = isOwnerMaintenanceTestCustomer(identity?.user?.email, input.issue)
+    const ownerTestPrice = isOwnerMaintenanceTestCustomer(
+      identity?.user?.email,
+      calculatedInput.issue
+    )
+    const input = confirmNoMaterialsForOwnerTest(calculatedInput, ownerTestPrice)
     const quote = applyOwnerMaintenanceTestPrice(
       calculateServiceQuote(input, policy, now),
       ownerTestPrice

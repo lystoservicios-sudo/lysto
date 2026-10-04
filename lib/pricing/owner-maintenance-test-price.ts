@@ -12,6 +12,13 @@ export function isOwnerMaintenanceTestIssue(ownerTestCustomer: boolean, issue: s
   return ownerTestCustomer && issue === 'mantenimiento'
 }
 
+export function confirmNoMaterialsForOwnerTest<T extends { materialsConfirmed: boolean }>(
+  input: T,
+  ownerTestQuote: boolean
+): T {
+  return ownerTestQuote ? { ...input, materialsConfirmed: true } : input
+}
+
 type QuoteAmounts = {
   total: number
   platformFee: number

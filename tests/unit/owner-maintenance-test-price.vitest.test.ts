@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   applyOwnerMaintenanceTestPrice,
+  confirmNoMaterialsForOwnerTest,
   isOwnerMaintenanceTestIssue,
   isOwnerMaintenanceTestCustomer,
   previewOwnerMaintenanceTestPrice
@@ -64,5 +65,14 @@ describe('owner maintenance test price', () => {
     expect(isOwnerMaintenanceTestIssue(true, 'mantenimiento')).toBe(true)
     expect(isOwnerMaintenanceTestIssue(true, 'instalacion')).toBe(false)
     expect(isOwnerMaintenanceTestIssue(false, 'mantenimiento')).toBe(false)
+  })
+
+  it('derives the no-material confirmation on the server only for the owner test quote', () => {
+    const input = { materialsConfirmed: false, issue: 'mantenimiento' }
+    expect(confirmNoMaterialsForOwnerTest(input, true)).toMatchObject({
+      issue: 'mantenimiento',
+      materialsConfirmed: true
+    })
+    expect(confirmNoMaterialsForOwnerTest(input, false)).toEqual(input)
   })
 })

@@ -223,8 +223,8 @@ export function AirConditioningWizard({
       : option === 'priority'
         ? prices.priority
         : prices.flexible
-  async function saveQuote() {
-    if (quoteBusy || uploadBusy || savedPhotos.length !== files.length) return
+  async function saveQuote(): Promise<boolean> {
+    if (quoteBusy || uploadBusy || savedPhotos.length !== files.length) return false
     setQuoteBusy(true)
     setQuoteNotice('')
     try {
@@ -241,7 +241,6 @@ export function AirConditioningWizard({
           propertyType: address.propertyType,
           access,
           equipment: { capacity, technology },
-          materialsConfirmed: isOwnerMaintenanceTestQuote,
           address: {
             street: address.street,
             number: address.number,
@@ -262,13 +261,23 @@ export function AirConditioningWizard({
         throw new Error('El sistema no confirmó que el presupuesto quedara guardado. Revisá Mis presupuestos antes de continuar.')
       setServerQuote({ id: data.quoteId, inputKey: quoteKey, quote: data.quote })
       setQuoteNotice(
-        'Presupuesto guardado. Podés consultar su revisión en Mis presupuestos. No se realizó ningún cobro.'
+        'Presupuesto guardado. Administración revisará el alcance. No se realizó ningún cobro.'
       )
+      return true
     } catch (error) {
       setQuoteNotice(error instanceof Error ? error.message : 'No se pudo guardar el presupuesto.')
+      return false
     } finally {
       setQuoteBusy(false)
     }
+  }
+
+  async function continueRequest() {
+    if (uploadBusy || errors.length > 0 || quoteBusy) return
+    if (step === 5 && !quoteSavedForCurrentInput) {
+      if (!(await saveQuote())) return
+    }
+    setStep((value) => Math.min(steps.length - 1, value + 1))
   }
 
   const validationKey =
@@ -430,39 +439,18 @@ export function AirConditioningWizard({
               {isOwnerMaintenanceTestQuote ? (
                 <p className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-950">
                   Precio especial de prueba para esta cuenta: $1.000 en total, sin repuestos. Al
-                  guardar, administración revisará el presupuesto antes de que puedas aceptarlo y
-                  pedir un profesional. No se cobra en este paso.
+                  continuar, el presupuesto se guardará para que administración lo revise. No se
+                  cobra en este paso.
                 </p>
               ) : null}
-              <Button
-                disabled={
-                  quoteBusy ||
-                  uploadBusy ||
-                  savedPhotos.length !== files.length ||
-                  (selectedDay === 'Otro día' && !customDate)
-                }
-                onClick={() => void saveQuote()}
-              >
-                {quoteBusy
-                  ? 'Calculando traslado y guardando…'
-                  : isOwnerMaintenanceTestQuote
-                    ? 'Guardar presupuesto de $1.000 para revisión'
-                    : 'Calcular traslado y guardar presupuesto'}
-              </Button>
               {quoteNotice ? (
                 <p role="status" className="text-sm text-blue-800">
                   {quoteNotice}
                 </p>
               ) : null}
-              <ButtonLink href="/app/presupuestos" variant="secondary">
-                Mis presupuestos
-              </ButtonLink>
-              {!quoteSavedForCurrentInput ? (
-                <p role="status" className="text-sm text-slate-600">
-                  Para continuar, primero guardá este presupuesto. Después lo vas a encontrar en
-                  “Mis presupuestos” para que administración lo revise.
-                </p>
-              ) : null}
+              <p className="text-sm text-slate-600">
+                Al solicitar, guardamos este presupuesto para revisión. No se realiza ningún cobro.
+              </p>
             </div>
           ) : null}
           {step === 6 ? (
@@ -524,14 +512,14 @@ export function AirConditioningWizard({
               <Button
                 size="lg"
                 className="flex-1 shadow-none sm:ml-auto sm:min-w-40 sm:flex-none"
-                disabled={
-                  uploadBusy ||
-                  errors.length > 0 ||
-                  (step === 5 && !quoteSavedForCurrentInput)
-                }
-                onClick={() => setStep((value) => Math.min(steps.length - 1, value + 1))}
+                disabled={uploadBusy || errors.length > 0 || quoteBusy}
+                onClick={() => void continueRequest()}
               >
-                Continuar
+                {step === 5
+                  ? quoteBusy
+                    ? 'Enviando solicitud…'
+                    : 'Solicitar'
+                  : 'Continuar'}
               </Button>
             )}
           </div>
