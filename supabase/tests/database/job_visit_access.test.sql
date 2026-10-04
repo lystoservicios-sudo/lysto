@@ -11,6 +11,11 @@ where email like 'visit-guard-%@lysto.test' and id<>'76000000-0000-4000-8000-000
 insert into public.customer_profiles(id,profile_id) values
 ('76000000-0000-4000-8000-000000000001','76000000-0000-4000-8000-000000000001'),
 ('76000000-0000-4000-8000-000000000004','76000000-0000-4000-8000-000000000004');
+select ok(not private.is_owner_maintenance_test_quote(
+  '76000000-0000-4000-8000-000000000001',
+  '{"issue":"mantenimiento"}'::jsonb,
+  '{"specialPricing":{"kind":"owner_maintenance_test","amount":1000},"total":1000,"platformFeeRate":0.18,"platformFee":180,"professionalAmount":820,"platformContribution":180}'::jsonb
+),'Owner test price cannot be forged for a different customer');
 insert into public.professional_profiles(id,profile_id,status) values
 ('76000000-0000-4000-8000-000000000002','76000000-0000-4000-8000-000000000002','approved');
 insert into public.admin_profiles(id,profile_id) values
@@ -32,6 +37,7 @@ update public.jobs set status='confirmed' where id='76300000-0000-4000-8000-0000
 select pg_temp.fixture_set_config('request.jwt.claims','{"sub":"76000000-0000-4000-8000-000000000001","role":"authenticated","app_metadata":{"app_role":"customer"}}',true);
 set local role authenticated;
 select is(public.get_job_visit('76300000-0000-4000-8000-000000000001')->>'addressLabel','Dirección de ensayo 123, CABA','Current customer can read their confirmed visit');
+select is(public.get_job_professional_name('76300000-0000-4000-8000-000000000001'),'Visit G.','Current customer can see the assigned professional before paying');
 reset role;
 select pg_temp.fixture_set_config('request.jwt.claims','{"sub":"76000000-0000-4000-8000-000000000002","role":"authenticated","app_metadata":{"app_role":"professional"}}',true);
 set local role authenticated;
@@ -48,6 +54,7 @@ reset role;
 select pg_temp.fixture_set_config('request.jwt.claims','{"sub":"76000000-0000-4000-8000-000000000004","role":"authenticated","app_metadata":{"app_role":"customer"}}',true);
 set local role authenticated;
 select throws_ok($$select public.get_job_visit('76300000-0000-4000-8000-000000000001')$$,'P0002','job_not_found','Another customer cannot read the visit');
+select throws_ok($$select public.get_job_professional_name('76300000-0000-4000-8000-000000000001')$$,'P0002','job_not_found','Another customer cannot read the assigned professional');
 reset role;
 select pg_temp.fixture_set_config('request.jwt.claims','{"sub":"76000000-0000-4000-8000-000000000005","role":"authenticated","app_metadata":{"app_role":"customer"}}',true);
 set local role authenticated;
@@ -67,5 +74,6 @@ set local role authenticated;
 select throws_ok($$select public.get_job_visit('76300000-0000-4000-8000-000000000001')$$,'P0002','job_not_found','Missing identity is rejected');
 reset role;
 select ok(not has_function_privilege('anon','public.get_job_visit(uuid)','execute'),'Anonymous execution remains revoked');
+select ok(not has_function_privilege('anon','public.get_job_professional_name(uuid)','execute'),'Anonymous professional name lookup remains revoked');
 select * from finish();
 rollback;

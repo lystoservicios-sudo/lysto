@@ -20,6 +20,10 @@ import {
   requestSubject
 } from '@/lib/security/rate-limit'
 import { requireNewRequests } from '@/lib/release/runtime-switches'
+import {
+  applyOwnerMaintenanceTestPrice,
+  isOwnerMaintenanceTestCustomer
+} from '@/lib/pricing/owner-maintenance-test-price'
 
 const schema = quoteInputSchema
   .omit({ route: true })
@@ -122,7 +126,13 @@ export async function POST(request: Request) {
       }
     }
     const input = quoteInputSchema.parse({ ...body, route })
-    const quote = calculateServiceQuote(input, policy, now)
+    const { data: identity } =
+      session.role === 'customer' ? await session.client.auth.getUser() : { data: { user: null } }
+    const ownerTestPrice = isOwnerMaintenanceTestCustomer(identity?.user?.email, input.issue)
+    const quote = applyOwnerMaintenanceTestPrice(
+      calculateServiceQuote(input, policy, now),
+      ownerTestPrice
+    )
     let quoteId: string | null = null
     if (body.save) {
       const customerId = session.role === 'customer' ? session.customerId : body.customerId

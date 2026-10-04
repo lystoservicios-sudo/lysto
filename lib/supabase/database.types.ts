@@ -4229,6 +4229,7 @@ export type Database = {
         Returns: boolean
       }
       get_job_visit: { Args: { p_job_id: string }; Returns: Json }
+      get_job_professional_name: { Args: { p_job_id: string }; Returns: string | null }
       get_payment_refund_execution_context: {
         Args: { p_claim_token: string; p_request_id: string }
         Returns: Json

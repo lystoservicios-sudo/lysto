@@ -38,6 +38,13 @@ export async function GET(request: Request) {
     const visitResult = await s.client.rpc('get_job_visit', { p_job_id: job.id })
     if (visitResult.error) throwPricingDatabaseError(visitResult.error)
     const visit = visitSchema.nullable().parse(visitResult.data)
+    const professionalResult = await s.client.rpc('get_job_professional_name', { p_job_id: job.id })
+    if (
+      professionalResult.error &&
+      !['42883', 'PGRST202'].includes(professionalResult.error.code ?? '')
+    )
+      throwPricingDatabaseError(professionalResult.error)
+    const professionalName = professionalResult.data ?? visit?.professionalName ?? null
     const { data: savedQuote } = await s.client
       .from('service_quotes')
       .select('*')
@@ -66,7 +73,7 @@ export async function GET(request: Request) {
       .eq('job_id', job.id)
       .maybeSingle()
     return privateJson({
-      job,
+      job: { ...job, professionalName },
       savedQuote,
       extras: extras ?? [],
       onsiteDiagnosis: onsite.data ?? null,

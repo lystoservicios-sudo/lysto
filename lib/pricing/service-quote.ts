@@ -204,7 +204,8 @@ export const reviewReasonLabels: Record<string, string> = {
   diagnosis_required: 'El alcance de reparación requiere confirmación técnica',
   professional_net_floor:
     'El neto estimado del profesional después del costo de Mercado Pago no cubre los costos calculados: revisar la comisión y los costos antes de ofrecer',
-  platform_cost_floor: 'Los costos de cobro superan la comisión disponible'
+  platform_cost_floor: 'Los costos de cobro superan la comisión disponible',
+  owner_maintenance_test_review: 'El precio especial de prueba requiere revisión de operaciones'
 }
 
 export function calculateServiceQuote(
@@ -372,4 +373,6 @@ export function calculateServiceQuote(
     priceKind: 'preliminary' as const
   }
 }
-export type ServiceQuote = ReturnType<typeof calculateServiceQuote>
+export type ServiceQuote = ReturnType<typeof calculateServiceQuote> & {
+  specialPricing?: { kind: 'owner_maintenance_test'; amount: number }
+}

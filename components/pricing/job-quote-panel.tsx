@@ -29,7 +29,7 @@ type Diagnosis = {
 }
 type JobData = {
   role: string
-  job: { id: string; status: string }
+  job: { id: string; status: string; professionalName: string | null }
   equipmentId: string | null
   visit: CustomerJobVisit | null
   onsiteDiagnosis: Diagnosis | null
@@ -225,6 +225,20 @@ export function JobQuotePanel({ jobId, requestId }: { jobId?: string; requestId?
               internal={data.role !== 'customer'}
               status={data.savedQuote.status}
             />
+          ) : null}
+          {data.role === 'customer' && data.job.professionalName ? (
+            <Card className="space-y-1 p-5">
+              <h2 className="font-bold">Técnico asignado: {data.job.professionalName}</h2>
+              {data.job.status === 'pending_professional_acceptance' ? (
+                <p className="text-sm text-slate-600">
+                  Cuando acepte el servicio, vas a poder pagar desde acá.
+                </p>
+              ) : data.job.status === 'confirmed' ? (
+                <p className="text-sm text-slate-600">
+                  El técnico aceptó el servicio. Ya podés confirmar el pago.
+                </p>
+              ) : null}
+            </Card>
           ) : null}
           <PaymentPanel
             jobId={data.job.id}
