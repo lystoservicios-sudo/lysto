@@ -75,4 +75,17 @@ describe('owner maintenance test price', () => {
     })
     expect(confirmNoMaterialsForOwnerTest(input, false)).toEqual(input)
   })
+
+  it('keeps the owner test quote within the database financial invariants', () => {
+    const result = applyOwnerMaintenanceTestPrice(quote, true)
+
+    expect(result.total).toBe(
+      result.calculatorSubtotal + Math.round(result.calculatorSubtotal * 0.3 * 100) / 100
+    )
+    expect(result.professionalAmount).toBeGreaterThanOrEqual(result.calculatorSubtotal)
+    expect(result.total).toBe(result.professionalAmount + result.platformFee)
+    expect(result.professionalAmount - result.paymentCostBudget).toBeGreaterThanOrEqual(
+      result.calculatorSubtotal
+    )
+  })
 })

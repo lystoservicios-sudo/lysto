@@ -42,6 +42,11 @@ export function applyOwnerMaintenanceTestPrice<T extends QuoteAmounts>(quote: T,
   if (!eligible) return quote
   const platformFee = money(OWNER_MAINTENANCE_TEST_PRICE * MARKETPLACE_COMMISSION_RATE)
   const professionalAmount = money(OWNER_MAINTENANCE_TEST_PRICE - platformFee)
+  const calculatorSubtotal = money(OWNER_MAINTENANCE_TEST_PRICE / 1.3)
+  const safetyAmount = money(OWNER_MAINTENANCE_TEST_PRICE - calculatorSubtotal)
+  const paymentCostBudget = money(
+    Math.min(OWNER_MAINTENANCE_TEST_PRICE * 0.06, professionalAmount - calculatorSubtotal)
+  )
   const reviewReasons = quote.reviewReasons.filter(
     (reason) => reason !== 'tariffs_unapproved' && reason !== 'professional_net_floor'
   )
@@ -53,14 +58,15 @@ export function applyOwnerMaintenanceTestPrice<T extends QuoteAmounts>(quote: T,
     professionalAmount,
     platformFeeRate: MARKETPLACE_COMMISSION_RATE,
     platformContribution: platformFee,
-    paymentCostBudget: money(OWNER_MAINTENANCE_TEST_PRICE * 0.06),
-    calculatorSubtotal: OWNER_MAINTENANCE_TEST_PRICE,
-    labor: OWNER_MAINTENANCE_TEST_PRICE,
-    laborReference: OWNER_MAINTENANCE_TEST_PRICE,
+    paymentCostBudget,
+    calculatorSubtotal,
+    subtotal: calculatorSubtotal,
+    labor: calculatorSubtotal,
+    laborReference: calculatorSubtotal,
     adjustments: [],
     materialsAmount: 0,
     travel: 0,
-    safetyAmount: 0,
+    safetyAmount,
     reviewReasons,
     readyToOffer: false,
     specialPricing: { kind: 'owner_maintenance_test' as const, amount: OWNER_MAINTENANCE_TEST_PRICE }
