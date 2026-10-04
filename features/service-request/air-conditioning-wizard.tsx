@@ -30,7 +30,10 @@ import {
   type ServiceQuote
 } from '@/lib/pricing/service-quote'
 import { QuoteBreakdown } from '@/components/pricing/quote-breakdown'
-import { previewOwnerMaintenanceTestPrice } from '@/lib/pricing/owner-maintenance-test-price'
+import {
+  isOwnerMaintenanceTestIssue,
+  previewOwnerMaintenanceTestPrice
+} from '@/lib/pricing/owner-maintenance-test-price'
 import { validateRequestStep } from '@/lib/service-request/validation'
 import { cn } from '@/lib/utils/cn'
 import { SavedAddressPicker } from '@/components/customer/saved-address-picker'
@@ -160,13 +163,18 @@ export function AirConditioningWizard({
         : null,
     [files, issue, timeSince]
   )
+  const isOwnerMaintenanceTestQuote = isOwnerMaintenanceTestIssue(
+    ownerMaintenanceTestCustomer,
+    issue ?? ''
+  )
   const prices = useMemo(() => {
     const data = {
       issue: issue ?? 'no_enfria',
       timeSince: timeSince ?? 'days',
       propertyType: address.propertyType,
       access,
-      equipment: { capacity, technology }
+      equipment: { capacity, technology },
+      materialsConfirmed: isOwnerMaintenanceTestQuote
     }
     return {
       flexible: previewOwnerMaintenanceTestPrice(
@@ -188,7 +196,8 @@ export function AirConditioningWizard({
     capacity,
     technology,
     policy,
-    ownerMaintenanceTestCustomer
+    ownerMaintenanceTestCustomer,
+    isOwnerMaintenanceTestQuote
   ])
   const quoteKey = JSON.stringify({
     issue,
@@ -226,6 +235,7 @@ export function AirConditioningWizard({
           propertyType: address.propertyType,
           access,
           equipment: { capacity, technology },
+          materialsConfirmed: isOwnerMaintenanceTestQuote,
           address: {
             street: address.street,
             number: address.number,
@@ -409,11 +419,11 @@ export function AirConditioningWizard({
                 priority={option === 'priority' ? selectedPrice : prices.priority}
               />
               <QuoteBreakdown quote={selectedPrice} />
-              {ownerMaintenanceTestCustomer && issue === 'mantenimiento' ? (
+              {isOwnerMaintenanceTestQuote ? (
                 <p className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-950">
-                  Precio especial de prueba para esta cuenta: $1.000 en total. Al guardar,
-                  administración revisará el presupuesto antes de que puedas aceptarlo y pedir
-                  un profesional. No se cobra en este paso.
+                  Precio especial de prueba para esta cuenta: $1.000 en total, sin repuestos. Al
+                  guardar, administración revisará el presupuesto antes de que puedas aceptarlo y
+                  pedir un profesional. No se cobra en este paso.
                 </p>
               ) : null}
               <Button
@@ -427,7 +437,7 @@ export function AirConditioningWizard({
               >
                 {quoteBusy
                   ? 'Calculando traslado y guardando…'
-                  : ownerMaintenanceTestCustomer && issue === 'mantenimiento'
+                  : isOwnerMaintenanceTestQuote
                     ? 'Guardar presupuesto de $1.000 para revisión'
                     : 'Calcular traslado y guardar presupuesto'}
               </Button>

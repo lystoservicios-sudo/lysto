@@ -5,7 +5,7 @@ export function QuoteBreakdown({ quote: q, internal = false, status }: { quote: 
   const reviewed = status === 'ready' || status === 'accepted'
   return <Card className="space-y-5 p-5 shadow-none">
     <div><p className="text-xs font-bold uppercase tracking-wider text-blue-700">{reviewed ? (status === 'accepted' ? 'Presupuesto aceptado' : 'Presupuesto verificado por operaciones') : q.readyToOffer ? 'Presupuesto preliminar' : 'Estimación · requiere revisión'}</p><h2 className="mt-2 text-3xl font-black tabular-nums">{ars(q.total)}</h2><p className="mt-2 text-sm text-slate-600">{q.scope}</p></div>
-    {q.specialPricing ? <dl className="space-y-2 text-sm"><Line label="Mantenimiento · precio especial de prueba" amount={q.total} /></dl> : <dl className="space-y-2 text-sm">
+    {q.specialPricing ? <dl className="space-y-2 text-sm"><Line label="Mantenimiento · precio de prueba sin repuestos" amount={q.total} /></dl> : <dl className="space-y-2 text-sm">
       <Line label="Mano de obra" amount={q.labor} />
       {q.adjustments.map(line => <Line key={line.code} label={line.label} amount={line.amount} />)}
       <Line label="Materiales cotizados" amount={q.materialsAmount} />

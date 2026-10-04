@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   applyOwnerMaintenanceTestPrice,
+  isOwnerMaintenanceTestIssue,
   isOwnerMaintenanceTestCustomer,
   previewOwnerMaintenanceTestPrice
 } from '@/lib/pricing/owner-maintenance-test-price'
@@ -57,5 +58,11 @@ describe('owner maintenance test price', () => {
     })
     expect(previewOwnerMaintenanceTestPrice(quote, true, 'no_enfria')).toEqual(quote)
     expect(previewOwnerMaintenanceTestPrice(quote, false, 'mantenimiento')).toEqual(quote)
+  })
+
+  it('marks no-material maintenance as confirmed only for the owner test quote', () => {
+    expect(isOwnerMaintenanceTestIssue(true, 'mantenimiento')).toBe(true)
+    expect(isOwnerMaintenanceTestIssue(true, 'instalacion')).toBe(false)
+    expect(isOwnerMaintenanceTestIssue(false, 'mantenimiento')).toBe(false)
   })
 })

@@ -8,6 +8,10 @@ export function isOwnerMaintenanceTestCustomer(email: string | null | undefined,
   return email?.trim().toLowerCase() === OWNER_TEST_CUSTOMER_EMAIL && issue === 'mantenimiento'
 }
 
+export function isOwnerMaintenanceTestIssue(ownerTestCustomer: boolean, issue: string) {
+  return ownerTestCustomer && issue === 'mantenimiento'
+}
+
 type QuoteAmounts = {
   total: number
   platformFee: number
@@ -63,6 +67,6 @@ export function previewOwnerMaintenanceTestPrice<T extends QuoteAmounts>(
 ) {
   return applyOwnerMaintenanceTestPrice(
     quote,
-    ownerTestCustomer && issue === 'mantenimiento'
+    isOwnerMaintenanceTestIssue(ownerTestCustomer, issue)
   )
 }
