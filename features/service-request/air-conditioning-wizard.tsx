@@ -35,6 +35,7 @@ import {
   previewOwnerMaintenanceTestPrice
 } from '@/lib/pricing/owner-maintenance-test-price'
 import { validateRequestStep } from '@/lib/service-request/validation'
+import { isSavedQuoteForCurrentInput } from '@/lib/service-request/wizard'
 import { cn } from '@/lib/utils/cn'
 import { SavedAddressPicker } from '@/components/customer/saved-address-picker'
 import type { CustomerAssetAddress } from '@/lib/customer-assets/contracts'
@@ -134,7 +135,11 @@ export function AirConditioningWizard({
   const [customDate, setCustomDate] = useState('')
   const [quoteBusy, setQuoteBusy] = useState(false)
   const [quoteNotice, setQuoteNotice] = useState('')
-  const [serverQuote, setServerQuote] = useState<{ key: string; quote: ServiceQuote } | null>(null)
+  const [serverQuote, setServerQuote] = useState<{
+    id: string
+    inputKey: string
+    quote: ServiceQuote
+  } | null>(null)
   const [policy, setPolicy] = useState(defaultQuotePolicy)
   useEffect(() => {
     let active = true
@@ -211,8 +216,9 @@ export function AirConditioningWizard({
     timeWindow,
     option
   })
+  const quoteSavedForCurrentInput = isSavedQuoteForCurrentInput(quoteKey, serverQuote)
   const selectedPrice =
-    serverQuote?.key === quoteKey
+    quoteSavedForCurrentInput && serverQuote
       ? serverQuote.quote
       : option === 'priority'
         ? prices.priority
@@ -252,7 +258,9 @@ export function AirConditioningWizard({
       })
       const data = await result.json()
       if (!result.ok) throw new Error(data.error)
-      setServerQuote({ key: quoteKey, quote: data.quote })
+      if (typeof data.quoteId !== 'string' || !data.quoteId)
+        throw new Error('El sistema no confirmó que el presupuesto quedara guardado. Revisá Mis presupuestos antes de continuar.')
+      setServerQuote({ id: data.quoteId, inputKey: quoteKey, quote: data.quote })
       setQuoteNotice(
         'Presupuesto guardado. Podés consultar su revisión en Mis presupuestos. No se realizó ningún cobro.'
       )
@@ -449,6 +457,12 @@ export function AirConditioningWizard({
               <ButtonLink href="/app/presupuestos" variant="secondary">
                 Mis presupuestos
               </ButtonLink>
+              {!quoteSavedForCurrentInput ? (
+                <p role="status" className="text-sm text-slate-600">
+                  Para continuar, primero guardá este presupuesto. Después lo vas a encontrar en
+                  “Mis presupuestos” para que administración lo revise.
+                </p>
+              ) : null}
             </div>
           ) : null}
           {step === 6 ? (
@@ -459,8 +473,9 @@ export function AirConditioningWizard({
                 acepte el trabajo, vas a poder pagar con Mercado Pago desde el detalle del servicio.
               </p>
               <p className="text-sm text-slate-600">
-                Guardar esta solicitud no genera un cobro. El presupuesto aceptado conserva su
-                precio.
+                El presupuesto ya quedó guardado en “Mis presupuestos” para revisión. Cuando esté
+                aprobado, vas a poder aceptarlo y solicitar el profesional. No se cobra hasta que
+                un profesional acepte el trabajo y confirmes el pago.
               </p>
               <ButtonLink href="/app/presupuestos">Ver mis presupuestos</ButtonLink>
             </Card>
@@ -509,7 +524,11 @@ export function AirConditioningWizard({
               <Button
                 size="lg"
                 className="flex-1 shadow-none sm:ml-auto sm:min-w-40 sm:flex-none"
-                disabled={uploadBusy || errors.length > 0}
+                disabled={
+                  uploadBusy ||
+                  errors.length > 0 ||
+                  (step === 5 && !quoteSavedForCurrentInput)
+                }
                 onClick={() => setStep((value) => Math.min(steps.length - 1, value + 1))}
               >
                 Continuar

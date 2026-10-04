@@ -56,6 +56,13 @@ export type StepValidation = {
   nextStep?: WizardStepKey
 }
 
+export function isSavedQuoteForCurrentInput(
+  currentInputKey: string,
+  savedQuote: { id: string; inputKey: string } | null | undefined
+): boolean {
+  return Boolean(savedQuote?.id && savedQuote.inputKey === currentInputKey)
+}
+
 function present(value: unknown): boolean {
   if (typeof value === 'string') return value.trim().length > 0
   return value !== undefined && value !== null && value !== false
