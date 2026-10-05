@@ -66,7 +66,8 @@ export async function loginAction(
         }
         if (trustedRole === 'professional') {
           const accepted = await supabase.rpc('accept_professional_invitation', {
-            p_token: invitationToken
+            // The SQL function deliberately accepts null to resume provisioned accounts.
+            p_token: invitationToken as string
           })
           if (accepted.error) {
             await supabase.auth.signOut({ scope: 'local' })

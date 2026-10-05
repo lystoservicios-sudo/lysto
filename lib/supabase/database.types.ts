@@ -2566,12 +2566,12 @@ export type Database = {
           id: string
           internal_score: number
           invitation_id: string | null
-          onboarding_completed_at: string | null
           jobs_completed: number
           license_entity: string | null
           license_expires_at: string | null
           license_number: string | null
           mobility_type: string | null
+          onboarding_completed_at: string | null
           profile_id: string
           rating_avg: number | null
           schedule_settings_version: number
@@ -2593,12 +2593,12 @@ export type Database = {
           id?: string
           internal_score?: number
           invitation_id?: string | null
-          onboarding_completed_at?: string | null
           jobs_completed?: number
           license_entity?: string | null
           license_expires_at?: string | null
           license_number?: string | null
           mobility_type?: string | null
+          onboarding_completed_at?: string | null
           profile_id: string
           rating_avg?: number | null
           schedule_settings_version?: number
@@ -2620,12 +2620,12 @@ export type Database = {
           id?: string
           internal_score?: number
           invitation_id?: string | null
-          onboarding_completed_at?: string | null
           jobs_completed?: number
           license_entity?: string | null
           license_expires_at?: string | null
           license_number?: string | null
           mobility_type?: string | null
+          onboarding_completed_at?: string | null
           profile_id?: string
           rating_avg?: number | null
           schedule_settings_version?: number
@@ -3808,12 +3808,8 @@ export type Database = {
     }
     Functions: {
       accept_professional_invitation: {
-        Args: { p_token: string | null }
+        Args: { p_token: string }
         Returns: Json
-      }
-      bind_professional_invitation_auth_user: {
-        Args: { p_auth_user_id: string; p_invitation_id: string }
-        Returns: undefined
       }
       ack_outbox_event: {
         Args: {
@@ -3865,6 +3861,10 @@ export type Database = {
           p_request_id: string
         }
         Returns: Json
+      }
+      bind_professional_invitation_auth_user: {
+        Args: { p_auth_user_id: string; p_invitation_id: string }
+        Returns: undefined
       }
       bootstrap_customer_account: { Args: never; Returns: Json }
       cancel_professional_invitation: {
@@ -3941,6 +3941,20 @@ export type Database = {
           reason: string
           request_id: string
           status: string
+        }[]
+      }
+      claim_professional_invitation_event: {
+        Args: {
+          p_invitation_id: string
+          p_lease_seconds?: number
+          p_worker_id: string
+        }
+        Returns: {
+          attempt_count: number
+          channel: string
+          claim_token: string
+          id: string
+          locked_until: string
         }[]
       }
       claim_provider_events: {
@@ -4043,14 +4057,14 @@ export type Database = {
         Returns: Json
       }
       create_professional_invitation_v2: {
-        Args: { p_email: string; p_first_name: string; p_last_name: string; p_specialty_slug: string }
+        Args: {
+          p_email: string
+          p_first_name: string
+          p_last_name: string
+          p_specialty_slug: string
+        }
         Returns: Json
       }
-      mark_professional_invitation_sent: {
-        Args: { p_invitation_id: string }
-        Returns: Json
-      }
-      professional_password_change_ready: { Args: never; Returns: boolean }
       create_service_request_from_app: {
         Args: {
           p_address_id: string
@@ -4228,8 +4242,8 @@ export type Database = {
         Args: { p_claim_token: string; p_event_id: string }
         Returns: boolean
       }
+      get_job_professional_name: { Args: { p_job_id: string }; Returns: string }
       get_job_visit: { Args: { p_job_id: string }; Returns: Json }
-      get_job_professional_name: { Args: { p_job_id: string }; Returns: string | null }
       get_payment_refund_execution_context: {
         Args: { p_claim_token: string; p_request_id: string }
         Returns: Json
@@ -4285,6 +4299,15 @@ export type Database = {
         }
         Returns: Json
       }
+      list_professional_workflow_v2: {
+        Args: {
+          p_before_created_at?: string
+          p_before_id?: string
+          p_limit?: number
+          p_resource: string
+        }
+        Returns: Json
+      }
       list_support_cases: { Args: { p_limit?: number }; Returns: Json }
       log_admin_action: {
         Args: {
@@ -4331,6 +4354,10 @@ export type Database = {
         Args: { p_checkout_id: string; p_evidence: Json }
         Returns: Json
       }
+      mark_professional_invitation_sent: {
+        Args: { p_invitation_id: string }
+        Returns: Json
+      }
       open_support_case: {
         Args: {
           p_category: string
@@ -4367,20 +4394,12 @@ export type Database = {
         Args: { p_category_id: string; p_version: string }
         Returns: Json
       }
-      list_professional_workflow_v2: {
-        Args: {
-          p_before_created_at?: string
-          p_before_id?: string
-          p_limit?: number
-          p_resource: string
-        }
-        Returns: Json
-      }
       production_readiness_probe: { Args: never; Returns: Json }
       professional_invitation_matches: {
         Args: { p_email: string; p_token: string }
         Returns: boolean
       }
+      professional_password_change_ready: { Args: never; Returns: boolean }
       professional_respond_to_job: {
         Args: {
           p_job_id: string
@@ -4402,10 +4421,11 @@ export type Database = {
         Returns: Json
       }
       prune_rate_limits: { Args: { p_limit?: number }; Returns: number }
+      read_professional_invitation_admin: {
+        Args: { p_id: string }
+        Returns: Json
+      }
       read_professional_onboarding: { Args: never; Returns: Json }
-      read_professional_invitation_admin: { Args: { p_id: string }; Returns: Json }
-      renew_professional_invitation: { Args: { p_id: string }; Returns: Json }
-      save_professional_address: { Args: { p_address: string; p_expected_version: number }; Returns: Json }
       record_policy_acceptance: {
         Args: {
           p_evidence?: Json
@@ -4428,6 +4448,7 @@ export type Database = {
         }
         Returns: string
       }
+      renew_professional_invitation: { Args: { p_id: string }; Returns: Json }
       replace_professional_schedule_settings: {
         Args: {
           p_absences: Json
@@ -4542,6 +4563,10 @@ export type Database = {
           p_quote_id: string
           p_reason: string
         }
+        Returns: Json
+      }
+      save_professional_address: {
+        Args: { p_address: string; p_expected_version: number }
         Returns: Json
       }
       save_professional_onboarding: {
