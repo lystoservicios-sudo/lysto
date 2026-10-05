@@ -15,6 +15,7 @@ beforeEach(() => {
   vi.stubEnv('NOTIFICATIONS_EMAIL_FROM', 'Lysto <notificaciones@lystohogar.com>')
   vi.stubEnv('NOTIFICATIONS_EMAIL_ENABLED', 'true')
   vi.stubEnv('RESEND_API_KEY', 'test-resend-key')
+  vi.stubEnv('APP_ENV', 'development')
 })
 afterEach(() => vi.unstubAllEnvs())
 
