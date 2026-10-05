@@ -155,6 +155,7 @@ export function SavedQuotes({
       {rows.map((row) => (
         <details
           key={row.id}
+          id={`presupuesto-${row.id}`}
           data-quote-id={row.id}
           className="rounded-2xl border border-slate-200 bg-white p-5"
         >
@@ -174,6 +175,24 @@ export function SavedQuotes({
             <p className="text-xs text-slate-500">
               Vence: {new Date(row.expires_at).toLocaleString('es-AR')}
             </p>
+            {internal && Date.parse(row.expires_at) <= Date.now() ? (
+              <div className="space-y-2 rounded-xl border border-amber-200 bg-amber-50 p-4">
+                <p className="text-sm text-amber-950">
+                  Este presupuesto venció el {new Date(row.expires_at).toLocaleString('es-AR')}; no
+                  se puede validar ni enviar al cliente con estos importes.
+                </p>
+                <ButtonLink
+                  href={`/admin/calculadora#presupuesto-${row.id}`}
+                  variant="secondary"
+                >
+                  Recalcular presupuesto
+                </ButtonLink>
+              </div>
+            ) : internal && canReview && reason.trim().length < 15 ? (
+              <p className="text-sm text-slate-600">
+                Para habilitar la revisión, ingresá un fundamento de al menos 15 caracteres.
+              </p>
+            ) : null}
             {row.previous_quote_id ? (
               <p className="text-xs text-slate-500">
                 Reemplaza al presupuesto {row.previous_quote_id}.
