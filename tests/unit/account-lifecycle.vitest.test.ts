@@ -27,11 +27,17 @@ describe('customer account lifecycle', () => {
   it.each([null, 'null', 'https://evil.test', 'https://app.lysto.test.evil.test', 'https://app.lysto.test/path', 'https://user@app.lysto.test'])('rejects foreign or malformed origin %s', origin => { expect(isAllowedAuthOrigin(origin, 'https://app.lysto.test')).toBe(false) })
   it('accepts explicit loopback origin for local tests', () => { expect(authOrigin('http://127.0.0.1:3100')).toBe('http://127.0.0.1:3100') })
   it.each([undefined, 'http://public.example', 'https://app.example/path', 'https://user:pass@app.example', 'https://app.example?next=x'])('rejects unsafe app origin %s', origin => { expect(() => authOrigin(origin)).toThrow() })
-  it('validates a strong matching recovery password', () => { expect(validRecoveryPassword('OtraClaveLarga123!', 'OtraClaveLarga123!')).toBe(true) })
-  it('keeps the recovery password policy longer than the registration policy', () => {
-    expect(validRecoveryPassword('Clave123', 'Clave123')).toBe(false)
+  it.each([6, 12])('accepts a recovery password with %i characters', length => {
+    const password = 'a'.repeat(length)
+    expect(validRecoveryPassword(password, password)).toBe(true)
   })
-  it.each([['short', 'short'], ['a'.repeat(129), 'a'.repeat(129)], ['ClaveCorrecta123!', 'different']])('rejects unsafe recovery password', (password, confirmation) => { expect(validRecoveryPassword(password, confirmation)).toBe(false) })
+  it.each([5, 13])('rejects a recovery password with %i characters', length => {
+    const password = 'a'.repeat(length)
+    expect(validRecoveryPassword(password, password)).toBe(false)
+  })
+  it('rejects recovery passwords that do not match', () => {
+    expect(validRecoveryPassword('Clave123', 'different')).toBe(false)
+  })
   it('returns the same public registration result for new and duplicate emails', async () => {
     const fresh = await registerCustomer(input, policy, { signUp: async () => ({ error: null }) })
     const duplicate = await registerCustomer(input, policy, { signUp: async () => ({ error: { code: 'user_already_exists' } }) })

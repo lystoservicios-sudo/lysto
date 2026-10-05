@@ -36,7 +36,7 @@ Expected: FAIL because the current recovery schema requires at least 12 characte
 
 Import and reuse `passwordSchema` from `lib/auth/customer-access.ts` inside `account-lifecycle.ts` instead of the separate 12–128 recovery schema.
 
-Set both recovery inputs to `minLength={6}` and `maxLength={12}`, make them revealable, and update the help text to `Usá entre 6 y 12 caracteres.`
+Set both recovery inputs to `minLength={6}` and `maxLength={12}`, and update the help text to `Usá entre 6 y 12 caracteres.`
 
 Update the server error message to say `entre 6 y 12 caracteres`.
 

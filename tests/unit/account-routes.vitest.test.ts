@@ -145,15 +145,16 @@ describe('account route boundaries', () => {
     expect(fixtures.verify).not.toHaveBeenCalled()
   })
   it('requires a recovery token before changing password and closes sessions afterward', async () => {
+    const password = 'Clave123'
     const response = await resetPost(
       post('/auth/reset-password', {
         token_hash: token,
-        password: 'ClaveNuevaLarga123!',
-        repeatPassword: 'ClaveNuevaLarga123!'
+        password,
+        repeatPassword: password
       })
     )
     expect(fixtures.verify).toHaveBeenCalledWith({ token_hash: token, type: 'recovery' })
-    expect(fixtures.update).toHaveBeenCalledWith({ password: 'ClaveNuevaLarga123!' })
+    expect(fixtures.update).toHaveBeenCalledWith({ password })
     expect(fixtures.signOut).toHaveBeenCalledWith({ scope: 'global' })
     expect(response.headers.get('location')).toBe(origin + '/login?reset=success')
   })
@@ -164,8 +165,8 @@ describe('account route boundaries', () => {
         await resetPost(
           post('/auth/reset-password', {
             token_hash: token,
-            password: 'ClaveNuevaLarga123!',
-            repeatPassword: 'ClaveNuevaLarga123!'
+            password: 'Clave123',
+            repeatPassword: 'Clave123'
           })
         )
       ).status

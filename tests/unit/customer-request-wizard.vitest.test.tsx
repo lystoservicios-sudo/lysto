@@ -6,8 +6,12 @@ import { PaymentDeferredPanel } from '@/components/customer/payment-deferred-pan
 import { AirConditioningWizard } from '@/features/service-request/air-conditioning-wizard'
 import { AIR_CONDITIONING_ISSUES } from '@/lib/domain/constants'
 import { generateDiagnosis } from '@/lib/diagnosis/rules'
+import { calculateServiceQuote, defaultQuotePolicy } from '@/lib/pricing/service-quote'
 
-afterEach(() => cleanup())
+afterEach(() => {
+  cleanup()
+  vi.unstubAllGlobals()
+})
 
 function completeAddressIfVisible() {
   if (!screen.queryByLabelText('Calle')) return
@@ -151,7 +155,28 @@ describe('customer request wizard', () => {
     expect(secondChoice.getAttribute('aria-checked')).toBe('true')
   })
 
-  it('stops at a deferred payment step instead of inventing matching and a created job', () => {
+  it('stops at a deferred payment step instead of inventing matching and a created job', async () => {
+    const now = new Date('2026-10-05T15:00:00Z')
+    const quote = calculateServiceQuote({
+      issue: 'no_enfria',
+      timeSince: 'days',
+      urgency: 'priority',
+      propertyType: 'house',
+      access: {},
+      equipment: { technology: 'unknown' },
+      route: {
+        source: 'simulation', origin: 'Calle de prueba 123', destination: 'Lysto',
+        province: 'CABA', outboundKm: 10, returnKm: 10, outboundMinutes: 30,
+        returnMinutes: 30, tolls: 0, tollsVerified: false, measuredAt: now.toISOString()
+      },
+      materials: [],
+      materialsConfirmed: false
+    }, defaultQuotePolicy, now)
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      if (String(input) === '/api/pricing/quote')
+        return new Response(JSON.stringify({ quoteId: 'saved-quote', quote }), { status: 200 })
+      return new Response('{}', { status: 503 })
+    }))
     render(<AirConditioningWizard />)
 
     expect(screen.getByText('Paso 1 de 7')).toBeTruthy()
@@ -168,12 +193,13 @@ describe('customer request wizard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Continuar' }))
     fireEvent.click(screen.getByRole('radio', { name: /Hace días/ }))
 
-    for (let step = 0; step < 5; step += 1) {
+    for (let step = 0; step < 4; step += 1) {
       completeAddressIfVisible()
       fireEvent.click(screen.getByRole('button', { name: 'Continuar' }))
     }
+    fireEvent.click(screen.getByRole('button', { name: 'Solicitar' }))
 
-    expect(screen.getByRole('heading', { name: 'Confirmación y pago' })).toBeTruthy()
+    expect(await screen.findByRole('heading', { name: 'Confirmación y pago' })).toBeTruthy()
     expect(screen.getByRole('link', { name: 'Ver mis presupuestos' }).getAttribute('href')).toBe(
       '/app/presupuestos'
     )

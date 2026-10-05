@@ -7,7 +7,7 @@ export async function POST(request: Request) {
   try {
     const form = await request.formData()
     const token = form.get('token_hash'), password = form.get('password'), confirmation = form.get('repeatPassword')
-    if (typeof token !== 'string' || !validAccountToken(token) || typeof password !== 'string' || typeof confirmation !== 'string' || !validRecoveryPassword(password,confirmation)) return accountResponse(new Response('Revisá el enlace y las contraseñas. Deben coincidir y tener entre 12 y 128 caracteres.',{status:400}))
+    if (typeof token !== 'string' || !validAccountToken(token) || typeof password !== 'string' || typeof confirmation !== 'string' || !validRecoveryPassword(password,confirmation)) return accountResponse(new Response('Revisá el enlace y las contraseñas. Deben coincidir y tener entre 6 y 12 caracteres.',{status:400}))
     const client = await createServerSupabaseClient()
     const { data, error } = await client.auth.verifyOtp({ token_hash:token,type:'recovery' })
     if (error || !data.user) return accountResponse(new Response('El enlace venció o ya fue utilizado. Solicitá otro desde Recuperar acceso.',{status:400}))

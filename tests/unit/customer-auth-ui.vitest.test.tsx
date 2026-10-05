@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 import { CompleteProfileForm } from '../../components/auth/customer-forms'
 import { RegistrationForm } from '../../app/(auth)/registro/registration-form'
+import ResetPage from '../../app/(auth)/restablecer/page'
 afterEach(cleanup)
 const policy = { termsVersion: 't1', privacyVersion: 'p1', termsUrl: 'https://lysto.test/terminos', privacyUrl: 'https://lysto.test/privacidad', testOnly: false }
 describe('customer account UI', () => {
@@ -32,6 +33,15 @@ describe('customer account UI', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Mostrar repetir contraseña' }))
     expect(password.type).toBe('password')
     expect(confirmation.type).toBe('text')
+  })
+  it('uses the customer password limits when resetting access', async () => {
+    render(await ResetPage({ searchParams: Promise.resolve({ token_hash: 'a'.repeat(43) }) }))
+
+    expect(screen.getByLabelText('Nueva contraseña').getAttribute('minlength')).toBe('6')
+    expect(screen.getByLabelText('Nueva contraseña').getAttribute('maxlength')).toBe('12')
+    expect(screen.getByLabelText('Repetir contraseña').getAttribute('minlength')).toBe('6')
+    expect(screen.getByLabelText('Repetir contraseña').getAttribute('maxlength')).toBe('12')
+    expect(screen.getByText('Usá entre 6 y 12 caracteres.')).toBeDefined()
   })
   it('shows only missing information with mobile-friendly phone input', () => {
     render(<CompleteProfileForm missing={['phone', 'property_type']} next="/app" />)
