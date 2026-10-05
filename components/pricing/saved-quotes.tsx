@@ -22,12 +22,16 @@ export function SavedQuotes({
   internal = false,
   canReview = true,
   revision = 0,
-  onRecalculate
+  onRecalculate,
+  heading = 'Presupuestos guardados',
+  description
 }: {
   internal?: boolean
   canReview?: boolean
   revision?: number
   onRecalculate?: (quote: SavedQuote) => void
+  heading?: string
+  description?: string
 }) {
   const [rows, setRows] = useState<SavedQuote[]>([])
   const [message, setMessage] = useState('')
@@ -124,7 +128,10 @@ export function SavedQuotes({
   }
   return (
     <section className="space-y-4">
-      <h2 className="text-2xl font-black">Presupuestos guardados</h2>
+      <div>
+        <h2 className="text-2xl font-black">{heading}</h2>
+        {description ? <p className="mt-1 text-sm text-slate-600">{description}</p> : null}
+      </div>
       {message ? (
         <p role="status" className="text-sm text-blue-800">
           {message}

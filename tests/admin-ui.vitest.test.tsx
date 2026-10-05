@@ -87,6 +87,12 @@ describe('administrative UI', () => {
     expect(screen.queryByText(/demo/i)).toBeNull()
   })
 
+  it('surfaces customer-submitted quotes in the existing admin requests inbox', () => {
+    const source = readFileSync(join(process.cwd(), 'app/(admin)/admin/solicitudes/page.tsx'), 'utf8')
+    expect(source).toContain('SavedQuotes')
+    expect(source).toContain('internal')
+  })
+
   it('renders a safe empty catalog state', () => {
     render(<CatalogConsole title="Servicios" rows={[]} />)
     expect(screen.getByText('No hay elementos configurados.')).toBeTruthy()
