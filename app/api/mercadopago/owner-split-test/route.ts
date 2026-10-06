@@ -39,11 +39,12 @@ export async function POST(request: Request) {
     const jobId = await paymentTransaction(async db => {
       await db.query('select pg_advisory_xact_lock(hashtext($1))', [`lysto-split-test:${session.customerId}`])
       const existing = await db.query<{ job_id: string }>(`
-        select j.id as job_id from public.request_answers a
-        join public.service_requests r on r.id=a.request_id
-        join public.jobs j on j.request_id=r.id
-        where r.customer_id=$1 and a.question_code='owner_marketplace_split_test'
-          and a.answer_json->>'seller_id'=$2 limit 1`, [session.customerId, professionalId])
+        select j.id as job_id from public.jobs j
+        join public.service_quotes q on q.request_id=j.request_id
+        where j.customer_id=$1 and j.professional_id=$2
+          and q.input->>'marketplaceSplitTest'='true'
+          and q.quote->'specialPricing'=jsonb_build_object('kind','owner_maintenance_test','amount',1000)
+        limit 1`, [session.customerId, professionalId])
       if (existing.rows[0]) return existing.rows[0].job_id
 
       const kind = await db.query<{ category_id: string; issue_type_id: string }>(`
@@ -56,8 +57,6 @@ export async function POST(request: Request) {
         values($1,$2,$3,'assigned',now()) returning id`,
         [session.customerId, kind.rows[0].category_id, kind.rows[0].issue_type_id])
       const requestId = req.rows[0].id
-      await db.query(`insert into public.request_answers(request_id,question_code,answer_value,answer_json)
-        values($1,'owner_marketplace_split_test','Prueba real de split',jsonb_build_object('seller_id',$2))`, [requestId, professionalId])
       const quote = applyOwnerMaintenanceTestPrice({
         total: TOTAL, platformFee: PLATFORM_FEE, professionalAmount: 820, platformFeeRate: 0.18,
         platformContribution: PLATFORM_FEE, paymentCostBudget: 0, calculatorSubtotal: 769.23,
@@ -65,8 +64,8 @@ export async function POST(request: Request) {
         travel: 0, safetyAmount: 230.77, safetyRate: 0.3, reviewReasons: [], readyToOffer: true
       }, true)
       await db.query(`insert into public.service_quotes(customer_id,address,input,quote,preferred_date,time_window,status,expires_at,request_id,accepted_at)
-        values($1,'{"label":"Prueba de pago"}'::jsonb,'{"issue":"mantenimiento"}'::jsonb,$2::jsonb,current_date+1,'Horario de prueba','accepted',now()+interval '7 days',$3,now())`,
-        [session.customerId, JSON.stringify(quote), requestId])
+        values($1,'{"label":"Prueba de pago"}'::jsonb,$2::jsonb,$3::jsonb,current_date+1,'Horario de prueba','accepted',now()+interval '7 days',$4,now())`,
+        [session.customerId, JSON.stringify({ issue: 'mantenimiento', marketplaceSplitTest: true }), JSON.stringify(quote), requestId])
       const job = await db.query<{ id: string }>(`insert into public.jobs(request_id,customer_id,professional_id,status,accepted_at)
         values($1,$2,$3,'confirmed',now()) returning id`, [requestId, session.customerId, professionalId])
       return job.rows[0].id
