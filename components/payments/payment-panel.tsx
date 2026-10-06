@@ -29,11 +29,13 @@ const ars = (n: string | number) =>
 export function PaymentPanel({
   jobId,
   jobStatus,
+  serviceAmount,
   role,
   extras = []
 }: {
   jobId?: string
   jobStatus?: string
+  serviceAmount?: number | null
   role?: string
   extras?: Array<{ id: string; fault: string; amount: number; status: string }>
 }) {
@@ -196,7 +198,9 @@ export function PaymentPanel({
                   {c?.status === 'approved'
                     ? 'Pagado'
                     : allowed
-                      ? 'Pagar con Mercado Pago'
+                      ? target.id === null && serviceAmount != null
+                        ? `Pagar ${ars(serviceAmount)} con Mercado Pago`
+                        : 'Pagar con Mercado Pago'
                       : (paymentStatusLabels[c?.status ?? ''] ?? 'Consultar estado')}
                 </Button>
               </div>
