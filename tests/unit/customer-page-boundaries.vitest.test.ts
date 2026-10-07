@@ -16,9 +16,20 @@ describe('customer page layout boundary', () => {
     expect(layoutSource).not.toContain('<AppShell role="Cliente"')
   })
 
-  it('registers the fourteen required customer routes', () => {
-    expect(customerScreenRoutes).toHaveLength(14)
-    expect(new Set(customerScreenRoutes.map((route) => route.href)).size).toBe(14)
+  it('registers the fifteen required customer routes', () => {
+    expect(customerScreenRoutes).toHaveLength(15)
+    expect(new Set(customerScreenRoutes.map((route) => route.href)).size).toBe(15)
+    expect(customerScreenRoutes).toContainEqual(expect.objectContaining({
+      href: '/app/hogar',
+      file: 'app/(customer)/app/hogar/page.tsx',
+      title: 'Mi hogar'
+    }))
+  })
+
+  it('keeps the Hogar placeholder free of invented records and interactions', () => {
+    const source = readFileSync(resolve(process.cwd(), 'app/(customer)/app/hogar/page.tsx'), 'utf8')
+
+    expect(source).not.toMatch(/fixture|mock|fetch\(|\.from\(|<form\b|<nav\b/i)
   })
 
   it('keeps global navigation and viewport wrappers out of customer pages', () => {
