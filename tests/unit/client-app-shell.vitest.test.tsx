@@ -2,6 +2,7 @@ import { cleanup, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { ClientBottomNavigation } from '@/components/app-shell/client-bottom-navigation'
+import { ClientAppShell } from '@/components/app-shell/client-app-shell'
 
 import {
   clientNavigationItems,
@@ -56,5 +57,31 @@ describe('client bottom navigation', () => {
 
     expect(request.getAttribute('href')).toBe('/app/solicitar/aire-acondicionado')
     expect(request.getAttribute('data-primary')).toBe('true')
+  })
+})
+
+describe('client app shell', () => {
+  it('renders a compact customer shell without dashboard chrome', () => {
+    navigation.pathname = '/app/equipos'
+    render(
+      <ClientAppShell identity={{ name: 'Marina Gómez', email: 'marina@example.com' }}>
+        <p>Contenido actual</p>
+      </ClientAppShell>
+    )
+
+    expect(screen.getByRole('link', { name: 'Lysto, inicio' }).getAttribute('href')).toBe('/app')
+    expect(screen.getByRole('button', { name: 'Notificaciones próximamente' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Abrir Cuenta' }).getAttribute('href')).toBe('/app/perfil')
+    expect(screen.getByRole('main').textContent).toContain('Contenido actual')
+    expect(screen.queryByText('Espacio cliente')).toBeNull()
+    expect(screen.queryByRole('button', { name: /navegación/i })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Cerrar sesión' })).toBeNull()
+  })
+
+  it('omits bottom navigation on focused routes', () => {
+    navigation.pathname = '/app/solicitar/aire-acondicionado'
+    render(<ClientAppShell><p>Solicitud</p></ClientAppShell>)
+
+    expect(screen.queryByRole('navigation', { name: 'Navegación principal del cliente' })).toBeNull()
   })
 })
