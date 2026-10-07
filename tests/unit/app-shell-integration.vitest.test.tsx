@@ -2,6 +2,7 @@ import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { AppShell } from '@/components/layout/page-shell'
+import { ClientAppShell } from '@/components/app-shell/client-app-shell'
 
 vi.mock('next/headers', () => ({
   cookies: async () => ({
@@ -34,5 +35,12 @@ describe('app shell integration', () => {
     expect(main.id).toBe('main-content')
     expect(main.getAttribute('tabindex')).toBe('-1')
     expect(screen.getByText('Contenido operativo')).toBeTruthy()
+  })
+
+  it('keeps the customer shell free of the shared sidebar landmark', () => {
+    render(<ClientAppShell><p>Contenido del cliente</p></ClientAppShell>)
+
+    expect(screen.queryByRole('complementary')).toBeNull()
+    expect(screen.getByRole('main').textContent).toContain('Contenido del cliente')
   })
 })

@@ -5,16 +5,15 @@ import { describe, expect, it } from 'vitest'
 import { customerScreenRoutes } from '@/features/customer/screen-contract'
 
 describe('customer page layout boundary', () => {
-  it('mounts customer navigation exclusively through the cloned sidebar shell', () => {
-    const shellSource = readFileSync(
-      resolve(process.cwd(), 'components/layout/page-shell.tsx'),
+  it('mounts customer navigation through the dedicated client app shell', () => {
+    const layoutSource = readFileSync(
+      resolve(process.cwd(), 'app/(customer)/app/layout.tsx'),
       'utf8'
     )
 
-    expect(shellSource).toContain('<AppShellProvider')
-    expect(shellSource).toContain('<AppSidebar role={role} adminPermissions={adminPermissions} />')
-    expect(shellSource).toContain('<AppTopbar role={role} identity={identity} />')
-    expect(shellSource).not.toContain('<AppNavigation')
+    expect(layoutSource).toContain("@/components/app-shell/client-app-shell")
+    expect(layoutSource).toContain('<ClientAppShell')
+    expect(layoutSource).not.toContain('<AppShell role="Cliente"')
   })
 
   it('registers the fourteen required customer routes', () => {
