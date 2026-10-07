@@ -19,5 +19,6 @@ export const customerScreenRoutes = [
   { id: 'CUS-11', href: '/app/garantias', file: 'app/(customer)/app/garantias/page.tsx', title: 'Garantías, reclamos y calidad' },
   { id: 'CUS-12', href: '/app/pagos', file: 'app/(customer)/app/pagos/page.tsx', title: 'Pagos y movimientos diferidos' },
   { id: 'CUS-13', href: '/app/perfil', file: 'app/(customer)/app/perfil/page.tsx', title: 'Perfil del cliente' },
-  { id: 'CUS-14', href: '/app/direcciones', file: 'app/(customer)/app/direcciones/page.tsx', title: 'Direcciones y acceso' }
+  { id: 'CUS-14', href: '/app/direcciones', file: 'app/(customer)/app/direcciones/page.tsx', title: 'Direcciones y acceso' },
+  { id: 'CUS-15', href: '/app/hogar', file: 'app/(customer)/app/hogar/page.tsx', title: 'Mi hogar' }
 ] as const satisfies readonly CustomerScreenRoute[]

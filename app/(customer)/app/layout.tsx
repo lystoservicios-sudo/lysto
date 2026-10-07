@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { AppShell } from '@/components/layout/page-shell'
+import { ClientAppShell } from '@/components/app-shell/client-app-shell'
 import { requirePageSession } from '@/lib/auth/session'
 import { readAccountIdentity } from '@/lib/auth/account-identity'
 import { headers } from 'next/headers'
@@ -12,5 +12,5 @@ export default async function CustomerLayout({ children }: { children: ReactNode
   const destination = await resolvedCustomerDestination(next)
   if (destination !== next) redirect(destination)
   const session = await requirePageSession('customer')
-  return <AppShell role="Cliente" identity={await readAccountIdentity(session)}>{children}</AppShell>
+  return <ClientAppShell identity={await readAccountIdentity(session)}>{children}</ClientAppShell>
 }
