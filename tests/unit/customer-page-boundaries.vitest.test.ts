@@ -16,14 +16,28 @@ describe('customer page layout boundary', () => {
     expect(layoutSource).not.toContain('<AppShell role="Cliente"')
   })
 
-  it('registers the fifteen required customer routes', () => {
-    expect(customerScreenRoutes).toHaveLength(15)
-    expect(new Set(customerScreenRoutes.map((route) => route.href)).size).toBe(15)
+  it('registers the sixteen required customer routes', () => {
+    expect(customerScreenRoutes).toHaveLength(16)
+    expect(customerScreenRoutes).toContainEqual(expect.objectContaining({
+      id: 'CUS-16',
+      href: '/app/mas',
+      file: 'app/(customer)/app/mas/page.tsx',
+      title: 'Más opciones'
+    }))
+    expect(new Set(customerScreenRoutes.map((route) => route.href)).size).toBe(16)
     expect(customerScreenRoutes).toContainEqual(expect.objectContaining({
       href: '/app/hogar',
       file: 'app/(customer)/app/hogar/page.tsx',
       title: 'Mi hogar'
     }))
+  })
+
+  it('keeps the Más placeholder minimal and free of invented interactions', () => {
+    const source = readFileSync(resolve(process.cwd(), 'app/(customer)/app/mas/page.tsx'), 'utf8')
+
+    expect(source).toContain('PageScaffold')
+    expect(source).toContain('title="Más"')
+    expect(source).not.toMatch(/fixture|mock|fetch\(|\.from\(|<form\b|<nav\b|<Link\b|<button\b|<Card\b|<a\b|\/api\//i)
   })
 
   it('keeps the Hogar placeholder free of invented records and interactions', () => {
