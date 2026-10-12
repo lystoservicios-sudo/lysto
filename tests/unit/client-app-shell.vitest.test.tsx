@@ -22,17 +22,48 @@ describe('client app shell navigation policy', () => {
   it('defines the five approved customer destinations in order', () => {
     expect(clientNavigationItems.map(({ label, href }) => ({ label, href }))).toEqual([
       { label: 'Inicio', href: '/app' },
-      { label: 'Hogar', href: '/app/hogar' },
+      { label: 'Servicios', href: '/app/trabajos' },
       { label: 'Pedir', href: '/app/solicitar/aire-acondicionado' },
-      { label: 'Equipos', href: '/app/equipos' },
-      { label: 'Cuenta', href: '/app/perfil' }
+      { label: 'Hogar', href: '/app/hogar' },
+      { label: 'Más', href: '/app/mas' }
     ])
   })
 
-  it('keeps nested equipment pages inside Equipos without marking Inicio active', () => {
-    expect(isClientNavigationItemActive('/app/equipos/abc', '/app/equipos')).toBe(true)
-    expect(isClientNavigationItemActive('/app/equipos/abc', '/app')).toBe(false)
+  it.each([
+    ['/app', 'home'],
+    ['/app/trabajos', 'services'],
+    ['/app/trabajos/job-1', 'services'],
+    ['/app/solicitudes', 'services'],
+    ['/app/solicitudes/request-1', 'services'],
+    ['/app/presupuestos', 'services'],
+    ['/app/solicitar/aire-acondicionado', 'request'],
+    ['/app/hogar', 'household'],
+    ['/app/equipos', 'household'],
+    ['/app/equipos/equipment-1', 'household'],
+    ['/app/mas', 'more'],
+    ['/app/perfil', 'more'],
+    ['/app/pagos', 'more'],
+    ['/app/pagos/mercadopago', 'more'],
+    ['/app/garantias', 'more'],
+    ['/app/direcciones', 'more'],
+    ['/app/mantenimientos', 'more']
+  ])('maps %s to the %s navigation group', (pathname, expectedId) => {
+    const activeItems = clientNavigationItems.filter((item) =>
+      isClientNavigationItemActive(pathname, item)
+    )
+    expect(activeItems.map((item) => item.id)).toEqual([expectedId])
   })
+
+  it('does not keep Inicio active on nested app routes', () => {
+    const home = clientNavigationItems.find((item) => item.id === 'home')!
+    expect(isClientNavigationItemActive('/app/trabajos', home)).toBe(false)
+  })
+
+  it.each(['/app/trabajos-extra', '/app/equipos-extra', '/app/pagos-extra', '/app/desconocida'])(
+    'does not match unrelated path %s', (pathname) => {
+      expect(clientNavigationItems.filter((item) => isClientNavigationItemActive(pathname, item))).toEqual([])
+    }
+  )
 
   it('hides bottom navigation in the focused request flow', () => {
     expect(shouldShowClientBottomNavigation('/app')).toBe(true)
