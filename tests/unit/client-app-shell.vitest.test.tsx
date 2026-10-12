@@ -73,13 +73,28 @@ describe('client app shell navigation policy', () => {
 })
 
 describe('client bottom navigation', () => {
-  it('renders five destinations and marks Equipos active', () => {
+  it('renders the approved five destinations and marks Servicios active', () => {
+    navigation.pathname = '/app/solicitudes/request-1'
     render(<ClientBottomNavigation />)
     const nav = screen.getByRole('navigation', { name: 'Navegación principal del cliente' })
 
     expect(within(nav).getAllByRole('link')).toHaveLength(5)
-    expect(within(nav).getByRole('link', { name: 'Equipos' }).getAttribute('aria-current')).toBe('page')
+    expect(within(nav).getAllByRole('link').map((link) => link.textContent)).toEqual([
+      'Inicio', 'Servicios', 'Pedir', 'Hogar', 'Más'
+    ])
+    expect(within(nav).getByRole('link', { name: 'Servicios' }).getAttribute('aria-current')).toBe('page')
     expect(within(nav).getByRole('link', { name: 'Inicio' }).hasAttribute('aria-current')).toBe(false)
+  })
+
+  it('marks Hogar active on equipment routes and Más active on secondary routes', () => {
+    navigation.pathname = '/app/equipos/equipment-1'
+    const { rerender } = render(<ClientBottomNavigation />)
+    expect(screen.getByRole('link', { name: 'Hogar' }).getAttribute('aria-current')).toBe('page')
+
+    navigation.pathname = '/app/pagos/mercadopago'
+    rerender(<ClientBottomNavigation />)
+    expect(screen.getByRole('link', { name: 'Más' }).getAttribute('aria-current')).toBe('page')
+    expect(screen.getByRole('link', { name: 'Hogar' }).hasAttribute('aria-current')).toBe(false)
   })
 
   it('keeps Pedir visually and semantically distinct', () => {

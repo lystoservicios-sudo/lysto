@@ -1,14 +1,14 @@
 import Link from 'next/link'
-import { AirVent, CircleUserRound, House, LayoutGrid, Plus } from 'lucide-react'
+import { House, LayoutGrid, MoreHorizontal, Plus, Wrench } from 'lucide-react'
 
-type ClientNavigationIcon = 'grid' | 'home' | 'plus' | 'equipment' | 'account'
+type ClientNavigationIcon = 'grid' | 'services' | 'plus' | 'home' | 'more'
 
 const icons = {
   grid: LayoutGrid,
   home: House,
   plus: Plus,
-  equipment: AirVent,
-  account: CircleUserRound
+  services: Wrench,
+  more: MoreHorizontal
 } as const
 
 export function ClientNavItem({

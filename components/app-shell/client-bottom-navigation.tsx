@@ -19,7 +19,7 @@ export function ClientBottomNavigation() {
           <ClientNavItem
             key={item.id}
             {...item}
-            active={isClientNavigationItemActive(pathname, item.href)}
+            active={isClientNavigationItemActive(pathname, item)}
           />
         ))}
       </div>
