@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "generatedFrom": "app/api/**/route.ts",
-  "count": 95,
+  "count": 108,
   "entries": [
     {
       "route": "/api/admin/approve-professional",
@@ -37,7 +37,7 @@
     },
     {
       "route": "/api/admin/invite-professional",
-      "method": "PATCH",
+      "method": "PUT",
       "status": "active",
       "authority": "Sesión: admin; permiso operations",
       "canonicalDestination": "/api/admin/invite-professional",
@@ -45,7 +45,7 @@
     },
     {
       "route": "/api/admin/invite-professional",
-      "method": "PUT",
+      "method": "PATCH",
       "status": "active",
       "authority": "Sesión: admin; permiso operations",
       "canonicalDestination": "/api/admin/invite-professional",
@@ -113,6 +113,30 @@
       "status": "active",
       "authority": "Sesión: sesión; permiso operations",
       "canonicalDestination": "/api/admin/professionals/invitations",
+      "test": "tests/integration/api-inventory.test.ts"
+    },
+    {
+      "route": "/api/admin/professionals/policies",
+      "method": "GET",
+      "status": "active",
+      "authority": "Sesión: admin; permiso operations",
+      "canonicalDestination": "/api/admin/professionals/policies",
+      "test": "tests/integration/api-inventory.test.ts"
+    },
+    {
+      "route": "/api/admin/professionals/policies",
+      "method": "POST",
+      "status": "active",
+      "authority": "Sesión: admin; permiso operations",
+      "canonicalDestination": "/api/admin/professionals/policies",
+      "test": "tests/integration/api-inventory.test.ts"
+    },
+    {
+      "route": "/api/admin/professionals/revalidation",
+      "method": "POST",
+      "status": "active",
+      "authority": "Sesión: admin; permiso operations",
+      "canonicalDestination": "/api/admin/professionals/revalidation",
       "test": "tests/integration/api-inventory.test.ts"
     },
     {
@@ -212,6 +236,46 @@
       "test": "tests/integration/api-inventory.test.ts"
     },
     {
+      "route": "/api/customer/homes/equipment",
+      "method": "POST",
+      "status": "active",
+      "authority": "Sesión: customer",
+      "canonicalDestination": "/api/customer/homes/equipment",
+      "test": "tests/integration/api-inventory.test.ts"
+    },
+    {
+      "route": "/api/customer/homes",
+      "method": "GET",
+      "status": "active",
+      "authority": "Sesión: customer",
+      "canonicalDestination": "/api/customer/homes",
+      "test": "tests/integration/api-inventory.test.ts"
+    },
+    {
+      "route": "/api/customer/homes",
+      "method": "POST",
+      "status": "active",
+      "authority": "Sesión: customer",
+      "canonicalDestination": "/api/customer/homes",
+      "test": "tests/integration/api-inventory.test.ts"
+    },
+    {
+      "route": "/api/customer/homes",
+      "method": "PUT",
+      "status": "active",
+      "authority": "Sesión: customer",
+      "canonicalDestination": "/api/customer/homes",
+      "test": "tests/integration/api-inventory.test.ts"
+    },
+    {
+      "route": "/api/customer/homes",
+      "method": "DELETE",
+      "status": "active",
+      "authority": "Sesión: customer",
+      "canonicalDestination": "/api/customer/homes",
+      "test": "tests/integration/api-inventory.test.ts"
+    },
+    {
       "route": "/api/customer/profile/email",
       "method": "POST",
       "status": "active",
@@ -241,6 +305,14 @@
       "status": "active",
       "authority": "Sesión y autorización verificadas por el servicio de la ruta",
       "canonicalDestination": "/api/customer/request/submit",
+      "test": "tests/integration/api-inventory.test.ts"
+    },
+    {
+      "route": "/api/customer/services",
+      "method": "GET",
+      "status": "active",
+      "authority": "Sesión: customer",
+      "canonicalDestination": "/api/customer/services",
       "test": "tests/integration/api-inventory.test.ts"
     },
     {
@@ -444,6 +516,14 @@
       "test": "tests/integration/api-inventory.test.ts"
     },
     {
+      "route": "/api/mercadopago/owner-split-test",
+      "method": "POST",
+      "status": "active",
+      "authority": "Sesión y autorización verificadas por el servicio de la ruta",
+      "canonicalDestination": "/api/mercadopago/owner-split-test",
+      "test": "tests/integration/api-inventory.test.ts"
+    },
+    {
       "route": "/api/mercadopago/webhook",
       "method": "POST",
       "status": "active",
@@ -572,11 +652,35 @@
       "test": "tests/unit/api-route-contracts.vitest.test.ts"
     },
     {
+      "route": "/api/professional/account/password",
+      "method": "POST",
+      "status": "active",
+      "authority": "Sesión y autorización verificadas por el servicio de la ruta",
+      "canonicalDestination": "/api/professional/account/password",
+      "test": "tests/integration/api-inventory.test.ts"
+    },
+    {
       "route": "/api/professional/onboarding/accept",
       "method": "POST",
       "status": "active",
       "authority": "Sesión confirmada e invitación/onboarding vigente",
       "canonicalDestination": "/api/professional/onboarding/accept",
+      "test": "tests/integration/api-inventory.test.ts"
+    },
+    {
+      "route": "/api/professional/onboarding/address",
+      "method": "POST",
+      "status": "active",
+      "authority": "Sesión confirmada e invitación/onboarding vigente",
+      "canonicalDestination": "/api/professional/onboarding/address",
+      "test": "tests/integration/api-inventory.test.ts"
+    },
+    {
+      "route": "/api/professional/onboarding/avatar",
+      "method": "POST",
+      "status": "active",
+      "authority": "Sesión confirmada e invitación/onboarding vigente",
+      "canonicalDestination": "/api/professional/onboarding/avatar",
       "test": "tests/integration/api-inventory.test.ts"
     },
     {

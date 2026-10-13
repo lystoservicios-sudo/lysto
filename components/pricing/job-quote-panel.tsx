@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { jobStatusLabels } from '@/lib/domain/job-status-labels'
 import type { JobStatus } from '@/lib/domain/types'
 import { Button } from '@/components/ui/button'
@@ -11,6 +11,7 @@ import { acknowledgeCommand, recoverCommand } from '@/lib/jobs/recoverable-comma
 import { QuoteBreakdown } from './quote-breakdown'
 import { PaymentPanel } from '@/components/payments/payment-panel'
 import { JobCloseoutForm } from '@/components/pro/job-closeout-form'
+import { CustomerServiceDetail, type CustomerServiceDetailData } from '@/components/customer/customer-service-detail'
 import {
   JobVisitCard,
   type CustomerJobVisit,
@@ -27,7 +28,7 @@ type Diagnosis = {
   version: number
   decision_reason: string | null
 }
-type JobData = {
+type JobData = CustomerServiceDetailData & {
   role: string
   job: { id: string; status: string; professionalName: string | null }
   equipmentId: string | null
@@ -53,10 +54,15 @@ type JobData = {
 }
 
 export function JobQuotePanel({ jobId, requestId }: { jobId?: string; requestId?: string }) {
+  const routeIdentity = jobId ? `job:${jobId}` : `request:${requestId ?? ''}`
+  const [loadedIdentity, setLoadedIdentity] = useState<string | null>(null)
+  const loadedIdentityRef = useRef<string | null>(null)
+  const [actorRole, setActorRole] = useState<string | null>(null)
   const [data, setData] = useState<JobData | null>(null),
     [message, setMessage] = useState('Cargando presupuesto…'),
     [revision, setRevision] = useState(0),
     [busy, setBusy] = useState(false)
+  const [customerReloading, setCustomerReloading] = useState(false)
   const [fault, setFault] = useState(''),
     [description, setDescription] = useState(''),
     [amount, setAmount] = useState('')
@@ -76,14 +82,25 @@ export function JobQuotePanel({ jobId, requestId }: { jobId?: string; requestId?
         if (!response.ok) throw new Error(body.error)
         if (active) {
           setData(body)
+          const requestedIdentity = jobId ? `job:${jobId}` : `request:${requestId ?? ''}`
+          loadedIdentityRef.current = requestedIdentity
+          setLoadedIdentity(requestedIdentity)
+          setActorRole(body.role)
           setMessage('')
         }
       })
       .catch((error) => {
         if (active) {
-          setData(null)
+          const requestedIdentity = jobId ? `job:${jobId}` : `request:${requestId ?? ''}`
+          const retainCustomerData = loadedIdentityRef.current === requestedIdentity
+          setData(current => current?.role === 'customer' && retainCustomerData ? current : null)
+          loadedIdentityRef.current = requestedIdentity
+          setLoadedIdentity(requestedIdentity)
           setMessage(error.message)
         }
+      })
+      .finally(() => {
+        if (active) setCustomerReloading(false)
       })
     return () => {
       active = false
@@ -180,6 +197,14 @@ export function JobQuotePanel({ jobId, requestId }: { jobId?: string; requestId?
       setSaved([])
       setSavedEvidence([])
     }
+  }
+  if (data?.role === 'customer') {
+    if (loadedIdentity !== routeIdentity) return <div className="space-y-4" aria-busy="true"><h1 className="text-2xl font-bold">Consultando el servicio</h1><p className="text-sm text-slate-600">Verificamos los datos del servicio seleccionado.</p></div>
+    return <CustomerServiceDetail key={data.job.id} data={data} reloadError={message} reloadInProgress={customerReloading} onReload={() => { setCustomerReloading(true); setRevision(value => value + 1) }} />
+  }
+  if (actorRole === 'customer') {
+    const failed = loadedIdentity === routeIdentity && Boolean(message) && !customerReloading
+    return <div className="space-y-4" aria-busy={!failed}><h1 className="text-2xl font-bold">{failed ? 'No pudimos consultar el servicio' : 'Consultando el servicio'}</h1>{failed ? <><p role="status" className="text-sm text-slate-600">{message}</p><Button onClick={() => { setCustomerReloading(true); setRevision(value => value + 1) }}>Volver a consultar el servicio</Button></> : <p className="text-sm text-slate-600">Verificamos los datos del servicio seleccionado.</p>}</div>
   }
   return (
     <div className="space-y-5">

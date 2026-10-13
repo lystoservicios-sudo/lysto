@@ -1,0 +1,292 @@
+import { randomUUID } from 'node:crypto'
+import { Client } from 'pg'
+import type { Page, Response } from '@playwright/test'
+
+import { test, expect, loginAs } from './fixtures/production'
+import type { FixtureAccount } from './fixtures/accounts'
+import type { CustomerAssetAddress, CustomerAssetEquipment } from '@/lib/customer-assets/contracts'
+import type { CustomerHome, CustomerHomesSnapshot, HomeKind } from '@/lib/customer-homes/contracts'
+import { assertTestEnvironment, readTestIdentity } from '../../scripts/lib/test-environment.mjs'
+
+type CreatedAssets = { homeIds: string[]; addressIds: string[]; equipmentIds: string[] }
+const createdAssets = (): CreatedAssets => ({ homeIds: [], addressIds: [], equipmentIds: [] })
+const homesPath = '/api/customer/homes'
+const equipmentPath = '/api/customer/homes/equipment'
+const navigation = (page: Page) => page.getByRole('navigation', { name: 'Navegación principal del cliente' })
+const uuidPattern = /^[a-f\d]{8}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{12}$/i
+
+async function homeResponse(page: Page, method: 'POST' | 'PUT' | 'DELETE', action: () => Promise<unknown>, path = homesPath): Promise<Response> {
+  const pending = page.waitForResponse(candidate => new URL(candidate.url()).pathname === path && candidate.request().method() === method)
+  await action()
+  const response = await pending
+  expect(response.ok(), `Hogar ${method} must persist through its authenticated API`).toBe(true)
+  return response
+}
+
+async function saveHome(page: Page, button: string): Promise<CustomerHome> {
+  const response = await homeResponse(page, 'PUT', () => page.getByRole('button', { name: button, exact: true }).click())
+  const result = await response.json() as { home: CustomerHome }
+  expect(result.home.id).toMatch(uuidPattern)
+  await expect(page.getByLabel('Hogar actual')).toHaveValue(result.home.id)
+  return result.home
+}
+
+async function readHomes(page: Page): Promise<CustomerHomesSnapshot> {
+  const response = await page.request.get(homesPath)
+  expect(response.ok()).toBe(true)
+  return await response.json() as CustomerHomesSnapshot
+}
+
+async function createHome(page: Page, created: CreatedAssets, options: { name: string; kind: HomeKind; addressId?: string; newAddress?: boolean }): Promise<CustomerHome> {
+  await page.getByRole('button', { name: /^(Crear mi primer hogar|Añadir otro hogar)$/ }).click()
+  await expect(navigation(page)).toHaveCount(0)
+  await page.getByLabel('Nombre del hogar').fill(options.name)
+  await page.getByLabel('Tipo de lugar').selectOption(options.kind)
+  if (options.kind === 'apartment') await page.getByLabel('Tipo de edificio').selectOption('high')
+  await page.getByLabel('Distribución inicial').selectOption('empty')
+  if (options.newAddress) {
+    await page.getByRole('radio', { name: 'Crear una dirección', exact: true }).check()
+    await page.getByLabel('Calle', { exact: true }).fill('Calle Hogar QA')
+    await page.getByLabel('Número', { exact: true }).fill('456')
+    await page.getByLabel('Piso de la dirección').fill('8')
+    await page.getByLabel('Ciudad', { exact: true }).fill('Buenos Aires')
+    await page.getByLabel('Provincia', { exact: true }).fill('Buenos Aires')
+  } else {
+    expect(options.addressId).toMatch(uuidPattern)
+    await page.getByRole('radio', { name: 'Usar una dirección guardada', exact: true }).check()
+    await page.getByLabel('Dirección', { exact: true }).selectOption(options.addressId!)
+  }
+  const response = await homeResponse(page, 'POST', () => page.getByRole('button', { name: 'Crear hogar', exact: true }).click())
+  const result = await response.json() as { home: CustomerHome; address?: CustomerAssetAddress }
+  expect(result.home.id).toMatch(uuidPattern)
+  created.homeIds.push(result.home.id)
+  if (result.address) created.addressIds.push(result.address.id)
+  await expect(page.getByLabel('Hogar actual')).toHaveValue(result.home.id)
+  await expect(navigation(page)).toBeVisible()
+  return result.home
+}
+
+async function addRoom(page: Page, name: string, kind: string, variant: string): Promise<CustomerHome> {
+  await page.getByRole('region', { name: 'Ambientes de la planta' }).getByRole('button', { name: 'Añadir', exact: true }).click()
+  await expect(navigation(page)).toHaveCount(0)
+  await page.getByLabel('Tipo de ambiente').selectOption(kind)
+  await page.getByLabel('Variante', { exact: true }).selectOption(variant)
+  await page.getByLabel('Nombre del ambiente').fill(name)
+  const home = await saveHome(page, 'Guardar ambiente')
+  await expect(page.getByRole('button', { name: `Abrir ${name}`, exact: true })).toBeVisible()
+  return home
+}
+
+async function registerAir(page: Page, created: CreatedAssets, nickname: string): Promise<{ home: CustomerHome; equipment: CustomerAssetEquipment }> {
+  await page.getByRole('button', { name: 'Añadir aire', exact: true }).click()
+  await expect(navigation(page)).toHaveCount(0)
+  await page.getByLabel('Nombre del aire').fill(nickname)
+  await page.getByLabel('Tipo de aire').selectOption('inverter')
+  await page.getByLabel('Marca (opcional)').fill('Equipo QA')
+  await page.getByLabel('Modelo (opcional)').fill('Modelo QA 4500')
+  await page.getByLabel('Frigorías (opcional)').fill('4500')
+  await page.getByLabel('Pared', { exact: true }).selectOption('west')
+  // Use real keyboard interactions; range controls are not fillable text inputs.
+  await page.getByLabel('Posición sobre la pared').press('ArrowRight')
+  const offset = Number(await page.getByLabel('Posición sobre la pared').inputValue())
+  expect(offset).toBeGreaterThan(.5)
+  await page.getByLabel('Altura orientativa').press('ArrowLeft')
+  const height = Number(await page.getByLabel('Altura orientativa').inputValue())
+  expect(height).toBeLessThan(2)
+  const response = await homeResponse(page, 'POST', () => page.getByRole('button', { name: 'Registrar y ubicar aire', exact: true }).click(), equipmentPath)
+  const result = await response.json() as { home: CustomerHome; equipment: CustomerAssetEquipment }
+  expect(result.equipment.id).toMatch(uuidPattern)
+  created.equipmentIds.push(result.equipment.id)
+  expect(result.home.placements.find(placement => placement.equipmentId === result.equipment.id)).toMatchObject({ wall: 'west', offset, height })
+  await expect(page.getByRole('heading', { name: nickname, exact: true })).toBeVisible()
+  await expect(navigation(page)).toBeVisible()
+  return result
+}
+
+async function confirmRemoval(page: Page, button: string): Promise<CustomerHome> {
+  await page.getByRole('button', { name: button, exact: true }).click()
+  const dialog = page.getByRole('dialog')
+  await expect(dialog).toBeVisible()
+  await expect(navigation(page)).toHaveCount(0)
+  const response = await homeResponse(page, 'PUT', () => dialog.getByRole('button', { name: 'Confirmar', exact: true }).click())
+  const result = await response.json() as { home: CustomerHome }
+  await expect(dialog).toHaveCount(0)
+  await expect(navigation(page)).toBeVisible()
+  return result.home
+}
+
+async function switchCustomer(page: Page, account: FixtureAccount, name: 'customerA' | 'customerB') {
+  // Use the real logout endpoint, keeping the staging protection cookie intact.
+  const response = await page.request.post('/auth/logout', { headers: { Origin: new URL(page.url()).origin }, maxRedirects: 0 })
+  expect(response.status()).toBe(303)
+  await loginAs(page, account, name)
+}
+
+async function cleanupCreated(account: FixtureAccount, created: CreatedAssets) {
+  if (!created.homeIds.length && !created.equipmentIds.length && !created.addressIds.length) return
+  // The same repository guard as the existing fixtures refuses production targets.
+  // Every deletion is further bounded by this synthetic owner and recorded UUIDs.
+  const target = assertTestEnvironment(process.env, readTestIdentity(process.env))
+  const db = new Client({ connectionString: target.databaseUrl, connectionTimeoutMillis: 5_000, query_timeout: 10_000, statement_timeout: 10_000, lock_timeout: 5_000 })
+  await db.connect()
+  try {
+    await db.query('begin')
+    try {
+      await db.query('delete from private.customer_home_operations where customer_id=$1 and result->\'home\'->>\'id\'=any($2::text[])', [account.entityId, created.homeIds])
+      await db.query('delete from public.customer_homes where customer_id=$1 and id=any($2::uuid[])', [account.entityId, created.homeIds])
+      await db.query('delete from public.customer_equipment where customer_id=$1 and id=any($2::uuid[])', [account.entityId, created.equipmentIds])
+      await db.query('delete from public.customer_addresses where customer_id=$1 and id=any($2::uuid[])', [account.entityId, created.addressIds])
+      await db.query('commit')
+    } catch (error) { await db.query('rollback'); throw error }
+  } finally { await db.end() }
+}
+
+test.describe('authenticated customer Hogar with a disposable backend', () => {
+  test.setTimeout(120_000)
+
+  test('creates, configures and archives a real home while keeping its postal address', async ({ page, accounts }) => {
+    const created = createdAssets(), customer = accounts.accounts.customerA
+    try {
+      await loginAs(page, customer, 'customerA')
+      await page.goto('/app/hogar')
+      await expect(page.getByRole('heading', { name: 'Tu hogar, a tu manera' })).toBeVisible()
+      const original = await createHome(page, created, { name: 'Casa QA', kind: 'house', newAddress: true })
+      expect(original.floors).toHaveLength(1)
+      expect(original.floors[0].rooms).toHaveLength(0)
+      await expect(page.getByText('Calle Hogar QA 456 · Piso 8, Buenos Aires', { exact: true })).toBeVisible()
+      await page.getByRole('button', { name: 'Configurar hogar', exact: true }).click()
+      await page.getByLabel('Nombre del hogar').fill('Casa QA configurada')
+      await page.getByLabel('Tiene balcón').check()
+      await page.getByLabel('Ventanas del hogar').selectOption('mixed')
+      const configured = await saveHome(page, 'Guardar configuración')
+      expect(configured).toMatchObject({ id: original.id, addressId: original.addressId, name: 'Casa QA configurada', features: { balcony: true, terrace: false, windows: 'mixed' } })
+      expect(configured.floors[0].id).toBe(original.floors[0].id)
+      await page.reload()
+      await expect(page.getByLabel('Hogar actual')).toHaveValue(original.id)
+      await expect(page.getByLabel('Hogar actual').getByRole('option', { name: 'Casa QA configurada', exact: true })).toBeAttached()
+      await expect(page.getByText('Ventanas mixtas', { exact: true })).toBeVisible()
+      expect((await readHomes(page)).homes.find(home => home.id === original.id)).toMatchObject({ name: 'Casa QA configurada', features: configured.features })
+
+      await page.getByRole('button', { name: 'Archivar hogar', exact: true }).click()
+      const dialog = page.getByRole('dialog', { name: '¿Archivar este hogar?', exact: true })
+      await homeResponse(page, 'DELETE', () => dialog.getByRole('button', { name: 'Confirmar', exact: true }).click())
+      await expect(page.getByRole('heading', { name: 'Tu hogar, a tu manera' })).toBeVisible()
+      await page.reload()
+      const persisted = await readHomes(page)
+      expect(persisted.homes.some(home => home.id === original.id)).toBe(false)
+      expect(persisted.addresses.some(address => address.id === original.addressId && !address.archivedAt)).toBe(true)
+      await expect(page.getByRole('button', { name: 'Crear mi primer hogar', exact: true })).toBeVisible()
+    } finally { await cleanupCreated(customer, created) }
+  })
+
+  test('persists individual floors, room variants and a real air placement across reloads', async ({ page, accounts }) => {
+    const created = createdAssets(), customer = accounts.accounts.customerA
+    try {
+      await loginAs(page, customer, 'customerA'); await page.goto('/app/hogar')
+      const initial = await readHomes(page)
+      const original = await createHome(page, created, { name: 'Departamento QA', kind: 'apartment', addressId: initial.addresses.find(address => !address.archivedAt)!.id })
+      const lowerId = original.floors[0].id
+      await addRoom(page, 'Living QA', 'living', 'dining')
+      await page.getByRole('button', { name: 'Planta', exact: true }).click()
+      await page.getByLabel('Nombre de la planta').fill('Planta alta QA')
+      const withUpper = await saveHome(page, 'Guardar planta')
+      const upper = withUpper.floors.find(floor => floor.id !== lowerId)!
+      await expect(page.getByLabel('Planta actual')).toHaveValue(upper.id)
+      await expect(page.getByRole('button', { name: 'Abrir Living QA', exact: true })).toHaveCount(0)
+      const withBedroom = await addRoom(page, 'Dormitorio QA', 'bedroom', 'double')
+      const bedroom = withBedroom.floors.find(floor => floor.id === upper.id)!.rooms.find(room => room.name === 'Dormitorio QA')!
+      expect(bedroom).toMatchObject({ kind: 'bedroom', variant: 'double' })
+      await page.getByLabel('Planta actual').selectOption(lowerId)
+      await expect(page.getByRole('button', { name: 'Abrir Living QA', exact: true })).toBeVisible()
+      await expect(page.getByRole('button', { name: 'Abrir Dormitorio QA', exact: true })).toHaveCount(0)
+      await page.getByLabel('Planta actual').selectOption(upper.id)
+      await page.getByRole('button', { name: 'Editar planta actual', exact: true }).click()
+      await page.getByLabel('Nombre de la planta').fill('Dormitorios QA')
+      await page.getByLabel('Orden de la planta').selectOption('0')
+      const reordered = await saveHome(page, 'Guardar planta')
+      expect(reordered.floors.map(floor => [floor.id, floor.order])).toEqual([[upper.id, 0], [lowerId, 1]])
+      await page.getByRole('button', { name: 'Abrir Dormitorio QA', exact: true }).click()
+      await expect(page.getByRole('heading', { name: 'Dormitorio QA', exact: true })).toBeVisible()
+      await expect(page.getByRole('button', { name: 'Volver a la planta', exact: true })).toBeVisible()
+      const registered = await registerAir(page, created, 'Aire dormitorio QA')
+      expect(registered.home.placements[0].roomId).toBe(bedroom.id)
+      await page.reload()
+      await expect(page.getByLabel('Planta actual')).toHaveValue(upper.id)
+      await expect(page.getByRole('button', { name: 'Abrir Living QA', exact: true })).toHaveCount(0)
+      await expect(page.getByRole('heading', { name: 'Aire dormitorio QA', exact: true })).toHaveCount(1)
+      await expect(page.getByRole('link', { name: 'Historial de Aire dormitorio QA', exact: true })).toHaveAttribute('href', `/app/equipos/${registered.equipment.id}`)
+      const persisted = await readHomes(page), persistedHome = persisted.homes.find(home => home.id === original.id)!
+      expect(persistedHome.floors.find(floor => floor.id === upper.id)!.rooms.find(room => room.id === bedroom.id)).toMatchObject({ name: 'Dormitorio QA', variant: 'double' })
+      expect(persistedHome.placements).toEqual(registered.home.placements)
+      expect(persisted.equipment.filter(equipment => equipment.id === registered.equipment.id)).toHaveLength(1)
+      expect(persisted.equipment.find(equipment => equipment.id === registered.equipment.id)).toMatchObject({ addressId: original.addressId, equipmentType: 'inverter', frigorias: '4500' })
+
+      const withoutRoom = await confirmRemoval(page, 'Quitar Dormitorio QA')
+      expect(withoutRoom.placements).toHaveLength(0)
+      await expect(page.getByText('Sin ubicar', { exact: true })).toBeVisible()
+      await expect(page.getByRole('link', { name: 'Historial de Aire dormitorio QA', exact: true })).toHaveAttribute('href', `/app/equipos/${registered.equipment.id}`)
+      await page.getByRole('button', { name: 'Editar planta actual', exact: true }).click()
+      const withoutUpper = await confirmRemoval(page, 'Quitar planta')
+      expect(withoutUpper.floors.map(floor => floor.id)).toEqual([lowerId])
+      await page.reload()
+      await expect(page.getByRole('button', { name: 'Abrir Living QA', exact: true })).toBeVisible()
+      await expect(page.getByRole('button', { name: 'Ubicar Aire dormitorio QA', exact: true })).toBeVisible()
+      const afterRemoval = await readHomes(page)
+      expect(afterRemoval.equipment.find(equipment => equipment.id === registered.equipment.id)).toMatchObject({ addressId: original.addressId, archivedAt: null })
+      expect(afterRemoval.homes.find(home => home.id === original.id)!.placements).toHaveLength(0)
+    } finally { await cleanupCreated(customer, created) }
+  })
+
+  test('switches between owned homes and rejects another customer reading or writing their IDs', async ({ page, accounts }) => {
+    const created = createdAssets(), customer = accounts.accounts.customerA
+    try {
+      await loginAs(page, customer, 'customerA'); await page.goto('/app/hogar')
+      const initial = await readHomes(page)
+      const first = await createHome(page, created, { name: 'Casa privada QA', kind: 'house', addressId: initial.addresses.find(address => !address.archivedAt)!.id })
+      await addRoom(page, 'Living privado QA', 'living', 'compact')
+      const registered = await registerAir(page, created, 'Aire privado QA')
+      const privateHome = registered.home
+      const second = await createHome(page, created, { name: 'Oficina privada QA', kind: 'office', newAddress: true })
+      await addRoom(page, 'Reuniones QA', 'meeting', 'boardroom')
+      await expect(page.getByRole('heading', { name: 'Aire privado QA', exact: true })).toHaveCount(0)
+      await expect(page.getByRole('button', { name: 'Abrir Living privado QA', exact: true })).toHaveCount(0)
+      await page.getByLabel('Hogar actual').selectOption(first.id)
+      await expect(page.getByRole('button', { name: 'Abrir Living privado QA', exact: true })).toBeVisible()
+      await expect(page.getByRole('heading', { name: 'Aire privado QA', exact: true })).toBeVisible()
+      await expect(page.getByRole('button', { name: 'Abrir Reuniones QA', exact: true })).toHaveCount(0)
+      await page.getByLabel('Hogar actual').selectOption(second.id)
+      await page.reload()
+      expect((await readHomes(page)).homes.map(home => home.id).sort()).toEqual([first.id, second.id].sort())
+
+      await switchCustomer(page, accounts.accounts.customerB, 'customerB')
+      await page.goto('/app/hogar')
+      await expect(page.getByRole('heading', { name: 'Tu hogar, a tu manera' })).toBeVisible()
+      const foreignSnapshot = await readHomes(page)
+      expect(foreignSnapshot.homes.some(home => created.homeIds.includes(home.id))).toBe(false)
+      expect(foreignSnapshot.equipment.some(equipment => equipment.id === registered.equipment.id)).toBe(false)
+      expect(foreignSnapshot.addresses.some(address => address.id === second.addressId)).toBe(false)
+      const saveForeign = await page.request.put(homesPath, { data: {
+        id: privateHome.id, expectedVersion: privateHome.version, name: 'Cambio ajeno rechazado',
+        addressId: privateHome.addressId, kind: privateHome.kind, building: privateHome.building,
+        features: privateHome.features, floors: privateHome.floors, placements: privateHome.placements
+      } })
+      expect([403, 404]).toContain(saveForeign.status())
+      const registerForeign = await page.request.post(equipmentPath, { data: {
+        homeId: privateHome.id, expectedVersion: privateHome.version, idempotencyKey: randomUUID(),
+        equipment: { nickname: 'Aire ajeno rechazado', equipmentType: 'split' },
+        placement: { roomId: privateHome.floors[0].rooms[0].id, wall: 'north', offset: .5, height: 2 }
+      } })
+      expect([403, 404]).toContain(registerForeign.status())
+      await page.goto(`/app/equipos/${registered.equipment.id}`)
+      await expect(page.getByRole('heading', { name: 'No encontramos ese equipo' })).toBeVisible()
+
+      await switchCustomer(page, customer, 'customerA'); await page.goto('/app/hogar')
+      const unchanged = await readHomes(page)
+      expect(unchanged.homes.find(home => home.id === first.id)).toMatchObject({ name: 'Casa privada QA', version: privateHome.version, placements: privateHome.placements })
+      expect(unchanged.equipment.filter(equipment => equipment.addressId === first.addressId)).toHaveLength(1)
+      expect(unchanged.equipment.find(equipment => equipment.id === registered.equipment.id)!.nickname).toBe('Aire privado QA')
+      await page.getByLabel('Hogar actual').selectOption(second.id)
+      await expect(page.getByRole('button', { name: 'Abrir Reuniones QA', exact: true })).toBeVisible()
+    } finally { await cleanupCreated(customer, created) }
+  })
+})

@@ -26,6 +26,35 @@ function completeAddressIfVisible() {
 }
 
 describe('customer request wizard', () => {
+  it.each(AIR_CONDITIONING_ISSUES)(
+    'starts with $title selected from Inicio without skipping the first step',
+    ({ slug, title }) => {
+      render(<AirConditioningWizard initialIssue={slug} />)
+
+      expect(screen.getByText('Paso 1 de 7')).toBeTruthy()
+      expect(screen.getByRole('radio', { name: new RegExp(title) }).getAttribute('aria-checked')).toBe(
+        'true'
+      )
+      expect((screen.getByRole('button', { name: 'Continuar' }) as HTMLButtonElement).disabled).toBe(
+        false
+      )
+      expect(screen.queryByRole('heading', { name: 'Contanos un poco más' })).toBeNull()
+    }
+  )
+
+  it('lets the customer change an issue selected from Inicio before continuing', () => {
+    render(<AirConditioningWizard initialIssue="no_enfria" />)
+
+    expect(screen.getByRole('radio', { name: /No enfría/ }).getAttribute('aria-checked')).toBe('true')
+    fireEvent.click(screen.getByRole('radio', { name: /Mantenimiento/ }))
+    expect(screen.getByRole('radio', { name: /No enfría/ }).getAttribute('aria-checked')).toBe('false')
+    expect(screen.getByRole('radio', { name: /Mantenimiento/ }).getAttribute('aria-checked')).toBe('true')
+    fireEvent.click(screen.getByRole('button', { name: 'Continuar' }))
+    expect(screen.getByRole('radiogroup', { name: 'Desde cuándo necesitás el servicio' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Atrás' }))
+    expect(screen.getByRole('radio', { name: /Mantenimiento/ }).getAttribute('aria-checked')).toBe('true')
+  })
+
   it('prefills the default active saved address and its access conditions', () => {
     render(<AirConditioningWizard savedAddresses={{ items: [{ id: '48b10c2d-f00a-45a4-8d8c-9fe6831d56d1', label: 'Mi oficina', street: 'San Martín', number: '456', floor: '2', apartment: null, city: 'CABA', province: 'Buenos Aires', propertyType: 'office', isDefault: true, access: { hasElevator: true, stairsRequired: true }, version: 2, createdAt: '2026-09-11T12:00:00Z', archivedAt: null }], total: 1, nextCursor: null }} />)
     fireEvent.click(screen.getByRole('radio', { name: /No enfría/ }))

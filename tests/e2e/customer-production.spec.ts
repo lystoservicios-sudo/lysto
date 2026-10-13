@@ -25,9 +25,11 @@ test('customer reloads the live dashboard and empty request history', async ({
   accounts
 }) => {
   await loginAs(page, accounts.accounts.customerA, 'customerA')
-  await expect(page.getByRole('heading', { name: /Hola, customerA/i })).toBeVisible()
+  await expect(page.getByRole('heading', { name: '¿Qué necesitás?' })).toBeVisible()
   await page.reload()
-  await expect(page.getByText('Tu hogar todavía no tiene actividad')).toBeVisible()
+  await expect(page.getByRole('link', { name: 'No enfría', exact: true })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'No enfría', exact: true })).toHaveAttribute('href', '/app/solicitar/aire-acondicionado?problema=no_enfria')
+  await expect(page.getByRole('heading', { name: 'Agregá tu hogar' })).toBeVisible()
   await page.goto('/app/solicitudes')
   await expect(page.getByRole('heading', { name: 'Mis solicitudes' })).toBeVisible()
   await expect(page.getByText('Todavía no tenés solicitudes')).toBeVisible()

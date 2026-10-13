@@ -4669,6 +4669,19 @@ export type Database = {
         }
         Returns: Json
       }
+      read_customer_homes: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      write_customer_home: {
+        Args: {
+          p_operation: string
+          p_id: string | null
+          p_expected_version: number | null
+          p_data: Json
+        }
+        Returns: Json
+      }
       write_customer_asset: {
         Args: {
           p_archive?: boolean

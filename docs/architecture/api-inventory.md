@@ -1,6 +1,6 @@
 # Inventario de API
 
-Generado desde los métodos exportados en `app/api/**/route.ts`. Total: **95 métodos**. El control automático falla si aparece o desaparece un método sin regenerar este archivo.
+Generado desde los métodos exportados en `app/api/**/route.ts`. Total: **108 métodos**. El control automático falla si aparece o desaparece un método sin regenerar este archivo.
 
 | Método | Ruta | Estado | Autoridad | Destino canónico | Prueba contractual |
 |---|---|---|---|---|---|
@@ -8,8 +8,8 @@ Generado desde los métodos exportados en `app/api/**/route.ts`. Total: **95 mé
 | `POST` | `/api/admin/assign-professional` | Retirada 410 | Pública; contrato retirado, sin mutación | `/api/pricing/offers` | `tests/unit/api-route-contracts.vitest.test.ts` |
 | `GET` | `/api/admin/audit` | Activa | Sesión: admin | `/api/admin/audit` | `tests/integration/api-inventory.test.ts` |
 | `POST` | `/api/admin/invite-professional` | Activa | Sesión: admin; permiso operations | `/api/admin/invite-professional` | `tests/integration/api-inventory.test.ts` |
-| `PATCH` | `/api/admin/invite-professional` | Activa | Sesión: admin; permiso operations | `/api/admin/invite-professional` | `tests/integration/api-inventory.test.ts` |
 | `PUT` | `/api/admin/invite-professional` | Activa | Sesión: admin; permiso operations | `/api/admin/invite-professional` | `tests/integration/api-inventory.test.ts` |
+| `PATCH` | `/api/admin/invite-professional` | Activa | Sesión: admin; permiso operations | `/api/admin/invite-professional` | `tests/integration/api-inventory.test.ts` |
 | `GET` | `/api/admin/notifications` | Activa | Sesión: sesión; permiso operations | `/api/admin/notifications` | `tests/integration/api-inventory.test.ts` |
 | `PATCH` | `/api/admin/notifications` | Activa | Sesión: sesión; permiso operations | `/api/admin/notifications` | `tests/integration/api-inventory.test.ts` |
 | `GET` | `/api/admin/permissions` | Activa | Sesión: sesión; permiso owner | `/api/admin/permissions` | `tests/integration/api-inventory.test.ts` |
@@ -18,6 +18,9 @@ Generado desde los métodos exportados en `app/api/**/route.ts`. Total: **95 mé
 | `POST` | `/api/admin/professionals/approve` | Activa | Sesión: admin; permiso operations | `/api/admin/professionals/approve` | `tests/integration/api-inventory.test.ts` |
 | `POST` | `/api/admin/professionals/documents/review` | Activa | Sesión: admin; permiso operations | `/api/admin/professionals/documents/review` | `tests/integration/api-inventory.test.ts` |
 | `GET` | `/api/admin/professionals/invitations` | Activa | Sesión: sesión; permiso operations | `/api/admin/professionals/invitations` | `tests/integration/api-inventory.test.ts` |
+| `GET` | `/api/admin/professionals/policies` | Activa | Sesión: admin; permiso operations | `/api/admin/professionals/policies` | `tests/integration/api-inventory.test.ts` |
+| `POST` | `/api/admin/professionals/policies` | Activa | Sesión: admin; permiso operations | `/api/admin/professionals/policies` | `tests/integration/api-inventory.test.ts` |
+| `POST` | `/api/admin/professionals/revalidation` | Activa | Sesión: admin; permiso operations | `/api/admin/professionals/revalidation` | `tests/integration/api-inventory.test.ts` |
 | `GET` | `/api/admin/professionals/review` | Activa | Sesión: admin; permiso operations | `/api/admin/professionals/review` | `tests/integration/api-inventory.test.ts` |
 | `POST` | `/api/admin/professionals/review` | Activa | Sesión: admin; permiso operations | `/api/admin/professionals/review` | `tests/integration/api-inventory.test.ts` |
 | `GET` | `/api/admin/professionals` | Activa | Sesión: sesión; permiso operations | `/api/admin/professionals` | `tests/integration/api-inventory.test.ts` |
@@ -30,10 +33,16 @@ Generado desde los métodos exportados en `app/api/**/route.ts`. Total: **95 mé
 | `GET` | `/api/customer/equipment/photos` | Activa | Sesión: customer | `/api/customer/equipment/photos` | `tests/integration/api-inventory.test.ts` |
 | `GET` | `/api/customer/equipment` | Activa | Sesión: customer | `/api/customer/equipment` | `tests/integration/api-inventory.test.ts` |
 | `DELETE` | `/api/customer/equipment` | Activa | Sesión: customer | `/api/customer/equipment` | `tests/integration/api-inventory.test.ts` |
+| `POST` | `/api/customer/homes/equipment` | Activa | Sesión: customer | `/api/customer/homes/equipment` | `tests/integration/api-inventory.test.ts` |
+| `GET` | `/api/customer/homes` | Activa | Sesión: customer | `/api/customer/homes` | `tests/integration/api-inventory.test.ts` |
+| `POST` | `/api/customer/homes` | Activa | Sesión: customer | `/api/customer/homes` | `tests/integration/api-inventory.test.ts` |
+| `PUT` | `/api/customer/homes` | Activa | Sesión: customer | `/api/customer/homes` | `tests/integration/api-inventory.test.ts` |
+| `DELETE` | `/api/customer/homes` | Activa | Sesión: customer | `/api/customer/homes` | `tests/integration/api-inventory.test.ts` |
 | `POST` | `/api/customer/profile/email` | Activa | Sesión: customer | `/api/customer/profile/email` | `tests/integration/api-inventory.test.ts` |
 | `GET` | `/api/customer/profile` | Activa | Sesión: customer | `/api/customer/profile` | `tests/integration/api-inventory.test.ts` |
 | `PUT` | `/api/customer/profile` | Activa | Sesión: customer | `/api/customer/profile` | `tests/integration/api-inventory.test.ts` |
 | `POST` | `/api/customer/request/submit` | Activa | Sesión y autorización verificadas por el servicio de la ruta | `/api/customer/request/submit` | `tests/integration/api-inventory.test.ts` |
+| `GET` | `/api/customer/services` | Activa | Sesión: customer | `/api/customer/services` | `tests/integration/api-inventory.test.ts` |
 | `POST` | `/api/diagnosis/generate` | Activa | Sesión: customer,admin | `/api/diagnosis/generate` | `tests/unit/diagnosis-route.vitest.test.ts` |
 | `POST` | `/api/equipment/register` | Activa | Sesión: customer | `/api/equipment/register` | `tests/integration/api-inventory.test.ts` |
 | `GET` | `/api/health/live` | Activa | Pública; sonda mínima | `/api/health/live` | `tests/integration/api-inventory.test.ts` |
@@ -59,6 +68,7 @@ Generado desde los métodos exportados en `app/api/**/route.ts`. Total: **95 mé
 | `POST` | `/api/mercadopago/create-preference` | Activa | Sesión y autorización verificadas por el servicio de la ruta | `/api/mercadopago/create-preference` | `tests/integration/api-inventory.test.ts` |
 | `POST` | `/api/mercadopago/oauth/authorize` | Activa | Sesión y autorización verificadas por el servicio de la ruta | `/api/mercadopago/oauth/authorize` | `tests/integration/api-inventory.test.ts` |
 | `GET` | `/api/mercadopago/oauth/callback` | Activa | Profesional; sesión, state y cookie | `/api/mercadopago/oauth/callback` | `tests/integration/api-inventory.test.ts` |
+| `POST` | `/api/mercadopago/owner-split-test` | Activa | Sesión y autorización verificadas por el servicio de la ruta | `/api/mercadopago/owner-split-test` | `tests/integration/api-inventory.test.ts` |
 | `POST` | `/api/mercadopago/webhook` | Activa | Proveedor; firma y consulta canónica | `/api/mercadopago/webhook` | `tests/integration/api-inventory.test.ts` |
 | `POST` | `/api/notifications/emit` | Activa | Sesión y autorización verificadas por el servicio de la ruta | `/api/notifications/emit` | `tests/integration/api-inventory.test.ts` |
 | `GET` | `/api/payments/refund-requests` | Activa | Sesión: admin | `/api/payments/refund-requests` | `tests/integration/api-inventory.test.ts` |
@@ -75,7 +85,10 @@ Generado desde los métodos exportados en `app/api/**/route.ts`. Total: **95 mé
 | `PATCH` | `/api/pricing/quotes` | Activa | Sesión y autorización verificadas por el servicio de la ruta | `/api/pricing/quotes` | `tests/integration/api-inventory.test.ts` |
 | `POST` | `/api/pro/jobs/action` | Retirada 410 | Pública; contrato retirado, sin mutación | `/api/pricing/job/status` | `tests/unit/api-route-contracts.vitest.test.ts` |
 | `POST` | `/api/pro/onboarding/evaluate` | Retirada 410 | Pública; contrato retirado, sin mutación | `/api/admin/professionals/review` | `tests/unit/api-route-contracts.vitest.test.ts` |
+| `POST` | `/api/professional/account/password` | Activa | Sesión y autorización verificadas por el servicio de la ruta | `/api/professional/account/password` | `tests/integration/api-inventory.test.ts` |
 | `POST` | `/api/professional/onboarding/accept` | Activa | Sesión confirmada e invitación/onboarding vigente | `/api/professional/onboarding/accept` | `tests/integration/api-inventory.test.ts` |
+| `POST` | `/api/professional/onboarding/address` | Activa | Sesión confirmada e invitación/onboarding vigente | `/api/professional/onboarding/address` | `tests/integration/api-inventory.test.ts` |
+| `POST` | `/api/professional/onboarding/avatar` | Activa | Sesión confirmada e invitación/onboarding vigente | `/api/professional/onboarding/avatar` | `tests/integration/api-inventory.test.ts` |
 | `GET` | `/api/professional/onboarding/context` | Activa | Sesión confirmada e invitación/onboarding vigente | `/api/professional/onboarding/context` | `tests/integration/api-inventory.test.ts` |
 | `POST` | `/api/professional/onboarding/documents/finalize` | Activa | Sesión confirmada e invitación/onboarding vigente | `/api/professional/onboarding/documents/finalize` | `tests/integration/api-inventory.test.ts` |
 | `POST` | `/api/professional/onboarding/documents/read` | Activa | Sesión confirmada e invitación/onboarding vigente | `/api/professional/onboarding/documents/read` | `tests/integration/api-inventory.test.ts` |

@@ -50,6 +50,8 @@ export async function writeCustomerAsset(
     p_archive: archive
   })
   if (result.error) {
+    if (result.error.code === 'P0001' && result.error.message === 'Address linked to active home')
+      throw new ApiError('address_has_home')
     if (result.error.code === '42501') throw new ApiError('forbidden')
     if (result.error.code === 'P0002') throw new ApiError('not_found')
     if (result.error.code === '40001' || result.error.code === '23505')

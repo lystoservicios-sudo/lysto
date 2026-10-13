@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server'
 import { ZodError } from 'zod'
 
 const errors = {
+  address_has_home: {
+    status: 409,
+    message: 'Esta dirección está vinculada a un hogar. Archivá ese hogar antes de quitarla.'
+  },
   last_owner: {
     status: 409,
     message:

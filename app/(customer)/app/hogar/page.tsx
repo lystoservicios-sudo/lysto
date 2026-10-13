@@ -1,15 +1,9 @@
-import { PageScaffold } from '@/components/layout/page-scaffold'
+import { CustomerHogar } from '@/components/customer/hogar/customer-hogar'
+import { requirePageSession } from '@/lib/auth/session'
+import { readCustomerHomes } from '@/lib/customer-homes/service'
 
-export default function CustomerHomePage() {
-  return (
-    <PageScaffold
-      eyebrow="Cliente"
-      title="Mi hogar"
-      description="Acá vas a poder organizar los lugares y direcciones asociados a tus servicios."
-    >
-      <p className="text-sm text-slate-600">
-        Esta sección estará disponible próximamente.
-      </p>
-    </PageScaffold>
-  )
+export default async function CustomerHogarPage() {
+  const session = await requirePageSession('customer')
+  const initialData = await readCustomerHomes(session)
+  return <CustomerHogar initialData={initialData} />
 }

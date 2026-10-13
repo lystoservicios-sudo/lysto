@@ -1,7 +1,8 @@
 'use client'
 
-import { ErrorState } from '@/components/customer/states'
+import Link from 'next/link'
+import styles from '@/components/customer/customer-services.module.css'
 
-export default function CustomerJobsError({ reset }: { reset: () => void }) {
-  return <ErrorState title="No pudimos cargar tus trabajos" description="Reintentá para recuperar el seguimiento." onRetry={reset} />
+export default function Error({ reset }: { error: Error & { digest?: string }; reset: () => void }) {
+  return <div className={styles.page}><h1 className={styles.title}>No pudimos cargar Servicios</h1><p className={styles.subtitle}>Volvé a consultar para recuperar el seguimiento de tus pedidos.</p><button className={styles.textAction} onClick={() => reset()}>Volver a consultar</button><Link className={styles.textAction} href="/app">Volver a Inicio</Link></div>
 }

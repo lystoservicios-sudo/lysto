@@ -1,34 +1,21 @@
-import { CustomerJobList } from '@/components/customer/customer-job-list'
-import { PageScaffold } from '@/components/layout/page-scaffold'
-import { ButtonLink } from '@/components/ui/button'
+import { z } from 'zod'
+import { CustomerServices } from '@/components/customer/customer-services'
 import { requirePageSession } from '@/lib/auth/session'
-import { listCustomerJobsLive } from '@/lib/customer/live-model'
+import { loadCustomerServices } from '@/lib/customer/services-model'
 
 export default async function CustomerJobsPage({
   searchParams
 }: {
-  searchParams: Promise<{ cursor?: string }>
+  searchParams: Promise<{ filter?: string; serviceCursor?: string; quoteCursor?: string }>
 }) {
-  const { cursor } = await searchParams
-  const jobs = await listCustomerJobsLive(await requirePageSession('customer'), {
+  const parameters = await searchParams
+  const parsed = z.enum(['all', 'in_progress', 'scheduled', 'finished']).safeParse(parameters.filter)
+  const filter = parsed.success ? parsed.data : 'all'
+  const page = await loadCustomerServices(await requirePageSession('customer'), {
+    filter,
     pageSize: 25,
-    ...(cursor ? { cursor } : {})
+    ...(typeof parameters.serviceCursor === 'string' ? { serviceCursor: parameters.serviceCursor } : {}),
+    ...(typeof parameters.quoteCursor === 'string' ? { quoteCursor: parameters.quoteCursor } : {})
   })
-  return (
-    <PageScaffold
-      title="Mis trabajos"
-      eyebrow="Cliente"
-      description="Seguí cada visita, revisá decisiones pendientes y consultá los servicios finalizados."
-    >
-      <CustomerJobList jobs={jobs.items} />
-      {jobs.nextCursor ? (
-        <ButtonLink
-          href={`/app/trabajos?cursor=${encodeURIComponent(jobs.nextCursor)}`}
-          variant="secondary"
-        >
-          Ver trabajos anteriores
-        </ButtonLink>
-      ) : null}
-    </PageScaffold>
-  )
+  return <CustomerServices initialPage={page} initialFilter={filter} />
 }

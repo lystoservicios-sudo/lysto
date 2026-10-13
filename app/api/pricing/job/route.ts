@@ -60,6 +60,37 @@ export async function GET(request: Request) {
       .select('equipment_id')
       .eq('id', job.request_id)
       .single()
+    let customerService: { issueLabel: string; equipmentName: string | null; addressLabel: string | null } | undefined
+    if (s.role === 'customer' && s.customerId) {
+      const requestResult = await s.client.from('service_requests')
+        .select('issue_type_id,equipment_id,address_id').eq('id', job.request_id).eq('customer_id', s.customerId).maybeSingle()
+      if (requestResult.error) throwPricingDatabaseError(requestResult.error)
+      const ownedRequest = requestResult.data
+      const [equipmentResult, addressResult, issueResult] = await Promise.all([
+        ownedRequest?.equipment_id
+          ? s.client.from('customer_equipment').select('nickname').eq('id', ownedRequest.equipment_id).eq('customer_id', s.customerId).maybeSingle()
+          : Promise.resolve({ data: null, error: null }),
+        ownedRequest?.address_id
+          ? s.client.from('customer_addresses').select('street,number,floor,apartment,city').eq('id', ownedRequest.address_id).eq('customer_id', s.customerId).maybeSingle()
+          : Promise.resolve({ data: null, error: null }),
+        ownedRequest?.issue_type_id
+          ? s.client.from('service_issue_types').select('name').eq('id', ownedRequest.issue_type_id).maybeSingle()
+          : Promise.resolve({ data: null, error: null })
+      ])
+      if (equipmentResult.error) throwPricingDatabaseError(equipmentResult.error)
+      if (addressResult.error) throwPricingDatabaseError(addressResult.error)
+      if (issueResult.error) throwPricingDatabaseError(issueResult.error)
+      const address = addressResult.data
+      customerService = {
+        issueLabel: issueResult.data?.name ?? 'Aire acondicionado',
+        equipmentName: equipmentResult.data?.nickname ?? null,
+        addressLabel: address ? [
+          [address.street, address.number].filter(Boolean).join(' '),
+          [address.floor ? `Piso ${address.floor}` : null, address.apartment ? `Depto. ${address.apartment}` : null].filter(Boolean).join(' '),
+          address.city
+        ].filter(Boolean).join(', ') : null
+      }
+    }
     const onsite = await s.client
       .from('onsite_diagnoses')
       .select('*')
@@ -80,6 +111,7 @@ export async function GET(request: Request) {
       finalReport: finalReport.data ?? null,
       equipmentId: serviceRequest?.equipment_id ?? null,
       visit,
+      ...(customerService ? { customerService } : {}),
       role: s.role
     })
   } catch (error) {

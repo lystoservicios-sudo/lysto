@@ -89,10 +89,12 @@ function handleRadioGroupKeyDown(event: KeyboardEvent<HTMLDivElement>) {
 
 export function AirConditioningWizard({
   savedAddresses = { items: [], total: 0, nextCursor: null },
-  ownerMaintenanceTestCustomer = false
+  ownerMaintenanceTestCustomer = false,
+  initialIssue
 }: {
   savedAddresses?: AssetPage<CustomerAssetAddress>
   ownerMaintenanceTestCustomer?: boolean
+  initialIssue?: ServiceIssueSlug
 }) {
   const initialSavedAddress = savedAddresses.items.find(item => item.isDefault && !item.archivedAt)
     ?? savedAddresses.items.find(item => !item.archivedAt)
@@ -105,7 +107,7 @@ export function AirConditioningWizard({
     stepStart.current?.focus({ preventScroll: true })
     stepStart.current?.scrollIntoView?.({ block: 'start', behavior: 'instant' })
   }, [step])
-  const [issue, setIssue] = useState<ServiceIssueSlug | undefined>()
+  const [issue, setIssue] = useState<ServiceIssueSlug | undefined>(initialIssue)
   const isPlannedService = issue === 'instalacion' || issue === 'mantenimiento'
   const [timeSince, setTimeSince] = useState<TimeSince | undefined>()
   const [files, setFiles] = useState<File[]>([])

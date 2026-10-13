@@ -1,5 +1,3 @@
-import { LoadingSkeleton } from '@/components/customer/states'
+import { CustomerServicesSkeleton } from '@/components/customer/customer-services'
 
-export default function CustomerJobsLoading() {
-  return <LoadingSkeleton label="Cargando trabajos" rows={7} />
-}
+export default function Loading() { return <CustomerServicesSkeleton /> }

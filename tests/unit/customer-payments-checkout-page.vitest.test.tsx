@@ -9,7 +9,14 @@ vi.mock('@/components/payments/payment-panel', () => ({
 vi.mock('@/components/layout/page-scaffold', () => ({
   PageScaffold: ({ children }: { children: React.ReactNode }) => <main>{children}</main>
 }))
-vi.mock('@/lib/auth/session', () => ({ requirePageSession: vi.fn(async () => ({ role: 'customer' })) }))
+vi.mock('@/lib/auth/session', () => ({
+  requirePageSession: vi.fn(async () => ({
+    role: 'customer', profileId: 'customer-profile',
+    client: {
+      from: () => ({ select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null, error: null }) }) }) })
+    }
+  }))
+}))
 vi.mock('@/lib/customer/live-model', () => ({
   listCustomerJobsLive: vi.fn(async () => ({
     items: [{ id: 'job-confirmed-1', status: 'confirmed', amount: 1000 }]

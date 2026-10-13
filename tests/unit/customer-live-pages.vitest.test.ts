@@ -41,7 +41,7 @@ describe('customer production pages', () => {
       const source = fs.readFileSync(path.join(root, page), 'utf8')
       expect(source, page).toContain("requirePageSession('customer')")
       expect(source, page).toMatch(
-        /customerLiveData|listCustomerRequestsLive|listCustomerJobsLive|customerReviewEligibility/
+        /loadCustomerHome|loadCustomerServices|customerLiveData|listCustomerRequestsLive|listCustomerJobsLive|customerReviewEligibility/
       )
     }
   })

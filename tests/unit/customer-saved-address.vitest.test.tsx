@@ -21,7 +21,7 @@ describe('saved service address integration', () => {
       client: { auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { email: 'customer@lysto.test' } } }) } }
     })
     mocks.addresses.mockResolvedValue({ items: [{ id: 'saved-home', label: 'Mi hogar', isDefault: true, archivedAt: null, street: 'San Martín', number: '932', floor: '2', apartment: 'C', city: 'Vicente López', province: 'Buenos Aires', propertyType: 'office', access: { hasElevator: true, hasParking: true, stairsRequired: false, outdoorUnitAtHeight: true, outdoorUnitOnBalcony: true, difficultAccess: true } }], total: 1, nextCursor: null })
-    render(await RequestPage())
+    render(await RequestPage({}))
     reachAddress()
     expect((screen.getByLabelText('Calle') as HTMLInputElement).value).toBe('San Martín')
     expect((screen.getByLabelText('Número') as HTMLInputElement).value).toBe('932')

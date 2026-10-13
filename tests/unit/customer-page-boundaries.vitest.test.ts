@@ -5,6 +5,24 @@ import { describe, expect, it } from 'vitest'
 import { customerScreenRoutes } from '@/features/customer/screen-contract'
 
 describe('customer page layout boundary', () => {
+  it('keeps server route props required for Next generated PageProps validation', () => {
+    for (const path of ['app/(customer)/app/presupuestos/page.tsx', 'app/(customer)/app/trabajos/page.tsx', 'app/(customer)/app/solicitar/aire-acondicionado/page.tsx']) {
+      const source = readFileSync(resolve(process.cwd(), path), 'utf8')
+      expect(source).not.toMatch(/}\s*=\s*\{\}\s*\)/)
+    }
+  })
+
+  it('provides focused loading and recoverable error states for Inicio', () => {
+    const loading = readFileSync(resolve(process.cwd(), 'app/(customer)/app/loading.tsx'), 'utf8')
+    const error = readFileSync(resolve(process.cwd(), 'app/(customer)/app/error.tsx'), 'utf8')
+
+    expect(loading).toContain('Cargando Inicio')
+    expect(loading).toContain('role="status"')
+    expect(error).toContain("'use client'")
+    expect(error).toContain('No pudimos cargar Inicio')
+    expect(error).toContain('reset()')
+  })
+
   it('mounts customer navigation through the dedicated client app shell', () => {
     const layoutSource = readFileSync(
       resolve(process.cwd(), 'app/(customer)/app/layout.tsx'),
@@ -40,10 +58,13 @@ describe('customer page layout boundary', () => {
     expect(source).not.toMatch(/fixture|mock|fetch\(|\.from\(|<form\b|<nav\b|<Link\b|<button\b|<Card\b|<a\b|\/api\//i)
   })
 
-  it('keeps the Hogar placeholder free of invented records and interactions', () => {
+  it('loads authenticated Hogar data without inventing records or duplicating its shell', () => {
     const source = readFileSync(resolve(process.cwd(), 'app/(customer)/app/hogar/page.tsx'), 'utf8')
 
     expect(source).not.toMatch(/fixture|mock|fetch\(|\.from\(|<form\b|<nav\b/i)
+    expect(source).toContain("requirePageSession('customer')")
+    expect(source).toContain('readCustomerHomes(session)')
+    expect(source).toContain('<CustomerHogar initialData={initialData}')
   })
 
   it('keeps global navigation and viewport wrappers out of customer pages', () => {

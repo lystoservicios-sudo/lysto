@@ -31,13 +31,17 @@ export function PaymentPanel({
   jobStatus,
   serviceAmount,
   role,
-  extras = []
+  extras = [],
+  readOnly = false,
+  onBusyChange
 }: {
   jobId?: string
   jobStatus?: string
   serviceAmount?: number | null
   role?: string
   extras?: Array<{ id: string; fault: string; amount: number; status: string }>
+  readOnly?: boolean
+  onBusyChange?: (busy: boolean) => void
 }) {
   const [rows, setRows] = useState<Checkout[]>([]),
     [actor, setActor] = useState(role),
@@ -45,6 +49,8 @@ export function PaymentPanel({
     [busy, setBusy] = useState(false),
     [revision, setRevision] = useState(0)
   const checkedReturn = useRef(false)
+  useEffect(() => { onBusyChange?.(busy) }, [busy, onBusyChange])
+  useEffect(() => () => { onBusyChange?.(false) }, [onBusyChange])
   useEffect(() => {
     let active = true
     fetch(`/api/mercadopago/checkouts${jobId ? `?jobId=${encodeURIComponent(jobId)}` : ''}`)
@@ -141,6 +147,7 @@ export function PaymentPanel({
   }
   const payableJob =
     jobId &&
+    !readOnly &&
     !['pending_assignment', 'pending_professional_acceptance'].includes(
       jobStatus ?? 'pending_assignment'
     ) &&
@@ -178,7 +185,10 @@ export function PaymentPanel({
           {message}
         </p>
       ) : null}
-      {jobId && actor === 'customer' && !payableJob ? (
+      {readOnly && actor === 'customer' ? (
+        <p className="text-sm">Los pagos de este servicio se consultan sin iniciar un nuevo cobro.</p>
+      ) : null}
+      {jobId && actor === 'customer' && !payableJob && !readOnly ? (
         <p className="text-sm">El pago se habilita cuando el profesional acepta el trabajo.</p>
       ) : null}
       {jobId && actor === 'customer' && payableJob

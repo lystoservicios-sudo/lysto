@@ -1,5 +1,10 @@
 'use client'
 
+/** Keeps transaction rejection distinct from a lost/ambiguous network response. */
+export class PrivateRequestError extends Error {
+  constructor(message: string, readonly status: number, readonly code?: string) { super(message) }
+}
+
 export async function privateRequest<T>(path: string, method = 'GET', body?: unknown): Promise<T> {
   const response = await fetch(path, {
     method,
@@ -10,18 +15,20 @@ export async function privateRequest<T>(path: string, method = 'GET', body?: unk
     signal: AbortSignal.timeout(30000)
   })
   if (!response.ok) {
+    const payload: unknown = await response.json().catch(() => null)
+    const code = payload && typeof payload === 'object' && 'code' in payload && typeof payload.code === 'string' ? payload.code : undefined
     if (response.status === 409) {
-      const body: unknown = await response.json().catch(() => null)
-      if (body && typeof body === 'object' && 'code' in body && body.code === 'last_owner')
-        throw new Error(
-          'Necesitás otro owner con cuenta activa y autenticador verificado antes de retirar este permiso.'
+      if (code === 'address_has_home') throw new PrivateRequestError('Esta dirección está vinculada a un hogar. Archivá ese hogar antes de quitarla.', 409, code)
+      if (code === 'last_owner')
+        throw new PrivateRequestError(
+          'Necesitás otro owner con cuenta activa y autenticador verificado antes de retirar este permiso.', 409, code
         )
     }
     if (response.status === 409)
-      throw new Error('Los datos cambiaron. Recargá la información antes de volver a guardar.')
-    if (response.status === 401) throw new Error('Tu sesión terminó. Volvé a iniciar sesión.')
-    if (response.status === 400) throw new Error('Revisá los datos ingresados.')
-    throw new Error('No pudimos completar la operación. Intentá nuevamente.')
+      throw new PrivateRequestError('Los datos cambiaron. Recargá la información antes de volver a guardar.', 409, code)
+    if (response.status === 401) throw new PrivateRequestError('Tu sesión terminó. Volvé a iniciar sesión.', 401, code)
+    if (response.status === 400) throw new PrivateRequestError('Revisá los datos ingresados.', 400, code)
+    throw new PrivateRequestError('No pudimos completar la operación. Intentá nuevamente.', response.status, code)
   }
   return response.json() as Promise<T>
 }

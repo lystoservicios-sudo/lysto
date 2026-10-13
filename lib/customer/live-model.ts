@@ -18,7 +18,7 @@ import {
   readCustomerProfile
 } from '@/lib/customer-assets/service'
 import { createCustomerQueries } from '@/lib/data-access/customer-queries'
-import type { ReadOptions, RequestDto } from '@/lib/data-access/read-contracts'
+import type { JobDto, ReadOptions, ReadPage, RequestDto } from '@/lib/data-access/read-contracts'
 import { customerJobStatusLabels } from '@/lib/domain/job-status-labels'
 import type { JobStatus, RequestStatus, ServiceIssueSlug } from '@/lib/domain/types'
 import { listMaintenance } from '@/lib/equipment/maintenance-service'
@@ -152,6 +152,10 @@ export async function listCustomerRequestsLive(session: Session, input: ReadOpti
 
 export async function listCustomerJobsLive(session: Session, input: ReadOptions = {}) {
   const page = await createCustomerQueries(session.client).list('jobs', input)
+  return hydrateCustomerJobs(session, page)
+}
+
+async function hydrateCustomerJobs(session: Session, page: ReadPage<JobDto>) {
   const requestIds = [...new Set(page.items.map((item) => item.requestId))]
   const requestResult = requestIds.length
     ? await session.client
@@ -196,6 +200,29 @@ export async function listCustomerJobsLive(session: Session, input: ReadOptions 
     }
   })
   return { ...page, items }
+}
+
+/** One completed service, ordered by its real completion rather than its creation. */
+export async function listLastCompletedCustomerJobLive(
+  session: Session
+): Promise<CustomerJobViewModel | null> {
+  if (session.role !== 'customer' || !session.customerId) throw new ApiError('forbidden')
+  const result = await session.client
+    .from('jobs')
+    .select('id')
+    .eq('customer_id', session.customerId)
+    .eq('status', 'completed')
+    .order('completed_at', { ascending: false, nullsFirst: false })
+    .order('id', { ascending: false })
+    .limit(1)
+  if (result.error || !result.data) throw new ApiError('service_unavailable')
+  const latestId = result.data[0]?.id
+  if (!latestId) return null
+  const job = await createCustomerQueries(session.client).detail('jobs', latestId)
+  // The guarded detail also revalidates authority. A job may change between reads.
+  if (!job || job.status !== 'completed') return null
+  const page = await hydrateCustomerJobs(session, { items: [job], total: 1, nextCursor: null })
+  return page.items[0] ?? null
 }
 
 export async function customerLiveData(session: Session) {

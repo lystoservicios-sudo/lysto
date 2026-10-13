@@ -6,7 +6,7 @@ const nextRequire = createRequire(require.resolve('next/package.json'))
 const { getSharp, optimizeImage } = require('next/dist/server/image-optimizer.js')
 const sharp = getSharp(1)
 const sharpVersion = sharp.versions.sharp
-assert.equal(sharpVersion, '0.35.4', 'Next must resolve the reviewed patched image processor')
+assert.equal(sharpVersion, '0.35.5', 'Next must resolve the reviewed patched image processor')
 assert.equal(nextRequire('postcss/package.json').version, '8.5.26')
 
 const source = await sharp({ create: { width: 32, height: 32, channels: 3, background: { r: 30, g: 80, b: 140 } } }).png().toBuffer()
