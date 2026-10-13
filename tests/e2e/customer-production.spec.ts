@@ -138,6 +138,12 @@ test('customer sees a paid confirmed visit, reprogramming and one persisted revi
     await page.getByRole('button', { name: 'Volver al servicio', exact: true }).click()
     await expect(navigation).toBeVisible()
     await expect(page.locator('#agenda').getByText(/18 de septiembre/)).toBeVisible()
+    // Closing the focused view does not rewrite its deep-link hash. A hard
+    // reload of #reprogramacion intentionally opens that form again. Enter
+    // the ordinary agenda before testing the newly confirmed date on reload.
+    await page.goto(`/app/trabajos/${jobId}#agenda`)
+    await expect(page).toHaveURL(new RegExp(`/app/trabajos/${jobId}#agenda$`))
+    await expect(page.getByRole('heading', { name: 'Solicitar otra fecha', exact: true })).toHaveCount(0)
 
     await db.query(
       `update public.job_schedule_reservations

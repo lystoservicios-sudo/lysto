@@ -1,21 +1,57 @@
-import { randomUUID } from 'node:crypto'
+import { randomBytes, randomUUID } from 'node:crypto'
 import { Client } from 'pg'
 import { createClient } from '@supabase/supabase-js'
 import { test, expect, loginAs } from './fixtures/production'
 import { assertTestEnvironment, readTestIdentity } from '../../scripts/lib/test-environment.mjs'
 
-test('an invalid professional invitation cannot create an account', async ({ page }) => {
-  await page.goto(`/pro/onboarding/${'a'.repeat(43)}`)
-  await expect(page.getByRole('heading', { name: 'Creá tu contraseña', exact: true })).toBeVisible()
-  await page.getByLabel('Contraseña', { exact: true }).fill('Clav3Seg!')
-  const rejectedRegistration = page.waitForResponse((response) =>
-    response.request().method() === 'POST' &&
-    new URL(response.url()).pathname === '/api/professional/onboarding/register'
-  )
-  await page.getByRole('button', { name: 'Continuar', exact: true }).click()
-  expect((await rejectedRegistration).status()).toBe(404)
-  await expect(page.getByRole('alert')).toBeVisible()
-  await expect(page).toHaveURL(new RegExp(`/pro/onboarding/${'a'.repeat(43)}$`))
+test('an invalid Flow3 invitation cannot claim or convert a customer identity', async ({
+  page,
+  accounts
+}) => {
+  test.setTimeout(60_000)
+  const token = randomBytes(32).toString('base64url')
+  const target = assertTestEnvironment(process.env, readTestIdentity(process.env))
+  const db = new Client({
+    connectionString: target.databaseUrl,
+    connectionTimeoutMillis: 5000, query_timeout: 10000
+  })
+  await db.connect()
+  try {
+    const identitySql = `select p.role,u.raw_app_meta_data->>'app_role' trusted_role,
+      (select count(*)::integer from public.professional_profiles pp where pp.profile_id=p.id) professional_count
+      from public.profiles p join auth.users u on u.id=p.auth_user_id
+      where p.id=$1 and p.auth_user_id=$2`
+    const customer = accounts.accounts.customerA
+    const identityParams = [customer.profileId, customer.authId]
+    const before = (await db.query(identitySql, identityParams)).rows
+    expect(before).toEqual([{ role: 'customer', trusted_role: 'customer', professional_count: 0 }])
+    // Flow3 accepts an existing verified identity. The old password-registration
+    // endpoint is not a substitute for its canonical token/recipient denial.
+    const landing = await page.goto(`/pro/onboarding/${token}`)
+    expect(landing?.status()).toBe(200)
+    await expect(page.getByRole('heading', { name: 'Creá tu contraseña', exact: true })).toBeVisible()
+    await expect(page.getByLabel('Contraseña', { exact: true })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Continuar', exact: true })).toBeVisible()
+    const headers = { Origin: new URL(page.url()).origin }
+    const anonymous = await page.request.post('/api/professional/onboarding/accept', {
+      headers, data: { token }
+    })
+    expect(anonymous.status()).toBe(401)
+    expect((await anonymous.json()).code === 'unauthorized').toBe(true)
+    await loginAs(page, customer, 'customerA')
+    const unavailable = await page.request.post('/api/professional/onboarding/accept', {
+      headers, data: { token }
+    })
+    expect(unavailable.status()).toBe(404)
+    expect((await unavailable.json()).code === 'not_found').toBe(true)
+    const after = (await db.query(identitySql, identityParams)).rows
+    expect(after).toEqual(before)
+    await page.goto('/app')
+    await expect(page.getByRole('heading', { name: '¿Qué necesitás?' })).toBeVisible()
+    expect(new URL(page.url()).pathname === '/app').toBe(true)
+  } finally {
+    await db.end()
+  }
 })
 
 test('administration provisions an invited identity without exposing credentials or a link', async ({
@@ -62,7 +98,13 @@ test('administration provisions an invited identity without exposing credentials
     }
     expect(result.invitation.status === 'queued' && result.invitation.expiresAt === null).toBe(true)
     expect(result.delivery?.accepted === false && result.delivery?.reason === 'email_not_configured').toBe(true)
-    await expect(page.getByRole('alert')).toHaveText(
+    // Next's route announcer also exposes role=alert. Keep all business alerts
+    // in scope so an unrelated error cannot be hidden by selecting the first.
+    const invitationAlerts = page.getByRole('alert').and(
+      page.locator(':not(#__next-route-announcer__)')
+    )
+    await expect(invitationAlerts).toHaveCount(1)
+    await expect(invitationAlerts).toHaveText(
       'El correo no está configurado. La invitación quedó pendiente; configurá el envío y reenviá desde su expediente.'
     )
     await expect(page.getByRole('link', { name: 'Abrir enlace de invitación', exact: true })).toHaveCount(0)
