@@ -4,7 +4,7 @@ Fecha: 2026-10-13. Alcance aprobado: varios hogares por direcciones propias, maq
 
 ## Estado de publicación
 
-**Hogar implementado y verificado automáticamente: CI `38460126121` del código `d928b42` está aprobado, incluidos 66/66 recorridos al primer intento. Pendiente de renovación efectiva de la conexión administrativa de Supabase y comprobación de la base real. La publicación está autorizada, pero todavía no se realizó en main ni se acredita disponibilidad de Hogar en producción.**
+**Hogar implementado y verificado automáticamente: CI `38460126121` del código `d928b42` está aprobado, incluidos 66/66 recorridos al primer intento. La conexión Owner por CLI y la migración de Hogar en Supabase producción ya están verificadas. La integración a main está autorizada; la disponibilidad de la aplicación se acredita con el resultado del despliegue asociado a main, no con la comprobación del esquema por sí sola.**
 
 La rama conserva Inicio y Servicios previamente aprobados y añade Hogar sin duplicar el App Shell. La demo independiente no se utiliza como fuente de datos de clientes.
 
@@ -100,13 +100,13 @@ Provenance contrastado contra los blobs exactos de Git, no sus conversiones CRLF
 1. Mantener el cleanup profesional HTTP aprobado en `81d4627`, con todas las identidades sintéticas eliminadas. Las cascadas y la protección de direcciones Hogar también pasaron las ocho regresiones de PostgreSQL, dentro de 1.098 controles aislados.
 2. Mantener la coincidencia exacta de tipos generados mediante `scripts/verify-ci-schema.mjs`; ese control ya pasó también en `81d4627`.
 3. Mantener los **66/66 recorridos al primer intento** y **285/285 de integración** acreditados en `d928b42`. El aislamiento eliminó los dos flaky sin cambiar cuotas ni producto. Sin datos de clientes ni credenciales de producción.
-4. Verificar permisos de la conexión de producción y aplicar exclusivamente la nueva migración necesaria; ejecutar advisors y consultas enfocadas. No ejecutar fixtures generales contra producción.
+4. Producción verificada: se aplicó exclusivamente `20261013141601_customer_hogar.sql`, se comprobaron permisos/RLS y consultas enfocadas, y se ejecutaron advisors de seguridad y rendimiento. No se ejecutaron fixtures generales contra producción.
 5. Mantener los 15/15 recorridos Hogar completos aprobados en CI. El navegador integrado devuelve que el puente nativo no está disponible; no se usa Chrome local como alternativa. Hay capturas sintéticas de CI y render/gestos comprobados automáticamente, pero no una revisión manual completa en el navegador integrado.
 6. Comprobar la rama remota, integrar sin force y verificar el SHA de main después de publicar.
 
-## Bloqueos comprobados del entorno
+## Historial de bloqueos del entorno
 
-- Proyecto Supabase vinculado: `dqonlqcurvjnjgsczevu`. El chat previo «Revisar acceso a Supabase» acredita configuración Owner. MCP listado como enabled/OAuth, pero iniciar conexión falla con `OAuth token refresh failed: Failed to parse server response`; sus herramientas SQL no están expuestas en esta sesión. CLI vinculado devuelve 403 de privilegios al iniciar el rol de consulta; advisors también. El intento de OAuth expiró sin renovar acceso. Se necesita reconectar con la cuenta propietaria, sin compartir secretos por chat.
+- Bloqueo de acceso resuelto mediante CLI Owner: proyecto `dqonlqcurvjnjgsczevu`, `SELECT 1` comprobado en una ejecución nueva como `postgres` en base `postgres`, con `--agent no`. Los errores anteriores de refresh MCP y privilegios de CLI pertenecen al diagnóstico histórico; ya no bloquean SQL ni advisors. No se requiere reconfigurar acceso ni abrir un navegador personal.
 - Comprobación adicional de solo lectura con la clave pública ya configurada: la API del proyecto responde, pero GET del RPC `read_customer_homes` devuelve 404/PGRST202 (no resuelto en la caché de esquema). No se intentó una escritura ni se registró cuerpo de respuesta, credenciales o datos de clientes. La conexión de aplicación no sustituye la renovación de acceso administrativo necesaria para verificar/aplicar la migración y ejecutar advisors.
 - Segunda comprobación limitada, con la clave de servidor existente fuera del repo, exclusivamente GET `select=id&limit=0`: `public.profiles` devuelve 200 y `public.customer_homes` 404/PGRST205. Target contrastado con project-ref y referencia configurada; sin obtener filas, hacer POST/RPC ni copiar/mostrar secretos. La clave funciona para la DataAPI de servidor, pero Hogar no se resuelve en su caché actual para ese acceso. No acredita ausencia absoluta de migración, permisos/RLS correctos ni acceso administrativo SQL. Un primer User-Agent predeterminado de PowerShell recibió 401; el User-Agent de servidor corrigió esa limitación de las secret keys y evita atribuirla erróneamente a una clave inválida. La [documentación oficial de API keys](https://supabase.com/docs/guides/getting-started/api-keys) explica este bloqueo por User-Agent y la separación entre grants y RLS.
 - Docker Desktop no ofrece un motor operativo; WSL informa servicio deshabilitado. No se modificaron servicios ni características del sistema operativo. CI usa su propio contenedor Supabase descartable como alternativa.
@@ -114,6 +114,28 @@ Provenance contrastado contra los blobs exactos de Git, no sus conversiones CRLF
 - [CI 38432247627](https://github.com/lystoservicios-sudo/lysto/actions/runs/38432247627), commit `adeba578`, conservó el diagnóstico sanitizado: las migraciones previas llegaron hasta Hogar, donde falló la expresión CASE mencionada. El rate limit transitorio de descarga se reintentó y no fue la causa final. PostgreSQL no llegó a ejecutar pgTAP, generación de tipos ni E2E. La migración todavía no se aplicó en el proyecto de producción.
 - [CI 38433534455](https://github.com/lystoservicios-sudo/lysto/actions/runs/38433534455), commit `700025f`, aprobó migraciones y 820 casos SQL. Lint PostgreSQL no tuvo errores; siete warnings nuevos de arrays originaron los casts explícitos y cinco warnings heredados no se modificaron. Falló exclusivamente por deriva de los tipos guardados; entregó el archivo generado ahora incorporado. Integración y E2E todavía no se ejecutaron.
 - [CI 38436316694](https://github.com/lystoservicios-sudo/lysto/actions/runs/38436316694), commit `a9a4ec98`, aprobó Windows, auditoría de producción, lint, TypeScript, dominio, herramientas, 1.135 unitarios, runtime, 1.090 SQL y tipos generados. Integración falló con el detalle anterior. E2E y despliegue no se ejecutaron; esto no acredita una entrega lista.
+
+## Verificación de Supabase producción — 2026-10-13
+
+La inspección real encontró 76 migraciones aplicadas y Hogar ausente. Cuatro migraciones históricas ya incluidas en main seguían pendientes: activación de registro por email, reanudación de invitaciones profesionales y dos herramientas de pruebas Owner. No son dependencias de Hogar y no se ejecutaron, ni se marcó falsamente su historial como aplicado.
+
+Se preparó un directorio temporal de despliegue con las 76 migraciones efectivamente aplicadas y únicamente la nueva de Hogar, junto con configuración y plantillas existentes. La copia de Hogar coincide byte por byte con la fuente aprobada. El dry-run confirmó exactamente una migración; `db push` la aplicó correctamente con su versión durable `20261013141601`. No se usaron `--include-all`, seeds ni roles, y `--skip-vault` impidió cambios de secretos.
+
+La verificación posterior se ejecutó en transacción de solo lectura y terminó con `customer_hogar_production_checks_passed`. Comprueba:
+
+- Una entrada de historial de migración, las cinco tablas públicas y el ledger privado con RLS.
+- Cinco políticas de lectura propia y ausencia de mutaciones directas o accesos anon/service_role/PUBLIC.
+- RPC públicas SECURITY INVOKER; implementaciones privadas SECURITY DEFINER; search_path vacío y grants limitados al rol autenticado.
+- Denegación real de lectura y creación sin una sesión de cliente, sin crear identidades ni fixtures de producción.
+- FK de alias a direcciones validada, NO ACTION y diferida hasta el final de la transacción.
+- Escritor canónico anterior preservado: `md5(prosrc)` antes/después `587634cacc1b5958f87294986d02b31a`.
+- Categoría de aire acondicionado activa. Snapshot de direcciones/equipos/trabajos sin cambios y ningún hogar sintético persistido.
+
+PostgREST ya resuelve el RPC: GET con la clave de servidor existente recibió 403/42501, coherente con la revocación de EXECUTE a service_role. No devolvió datos de clientes ni usó una sesión real de cliente.
+
+Advisors de seguridad y rendimiento antes/después: cero errores y cero avisos nuevos de Hogar. Permanecen los mismos 75 WARN anteriores (35 funciones públicas privilegiadas heredadas, 38 políticas permisivas múltiples, citext en public y protección de contraseñas filtradas desactivada). No se alteraron esos componentes ajenos a Hogar. Referencias de seguimiento: [funciones públicas privilegiadas](https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable), [políticas múltiples](https://supabase.com/docs/guides/database/database-linter?lint=0006_multiple_permissive_policies), [extensiones públicas](https://supabase.com/docs/guides/database/database-linter?lint=0014_extension_in_public) y [protección de contraseñas](https://supabase.com/docs/guides/auth/password-security).
+
+No se copiaron secretos al repositorio ni se modificaron las instrucciones locales de acceso, los diseños ajenos o la demo sin seguimiento. El código y las migraciones permanecen idénticos al candidato `c8c6927` aprobado en CI; esta actualización solo registra evidencia de producción.
 
 ## Recuperación
 
