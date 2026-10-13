@@ -7,6 +7,7 @@ import sharp from 'sharp'
 import { chromium, type Page } from '@playwright/test'
 import { createFixtureAccounts, type AccountName, type FixtureAccount } from './fixtures'
 import { fixtureCookieHeader, startTestApp } from './http'
+import { clearOwnedProfessionalOnboardingOutbox } from './professional-onboarding-cleanup'
 import { assertTestEnvironment, readTestIdentity } from '../../scripts/lib/test-environment.mjs'
 
 describe('professional invitation and review lifecycle', () => {
@@ -126,10 +127,15 @@ describe('professional invitation and review lifecycle', () => {
             'select id from public.professional_invitations where created_by=any($1::uuid[])',
             [[fixture.accounts.owner.profileId, fixture.accounts.operations.profileId]]
           )).rows.map((row) => row.id)
-          await database.query(
-            'delete from private.outbox_events where aggregate_id=any($1::uuid[])',
-            [invitations]
-          )
+          await clearOwnedProfessionalOnboardingOutbox(database, {
+            invitationIds: invitations,
+            professionalIds: [
+              fixture.accounts.professionalApproved.entityId,
+              fixture.accounts.professionalSuspended.entityId,
+              ...extraUsers.map((row) => row.professional_id).filter(Boolean)
+            ],
+            recipientProfileIds: extraUsers.map((row) => row.profile_id).filter(Boolean)
+          })
           await database.query(
             'delete from public.admin_audit_logs where entity_id=any($1::uuid[]) or actor_profile_id=any($2::uuid[])',
             [[...invitations, ...professionals], extraUsers.map((row) => row.profile_id).filter(Boolean)]

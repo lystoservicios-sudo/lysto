@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { Client } from 'pg'
 
 import { test, expect, loginAs } from './fixtures/production'
+import { assertTestEnvironment, readTestIdentity } from '../../scripts/lib/test-environment.mjs'
 
 test('customer registration shows the approved legal consent without granting a professional account', async ({ page }) => {
   await page.goto('/registro')
@@ -29,7 +30,9 @@ test('customer reloads the live dashboard and empty request history', async ({
   await page.reload()
   await expect(page.getByRole('link', { name: 'No enfría', exact: true })).toBeVisible()
   await expect(page.getByRole('link', { name: 'No enfría', exact: true })).toHaveAttribute('href', '/app/solicitar/aire-acondicionado?problema=no_enfria')
-  await expect(page.getByRole('heading', { name: 'Agregá tu hogar' })).toBeVisible()
+  // The real fixture already owns a saved address, but no equipment.
+  await expect(page.getByRole('heading', { name: 'Agregá tu primer equipo', exact: true })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Agregar equipo', exact: true })).toHaveAttribute('href', '/app/equipos')
   await page.goto('/app/solicitudes')
   await expect(page.getByRole('heading', { name: 'Mis solicitudes' })).toBeVisible()
   await expect(page.getByText('Todavía no tenés solicitudes')).toBeVisible()
@@ -41,19 +44,21 @@ test('a customer cannot load another customer identifier', async ({ page, accoun
   await expect(page.getByRole('heading', { name: 'No encontramos ese equipo' })).toBeVisible()
 })
 
-test('customer follows visit links, sees reprogramming and submits one review', async ({
+test('customer sees a paid confirmed visit, reprogramming and one persisted review', async ({
   page,
   accounts
 }) => {
   // This complete two-customer journey makes several live staging round trips.
   test.setTimeout(60_000)
-  const db = new Client({ connectionString: process.env.LYSTO_TEST_DATABASE_URL })
+  const target = assertTestEnvironment(process.env, readTestIdentity(process.env))
+  const db = new Client({ connectionString: target.databaseUrl, connectionTimeoutMillis: 5000, query_timeout: 10000 })
   const addressId = randomUUID(),
     requestId = randomUUID(),
     jobId = randomUUID(),
     firstScheduleId = randomUUID(),
     secondScheduleId = randomUUID(),
-    decisionId = randomUUID()
+    decisionId = randomUUID(),
+    checkoutId = randomUUID()
   await db.connect()
   try {
     const config = (
@@ -102,20 +107,37 @@ test('customer follows visit links, sees reprogramming and submits one review', 
 
     await loginAs(page, accounts.accounts.customerA, 'customerA')
     await page.goto(`/app/trabajos/${jobId}#agenda`)
-    await expect(page.getByRole('heading', { name: 'Tu próximo servicio' })).toBeVisible()
-    await expect(page.getByText('18 de septiembre de 2030')).toBeVisible()
+    // Professional acceptance and a reservation do not establish payment.
+    await expect(page.getByRole('heading', { name: 'Ya podés pagar', exact: true })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Visita confirmada', exact: true })).toHaveCount(0)
+    await expect(page.getByRole('button', { name: 'Solicitar reprogramación' })).toHaveCount(0)
+    await expect(page.getByText('Pago aprobado', { exact: true })).toHaveCount(0)
+
+    // Only our exact synthetic checkout is marked approved. No provider is called.
+    await db.query(
+      `insert into public.marketplace_checkouts(id,job_id,customer_id,professional_id,seller_account_id,amount,marketplace_fee,live_mode,status)
+       values($1,$2,$3,$4,'e2e-synthetic-seller',100,18,false,'approved')`,
+      [checkoutId, jobId, accounts.accounts.customerA.entityId, accounts.accounts.professionalApproved.entityId]
+    )
+    await page.reload()
+    await expect(page.getByRole('heading', { name: 'Visita confirmada', exact: true })).toBeVisible()
+    await expect(page.locator('#agenda').getByText(/18 de septiembre/)).toBeVisible()
+    await expect(page.locator('#agenda').getByText('10:00 a 12:00', { exact: true })).toBeVisible()
+    await expect(page.getByText('Pago aprobado', { exact: true })).toBeVisible()
     await expect(page.getByText('Calle Visita 2040, Buenos Aires')).toBeVisible()
-    await expect(page.getByRole('link', { name: 'Cómo llegar' })).toHaveAttribute(
-      'href',
-      /google\.com\/maps/
-    )
+    const navigation = page.getByRole('navigation', { name: 'Navegación principal del cliente' })
+    await expect(navigation).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Contactar a soporte de Lysto' })).toHaveCount(0)
+    await expect(page.getByRole('link', { name: 'Garantías y reclamos', exact: true })).toHaveCount(0)
     await page.goto(`/app/trabajos/${jobId}#reprogramacion`)
-    await expect(page.getByRole('button', { name: 'Solicitar reprogramación' })).toBeVisible()
-    await page.goto(`/app/trabajos/${jobId}#contacto`)
-    await expect(page.getByRole('link', { name: 'Contactar a soporte de Lysto' })).toHaveAttribute(
-      'href',
-      `/app/garantias?jobId=${jobId}`
-    )
+    await expect(page.getByRole('heading', { name: 'Solicitar otra fecha', exact: true })).toBeVisible()
+    await expect(page.getByLabel('Nueva fecha y hora', { exact: true })).toBeVisible()
+    await expect(page.getByLabel('Motivo de la reprogramación', { exact: true })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Enviar solicitud', exact: true })).toBeDisabled()
+    await expect(navigation).toHaveCount(0)
+    await page.getByRole('button', { name: 'Volver al servicio', exact: true }).click()
+    await expect(navigation).toBeVisible()
+    await expect(page.locator('#agenda').getByText(/18 de septiembre/)).toBeVisible()
 
     await db.query(
       `update public.job_schedule_reservations
@@ -135,7 +157,10 @@ test('customer follows visit links, sees reprogramming and submits one review', 
       ]
     )
     await page.reload()
-    await expect(page.getByText('19 de septiembre de 2030')).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Visita confirmada', exact: true })).toBeVisible()
+    await expect(page.locator('#agenda').getByText(/19 de septiembre/)).toBeVisible()
+    await expect(page.locator('#agenda').getByText(/18 de septiembre/)).toHaveCount(0)
+    await expect(page.locator('#agenda').getByText('12:00 a 14:00', { exact: true })).toBeVisible()
 
     await db.query(
       `insert into public.job_customer_decisions(id,job_id,customer_id,decision,idempotency_key,created_by)
@@ -159,22 +184,33 @@ test('customer follows visit links, sees reprogramming and submits one review', 
     await expect(page.getByText('Calificación guardada.')).toBeVisible()
     await page.reload()
     await expect(page.getByText('Ya calificaste este servicio')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Enviar calificación', exact: true })).toHaveCount(0)
+    expect((await db.query(
+      'select count(*)::integer count from public.reviews where job_id=$1 and customer_id=$2',
+      [jobId, accounts.accounts.customerA.entityId]
+    )).rows[0].count).toBe(1)
 
-    await page.getByRole('button', { name: 'Cerrar sesión' }).click()
-    await expect(page).toHaveURL(/\/login\?logout=success/)
+    const logout = await page.request.post('/auth/logout', {
+      headers: { Origin: new URL(page.url()).origin }, maxRedirects: 0
+    })
+    expect(logout.status()).toBe(303)
+    await page.goto('/app')
+    await expect(page).toHaveURL(/\/login(?:\?|$)/)
     await loginAs(page, accounts.accounts.customerB, 'customerB')
     await page.goto(`/app/trabajos/${jobId}`)
     await expect(page.getByText('No encontramos un trabajo disponible para tu cuenta.')).toBeVisible()
     await page.goto(`/app/trabajos/${jobId}/review`)
     await expect(page.getByRole('heading', { name: 'Calificar servicio' })).toHaveCount(0)
   } finally {
-    await db.query(`delete from private.outbox_events where aggregate_id=$1`, [jobId])
-    await db.query(`delete from public.complaints where job_id=$1`, [jobId])
-    await db.query(`delete from public.reviews where job_id=$1`, [jobId])
-    await db.query(`delete from public.job_customer_decisions where job_id=$1`, [jobId])
-    await db.query(`delete from public.jobs where id=$1`, [jobId])
-    await db.query(`delete from public.service_requests where id=$1`, [requestId])
-    await db.query(`delete from public.customer_addresses where id=$1`, [addressId])
-    await db.end()
+    try {
+      await db.query(`delete from private.outbox_events where aggregate_id=$1`, [jobId])
+      await db.query(`delete from public.complaints where job_id=$1`, [jobId])
+      await db.query(`delete from public.reviews where job_id=$1 and customer_id=$2`, [jobId, accounts.accounts.customerA.entityId])
+      await db.query(`delete from public.job_customer_decisions where job_id=$1`, [jobId])
+      await db.query(`delete from public.marketplace_checkouts where id=$1 and job_id=$2 and customer_id=$3`, [checkoutId, jobId, accounts.accounts.customerA.entityId])
+      await db.query(`delete from public.jobs where id=$1 and customer_id=$2`, [jobId, accounts.accounts.customerA.entityId])
+      await db.query(`delete from public.service_requests where id=$1 and customer_id=$2`, [requestId, accounts.accounts.customerA.entityId])
+      await db.query(`delete from public.customer_addresses where id=$1 and customer_id=$2`, [addressId, accounts.accounts.customerA.entityId])
+    } finally { await db.end() }
   }
 })
