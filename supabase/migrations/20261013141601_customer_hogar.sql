@@ -151,7 +151,7 @@ begin
         or (r->>'width')::numeric not between 2 and 12 or (r->>'depth')::numeric not between 2 and 12
         or (r->>'rotation')::numeric not in (0,90,180,270) then raise exception using errcode='22023',message='Invalid room'; end if;
       v_kind:=r->>'kind'; v_variant:=r->>'variant';
-      if not case v_kind
+      if not (case v_kind
         when 'living' then v_variant in ('compact','family','dining') when 'bedroom' then v_variant in ('principal','double','guest')
         when 'kitchen' then v_variant in ('linear','l','island') when 'bathroom' then v_variant in ('shower','bathtub','compact')
         when 'office' then v_variant in ('individual','shared','studio') when 'dining' then v_variant in ('compact','family')
@@ -159,7 +159,7 @@ begin
         when 'storage' then v_variant in ('closet','utility') when 'garage' then v_variant in ('single','double')
         when 'patio' then v_variant in ('courtyard','garden') when 'balcony' then v_variant in ('narrow','wide')
         when 'terrace' then v_variant in ('open','covered') when 'meeting' then v_variant in ('compact','boardroom')
-        when 'reception' then v_variant in ('compact','lounge') when 'commercial' then v_variant in ('retail','open') else false end then raise exception using errcode='22023',message='Invalid room variant'; end if;
+        when 'reception' then v_variant in ('compact','lounge') when 'commercial' then v_variant in ('retail','open') else false end) then raise exception using errcode='22023',message='Invalid room variant'; end if;
       if (v_kind in ('living','bedroom') and p_data->>'kind' not in ('house','apartment','ph'))
         or (v_kind in ('meeting','reception') and p_data->>'kind' not in ('office','commercial'))
         or (v_kind='commercial' and p_data->>'kind'<>'commercial') or (v_kind='garage' and p_data->>'kind'='apartment')

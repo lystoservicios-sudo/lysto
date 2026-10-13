@@ -2,6 +2,12 @@ import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 const sql = readFileSync('supabase/migrations/20261013141601_customer_hogar.sql', 'utf8')
 describe('Hogar migration security boundaries', () => {
+  it('parenthesizes the CASE expression inside IF so branch THEN tokens cannot end its condition', () => {
+    // Regression from isolated PostgreSQL startup: SQLSTATE 42601, statement 42.
+    // This source guard supplements, but does not replace, the real migration gate.
+    expect(/if not \(case v_kind[\s\S]*else false end\) then/.test(sql)).toBe(true)
+    expect(/if not case v_kind/.test(sql)).toBe(false)
+  })
   it('protects every exposed relation with owner SELECT and no direct mutation', () => {
     for (const table of ['customer_homes','customer_home_addresses','customer_home_floors','customer_home_rooms','customer_equipment_placements']) {
       expect(sql).toContain(`alter table public.${table} enable row level security`)
