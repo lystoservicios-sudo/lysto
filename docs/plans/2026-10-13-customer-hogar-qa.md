@@ -4,7 +4,7 @@ Fecha: 2026-10-13. Alcance aprobado: varios hogares por direcciones propias, maq
 
 ## Estado de publicación
 
-**Pendiente de renovación efectiva de la conexión de Supabase y comprobación de base real. El usuario autorizó la implementación y publicación, pero no debe declararse listo ni publicarse en main hasta superar los controles.**
+**Hogar implementado y verificado automáticamente: CI `38460126121` del código `d928b42` está aprobado, incluidos 66/66 recorridos al primer intento. Pendiente de renovación efectiva de la conexión administrativa de Supabase y comprobación de la base real. La publicación está autorizada, pero todavía no se realizó en main ni se acredita disponibilidad de Hogar en producción.**
 
 La rama conserva Inicio y Servicios previamente aprobados y añade Hogar sin duplicar el App Shell. La demo independiente no se utiliza como fuente de datos de clientes.
 
@@ -82,11 +82,24 @@ Los dos reintentos son exclusivamente el login de customerA en el nuevo caso neg
 
 Corrección exclusiva del harness: `professional-production.spec.ts` y `service-lifecycle.spec.ts` sobrescriben localmente el fixture worker `accounts` con la misma factory, MFA por defecto, guard de staging y cleanup en finally, incluido un setup fallido. No se cambia el fixture base ni los cuerpos de los cinco casos, no se reinician cuotas ni se alteran límites/IPs. Verificación de metadatos con Playwright instalado: antes solo dos hashes de worker, con Solicitar todavía en el grupo base; después hay tres grupos distintos (base/profesional/Solicitar). El runner agrupa primero por hash y después por archivo; esta separación evita depender del orden o de un retry que reinicie cuentas. Revisión independiente conforme; tipos/lint completos, diff-check y descubrimiento de los 66 casos aprobados. Confirmación de cero flaky pendiente del nuevo CI.
 
+## Resultado final del código implementado
+
+[CI 38460126121](https://github.com/lystoservicios-sudo/lysto/actions/runs/38460126121), commit `d928b42430fcd588a91b308eff770ab8a601e5df`, terminó **aprobado en Ubuntu y Windows**. Artefactos y revisión independiente confirman:
+
+- Unitarias: **161 archivos / 1.146 aprobadas**.
+- PostgreSQL: **39 archivos / 1.098 aprobadas**, incluidos catálogo, lifecycle, cascadas y protección de direcciones.
+- Integración: **33 archivos / 285 aprobadas**, cero hooks fallidos y cero pendientes.
+- Navegadores: **66/66 al primer intento**, incluidas **15/15 de Hogar**. Cero fallos, casos omitidos o flaky; todas las entradas contienen exactamente un intento aprobado.
+- Limpieza: **35/35 manifiestos de fixtures** y un manifiesto separado de ciclo de cuenta, todos limpios; cero fallos y cero identidades Auth inciertas.
+- Auditoría de dependencias de producción, lint, tipos, dominio, tooling, runtime de imágenes/pagos, compilación de producción y coincidencia exacta de tipos generados aprobados. Continúan las limitaciones de dependencias de desarrollo y registro profesional antiguo documentadas, sin afirmar que se repararon.
+
+Provenance contrastado contra los blobs exactos de Git, no sus conversiones CRLF de Windows: lockfile SHA-256 `43a09c8882ccaa1dcd7a61c2cbb71ebc4c8230645d58b14025e8a4a1c6c118f3`; las 81 migraciones y su hash agregado `bfb9c24891754691da8d28429ae5a2f842d7106d404ed39e0c7694b08d87b95c` coinciden con CI. Evidencia descargada en `C:\Users\quime\AppData\Local\Temp\hogar-ci-d928b42-859098ba`; fuente original en el artefacto de GitHub correspondiente. Esto valida el código y backend descartable, **no la base hospedada ni un despliegue**. La modificación posterior a este checkpoint es solo esta documentación de resultados.
+
 ## Verificación todavía obligatoria
 
 1. Mantener el cleanup profesional HTTP aprobado en `81d4627`, con todas las identidades sintéticas eliminadas. Las cascadas y la protección de direcciones Hogar también pasaron las ocho regresiones de PostgreSQL, dentro de 1.098 controles aislados.
 2. Mantener la coincidencia exacta de tipos generados mediante `scripts/verify-ci-schema.mjs`; ese control ya pasó también en `81d4627`.
-3. Eliminar los dos flaky de login por contaminación entre archivos y repetir los 66 recorridos contra el backend descartable de CI. Los tres títulos con errores de contrato ya pasaron; integración continúa 285/285 con hooks correctos. Sin datos de clientes ni credenciales de producción, cero casos omitidos y cero flaky.
+3. Mantener los **66/66 recorridos al primer intento** y **285/285 de integración** acreditados en `d928b42`. El aislamiento eliminó los dos flaky sin cambiar cuotas ni producto. Sin datos de clientes ni credenciales de producción.
 4. Verificar permisos de la conexión de producción y aplicar exclusivamente la nueva migración necesaria; ejecutar advisors y consultas enfocadas. No ejecutar fixtures generales contra producción.
 5. Mantener los 15/15 recorridos Hogar completos aprobados en CI. El navegador integrado devuelve que el puente nativo no está disponible; no se usa Chrome local como alternativa. Hay capturas sintéticas de CI y render/gestos comprobados automáticamente, pero no una revisión manual completa en el navegador integrado.
 6. Comprobar la rama remota, integrar sin force y verificar el SHA de main después de publicar.
