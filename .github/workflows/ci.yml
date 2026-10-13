@@ -67,7 +67,16 @@ jobs:
         id: database-project
         run: node scripts/prepare-ci-database.mjs "$RUNNER_TEMP/lysto-integration-ci"
       - name: Start clean local Supabase
-        run: pnpm exec supabase start --workdir "$RUNNER_TEMP/lysto-integration-ci" > "$RUNNER_TEMP/supabase-start.log" 2>&1
+        run: |
+          if pnpm exec supabase start --workdir "$RUNNER_TEMP/lysto-integration-ci" > "$RUNNER_TEMP/supabase-start.log" 2>&1; then
+            printf '%s\n' 'Disposable Supabase stack started successfully.'
+          else
+            supabase_start_status=$?
+            if ! node scripts/record-supabase-start-failure.mjs "$RUNNER_TEMP/supabase-start.log"; then
+              printf '%s\n' 'Safe startup diagnostics unavailable; startup remains failed.'
+            fi
+            exit "$supabase_start_status"
+          fi
       - name: Database permissions and schema tests
         run: pnpm exec supabase test db --local --workdir "$RUNNER_TEMP/lysto-integration-ci" | tee output/ci/database-tests.log
       - name: Database lint and generated types

@@ -266,26 +266,32 @@ test.describe('authenticated customer Hogar with a disposable backend', () => {
       expect(foreignSnapshot.homes.some(home => created.homeIds.includes(home.id))).toBe(false)
       expect(foreignSnapshot.equipment.some(equipment => equipment.id === registered.equipment.id)).toBe(false)
       expect(foreignSnapshot.addresses.some(address => address.id === second.addressId)).toBe(false)
-      const staleInlineCreate = await page.request.post(homesPath, { headers: { 'X-Lysto-Customer-Id': customer.entityId }, data: {
+      const origin = new URL(page.url()).origin
+      // Supply valid CSRF context: these requests must test actor/RPC isolation,
+      // not accidentally pass because readPrivateJsonBody rejected a missing Origin.
+      const staleInlineCreate = await page.request.post(homesPath, { headers: { Origin: origin, 'X-Lysto-Customer-Id': customer.entityId }, data: {
         name: 'Comando privado A rechazado', addressId: null,
         newAddress: { label: 'Dirección privada A rechazada', street: 'Calle privada A', number: '1', city: 'CABA', province: 'CABA', propertyType: 'house', access: {}, isDefault: false },
         kind: 'house', building: null, features: { balcony: false, terrace: false, windows: 'large' },
         floors: [{ id: randomUUID(), name: 'Principal', order: 0, rooms: [] }], placements: [], idempotencyKey: randomUUID()
       } })
       expect(staleInlineCreate.status()).toBe(403)
+      expect(await staleInlineCreate.json()).toMatchObject({ code: 'forbidden' })
       expect(await readHomes(page, accounts.accounts.customerB)).toEqual(foreignSnapshot)
-      const saveForeign = await page.request.put(homesPath, { headers: { 'X-Lysto-Customer-Id': accounts.accounts.customerB.entityId }, data: {
+      const saveForeign = await page.request.put(homesPath, { headers: { Origin: origin, 'X-Lysto-Customer-Id': accounts.accounts.customerB.entityId }, data: {
         id: privateHome.id, expectedVersion: privateHome.version, name: 'Cambio ajeno rechazado',
         addressId: privateHome.addressId, kind: privateHome.kind, building: privateHome.building,
         features: privateHome.features, floors: privateHome.floors, placements: privateHome.placements
       } })
-      expect([403, 404]).toContain(saveForeign.status())
-      const registerForeign = await page.request.post(equipmentPath, { headers: { 'X-Lysto-Customer-Id': accounts.accounts.customerB.entityId }, data: {
+      expect(saveForeign.status()).toBe(404)
+      expect(await saveForeign.json()).toMatchObject({ code: 'not_found' })
+      const registerForeign = await page.request.post(equipmentPath, { headers: { Origin: origin, 'X-Lysto-Customer-Id': accounts.accounts.customerB.entityId }, data: {
         homeId: privateHome.id, expectedVersion: privateHome.version, idempotencyKey: randomUUID(),
         equipment: { nickname: 'Aire ajeno rechazado', equipmentType: 'split' },
         placement: { roomId: privateHome.floors[0].rooms[0].id, wall: 'north', offset: .5, height: 2 }
       } })
-      expect([403, 404]).toContain(registerForeign.status())
+      expect(registerForeign.status()).toBe(404)
+      expect(await registerForeign.json()).toMatchObject({ code: 'not_found' })
       await page.goto(`/app/equipos/${registered.equipment.id}`)
       await expect(page.getByRole('heading', { name: 'No encontramos ese equipo' })).toBeVisible()
 
