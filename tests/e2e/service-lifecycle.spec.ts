@@ -1,8 +1,24 @@
 import { Client } from 'pg'
-import { test, expect, loginAs } from './fixtures/production'
+import { test as productionTest, expect, loginAs } from './fixtures/production'
+import { createFixtureAccounts } from '../integration/fixtures'
 import type { CustomerAssetAddress } from '@/lib/customer-assets/contracts'
 import type { ServiceQuote } from '@/lib/pricing/service-quote'
 import { assertTestEnvironment, readTestIdentity } from '../../scripts/lib/test-environment.mjs'
+
+// Keep real login quotas independent from other specs without changing security controls.
+const test = productionTest.extend({
+  accounts: [
+    async ({}, use) => {
+      const pending = createFixtureAccounts({ directSqlAuth: process.env.APP_ENV === 'staging' })
+      try {
+        await use(await pending)
+      } finally {
+        await pending.cleanup()
+      }
+    },
+    { scope: 'worker' }
+  ]
+})
 
 test('customer saves a quote through the current flow and reloads its persistent identifier', async ({
   page,

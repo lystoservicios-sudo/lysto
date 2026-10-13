@@ -1,8 +1,25 @@
 import { randomBytes, randomUUID } from 'node:crypto'
 import { Client } from 'pg'
 import { createClient } from '@supabase/supabase-js'
-import { test, expect, loginAs } from './fixtures/production'
+import { test as productionTest, expect, loginAs } from './fixtures/production'
+import { createFixtureAccounts } from '../integration/fixtures'
 import { assertTestEnvironment, readTestIdentity } from '../../scripts/lib/test-environment.mjs'
+
+// These journeys own their worker accounts rather than inheriting the login
+// budget consumed by customer suites. Keep real MFA and scoped cleanup intact.
+const test = productionTest.extend({
+  accounts: [
+    async ({}, use) => {
+      const pending = createFixtureAccounts({ directSqlAuth: process.env.APP_ENV === 'staging' })
+      try {
+        await use(await pending)
+      } finally {
+        await pending.cleanup()
+      }
+    },
+    { scope: 'worker' }
+  ]
+})
 
 test('an invalid Flow3 invitation cannot claim or convert a customer identity', async ({
   page,
