@@ -5,12 +5,12 @@ export class PrivateRequestError extends Error {
   constructor(message: string, readonly status: number, readonly code?: string) { super(message) }
 }
 
-export async function privateRequest<T>(path: string, method = 'GET', body?: unknown): Promise<T> {
+export async function privateRequest<T>(path: string, method = 'GET', body?: unknown, headers?: Record<string, string>): Promise<T> {
   const response = await fetch(path, {
     method,
     credentials: 'same-origin',
     cache: 'no-store',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...headers },
     body: body === undefined ? undefined : JSON.stringify(body),
     signal: AbortSignal.timeout(30000)
   })

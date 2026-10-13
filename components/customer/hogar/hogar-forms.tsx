@@ -378,6 +378,7 @@ export function HomeForm({
       </fieldset>
       <FormActions
         busy={busy}
+        cancelDisabled={locked}
         label={
           flow.existing ? 'Guardar configuración' : locked ? 'Reintentar creación' : 'Crear hogar'
         }
@@ -816,6 +817,7 @@ export function PlacementForm({
       <FormActions
         busy={busy}
         label={flow.register ? 'Registrar y ubicar aire' : 'Guardar ubicación'}
+        cancelDisabled={locked}
         onCancel={onCancel}
       />
     </form>
@@ -831,16 +833,23 @@ function Field({ label, id, children }: { label: string; id: string; children: R
 }
 function FormActions({
   busy,
+  cancelDisabled = false,
   label,
   onCancel
 }: {
   busy: boolean
+  cancelDisabled?: boolean
   label: string
   onCancel: () => void
 }) {
   return (
     <div className={styles.formActions}>
-      <button type="button" className={styles.secondary} disabled={busy} onClick={onCancel}>
+      <button
+        type="button"
+        className={styles.secondary}
+        disabled={busy || cancelDisabled}
+        onClick={onCancel}
+      >
         Cancelar
       </button>
       <button type="submit" className={styles.primary} disabled={busy}>

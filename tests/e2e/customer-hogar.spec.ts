@@ -20,6 +20,7 @@ async function homeResponse(page: Page, method: 'POST' | 'PUT' | 'DELETE', actio
   await action()
   const response = await pending
   expect(response.ok(), `Hogar ${method} must persist through its authenticated API`).toBe(true)
+  expect(response.request().headers()['x-lysto-customer-id']).toMatch(uuidPattern)
   return response
 }
 
@@ -31,8 +32,8 @@ async function saveHome(page: Page, button: string): Promise<CustomerHome> {
   return result.home
 }
 
-async function readHomes(page: Page): Promise<CustomerHomesSnapshot> {
-  const response = await page.request.get(homesPath)
+async function readHomes(page: Page, account: FixtureAccount): Promise<CustomerHomesSnapshot> {
+  const response = await page.request.get(homesPath, { headers: { 'X-Lysto-Customer-Id': account.entityId } })
   expect(response.ok()).toBe(true)
   return await response.json() as CustomerHomesSnapshot
 }
@@ -165,14 +166,14 @@ test.describe('authenticated customer Hogar with a disposable backend', () => {
       await expect(page.getByLabel('Hogar actual')).toHaveValue(original.id)
       await expect(page.getByLabel('Hogar actual').getByRole('option', { name: 'Casa QA configurada', exact: true })).toBeAttached()
       await expect(page.getByText('Ventanas mixtas', { exact: true })).toBeVisible()
-      expect((await readHomes(page)).homes.find(home => home.id === original.id)).toMatchObject({ name: 'Casa QA configurada', features: configured.features })
+      expect((await readHomes(page, customer)).homes.find(home => home.id === original.id)).toMatchObject({ name: 'Casa QA configurada', features: configured.features })
 
       await page.getByRole('button', { name: 'Archivar hogar', exact: true }).click()
       const dialog = page.getByRole('dialog', { name: '¿Archivar este hogar?', exact: true })
       await homeResponse(page, 'DELETE', () => dialog.getByRole('button', { name: 'Confirmar', exact: true }).click())
       await expect(page.getByRole('heading', { name: 'Tu hogar, a tu manera' })).toBeVisible()
       await page.reload()
-      const persisted = await readHomes(page)
+      const persisted = await readHomes(page, customer)
       expect(persisted.homes.some(home => home.id === original.id)).toBe(false)
       expect(persisted.addresses.some(address => address.id === original.addressId && !address.archivedAt)).toBe(true)
       await expect(page.getByRole('button', { name: 'Crear mi primer hogar', exact: true })).toBeVisible()
@@ -183,7 +184,7 @@ test.describe('authenticated customer Hogar with a disposable backend', () => {
     const created = createdAssets(), customer = accounts.accounts.customerA
     try {
       await loginAs(page, customer, 'customerA'); await page.goto('/app/hogar')
-      const initial = await readHomes(page)
+      const initial = await readHomes(page, customer)
       const original = await createHome(page, created, { name: 'Departamento QA', kind: 'apartment', addressId: initial.addresses.find(address => !address.archivedAt)!.id })
       const lowerId = original.floors[0].id
       await addRoom(page, 'Living QA', 'living', 'dining')
@@ -215,7 +216,7 @@ test.describe('authenticated customer Hogar with a disposable backend', () => {
       await expect(page.getByRole('button', { name: 'Abrir Living QA', exact: true })).toHaveCount(0)
       await expect(page.getByRole('heading', { name: 'Aire dormitorio QA', exact: true })).toHaveCount(1)
       await expect(page.getByRole('link', { name: 'Historial de Aire dormitorio QA', exact: true })).toHaveAttribute('href', `/app/equipos/${registered.equipment.id}`)
-      const persisted = await readHomes(page), persistedHome = persisted.homes.find(home => home.id === original.id)!
+      const persisted = await readHomes(page, customer), persistedHome = persisted.homes.find(home => home.id === original.id)!
       expect(persistedHome.floors.find(floor => floor.id === upper.id)!.rooms.find(room => room.id === bedroom.id)).toMatchObject({ name: 'Dormitorio QA', variant: 'double' })
       expect(persistedHome.placements).toEqual(registered.home.placements)
       expect(persisted.equipment.filter(equipment => equipment.id === registered.equipment.id)).toHaveLength(1)
@@ -231,7 +232,7 @@ test.describe('authenticated customer Hogar with a disposable backend', () => {
       await page.reload()
       await expect(page.getByRole('button', { name: 'Abrir Living QA', exact: true })).toBeVisible()
       await expect(page.getByRole('button', { name: 'Ubicar Aire dormitorio QA', exact: true })).toBeVisible()
-      const afterRemoval = await readHomes(page)
+      const afterRemoval = await readHomes(page, customer)
       expect(afterRemoval.equipment.find(equipment => equipment.id === registered.equipment.id)).toMatchObject({ addressId: original.addressId, archivedAt: null })
       expect(afterRemoval.homes.find(home => home.id === original.id)!.placements).toHaveLength(0)
     } finally { await cleanupCreated(customer, created) }
@@ -241,7 +242,7 @@ test.describe('authenticated customer Hogar with a disposable backend', () => {
     const created = createdAssets(), customer = accounts.accounts.customerA
     try {
       await loginAs(page, customer, 'customerA'); await page.goto('/app/hogar')
-      const initial = await readHomes(page)
+      const initial = await readHomes(page, customer)
       const first = await createHome(page, created, { name: 'Casa privada QA', kind: 'house', addressId: initial.addresses.find(address => !address.archivedAt)!.id })
       await addRoom(page, 'Living privado QA', 'living', 'compact')
       const registered = await registerAir(page, created, 'Aire privado QA')
@@ -256,22 +257,30 @@ test.describe('authenticated customer Hogar with a disposable backend', () => {
       await expect(page.getByRole('button', { name: 'Abrir Reuniones QA', exact: true })).toHaveCount(0)
       await page.getByLabel('Hogar actual').selectOption(second.id)
       await page.reload()
-      expect((await readHomes(page)).homes.map(home => home.id).sort()).toEqual([first.id, second.id].sort())
+      expect((await readHomes(page, customer)).homes.map(home => home.id).sort()).toEqual([first.id, second.id].sort())
 
       await switchCustomer(page, accounts.accounts.customerB, 'customerB')
       await page.goto('/app/hogar')
       await expect(page.getByRole('heading', { name: 'Tu hogar, a tu manera' })).toBeVisible()
-      const foreignSnapshot = await readHomes(page)
+      const foreignSnapshot = await readHomes(page, accounts.accounts.customerB)
       expect(foreignSnapshot.homes.some(home => created.homeIds.includes(home.id))).toBe(false)
       expect(foreignSnapshot.equipment.some(equipment => equipment.id === registered.equipment.id)).toBe(false)
       expect(foreignSnapshot.addresses.some(address => address.id === second.addressId)).toBe(false)
-      const saveForeign = await page.request.put(homesPath, { data: {
+      const staleInlineCreate = await page.request.post(homesPath, { headers: { 'X-Lysto-Customer-Id': customer.entityId }, data: {
+        name: 'Comando privado A rechazado', addressId: null,
+        newAddress: { label: 'Dirección privada A rechazada', street: 'Calle privada A', number: '1', city: 'CABA', province: 'CABA', propertyType: 'house', access: {}, isDefault: false },
+        kind: 'house', building: null, features: { balcony: false, terrace: false, windows: 'large' },
+        floors: [{ id: randomUUID(), name: 'Principal', order: 0, rooms: [] }], placements: [], idempotencyKey: randomUUID()
+      } })
+      expect(staleInlineCreate.status()).toBe(403)
+      expect(await readHomes(page, accounts.accounts.customerB)).toEqual(foreignSnapshot)
+      const saveForeign = await page.request.put(homesPath, { headers: { 'X-Lysto-Customer-Id': accounts.accounts.customerB.entityId }, data: {
         id: privateHome.id, expectedVersion: privateHome.version, name: 'Cambio ajeno rechazado',
         addressId: privateHome.addressId, kind: privateHome.kind, building: privateHome.building,
         features: privateHome.features, floors: privateHome.floors, placements: privateHome.placements
       } })
       expect([403, 404]).toContain(saveForeign.status())
-      const registerForeign = await page.request.post(equipmentPath, { data: {
+      const registerForeign = await page.request.post(equipmentPath, { headers: { 'X-Lysto-Customer-Id': accounts.accounts.customerB.entityId }, data: {
         homeId: privateHome.id, expectedVersion: privateHome.version, idempotencyKey: randomUUID(),
         equipment: { nickname: 'Aire ajeno rechazado', equipmentType: 'split' },
         placement: { roomId: privateHome.floors[0].rooms[0].id, wall: 'north', offset: .5, height: 2 }
@@ -281,7 +290,7 @@ test.describe('authenticated customer Hogar with a disposable backend', () => {
       await expect(page.getByRole('heading', { name: 'No encontramos ese equipo' })).toBeVisible()
 
       await switchCustomer(page, customer, 'customerA'); await page.goto('/app/hogar')
-      const unchanged = await readHomes(page)
+      const unchanged = await readHomes(page, customer)
       expect(unchanged.homes.find(home => home.id === first.id)).toMatchObject({ name: 'Casa privada QA', version: privateHome.version, placements: privateHome.placements })
       expect(unchanged.equipment.filter(equipment => equipment.addressId === first.addressId)).toHaveLength(1)
       expect(unchanged.equipment.find(equipment => equipment.id === registered.equipment.id)!.nickname).toBe('Aire privado QA')

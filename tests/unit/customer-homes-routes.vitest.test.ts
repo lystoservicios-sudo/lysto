@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { PUT, POST } from '@/app/api/customer/homes/route'
+import { DELETE, GET, PUT, POST } from '@/app/api/customer/homes/route'
+import { POST as POST_EQUIPMENT } from '@/app/api/customer/homes/equipment/route'
 import { createHomeSchema, saveHomeSchema } from '@/lib/customer-homes/contracts'
 
 const state = vi.hoisted(() => ({ role: 'customer', rpc: vi.fn() }))
@@ -16,14 +17,60 @@ function largeLayout() {
   return { name: 'Hogar amplio', addressId: id(20), kind: 'house' as const, building: null, features: { balcony: false, terrace: false, windows: 'large' as const }, floors,
     placements: Array.from({ length: 500 }, (_, i) => ({ equipmentId: id(20000 + i), roomId: floors[Math.floor(i / 60)].rooms[i % 60].id, wall: 'north' as const, offset: .5, height: 2 })) }
 }
-function request(method: 'POST' | 'PUT', body: string) {
-  return new Request('http://localhost:3100/api/customer/homes', { method, headers: { origin: 'http://localhost:3100', 'content-type': 'application/json' }, body })
+function request(method: 'GET' | 'POST' | 'PUT' | 'DELETE', body?: string, actor: string | null = id(2), path = '/api/customer/homes') {
+  return new Request(`http://localhost:3100${path}`, { method, headers: { origin: 'http://localhost:3100', 'content-type': 'application/json', ...(actor === null ? {} : { 'X-Lysto-Customer-Id': actor }) }, body })
 }
 beforeEach(() => {
   vi.stubEnv('NEXT_PUBLIC_APP_URL', 'http://localhost:3100')
   vi.stubEnv('RATE_LIMIT_HASH_KEY', '')
   state.role = 'customer'
   state.rpc.mockReset().mockResolvedValue({ data: { saved: true }, error: null })
+})
+
+describe('Hogar expected authenticated actor precondition', () => {
+  const routes = [
+    ['GET', GET, '/api/customer/homes'],
+    ['POST', POST, '/api/customer/homes'],
+    ['PUT', PUT, '/api/customer/homes'],
+    ['DELETE', DELETE, '/api/customer/homes'],
+    ['POST', POST_EQUIPMENT, '/api/customer/homes/equipment']
+  ] as const
+  it.each(routes)('%s rejects missing, invalid or another account before body or RPC', async (method, handler, path) => {
+    for (const actor of [null, 'invalid-uuid', id(3)]) {
+      const value = request(method, method === 'GET' ? undefined : '{broken', actor, path)
+      const reader = value.body ? vi.spyOn(value.body, 'getReader') : undefined
+      const result = await handler(value)
+      expect(result.status).toBe(403)
+      expect((await result.json()).code).toBe('forbidden')
+      if (reader) expect(reader).not.toHaveBeenCalled()
+      expect(state.rpc).not.toHaveBeenCalled()
+    }
+  })
+  it('refuses replaying A inline creation under B session despite owning a new address', async () => {
+    const value = { ...largeLayout(), addressId: null, placements: [], idempotencyKey: id(2), newAddress: { label: 'Account A home', street: 'A private street', number: '123', city: 'CABA', province: 'CABA', propertyType: 'house', access: {}, isDefault: false } }
+    expect(createHomeSchema.safeParse(value).success).toBe(true)
+    const result = await POST(request('POST', JSON.stringify(value), id(3)))
+    expect(result.status).toBe(403)
+    expect(state.rpc).not.toHaveBeenCalled()
+  })
+  it('reads only after the expected actor matches the trusted session', async () => {
+    state.rpc.mockResolvedValue({ data: { homes: [], addresses: [], equipment: [] }, error: null })
+    const result = await GET(request('GET'))
+    expect(result.status).toBe(200)
+    expect(await result.json()).toEqual({ homes: [], addresses: [], equipment: [] })
+    expect(state.rpc).toHaveBeenCalledWith('read_customer_homes')
+  })
+  it('archives the owned home with a matching actor without passing header authority to RPC', async () => {
+    const result = await DELETE(request('DELETE', JSON.stringify({ id: id(30), expectedVersion: 2 })))
+    expect(result.status).toBe(200)
+    expect(state.rpc).toHaveBeenCalledWith('write_customer_home', { p_operation: 'archive', p_id: id(30), p_expected_version: 2, p_data: {} })
+  })
+  it('registers equipment with a matching actor and still leaves ownership to RPC', async () => {
+    const value = { homeId: id(30), expectedVersion: 2, idempotencyKey: id(31), equipment: { nickname: 'Owned air', equipmentType: 'split' }, placement: { roomId: id(32), wall: 'north', offset: .5, height: 2 } }
+    const result = await POST_EQUIPMENT(request('POST', JSON.stringify(value), id(2), '/api/customer/homes/equipment'))
+    expect(result.status).toBe(201)
+    expect(state.rpc).toHaveBeenCalledWith('write_customer_home', { p_operation: 'equipment', p_id: id(30), p_expected_version: 2, p_data: { idempotencyKey: value.idempotencyKey, equipment: value.equipment, placement: value.placement } })
+  })
 })
 afterEach(() => vi.unstubAllEnvs())
 describe('Hogar aggregate HTTP byte budget', () => {

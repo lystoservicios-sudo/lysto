@@ -20,7 +20,7 @@ import {
 } from 'lucide-react'
 import { Dialog } from '@/components/ui/dialog'
 import { useClientFocusedFlow } from '@/components/app-shell/client-flow-context'
-import { assetError, assetRequest } from '@/lib/customer-assets/client'
+import { assetError, assetRequest as originalAssetRequest } from '@/lib/customer-assets/client'
 import { PrivateRequestError } from '@/lib/http/private-client'
 import type { CustomerAssetAddress, CustomerAssetEquipment } from '@/lib/customer-assets/contracts'
 import {
@@ -29,11 +29,15 @@ import {
   addHomeEquipmentSchema,
   createHomeSchema,
   saveHomeSchema,
-  type CreateHomeInput,
-  type AddHomeEquipmentInput,
   type CustomerHome,
   type CustomerHomesSnapshot
 } from '@/lib/customer-homes/contracts'
+import {
+  clearPendingHomeOperation,
+  readPendingHomeOperation,
+  storePendingHomeOperation,
+  type PendingHomeOperation
+} from '@/lib/customer-homes/pending-operation'
 import {
   addHomeRoom,
   createHomeFloor,
@@ -84,7 +88,18 @@ function homePayload(home: CustomerHome) {
   }
 }
 
-export function CustomerHogar({ initialData }: { initialData: CustomerHomesSnapshot }) {
+export function CustomerHogar(props: { initialData: CustomerHomesSnapshot; customerId?: string }) {
+  // A different authenticated customer must never inherit the previous account's refs or form.
+  return <CustomerHogarScreen key={props.customerId ?? 'unscoped'} {...props} />
+}
+
+function CustomerHogarScreen({
+  initialData,
+  customerId
+}: {
+  initialData: CustomerHomesSnapshot
+  customerId?: string
+}) {
   const [data, setData] = useState(initialData)
   const [homeId, setHomeId] = useState(initialData.homes[0]?.id ?? '')
   const [floorId, setFloorId] = useState(initialData.homes[0]?.floors[0]?.id ?? '')
@@ -97,30 +112,46 @@ export function CustomerHogar({ initialData }: { initialData: CustomerHomesSnaps
   const [gpuUnavailable, setGpuUnavailable] = useState(false)
   const [confirm, setConfirm] = useState<Confirmation | null>(null)
   const headingRef = useRef<HTMLHeadingElement>(null)
-  const creationAttempt = useRef<{
-    key: string
-    input: CreateHomeInput
-  } | null>(null)
-  const [creationPending, setCreationPending] = useState(false)
-  const equipmentAttempt = useRef<{ key: string; input: AddHomeEquipmentInput } | null>(null)
-  const [equipmentPending, setEquipmentPending] = useState(false)
+  const pendingRef = useRef<PendingHomeOperation | null>(null)
+  const pendingUncertain = useRef(false)
+  const [pending, setPending] = useState<PendingHomeOperation | null>(null)
+  const [pendingReady, setPendingReady] = useState(!customerId)
+  const [pendingRecoveryError, setPendingRecoveryError] = useState('')
+  const creationPending = pending?.kind === 'create-home'
+  const equipmentPending = pending?.kind === 'add-equipment'
+  const newOperationBlocked = !pendingReady || Boolean(pending || pendingRecoveryError)
+  const editingBlocked = busy || newOperationBlocked
   const home = data.homes.find((h) => h.id === homeId) ?? data.homes[0]
   const floor = home?.floors.find((f) => f.id === floorId) ?? home?.floors[0]
   const room = floor?.rooms.find((r) => r.id === roomId)
   const address = data.addresses.find((a) => a.id === home?.addressId)
+  function assetRequest<T>(path: string, method = 'GET', body?: unknown): Promise<T> {
+    return customerId
+      ? originalAssetRequest<T>(path, method, body, { 'X-Lysto-Customer-Id': customerId })
+      : originalAssetRequest<T>(path, method, body)
+  }
   useClientFocusedFlow(Boolean(flow || confirm))
+  useEffect(() => {
+    if (!customerId) return
+    const recovered = readPendingHomeOperation(customerId)
+    pendingRef.current = recovered.operation
+    pendingUncertain.current = Boolean(recovered.operation)
+    setPending(recovered.operation)
+    setPendingRecoveryError(recovered.error)
+    setPendingReady(true)
+  }, [customerId])
   useEffect(() => {
     headingRef.current?.focus()
   }, [flow?.type])
   useEffect(() => {
-    if (!flow) return
+    if (!flow && !pending) return
     const preventLoss = (event: BeforeUnloadEvent) => {
       event.preventDefault()
       event.returnValue = ''
     }
     window.addEventListener('beforeunload', preventLoss)
     return () => window.removeEventListener('beforeunload', preventLoss)
-  }, [flow])
+  }, [flow, pending])
   const unavailable = useCallback(() => {
     setGpuUnavailable(true)
     setListOnly(true)
@@ -130,7 +161,7 @@ export function CustomerHogar({ initialData }: { initialData: CustomerHomesSnaps
     setNotice('')
   }
   const closeFlow = () => {
-    if (!busy) {
+    if (!busy && !pendingRef.current) {
       setFlow(null)
       clearFeedback()
     }
@@ -150,22 +181,90 @@ export function CustomerHogar({ initialData }: { initialData: CustomerHomesSnaps
       next.floors.some((f) => f.rooms.some((r) => r.id === current)) ? current : null
     )
   }
-  async function mutation(action: () => Promise<void>) {
+  function rememberPending(operation: PendingHomeOperation) {
+    if (customerId) storePendingHomeOperation(customerId, operation)
+    pendingRef.current = operation
+    pendingUncertain.current = false
+    setPending(operation)
+  }
+  function forgetPending() {
+    if (customerId) clearPendingHomeOperation(customerId)
+    pendingRef.current = null
+    pendingUncertain.current = false
+    setPending(null)
+  }
+  async function replayPending() {
+    const operation = pendingRef.current
+    if (!operation) return
+    if (operation.kind === 'create-home') {
+      const result = await assetRequest<{ home: CustomerHome; address?: CustomerAssetAddress }>(
+        '/api/customer/homes',
+        'POST',
+        operation.input
+      )
+      if (result.address)
+        setData((current) => ({
+          ...current,
+          addresses: [
+            ...current.addresses.filter((a) => a.id !== result.address!.id),
+            result.address!
+          ]
+        }))
+      acceptHome(result.home)
+      setRoomId(null)
+      setNotice('Tu hogar quedó creado. Podés adaptar cada ambiente.')
+    } else {
+      const result = await assetRequest<{ home: CustomerHome; equipment: CustomerAssetEquipment }>(
+        '/api/customer/homes/equipment',
+        'POST',
+        operation.input
+      )
+      acceptHome(result.home)
+      setData((current) => ({
+        ...current,
+        equipment: [
+          ...current.equipment.filter((e) => e.id !== result.equipment.id),
+          result.equipment
+        ]
+      }))
+      setRoomId(operation.input.placement.roomId)
+      setNotice('Aire registrado y ubicado.')
+    }
+    forgetPending()
+    setFlow(null)
+    setConfirm(null)
+  }
+  async function mutation(
+    action: () => Promise<void>,
+    options: { pendingWrite?: boolean; readOnly?: boolean } = {}
+  ) {
     if (busy) return
+    if (
+      (pendingRef.current || pendingRecoveryError) &&
+      !options.pendingWrite &&
+      !options.readOnly
+    ) {
+      setError(
+        'Primero confirmá el guardado pendiente mediante su reintento. No enviaremos otro registro.'
+      )
+      return
+    }
     setBusy(true)
     clearFeedback()
     try {
       await action()
     } catch (err) {
       if (
+        options.pendingWrite &&
+        !pendingUncertain.current &&
         err instanceof PrivateRequestError &&
         err.status < 500 &&
-        ![401, 408, 409, 429].includes(err.status)
+        ![401, 408, 429].includes(err.status)
       ) {
-        creationAttempt.current = null
-        equipmentAttempt.current = null
-        setCreationPending(false)
-        setEquipmentPending(false)
+        forgetPending()
+      } else if (options.pendingWrite && pendingRef.current) {
+        // A later rejection cannot prove that an earlier lost response never committed.
+        pendingUncertain.current = true
       }
       setError(assetError(err))
     } finally {
@@ -187,24 +286,30 @@ export function CustomerHogar({ initialData }: { initialData: CustomerHomesSnaps
     setNotice(success)
   }
   async function reload() {
-    await mutation(async () => {
-      const next = await assetRequest<CustomerHomesSnapshot>('/api/customer/homes')
-      setData(next)
-      setFlow(null)
-      setConfirm(null)
-      const selected = next.homes.find((h) => h.id === home?.id) ?? next.homes[0]
-      setHomeId(selected?.id ?? '')
-      setFloorId(
-        selected?.floors.find((f) => f.id === floor?.id)?.id ?? selected?.floors[0]?.id ?? ''
-      )
-      setRoomId(null)
-      setNotice('Hogar actualizado.')
-    })
+    await mutation(
+      async () => {
+        const next = await assetRequest<CustomerHomesSnapshot>('/api/customer/homes')
+        setData(next)
+        if (!pendingRef.current || pendingRef.current.kind === 'add-equipment') setFlow(null)
+        setConfirm(null)
+        const selected = next.homes.find((h) => h.id === home?.id) ?? next.homes[0]
+        setHomeId(selected?.id ?? '')
+        setFloorId(
+          selected?.floors.find((f) => f.id === floor?.id)?.id ?? selected?.floors[0]?.id ?? ''
+        )
+        setRoomId(null)
+        setNotice(
+          pendingRef.current
+            ? 'Información actualizada. El guardado sigue pendiente: reintentá el mismo registro para confirmar su resultado.'
+            : 'Hogar actualizado.'
+        )
+      },
+      { readOnly: true }
+    )
   }
   function newHome() {
+    if (newOperationBlocked || busy) return
     clearFeedback()
-    creationAttempt.current = null
-    setCreationPending(false)
     setFlow({
       type: 'home',
       value: configuration(),
@@ -213,6 +318,7 @@ export function CustomerHogar({ initialData }: { initialData: CustomerHomesSnaps
     })
   }
   function newRoom() {
+    if (editingBlocked) return
     if (!home || !floor) return
     clearFeedback()
     try {
@@ -223,10 +329,9 @@ export function CustomerHogar({ initialData }: { initialData: CustomerHomesSnaps
     }
   }
   function placeEquipment(item?: CustomerAssetEquipment) {
+    if (newOperationBlocked || busy) return
     if (!home || !floor) return
     if (item && !airTypes.some(([value]) => value === item.equipmentType)) return
-    equipmentAttempt.current = null
-    setEquipmentPending(false)
     const target = room ?? floor.rooms[0]
     if (!target) {
       setError('Añadí un ambiente en esta planta antes de ubicar un aire.')
@@ -297,13 +402,13 @@ export function CustomerHogar({ initialData }: { initialData: CustomerHomesSnaps
       : home
   const previewEquipment = useMemo(
     () =>
-      flow?.type === 'placement' && flow.register
+      home && flow?.type === 'placement' && flow.register
         ? [
             ...visibleEquipment,
             {
               id: flow.value.equipmentId,
               nickname: flow.equipment.nickname || 'Nuevo aire',
-              addressId: home!.addressId,
+              addressId: home.addressId,
               equipmentType: flow.equipment.equipmentType,
               brand: flow.equipment.brand,
               model: flow.equipment.model,
@@ -342,67 +447,57 @@ export function CustomerHogar({ initialData }: { initialData: CustomerHomesSnaps
             : (room?.name ?? 'Mi hogar')
 
   async function saveConfiguration(value: HomeConfig, newAddress?: Record<string, unknown>) {
-    await mutation(async () => {
-      if (flow?.type !== 'home') return
-      const addressId = value.addressId
-      if (flow.existing && home)
-        await persist(
-          {
-            ...home,
-            ...value,
-            addressId,
-            building: value.kind === 'apartment' ? value.building : null
-          },
-          'Configuración guardada.'
-        )
-      else {
-        if (creationAttempt.current?.key !== flow.key) {
-          const floors = value.suggested
-            ? createHomePreset(value.kind, value.features)
-            : [{ id: uuid(), name: 'Planta baja', order: 0, rooms: [] }]
-          const parsed = createHomeSchema.safeParse({
-            name: value.name,
-            addressId: newAddress ? null : addressId,
-            ...(newAddress ? { newAddress } : {}),
-            kind: value.kind,
-            building: value.kind === 'apartment' ? value.building : null,
-            features: value.features,
-            floors,
-            placements: [],
-            idempotencyKey: flow.key
-          })
-          if (!parsed.success)
-            throw new Error(parsed.error.issues[0]?.message || 'Revisá los datos de tu hogar.')
-          creationAttempt.current = { key: flow.key, input: parsed.data }
+    await mutation(
+      async () => {
+        if (flow?.type !== 'home') return
+        const addressId = value.addressId
+        if (flow.existing && home)
+          await persist(
+            {
+              ...home,
+              ...value,
+              addressId,
+              building: value.kind === 'apartment' ? value.building : null
+            },
+            'Configuración guardada.'
+          )
+        else {
+          if (!pendingRef.current) {
+            const floors = value.suggested
+              ? createHomePreset(value.kind, value.features)
+              : [{ id: uuid(), name: 'Planta baja', order: 0, rooms: [] }]
+            const parsed = createHomeSchema.safeParse({
+              name: value.name,
+              addressId: newAddress ? null : addressId,
+              ...(newAddress ? { newAddress } : {}),
+              kind: value.kind,
+              building: value.kind === 'apartment' ? value.building : null,
+              features: value.features,
+              floors,
+              placements: [],
+              idempotencyKey: flow.key
+            })
+            if (!parsed.success)
+              throw new Error(parsed.error.issues[0]?.message || 'Revisá los datos de tu hogar.')
+            rememberPending({ kind: 'create-home', input: parsed.data })
+          }
+          await replayPending()
         }
-        setCreationPending(true)
-        const result = await assetRequest<{
-          home: CustomerHome
-          address?: CustomerAssetAddress
-        }>('/api/customer/homes', 'POST', creationAttempt.current.input)
-        creationAttempt.current = null
-        setCreationPending(false)
-        if (result.address)
-          setData((current) => ({
-            ...current,
-            addresses: [
-              ...current.addresses.filter((a) => a.id !== result.address!.id),
-              result.address!
-            ]
-          }))
-        acceptHome(result.home)
-        setFlow(null)
-        setNotice('Tu hogar quedó creado. Podés adaptar cada ambiente.')
-        setRoomId(null)
-      }
-    })
+      },
+      { pendingWrite: flow?.type === 'home' && !flow.existing }
+    )
   }
   return (
     <div className={styles.hogar} aria-busy={busy}>
       <header className={styles.header}>
         <div>
           {flow ? (
-            <button type="button" className={styles.back} disabled={busy} onClick={closeFlow}>
+            <button
+              type="button"
+              className={styles.back}
+              disabled={busy || Boolean(pending)}
+              onClick={closeFlow}
+            >
               <ArrowLeft size={18} aria-hidden />
               Volver a Hogar
             </button>
@@ -419,17 +514,42 @@ export function CustomerHogar({ initialData }: { initialData: CustomerHomesSnaps
             type="button"
             aria-label="Añadir otro hogar"
             className={styles.iconButton}
-            disabled={busy}
+            disabled={busy || newOperationBlocked}
             onClick={newHome}
           >
             <Plus size={20} aria-hidden />
           </button>
         )}
       </header>
+      {pendingRecoveryError && (
+        <p role="alert" className={styles.error}>
+          {pendingRecoveryError}
+        </p>
+      )}
+      {pending && !flow && (
+        <section className={styles.error} aria-label="Guardado pendiente">
+          <p>
+            Hay un {creationPending ? 'hogar' : 'aire'} pendiente de confirmar en esta cuenta.
+            Reintentar conserva exactamente el registro anterior y evita duplicados. Actualizar la
+            lista no cancela ese guardado.
+          </p>
+          <button
+            type="button"
+            className={styles.primary}
+            disabled={busy}
+            onClick={() => void mutation(replayPending, { pendingWrite: true })}
+          >
+            {busy ? 'Confirmando…' : 'Reintentar guardado pendiente'}
+          </button>
+          <button type="button" className={styles.secondary} disabled={busy} onClick={reload}>
+            Recargar Hogar
+          </button>
+        </section>
+      )}
       {error && (
         <div role="alert" className={styles.error}>
           <p>{error}</p>
-          {(error.includes('Los datos cambiaron') || creationPending || equipmentPending) && (
+          {(error.includes('Los datos cambiaron') || (Boolean(pending) && Boolean(flow))) && (
             <button type="button" className={styles.secondary} disabled={busy} onClick={reload}>
               Recargar Hogar
             </button>
@@ -463,7 +583,12 @@ export function CustomerHogar({ initialData }: { initialData: CustomerHomesSnaps
             Organizá tu casa, departamento u oficina. Creá sus ambientes y ubicá tus aires para
             tener todo a mano.
           </p>
-          <button type="button" className={styles.primary} disabled={busy} onClick={newHome}>
+          <button
+            type="button"
+            className={styles.primary}
+            disabled={busy || newOperationBlocked}
+            onClick={newHome}
+          >
             <Plus size={18} aria-hidden />
             Crear mi primer hogar
           </button>
@@ -519,8 +644,9 @@ export function CustomerHogar({ initialData }: { initialData: CustomerHomesSnaps
               type="button"
               className={styles.iconButton}
               aria-label="Configurar hogar"
-              disabled={busy}
+              disabled={editingBlocked}
               onClick={() => {
+                if (editingBlocked) return
                 clearFeedback()
                 setFlow({
                   type: 'home',
@@ -579,8 +705,9 @@ export function CustomerHogar({ initialData }: { initialData: CustomerHomesSnaps
             <button
               type="button"
               className={styles.textButton}
-              disabled={busy || home.floors.length >= 12}
+              disabled={editingBlocked || home.floors.length >= 12}
               onClick={() => {
+                if (editingBlocked) return
                 clearFeedback()
                 setFlow({
                   type: 'floor',
@@ -601,9 +728,10 @@ export function CustomerHogar({ initialData }: { initialData: CustomerHomesSnaps
               <button
                 type="button"
                 className={styles.iconButton}
-                disabled={busy}
+                disabled={editingBlocked}
                 aria-label="Editar planta actual"
                 onClick={() => {
+                  if (editingBlocked) return
                   clearFeedback()
                   setFlow({
                     type: 'floor',
@@ -788,60 +916,50 @@ export function CustomerHogar({ initialData }: { initialData: CustomerHomesSnaps
           onChange={setFlow}
           onCancel={closeFlow}
           onSave={() =>
-            mutation(async () => {
-              if (flow.register) {
-                if (equipmentAttempt.current?.key !== flow.key) {
-                  const parsed = addHomeEquipmentSchema.safeParse({
-                    homeId: home.id,
-                    expectedVersion: home.version,
-                    idempotencyKey: flow.key,
-                    equipment: {
-                      ...flow.equipment,
-                      frigorias: flow.equipment.frigorias ? Number(flow.equipment.frigorias) : null
+            mutation(
+              async () => {
+                if (flow.register) {
+                  if (!pendingRef.current) {
+                    const parsed = addHomeEquipmentSchema.safeParse({
+                      homeId: home.id,
+                      expectedVersion: home.version,
+                      idempotencyKey: flow.key,
+                      equipment: {
+                        ...flow.equipment,
+                        frigorias: flow.equipment.frigorias
+                          ? Number(flow.equipment.frigorias)
+                          : null
+                      },
+                      placement: {
+                        roomId: flow.value.roomId,
+                        wall: flow.value.wall,
+                        offset: flow.value.offset,
+                        height: flow.value.height
+                      }
+                    })
+                    if (!parsed.success)
+                      throw new Error(
+                        parsed.error.issues[0]?.message || 'Revisá los datos del aire.'
+                      )
+                    rememberPending({ kind: 'add-equipment', input: parsed.data })
+                  }
+                  await replayPending()
+                } else {
+                  await persist(
+                    {
+                      ...home,
+                      placements: [
+                        ...home.placements.filter((p) => p.equipmentId !== flow.value.equipmentId),
+                        flow.value
+                      ]
                     },
-                    placement: {
-                      roomId: flow.value.roomId,
-                      wall: flow.value.wall,
-                      offset: flow.value.offset,
-                      height: flow.value.height
-                    }
-                  })
-                  if (!parsed.success)
-                    throw new Error(parsed.error.issues[0]?.message || 'Revisá los datos del aire.')
-                  equipmentAttempt.current = { key: flow.key, input: parsed.data }
+                    'Ubicación guardada.'
+                  )
+                  setRoomId(flow.value.roomId)
                 }
-                setEquipmentPending(true)
-                const result = await assetRequest<{
-                  home: CustomerHome
-                  equipment: CustomerAssetEquipment
-                }>('/api/customer/homes/equipment', 'POST', equipmentAttempt.current.input)
-                equipmentAttempt.current = null
-                setEquipmentPending(false)
-                acceptHome(result.home)
-                setData((current) => ({
-                  ...current,
-                  equipment: [
-                    ...current.equipment.filter((e) => e.id !== result.equipment.id),
-                    result.equipment
-                  ]
-                }))
-                setFlow(null)
-                setNotice('Aire registrado y ubicado.')
-                setRoomId(flow.value.roomId)
-              } else {
-                await persist(
-                  {
-                    ...home,
-                    placements: [
-                      ...home.placements.filter((p) => p.equipmentId !== flow.value.equipmentId),
-                      flow.value
-                    ]
-                  },
-                  'Ubicación guardada.'
-                )
-                setRoomId(flow.value.roomId)
-              }
-            })
+              },
+              { pendingWrite: flow.register }
+            )
           }
         />
       )}
@@ -856,7 +974,7 @@ export function CustomerHogar({ initialData }: { initialData: CustomerHomesSnaps
               <button
                 type="button"
                 className={styles.textButton}
-                disabled={busy || floor.rooms.length >= 60}
+                disabled={editingBlocked || floor.rooms.length >= 60}
                 onClick={newRoom}
               >
                 <Plus size={16} aria-hidden />
@@ -890,8 +1008,9 @@ export function CustomerHogar({ initialData }: { initialData: CustomerHomesSnaps
                   type="button"
                   aria-label={`Editar ${r.name}`}
                   className={styles.iconButton}
-                  disabled={busy}
+                  disabled={editingBlocked}
                   onClick={() => {
+                    if (editingBlocked) return
                     clearFeedback()
                     setFlow({ type: 'room', value: { ...r }, existing: true })
                   }}
@@ -902,7 +1021,7 @@ export function CustomerHogar({ initialData }: { initialData: CustomerHomesSnaps
                   type="button"
                   aria-label={`Quitar ${r.name}`}
                   className={styles.iconButton}
-                  disabled={busy}
+                  disabled={editingBlocked}
                   onClick={() =>
                     setConfirm({
                       title: `¿Quitar ${r.name}?`,
@@ -930,7 +1049,12 @@ export function CustomerHogar({ initialData }: { initialData: CustomerHomesSnaps
               <button
                 type="button"
                 className={styles.textButton}
-                disabled={busy || !floor.rooms.length || home.placements.length >= 500}
+                disabled={
+                  busy ||
+                  newOperationBlocked ||
+                  !floor.rooms.length ||
+                  home.placements.length >= 500
+                }
                 onClick={() => placeEquipment()}
               >
                 <Plus size={16} aria-hidden />
@@ -1004,6 +1128,7 @@ export function CustomerHogar({ initialData }: { initialData: CustomerHomesSnaps
                         aria-label={`${placement ? 'Reubicar' : 'Ubicar'} ${item.nickname}`}
                         disabled={
                           busy ||
+                          newOperationBlocked ||
                           !floor.rooms.length ||
                           (!placement && home.placements.length >= 500) ||
                           !airTypes.some(([value]) => value === item.equipmentType)
@@ -1025,7 +1150,7 @@ export function CustomerHogar({ initialData }: { initialData: CustomerHomesSnaps
                           type="button"
                           className={styles.textButton}
                           aria-label={`Quitar ubicación de ${item.nickname}`}
-                          disabled={busy}
+                          disabled={editingBlocked}
                           onClick={() =>
                             setConfirm({
                               title: '¿Quitar la ubicación?',
@@ -1060,7 +1185,7 @@ export function CustomerHogar({ initialData }: { initialData: CustomerHomesSnaps
           <Link href="/app/direcciones">Gestionar direcciones</Link>
           <button
             type="button"
-            disabled={busy}
+            disabled={editingBlocked}
             onClick={() =>
               setConfirm({
                 title: '¿Archivar este hogar?',

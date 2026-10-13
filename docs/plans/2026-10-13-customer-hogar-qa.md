@@ -4,7 +4,7 @@ Fecha: 2026-10-13. Alcance aprobado: varios hogares por direcciones propias, maq
 
 ## Estado de publicación
 
-**Pendiente de autorización de Supabase y comprobación de base real. No declarar listo para producción ni publicar en main todavía.**
+**Pendiente de renovación efectiva de la conexión de Supabase y comprobación de base real. El usuario autorizó la implementación y publicación, pero no debe declararse listo ni publicarse en main hasta superar los controles.**
 
 La rama conserva Inicio y Servicios previamente aprobados y añade Hogar sin duplicar el App Shell. La demo independiente no se utiliza como fuente de datos de clientes.
 
@@ -22,18 +22,21 @@ La rama conserva Inicio y Servicios previamente aprobados y añade Hogar sin dup
 - Revisión independiente de cumplimiento: 101 pruebas enfocadas aprobadas antes de los últimos controles de capacidad.
 - Recorridos de interfaz ampliados: 37/37; creación por perfil, varias plantas y hogares, variantes, persistencia solicitada por API, cancelación, errores, reintentos idénticos y navegación real.
 - Geometría/escena: 21/21; todos los ambientes/variantes, seis tipos de aire, planta/foco, paredes, límites de ubicación y limpieza de recursos.
-- Compilación Next completa aprobada. Regresión detectada/corregida en argumentos opcionales de Presupuestos y Solicitar: validación PageProps generada por Next.
-- Dominio: 174/174. Seguridad del harness/herramientas: 27/27.
+- Compilación Next 15.5.27 completa aprobada después de las correcciones finales: 101/101 páginas generadas, lint y tipos aprobados. Regresión detectada/corregida en argumentos opcionales de Presupuestos y Solicitar: validación PageProps generada por Next.
+- Dominio: 174/174. Seguridad del harness/herramientas: 33/33 después del parche final.
 - Procesamiento de imágenes y biblioteca de pagos: comprobaciones locales aprobadas, sin consultas de base ni llamadas a proveedores.
-- Actualizaciones de parche para superar auditoría de producción: Sharp 0.35.5 y source-map-js 1.2.2. Auditoría posterior: cero avisos altos/críticos; dos moderados preexistentes. Fuentes: [Sharp](https://github.com/advisories/GHSA-wq5f-xc86-pv6w), [source-map-js](https://github.com/advisories/GHSA-68fv-2mgg-jv7q).
+- Actualizaciones de parche: Sharp 0.35.5, source-map-js 1.2.2 y Next/eslint-config-next 15.5.27. Auditoría JSON de **producción** final: cero avisos en todas las severidades, exit 0. Esto no acredita cero avisos en dependencias de desarrollo. Fuentes: [Sharp](https://github.com/advisories/GHSA-wq5f-xc86-pv6w), [source-map-js](https://github.com/advisories/GHSA-68fv-2mgg-jv7q), [Next SSG/ISR](https://github.com/vercel/next.js/security/advisories/GHSA-4jqv-mc3x-m676), [Next caché compartida](https://github.com/vercel/next.js/security/advisories/GHSA-mcj8-r9mp-w47p).
+- El guardia de imágenes verifica la política de Next 15.5.27: AVIF solo se decodifica con libheif >=1.23.2. Sharp instalado incluye 1.23.5; cuatro pruebas comprueban el runtime real y el bloqueo ante metadatos inseguros/desconocidos, sin desbloquear loaders.
 
-Las pruebas de UI usan dobles de API/GPU y **no acreditan persistencia real ni renderizado visual**. Una primera suite completa tuvo un timeout de 5 s durante cargas concurrentes; el archivo afectado pasó 9/9 aislado. La repetición completa sigue pendiente de cierre.
+Las pruebas de UI usan dobles de API/GPU y **no acreditan persistencia real ni renderizado visual**. Una primera suite completa tuvo un timeout de 5 s durante cargas concurrentes; el archivo afectado pasó 9/9 aislado. La repetición completa del checkpoint `2ffeedd` terminó correctamente: **156 archivos y 1.091 pruebas, cero fallos**. Las correcciones posteriores de recuperación y precondición de cuenta requieren evidencia nueva y no se incluyen en ese total.
 
 ## Revisiones y correcciones
 
 Reintentos de creación/alta conservan exactamente el cuerpo y la clave originales. Una dirección nueva participa en la misma transacción que el hogar. No se permite archivar una dirección principal vinculada a un hogar activo. Aires antiguos de tipo incompleto tienen explicación y acceso al historial; nunca se representan silenciosamente como Split. Balcón/terraza no pueden desactivarse si todavía existe ese ambiente.
 
-La revisión de calidad identificó además condiciones de carrera entre clientes al colisionar UUID de plantas, límite de 500 ubicaciones omitido en alta y presupuesto HTTP insuficiente para una distribución válida grande. Deben comprobarse los parches y sus pruebas antes de integrar.
+La revisión de calidad identificó además condiciones de carrera entre clientes al colisionar UUID de plantas, límite de 500 ubicaciones omitido en alta y presupuesto HTTP insuficiente para una distribución válida grande. Los parches pasaron revisión independiente y la suite local de 125 casos de Hogar; todavía requieren PostgreSQL real.
+
+La revisión final detectó que salir o recargar tras una respuesta perdida podía descartar la identidad de un alta. Se incorpora un comando validado en `sessionStorage`, separado por cliente, persistido antes del POST y reintentado solo por acción explícita. Un GET vacío no acredita que la transacción no se haya ejecutado. Los rechazos definitivos se distinguen de una respuesta perdida; un primer 409 conocido permite corregir el comando abortado, pero un 409 posterior a ambigüedad lo conserva. Todas las entradas de edición se bloquean durante recuperación, manteniendo la navegación de lectura y el reintento. La precondición `X-Lysto-Customer-Id` se compara con la sesión fresca en las cinco operaciones API antes del cuerpo/RPC; nunca deriva el propietario desde ese encabezado. Impide enviar un comando de una pestaña de A bajo la cuenta B. Revisión independiente final conforme, sin bloqueantes locales en este alcance; 74/74 casos UI y 20/20 de actor/headers/error pasan.
 
 ## Verificación todavía obligatoria
 
@@ -46,9 +49,9 @@ La revisión de calidad identificó además condiciones de carrera entre cliente
 
 ## Bloqueos comprobados del entorno
 
-- Proyecto Supabase vinculado: `dqonlqcurvjnjgsczevu`. MCP configurado pero herramientas no expuestas en esta sesión. CLI vinculado devuelve 403 de privilegios al iniciar el rol de consulta; advisors también. Solicitud al usuario: reconectar en Codex con cuenta propietaria, sin compartir secretos por chat.
+- Proyecto Supabase vinculado: `dqonlqcurvjnjgsczevu`. El chat previo «Revisar acceso a Supabase» acredita configuración Owner. MCP listado como enabled/OAuth, pero iniciar conexión falla con `OAuth token refresh failed: Failed to parse server response`; sus herramientas SQL no están expuestas en esta sesión. CLI vinculado devuelve 403 de privilegios al iniciar el rol de consulta; advisors también. El intento de OAuth expiró sin renovar acceso. Se necesita reconectar con la cuenta propietaria, sin compartir secretos por chat.
 - Docker Desktop no ofrece un motor operativo; WSL informa servicio deshabilitado. No se modificaron servicios ni características del sistema operativo. CI usa su propio contenedor Supabase descartable como alternativa.
-- GitHub main previo ya fallaba en auditoría de dependencias, antes de Hogar. No se omiten ni relajan los controles para publicar.
+- GitHub main previo ya fallaba en auditoría de dependencias, antes de Hogar. El checkpoint se publicó solo en `codex/customer-services`; main permanece intacto. [CI 38427354720](https://github.com/lystoservicios-sudo/lysto/actions/runs/38427354720) pasó dominio en Windows, pero se detuvo en la auditoría JSON antes de comprobar la base o ejecutar E2E. El artefacto real contiene cero altos y dos moderados de Next 15.5.24; la advertencia alta de instalación del gestor no corresponde a ese artefacto. El parche oficial 15.5.27 supera ahora ese mismo comando localmente, sin omitir ni relajar el control; falta la nueva ejecución remota.
 
 ## Recuperación
 
