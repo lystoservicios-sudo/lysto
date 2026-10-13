@@ -176,8 +176,7 @@ describe('HTTP access control with real Auth sessions', () => {
   it.each([
     ['customerA', '/admin/dashboard'],
     ['customerA', '/pro/dashboard'],
-    ['owner', '/app'],
-    ['professionalSuspended', '/pro/dashboard']
+    ['owner', '/app']
   ] as const)(
     'does not grant %s the visual role of %s',
     async (account, path) => {
@@ -187,6 +186,18 @@ describe('HTTP access control with real Auth sessions', () => {
     },
     240_000
   )
+
+  it('keeps a suspended professional dashboard read-only without operational access', async () => {
+    // The September workspace redesign separates dashboard access from authority.
+    // A pending shell is permitted; job APIs must still reject the current state.
+    const response = await request('GET', '/pro/dashboard', 'professionalSuspended')
+    expect(response.status).toBe(200)
+    expect(response.headers.get('cache-control')).toContain('no-store')
+    const html = await response.text()
+    expect(html).toContain('Revisión pendiente')
+    expect(html).not.toContain('aria-label="Navegación profesional móvil"')
+    expect((await request('GET', '/api/pricing/job', 'professionalSuspended')).status).toBe(403)
+  }, 240_000)
 
   it.each([
     ['customerA', 'PUT', '/api/pricing/policy'],

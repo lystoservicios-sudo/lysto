@@ -80,14 +80,20 @@ jobs:
       - name: Database permissions and schema tests
         run: pnpm exec supabase test db --local --workdir "$RUNNER_TEMP/lysto-integration-ci" | tee output/ci/database-tests.log
       - name: Database lint and generated types
+        id: database-schema
         run: |
           pnpm exec supabase db lint --local --schema public,private,invitation_gateway --fail-on error --workdir "$RUNNER_TEMP/lysto-integration-ci" | tee output/ci/database-lint.log
           node scripts/verify-ci-schema.mjs "$RUNNER_TEMP/lysto-integration-ci"
       - name: Install E2E browsers
+        id: e2e-browsers
         run: pnpm exec playwright install --with-deps chromium webkit
       - name: Mandatory Auth and payment integration; zero skipped
+        id: integration
         run: pnpm test:integration -- --local-workdir "$RUNNER_TEMP/lysto-integration-ci" | tee output/ci/integration.log
       - name: Production build and E2E with disposable backend; zero skipped
+        # Obtain independent browser evidence even when an integration assertion
+        # fails. That failure still blocks this job and production deployment.
+        if: ${{ !cancelled() && steps.database-schema.outcome == 'success' && steps.e2e-browsers.outcome == 'success' && (steps.integration.outcome == 'success' || steps.integration.outcome == 'failure') }}
         run: node scripts/test-e2e-ci.mjs "$RUNNER_TEMP/lysto-integration-ci"
       - name: Verify incomplete release manifest is blocked
         run: node scripts/check-release-evidence.mjs --self-test-blocking

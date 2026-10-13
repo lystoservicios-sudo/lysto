@@ -103,8 +103,26 @@ describe('authenticated professional pages', () => {
     }
   })
 
-  it('does not open the professional workspace for a suspended profile', async () => {
-    const response = await page('/pro/dashboard', 'professionalSuspended')
-    expect(response.status).toBe(404)
+  it('shows only the read-only pending workspace to a suspended profile, never its assigned work', async () => {
+    await database.query('update public.jobs set professional_id=$1 where id=$2', [
+      fixture.accounts.professionalSuspended.entityId,
+      jobId
+    ])
+    try {
+      const response = await page('/pro/dashboard', 'professionalSuspended')
+      expect(response.status).toBe(200)
+      const html = await response.text()
+      expect(html).toContain('Revisión pendiente')
+      expect(html).not.toContain(jobId)
+      expect(html).not.toContain('aria-label="Navegación profesional móvil"')
+      const denied = await page(`/api/pricing/job?jobId=${jobId}`, 'professionalSuspended')
+      expect(denied.status).toBe(403)
+      expect(denied.headers.get('cache-control')).toContain('no-store')
+    } finally {
+      await database.query('update public.jobs set professional_id=$1 where id=$2', [
+        fixture.accounts.professionalApproved.entityId,
+        jobId
+      ])
+    }
   })
 })

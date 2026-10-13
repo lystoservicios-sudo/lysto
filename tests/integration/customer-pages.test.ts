@@ -78,7 +78,10 @@ describe('authenticated customer pages', () => {
   it('shows an honest empty state for a customer without history', async () => {
     const response = await page('/app/trabajos', 'customerB')
     expect(response.status).toBe(200)
-    expect(await response.text()).toContain('Todavía no tenés trabajos')
+    const html = await response.text()
+    expect(html).toContain('Todavía no tenés servicios')
+    expect(html).toContain('Pedir un servicio')
+    expect(html).not.toContain(jobId)
   })
 
   it('returns absence for another customer review URL', async () => {
