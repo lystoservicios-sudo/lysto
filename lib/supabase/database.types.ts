@@ -491,6 +491,235 @@ export type Database = {
           },
         ]
       }
+      customer_equipment_placements: {
+        Row: {
+          customer_id: string
+          equipment_id: string
+          height: number
+          home_id: string
+          room_id: string
+          wall: string
+          wall_offset: number
+        }
+        Insert: {
+          customer_id: string
+          equipment_id: string
+          height: number
+          home_id: string
+          room_id: string
+          wall: string
+          wall_offset: number
+        }
+        Update: {
+          customer_id?: string
+          equipment_id?: string
+          height?: number
+          home_id?: string
+          room_id?: string
+          wall?: string
+          wall_offset?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_equipment_placements_equipment_id_customer_id_fkey"
+            columns: ["equipment_id", "customer_id"]
+            isOneToOne: false
+            referencedRelation: "customer_equipment"
+            referencedColumns: ["id", "customer_id"]
+          },
+          {
+            foreignKeyName: "customer_equipment_placements_room_id_home_id_customer_id_fkey"
+            columns: ["room_id", "home_id", "customer_id"]
+            isOneToOne: false
+            referencedRelation: "customer_home_rooms"
+            referencedColumns: ["id", "home_id", "customer_id"]
+          },
+        ]
+      }
+      customer_home_addresses: {
+        Row: {
+          address_id: string
+          archived_at: string | null
+          customer_id: string
+          home_id: string
+        }
+        Insert: {
+          address_id: string
+          archived_at?: string | null
+          customer_id: string
+          home_id: string
+        }
+        Update: {
+          address_id?: string
+          archived_at?: string | null
+          customer_id?: string
+          home_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_home_addresses_address_id_customer_id_fkey"
+            columns: ["address_id", "customer_id"]
+            isOneToOne: false
+            referencedRelation: "customer_addresses"
+            referencedColumns: ["id", "customer_id"]
+          },
+          {
+            foreignKeyName: "customer_home_addresses_home_id_customer_id_fkey"
+            columns: ["home_id", "customer_id"]
+            isOneToOne: false
+            referencedRelation: "customer_homes"
+            referencedColumns: ["id", "customer_id"]
+          },
+        ]
+      }
+      customer_home_floors: {
+        Row: {
+          customer_id: string
+          home_id: string
+          id: string
+          name: string
+          sort_order: number
+        }
+        Insert: {
+          customer_id: string
+          home_id: string
+          id: string
+          name: string
+          sort_order: number
+        }
+        Update: {
+          customer_id?: string
+          home_id?: string
+          id?: string
+          name?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_home_floors_home_id_customer_id_fkey"
+            columns: ["home_id", "customer_id"]
+            isOneToOne: false
+            referencedRelation: "customer_homes"
+            referencedColumns: ["id", "customer_id"]
+          },
+        ]
+      }
+      customer_home_rooms: {
+        Row: {
+          customer_id: string
+          depth: number
+          floor_id: string
+          home_id: string
+          id: string
+          kind: string
+          name: string
+          rotation: number
+          variant: string
+          width: number
+          windows: string
+          x: number
+          z: number
+        }
+        Insert: {
+          customer_id: string
+          depth: number
+          floor_id: string
+          home_id: string
+          id: string
+          kind: string
+          name: string
+          rotation: number
+          variant: string
+          width: number
+          windows: string
+          x: number
+          z: number
+        }
+        Update: {
+          customer_id?: string
+          depth?: number
+          floor_id?: string
+          home_id?: string
+          id?: string
+          kind?: string
+          name?: string
+          rotation?: number
+          variant?: string
+          width?: number
+          windows?: string
+          x?: number
+          z?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_home_rooms_floor_id_home_id_customer_id_fkey"
+            columns: ["floor_id", "home_id", "customer_id"]
+            isOneToOne: false
+            referencedRelation: "customer_home_floors"
+            referencedColumns: ["id", "home_id", "customer_id"]
+          },
+        ]
+      }
+      customer_homes: {
+        Row: {
+          archived_at: string | null
+          balcony: boolean
+          building: string | null
+          created_at: string
+          current_address_id: string
+          customer_id: string
+          id: string
+          kind: string
+          name: string
+          terrace: boolean
+          version: number
+          windows: string
+        }
+        Insert: {
+          archived_at?: string | null
+          balcony?: boolean
+          building?: string | null
+          created_at?: string
+          current_address_id: string
+          customer_id: string
+          id?: string
+          kind: string
+          name: string
+          terrace?: boolean
+          version?: number
+          windows: string
+        }
+        Update: {
+          archived_at?: string | null
+          balcony?: boolean
+          building?: string | null
+          created_at?: string
+          current_address_id?: string
+          customer_id?: string
+          id?: string
+          kind?: string
+          name?: string
+          terrace?: boolean
+          version?: number
+          windows?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_homes_current_address_id_customer_id_fkey"
+            columns: ["current_address_id", "customer_id"]
+            isOneToOne: false
+            referencedRelation: "customer_addresses"
+            referencedColumns: ["id", "customer_id"]
+          },
+          {
+            foreignKeyName: "customer_homes_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customer_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customer_profiles: {
         Row: {
           created_at: string
@@ -4052,6 +4281,16 @@ export type Database = {
         }
         Returns: Json
       }
+      create_owner_marketplace_split_test_job: {
+        Args: {
+          p_actor_session_id: string
+          p_actor_user_id: string
+          p_customer_id: string
+          p_professional_id: string
+          p_quote: Json
+        }
+        Returns: string
+      }
       create_professional_invitation: {
         Args: { p_email: string; p_reason: string; p_specialty_slug: string }
         Returns: Json
@@ -4421,6 +4660,7 @@ export type Database = {
         Returns: Json
       }
       prune_rate_limits: { Args: { p_limit?: number }; Returns: number }
+      read_customer_homes: { Args: never; Returns: Json }
       read_professional_invitation_admin: {
         Args: { p_id: string }
         Returns: Json
@@ -4669,19 +4909,6 @@ export type Database = {
         }
         Returns: Json
       }
-      read_customer_homes: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      write_customer_home: {
-        Args: {
-          p_operation: string
-          p_id: string | null
-          p_expected_version: number | null
-          p_data: Json
-        }
-        Returns: Json
-      }
       write_customer_asset: {
         Args: {
           p_archive?: boolean
@@ -4689,6 +4916,15 @@ export type Database = {
           p_expected_version: number
           p_id: string
           p_kind: string
+        }
+        Returns: Json
+      }
+      write_customer_home: {
+        Args: {
+          p_data: Json
+          p_expected_version: number
+          p_id: string
+          p_operation: string
         }
         Returns: Json
       }

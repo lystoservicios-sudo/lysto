@@ -17,6 +17,7 @@ create table public.customer_home_addresses (
 );
 create unique index customer_home_addresses_active_idx on public.customer_home_addresses(customer_id,address_id) where archived_at is null;
 create index customer_home_addresses_address_idx on public.customer_home_addresses(address_id,customer_id);
+create index customer_home_addresses_home_idx on public.customer_home_addresses(home_id,customer_id);
 create table public.customer_home_floors (
   id uuid primary key, home_id uuid not null, customer_id uuid not null, name text not null check(length(btrim(name)) between 1 and 80),
   sort_order integer not null check(sort_order between 0 and 11),
@@ -117,7 +118,7 @@ revoke all on function private.write_customer_asset(text,uuid,integer,jsonb,bool
 grant execute on function private.write_customer_asset(text,uuid,integer,jsonb,boolean),public.write_customer_asset(text,uuid,integer,jsonb,boolean) to authenticated;
 
 create function private.validate_home_layout(p_data jsonb) returns void language plpgsql set search_path='' as $$
-declare f jsonb; r jsonb; p jsonb; v_ids uuid[]:='{}'; v_rooms uuid[]:='{}'; v_equipment uuid[]:='{}'; v_orders integer[]:='{}'; v_id uuid; v_order integer; v_variant text; v_kind text;
+declare f jsonb; r jsonb; p jsonb; v_ids uuid[]:='{}'::uuid[]; v_rooms uuid[]:='{}'::uuid[]; v_equipment uuid[]:='{}'::uuid[]; v_orders integer[]:='{}'::integer[]; v_id uuid; v_order integer; v_variant text; v_kind text;
 begin
   perform private.validate_asset_object(p_data,array['name','addressId','kind','building','features','floors','placements','idempotencyKey']);
   perform private.validate_asset_object(p_data->'features',array['balcony','terrace','windows']);
@@ -193,7 +194,7 @@ language plpgsql security definer set search_path='' as $$
 declare
   v_customer uuid:=private.current_customer_id(); v_home public.customer_homes%rowtype; v_prior private.customer_home_operations%rowtype;
   v_id uuid; v_key uuid; v_result jsonb; v_original_input jsonb; v_new_address jsonb; v_affected_rows integer; f jsonb; r jsonb; p jsonb; v_equipment public.customer_equipment%rowtype; v_equipment_data jsonb;
-  v_floor_ids uuid[]:='{}'; v_room_ids uuid[]:='{}'; v_equipment_ids uuid[]:='{}';
+  v_floor_ids uuid[]:='{}'::uuid[]; v_room_ids uuid[]:='{}'::uuid[]; v_equipment_ids uuid[]:='{}'::uuid[];
 begin
   if v_customer is null then raise exception using errcode='42501',message='Customer session required'; end if;
   perform 1 from public.customer_profiles where id=v_customer for update;

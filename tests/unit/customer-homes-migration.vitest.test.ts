@@ -2,6 +2,19 @@ import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 const sql = readFileSync('supabase/migrations/20261013141601_customer_hogar.sql', 'utf8')
 describe('Hogar migration security boundaries', () => {
+  it('indexes the full owned-home foreign key on address aliases', () => {
+    expect(sql.includes('create index customer_home_addresses_home_idx on public.customer_home_addresses(home_id,customer_id);')).toBe(true)
+    expect(sql.includes('foreign key(home_id,customer_id) references public.customer_homes(id,customer_id) on delete cascade')).toBe(true)
+    expect(sql.includes('create unique index customer_home_addresses_active_idx on public.customer_home_addresses(customer_id,address_id) where archived_at is null;')).toBe(true)
+  })
+  it('initializes all seven layout identity arrays with their explicit PostgreSQL types', () => {
+    // Actual isolated database lint warned SQLSTATE 42804 for text initializers.
+    // The cast removes ambiguity without changing function contracts or ownership.
+    for (const variable of ['v_ids', 'v_rooms', 'v_equipment', 'v_floor_ids', 'v_room_ids', 'v_equipment_ids'])
+      expect(sql.includes(`${variable} uuid[]:='{}'::uuid[]`), variable).toBe(true)
+    expect(sql.includes("v_orders integer[]:='{}'::integer[]")).toBe(true)
+    expect(/\b(?:v_ids|v_rooms|v_equipment|v_orders|v_floor_ids|v_room_ids|v_equipment_ids) (?:uuid|integer)\[\]:='\{\}';/.test(sql)).toBe(false)
+  })
   it('parenthesizes the CASE expression inside IF so branch THEN tokens cannot end its condition', () => {
     // Regression from isolated PostgreSQL startup: SQLSTATE 42601, statement 42.
     // This source guard supplements, but does not replace, the real migration gate.
