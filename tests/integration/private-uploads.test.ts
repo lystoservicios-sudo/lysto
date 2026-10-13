@@ -21,6 +21,7 @@ describe('private uploads through actual HTTP and Storage', () => {
   const stored: Array<{ bucket: string; path: string }> = []
   const requestId = randomUUID(),
     jobId = randomUUID()
+  const documentCategoryId = randomUUID()
   beforeAll(async () => {
     pending = createFixtureAccounts()
     fixture = await pending
@@ -37,6 +38,20 @@ describe('private uploads through actual HTTP and Storage', () => {
       query_timeout: 10000
     })
     await database.connect()
+    // Associate only this synthetic approved professional with an isolated
+    // current document policy; the shared fixtures have no specialty dossier.
+    await database.query(
+      'insert into public.service_categories(id,slug,name) values($1,$2,$3)',
+      [documentCategoryId, 't-private-upload-' + documentCategoryId, 'Documentos sintéticos de prueba']
+    )
+    await database.query(
+      "insert into private.professional_review_policies(category_id,version,required_documents,expiry_documents,required_tools,min_experience,requires_license,test_only) values($1,$2,array['identity_front','identity_back','license'],'{}','{}',0,true,true)",
+      [documentCategoryId, 't-private-upload-' + documentCategoryId]
+    )
+    await database.query(
+      'insert into public.professional_service_categories(professional_id,category_id,approved) values($1,$2,true)',
+      [fixture.accounts.professionalApproved.entityId, documentCategoryId]
+    )
     await database.query(
       `insert into public.service_requests (id,customer_id,category_id,issue_type_id,status)
       select $1,$2,c.id,i.id,'pending_assignment' from public.service_categories c join public.service_issue_types i on i.category_id=c.id where c.slug='aire_acondicionado' and i.slug='mantenimiento'`,
@@ -104,6 +119,15 @@ describe('private uploads through actual HTTP and Storage', () => {
             [profiles]
           )
           await database.query('delete from public.service_requests where id=$1', [requestId])
+          await database.query(
+            'delete from public.professional_service_categories where professional_id=$1 and category_id=$2',
+            [fixture.accounts.professionalApproved.entityId, documentCategoryId]
+          )
+          await database.query(
+            'delete from private.professional_review_policies where category_id=$1',
+            [documentCategoryId]
+          )
+          await database.query('delete from public.service_categories where id=$1', [documentCategoryId])
         }
       } finally {
         try {
@@ -491,7 +515,7 @@ describe('private uploads through actual HTTP and Storage', () => {
       {
         kind: 'professional-document',
         entityId: fixture.accounts.professionalApproved.entityId,
-        documentType: 'identity'
+        documentType: 'identity_front'
       },
       { kind: 'job-document', entityId: jobId, phase: 'document' }
     ]) {
@@ -524,5 +548,16 @@ describe('private uploads through actual HTTP and Storage', () => {
         ).rows[0].n
       ).toBe(1)
     }
+  })
+  it('rejects a legacy document type outside the current professional policy', async () => {
+    const response = await post('/api/uploads/sign', {
+      kind: 'professional-document',
+      entityId: fixture.accounts.professionalApproved.entityId,
+      documentType: 'identity',
+      mimeType: 'image/png',
+      sizeBytes: png.length,
+      sha256: createHash('sha256').update(png).digest('hex')
+    }, 'professionalApproved')
+    expect(response.status).toBe(400)
   })
 })

@@ -1,6 +1,6 @@
-import { randomUUID } from 'node:crypto'
+import { createHash, randomUUID } from 'node:crypto'
 import { Client } from 'pg'
-import type { Page, Response } from '@playwright/test'
+import type { Locator, Page, Response } from '@playwright/test'
 
 import { test, expect, loginAs } from './fixtures/production'
 import type { FixtureAccount } from './fixtures/accounts'
@@ -14,6 +14,73 @@ const homesPath = '/api/customer/homes'
 const equipmentPath = '/api/customer/homes/equipment'
 const navigation = (page: Page) => page.getByRole('navigation', { name: 'Navegación principal del cliente' })
 const uuidPattern = /^[a-f\d]{8}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{12}$/i
+const gpuFallbackCopy = 'La vista 3D no está disponible en este dispositivo. Todos los cambios se pueden hacer desde los controles.'
+const sceneControlNames = ['Girar maqueta', 'Acercar maqueta', 'Alejar maqueta', 'Restablecer vista'] as const
+
+async function declaredSceneMode(page: Page): Promise<'webgl' | 'fallback'> {
+  let mode: 'pending' | 'webgl' | 'fallback' = 'pending'
+  await expect.poll(async () => {
+    if (await page.getByText(gpuFallbackCopy, { exact: true }).isVisible()) mode = 'fallback'
+    else if (await page.getByTestId('hogar-3d-canvas').isVisible()) mode = 'webgl'
+    return mode
+  }, { timeout: 15_000, message: 'Hogar must render a real canvas or explicitly declare its list fallback' }).not.toBe('pending')
+  return mode as 'webgl' | 'fallback'
+}
+
+async function expectListFallback(page: Page) {
+  await expect(page.getByText(gpuFallbackCopy, { exact: true })).toBeVisible()
+  await expect(page.getByTestId('hogar-3d-canvas')).toHaveCount(0)
+  // The parent removes unsupported controls entirely; no invalid 3D action
+  // can remain enabled. This is not a skip or an accepted blank canvas.
+  await expect(page.locator('.hogar-scene-controls button:enabled')).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Volver a 3D', exact: true })).toHaveCount(0)
+}
+
+async function canvasDigest(canvas: Locator): Promise<string> {
+  // Browser screenshots capture WebGL without preserveDrawingBuffer. Suppress
+  // sibling UI only for this capture, so focus/hover/label motion cannot stand
+  // in for a rendered scene change. Pixels are never logged or attached.
+  const pixels = await canvas.screenshot({
+    animations: 'disabled', timeout: 5_000,
+    style: '.hogar-scene-label, .hogar-scene-controls { visibility: hidden !important; }'
+  })
+  return createHash('sha256').update(pixels).digest('hex')
+}
+
+async function stableCanvasDigest(canvas: Locator): Promise<string> {
+  let previous = '', latest = ''
+  await expect.poll(async () => {
+    latest = await canvasDigest(canvas)
+    const stable = latest === previous
+    previous = latest
+    return stable
+  }, { timeout: 10_000, intervals: [150, 300, 600], message: 'The actual WebGL frame must settle before a visual interaction comparison' }).toBe(true)
+  return latest
+}
+
+async function expectCanvasChange(canvas: Locator, before: string, description: string): Promise<string> {
+  await expect.poll(() => canvasDigest(canvas), {
+    timeout: 10_000, intervals: [150, 300, 600], message: description
+  }).not.toBe(before)
+  return stableCanvasDigest(canvas)
+}
+
+async function expectRealWebGL(page: Page) {
+  const canvas = page.getByTestId('hogar-3d-canvas')
+  await expect(canvas).toHaveCount(1)
+  await expect(canvas).toBeVisible({ timeout: 15_000 })
+  const context = await canvas.evaluate(element => {
+    const canvas = element as HTMLCanvasElement
+    const gl = canvas.getContext('webgl2')
+    return { available: gl !== null, lost: gl?.isContextLost(), width: gl?.drawingBufferWidth ?? 0, height: gl?.drawingBufferHeight ?? 0 }
+  })
+  expect(context.available).toBe(true)
+  expect(context.lost).toBe(false)
+  expect(context.width).toBeGreaterThan(100)
+  expect(context.height).toBeGreaterThan(100)
+  for (const name of sceneControlNames) await expect(page.getByRole('button', { name, exact: true })).toBeEnabled()
+  return canvas
+}
 
 async function homeResponse(page: Page, method: 'POST' | 'PUT' | 'DELETE', action: () => Promise<unknown>, path = homesPath): Promise<Response> {
   const pending = page.waitForResponse(candidate => new URL(candidate.url()).pathname === path && candidate.request().method() === method)
@@ -144,6 +211,155 @@ async function cleanupCreated(account: FixtureAccount, created: CreatedAssets) {
 
 test.describe('authenticated customer Hogar with a disposable backend', () => {
   test.setTimeout(120_000)
+
+  test('renders and manipulates the actual home canvas while isolating rooms and showing one floor at a time', async ({ page, accounts, browserName }) => {
+    const created = createdAssets(), customer = accounts.accounts.customerA
+    try {
+      // Deterministic camera settling, while still exercising real controls,
+      // pointer events, rendering and the product's reduced-motion handling.
+      await page.emulateMedia({ reducedMotion: 'reduce' })
+      await loginAs(page, customer, 'customerA'); await page.goto('/app/hogar')
+      const original = await createHome(page, created, { name: 'Casa 3D QA', kind: 'house', newAddress: true })
+      const lowerId = original.floors[0].id
+      const withLiving = await addRoom(page, 'Living 3D QA', 'living', 'family')
+      const livingId = withLiving.floors[0].rooms.find(room => room.name === 'Living 3D QA')!.id
+      await addRoom(page, 'Cocina 3D QA', 'kitchen', 'island')
+      const mode = await declaredSceneMode(page)
+      // Chromium must supply real rendering evidence. WebKit may have no GPU,
+      // but still must exercise the declared, working fallback without skipping.
+      if (browserName !== 'webkit') expect(mode).toBe('webgl')
+      const labels = page.locator('.hogar-scene-label')
+      const canvas = mode === 'webgl' ? await expectRealWebGL(page) : null
+      if (canvas) {
+        await expect(labels).toHaveCount(2)
+        // Returning from the room editor restores the user's previous floor
+        // camera. Establish the canonical reset frame before testing reset.
+        await page.getByRole('button', { name: 'Restablecer vista', exact: true }).click()
+        const initialFrame = await stableCanvasDigest(canvas)
+        await page.getByRole('button', { name: 'Girar maqueta', exact: true }).click()
+        const rotated = await expectCanvasChange(canvas, initialFrame, 'Rotate must change the rendered room geometry, not only an HTML control')
+        await page.getByRole('button', { name: 'Acercar maqueta', exact: true }).click()
+        const zoomed = await expectCanvasChange(canvas, rotated, 'Zoom in must change the actual WebGL frame')
+        await page.getByRole('button', { name: 'Alejar maqueta', exact: true }).click()
+        await expectCanvasChange(canvas, zoomed, 'Zoom out must change the actual WebGL frame')
+        await page.getByRole('button', { name: 'Restablecer vista', exact: true }).click()
+        await expect.poll(() => canvasDigest(canvas), { timeout: 10_000 }).toBe(initialFrame)
+        const box = await canvas.boundingBox()
+        expect(box).not.toBeNull()
+        if (!box) throw new Error('The live home canvas has no usable pointer bounds')
+        await page.mouse.move(box.x + box.width * .32, box.y + box.height * .46)
+        await page.mouse.down()
+        await page.mouse.move(box.x + box.width * .68, box.y + box.height * .46, { steps: 12 })
+        await page.mouse.up()
+        await expectCanvasChange(canvas, initialFrame, 'A real pointer drag must rotate the rendered scene')
+        await expect(page.getByRole('button', { name: 'Volver a la planta', exact: true })).toHaveCount(0)
+        await page.getByRole('button', { name: 'Restablecer vista', exact: true }).click()
+        await expect.poll(() => canvasDigest(canvas), { timeout: 10_000 }).toBe(initialFrame)
+        const label = page.getByRole('button', { name: 'Seleccionar Living 3D QA en la maqueta', exact: true })
+        await expect(label).toBeVisible()
+        const target = await label.boundingBox()
+        expect(target).not.toBeNull()
+        if (!target) throw new Error('The rendered living room has no projected selection target')
+        // Labels intentionally pass pointer events to the canvas. Clicking this
+        // observed projection therefore exercises the live room raycast.
+        await page.mouse.click(target.x + target.width / 2, target.y + target.height / 2)
+        await expect(page.locator('.hogar-scene')).toHaveClass(/is-focused/)
+        await expect(labels).toHaveCount(1)
+        await expect(page.getByRole('button', { name: 'Seleccionar Cocina 3D QA en la maqueta', exact: true })).toHaveCount(0)
+        await expectCanvasChange(canvas, initialFrame, 'Entering one room must render that room in isolation')
+      } else {
+        await expectListFallback(page)
+        await page.getByRole('button', { name: 'Abrir Living 3D QA', exact: true }).click()
+      }
+      await expect(page.getByRole('heading', { name: 'Living 3D QA', exact: true }).first()).toBeVisible()
+      await expect(page.getByRole('button', { name: 'Abrir Cocina 3D QA', exact: true })).toHaveCount(0)
+      await page.getByRole('button', { name: 'Añadir aire', exact: true }).click()
+      await expect(page.getByLabel('Ambiente', { exact: true })).toHaveValue(livingId)
+      await expect(navigation(page)).toHaveCount(0)
+      if (canvas) {
+        await expect(page.locator('.hogar-scene')).toHaveClass(/is-focused.*is-placing/)
+        await expect(labels).toHaveCount(0)
+        await expectRealWebGL(page)
+      } else await expectListFallback(page)
+      await page.getByRole('button', { name: 'Cancelar', exact: true }).click()
+      await expect(navigation(page)).toBeVisible()
+      await page.getByRole('button', { name: 'Volver a la planta', exact: true }).click()
+      await page.getByRole('button', { name: 'Planta', exact: true }).click()
+      await page.getByLabel('Nombre de la planta').fill('Planta alta 3D QA')
+      const withUpper = await saveHome(page, 'Guardar planta')
+      const upper = withUpper.floors.find(floor => floor.id !== lowerId)!
+      await addRoom(page, 'Dormitorio 3D QA', 'bedroom', 'double')
+      await expect(page.getByLabel('Planta actual')).toHaveValue(upper.id)
+      await expect(page.getByRole('button', { name: 'Abrir Living 3D QA', exact: true })).toHaveCount(0)
+      await expect(page.getByRole('button', { name: 'Abrir Dormitorio 3D QA', exact: true })).toBeVisible()
+      if (canvas) {
+        await expect(labels).toHaveCount(1)
+        await expect(page.getByRole('button', { name: 'Seleccionar Dormitorio 3D QA en la maqueta', exact: true })).toBeVisible()
+        await expect(page.getByRole('button', { name: 'Seleccionar Living 3D QA en la maqueta', exact: true })).toHaveCount(0)
+      } else await expectListFallback(page)
+      await page.getByLabel('Planta actual').selectOption(lowerId)
+      await expect(page.getByRole('button', { name: 'Abrir Living 3D QA', exact: true })).toBeVisible()
+      await expect(page.getByRole('button', { name: 'Abrir Dormitorio 3D QA', exact: true })).toHaveCount(0)
+      if (canvas) {
+        await expect(labels).toHaveCount(2)
+        await expect(page.getByRole('button', { name: 'Seleccionar Dormitorio 3D QA en la maqueta', exact: true })).toHaveCount(0)
+        await page.getByRole('button', { name: 'Lista', exact: true }).click()
+        await expect(page.getByTestId('hogar-3d-canvas')).toHaveCount(0)
+        await expect(page.getByRole('button', { name: 'Volver a 3D', exact: true })).toBeEnabled()
+        await page.getByRole('button', { name: 'Volver a 3D', exact: true }).click()
+        await expectRealWebGL(page)
+        await expect(labels).toHaveCount(2)
+      }
+      const persisted = (await readHomes(page, customer)).homes.find(home => home.id === original.id)!
+      expect(persisted.floors).toHaveLength(2)
+      expect(persisted.placements).toHaveLength(0)
+    } finally { await cleanupCreated(customer, created) }
+  })
+
+  test('keeps real room, floor and air workflows usable when WebGL2 is unavailable', async ({ page, accounts }) => {
+    const created = createdAssets(), customer = accounts.accounts.customerA
+    try {
+      await page.addInitScript(() => {
+        Object.defineProperty(window, 'WebGL2RenderingContext', { configurable: true, value: undefined })
+      })
+      await loginAs(page, customer, 'customerA'); await page.goto('/app/hogar')
+      const original = await createHome(page, created, { name: 'Casa sin GPU QA', kind: 'house', newAddress: true })
+      expect(await page.evaluate(() => typeof window.WebGL2RenderingContext)).toBe('undefined')
+      await expectListFallback(page)
+      await addRoom(page, 'Living sin GPU QA', 'living', 'compact')
+      await page.getByRole('button', { name: 'Editar Living sin GPU QA', exact: true }).click()
+      await page.getByLabel('Nombre del ambiente').fill('Living editado sin GPU QA')
+      await saveHome(page, 'Guardar ambiente')
+      await expectListFallback(page)
+      await page.getByRole('button', { name: 'Planta', exact: true }).click()
+      await page.getByLabel('Nombre de la planta').fill('Planta alta sin GPU QA')
+      const withUpper = await saveHome(page, 'Guardar planta')
+      const upper = withUpper.floors.find(floor => floor.id !== original.floors[0].id)!
+      const withBedroom = await addRoom(page, 'Dormitorio sin GPU QA', 'bedroom', 'guest')
+      const bedroom = withBedroom.floors.find(floor => floor.id === upper.id)!.rooms[0]
+      await expect(page.getByRole('button', { name: 'Abrir Living editado sin GPU QA', exact: true })).toHaveCount(0)
+      const registered = await registerAir(page, created, 'Aire sin GPU QA')
+      expect(registered.home.placements[0].roomId).toBe(bedroom.id)
+      await expectListFallback(page)
+      await page.reload()
+      await page.getByLabel('Planta actual').selectOption(upper.id)
+      await expectListFallback(page)
+      await expect(page.getByRole('heading', { name: 'Aire sin GPU QA', exact: true })).toBeVisible()
+      await expect(page.getByRole('link', { name: 'Historial de Aire sin GPU QA', exact: true })).toHaveAttribute('href', `/app/equipos/${registered.equipment.id}`)
+      await page.getByRole('button', { name: 'Reubicar Aire sin GPU QA', exact: true }).click()
+      await expect(page.getByLabel('Ambiente', { exact: true })).toHaveValue(bedroom.id)
+      await expectListFallback(page)
+      await page.getByLabel('Pared', { exact: true }).selectOption('east')
+      await saveHome(page, 'Guardar ubicación')
+      await expectListFallback(page)
+      const persisted = await readHomes(page, customer)
+      const persistedHome = persisted.homes.find(home => home.id === original.id)!
+      expect(persistedHome.floors.find(floor => floor.id === original.floors[0].id)!.rooms[0].name).toBe('Living editado sin GPU QA')
+      expect(persistedHome.placements).toEqual([{ ...registered.home.placements[0], wall: 'east' }])
+      expect(persisted.equipment.filter(equipment => equipment.id === registered.equipment.id)).toHaveLength(1)
+      await expect(navigation(page)).toBeVisible()
+    } finally { await cleanupCreated(customer, created) }
+  })
 
   test('creates, configures and archives a real home while keeping its postal address', async ({ page, accounts }) => {
     const created = createdAssets(), customer = accounts.accounts.customerA

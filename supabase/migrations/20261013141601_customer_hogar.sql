@@ -13,7 +13,11 @@ create index customer_homes_address_idx on public.customer_homes(current_address
 create table public.customer_home_addresses (
   home_id uuid not null, customer_id uuid not null, address_id uuid not null, archived_at timestamptz,
   primary key(home_id,address_id), foreign key(home_id,customer_id) references public.customer_homes(id,customer_id) on delete cascade,
-  foreign key(address_id,customer_id) references public.customer_addresses(id,customer_id)
+  -- Alias links outlive individual address revisions. During full owner
+  -- deletion, address cascades may run before the home-to-alias cascade.
+  -- Keep NO ACTION (never delete a home through its address), but verify this
+  -- dependency at transaction end after all owner cascades have finished.
+  foreign key(address_id,customer_id) references public.customer_addresses(id,customer_id) deferrable initially deferred
 );
 create unique index customer_home_addresses_active_idx on public.customer_home_addresses(customer_id,address_id) where archived_at is null;
 create index customer_home_addresses_address_idx on public.customer_home_addresses(address_id,customer_id);

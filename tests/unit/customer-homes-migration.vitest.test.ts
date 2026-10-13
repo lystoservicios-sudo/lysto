@@ -2,6 +2,14 @@ import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 const sql = readFileSync('supabase/migrations/20261013141601_customer_hogar.sql', 'utf8')
 describe('Hogar migration security boundaries', () => {
+  it('defers only the revision-alias address constraint so full owner cascades can finish', () => {
+    const aliases = sql.slice(sql.indexOf('create table public.customer_home_addresses'), sql.indexOf('create unique index customer_home_addresses_active_idx'))
+    expect(aliases).toContain('foreign key(address_id,customer_id) references public.customer_addresses(id,customer_id) deferrable initially deferred')
+    expect(aliases).not.toMatch(/references public\.customer_addresses[^;]*on delete cascade/)
+    const homes = sql.slice(0, sql.indexOf('create index customer_homes_owner_idx'))
+    expect(homes).toContain('foreign key(current_address_id,customer_id) references public.customer_addresses(id,customer_id)')
+    expect(homes).not.toContain('deferrable')
+  })
   it('indexes the full owned-home foreign key on address aliases', () => {
     expect(sql.includes('create index customer_home_addresses_home_idx on public.customer_home_addresses(home_id,customer_id);')).toBe(true)
     expect(sql.includes('foreign key(home_id,customer_id) references public.customer_homes(id,customer_id) on delete cascade')).toBe(true)

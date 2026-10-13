@@ -7,12 +7,11 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set search_path=public,extensions;
 set local statement_timeout='30s';
-select plan(10);
+select plan(8);
 
-create function pg_temp.hogar_owner_cleanup_probe(p_scenario text,p_delete_as_auth_admin boolean)
+create function pg_temp.hogar_owner_cleanup_probe(p_scenario text,p_delete_address_only boolean)
 returns void language plpgsql security invoker set search_path='' as $owner_cleanup$
 declare
-  v_owner_role text:=current_user;
   v_user uuid:=gen_random_uuid(); v_session uuid:=gen_random_uuid();
   v_profile uuid:=gen_random_uuid(); v_customer uuid:=gen_random_uuid();
   v_original_address uuid:=gen_random_uuid(); v_current_address uuid;
@@ -61,28 +60,40 @@ begin
     insert into public.customer_home_rooms(id,home_id,floor_id,customer_id,name,kind,variant,x,z,width,depth,rotation,windows)
       values(v_room,v_home,v_floor,v_customer,'Synthetic bedroom','bedroom','principal',0,0,4,4,0,'large');
     select id into strict v_category from public.service_categories where slug='aire_acondicionado';
-    insert into public.customer_equipment(id,customer_id,address_id,category_id,nickname,equipment_type)
-      values(v_equipment,v_customer,
-        case when p_scenario='revised' then v_original_address else v_current_address end,
-        v_category,'Synthetic cleanup air','split');
-    -- Archival keeps inventory/floors/rooms, but clears location metadata.
-    if p_scenario<>'archived' then
-      insert into public.customer_equipment_placements(equipment_id,home_id,room_id,customer_id,wall,wall_offset,height)
-        values(v_equipment,v_home,v_room,v_customer,'north',.5,2);
+    if not p_delete_address_only then
+      insert into public.customer_equipment(id,customer_id,address_id,category_id,nickname,equipment_type)
+        values(v_equipment,v_customer,
+          case when p_scenario='revised' then v_original_address else v_current_address end,
+          v_category,'Synthetic cleanup air','split');
+      -- Archival keeps inventory/floors/rooms, but clears location metadata.
+      if p_scenario<>'archived' then
+        insert into public.customer_equipment_placements(equipment_id,home_id,room_id,customer_id,wall,wall_offset,height)
+          values(v_equipment,v_home,v_room,v_customer,'north',.5,2);
+      end if;
     end if;
     insert into private.customer_home_operations(customer_id,idempotency_key,operation,input,result)
       values(v_customer,gen_random_uuid(),'create',jsonb_build_object('id',null,'data',jsonb_build_object('name','Synthetic cleanup home')),
         jsonb_build_object('home',jsonb_build_object('id',v_home)));
   end if;
 
-  -- Compare database-owner cascades with the role used by local GoTrue.
-  -- Neither executor calls a customer RPC. The DELETE explicitly targets
-  -- only the one synthetic UUID created above.
-  if p_delete_as_auth_admin then
-    perform set_config('role','supabase_auth_admin',true);
+  -- An isolated address DELETE must remain forbidden while its home survives,
+  -- including when an alias constraint is initially deferred. Force its check
+  -- here rather than certifying a transaction that never commits.
+  if p_delete_address_only then
+    if p_scenario='revised' then
+      -- No equipment references the historical address in this probe, and the
+      -- home points at its revision. Only the deferred alias FK can reject it.
+      delete from public.customer_addresses where id=v_original_address and customer_id=v_customer;
+    else
+      delete from public.customer_addresses where id=v_current_address and customer_id=v_customer;
+    end if;
+    set constraints all immediate;
+    raise exception 'Synthetic address deletion bypassed a live home dependency';
   end if;
+  -- Only the generated owner's UUID is deleted. Real GoTrue-role cleanup is
+  -- tested through Auth admin HTTP in integration, not an unavailable SET ROLE
+  -- (the CI postgres executor cannot become supabase_auth_admin).
   delete from auth.users where id=v_user;
-  perform set_config('role',v_owner_role,true);
 
   if exists(select 1 from auth.users where id=v_user)
     or exists(select 1 from auth.sessions where id=v_session)
@@ -102,14 +113,13 @@ end;
 $owner_cleanup$;
 
 select lives_ok($probe$select pg_temp.hogar_owner_cleanup_probe('control',false);$probe$,'SQL owner deletes a synthetic customer without Hogar');
-select lives_ok($probe$select pg_temp.hogar_owner_cleanup_probe('control',true);$probe$,'Auth admin deletes a synthetic customer without Hogar');
 select lives_ok($probe$select pg_temp.hogar_owner_cleanup_probe('minimal',false);$probe$,'SQL owner deletes a minimal active home and current address');
-select lives_ok($probe$select pg_temp.hogar_owner_cleanup_probe('minimal',true);$probe$,'Auth admin deletes a minimal active home and current address');
 select lives_ok($probe$select pg_temp.hogar_owner_cleanup_probe('populated',false);$probe$,'SQL owner deletes a populated home with equipment, placement and private operation');
-select lives_ok($probe$select pg_temp.hogar_owner_cleanup_probe('populated',true);$probe$,'Auth admin deletes a populated home with equipment, placement and private operation');
 select lives_ok($probe$select pg_temp.hogar_owner_cleanup_probe('revised',false);$probe$,'SQL owner deletes linked address revisions without rewriting historical equipment');
-select lives_ok($probe$select pg_temp.hogar_owner_cleanup_probe('revised',true);$probe$,'Auth admin deletes linked address revisions without rewriting historical equipment');
 select lives_ok($probe$select pg_temp.hogar_owner_cleanup_probe('archived',false);$probe$,'SQL owner deletes an archived home with retained inventory');
-select lives_ok($probe$select pg_temp.hogar_owner_cleanup_probe('archived',true);$probe$,'Auth admin deletes an archived home with retained inventory');
+select throws_ok($probe$select pg_temp.hogar_owner_cleanup_probe('minimal',true);$probe$,'23503',null,'A current address cannot be deleted while its home survives');
+select throws_ok($probe$select pg_temp.hogar_owner_cleanup_probe('revised',true);$probe$,'23503',null,'A historical address referenced only by an alias cannot bypass deferred checking');
+select ok((select condeferrable and condeferred from pg_constraint where conrelid='public.customer_home_addresses'::regclass
+  and conname='customer_home_addresses_address_id_customer_id_fkey'),'Only the alias dependency waits until owner cascades have finished');
 select * from finish();
 rollback;
