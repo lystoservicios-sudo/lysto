@@ -12,7 +12,8 @@ export function LoginFormView({ state, pending, formAction, next = '/app', staff
   return <form action={formAction} className="auth-form">
     <input type="hidden" name="next" value={next} />
     <AuthInput label="Email" name="email" type="email" autoComplete="email" placeholder="tu@email.com" defaultValue={state.email} disabled={pending} />
-    <AuthInput label="Contraseña" name="password" type="password" autoComplete="current-password" placeholder="Tu contraseña" disabled={pending}><Link className="auth-link" href="/recuperar">¿La olvidaste?</Link></AuthInput>
+    <AuthInput label="Contraseña" name="password" type="password" autoComplete="current-password" placeholder="Tu contraseña" revealable disabled={pending} />
+    <div className="auth-recovery-link"><Link className="auth-link" href="/recuperar">Olvidé mi contraseña</Link></div>
     <AuthNotice state={state} />
     <button type="submit" disabled={pending} className="auth-button">{pending ? 'Ingresando…' : 'Ingresar'}<ArrowRight size={16} aria-hidden="true" /></button>
     {!staff && <p className="auth-form-bottom">¿Es tu primera vez? <Link className="auth-link" href={`/registro?next=${encodeURIComponent(next)}`}>Crear una cuenta</Link></p>}

@@ -6,7 +6,11 @@ import { assertTestEnvironment, readTestIdentity } from '../../scripts/lib/test-
 
 test('customer registration shows the approved legal consent without granting a professional account', async ({ page }) => {
   await page.goto('/registro')
-  await expect(page.getByRole('heading', { name: 'Tu hogar, en buenas manos.' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Creá tu cuenta' })).toBeVisible()
+  await page.getByLabel('Nombre', { exact: true }).fill('Cliente')
+  await page.getByLabel('Apellido', { exact: true }).fill('Prueba')
+  await page.getByLabel('Teléfono', { exact: true }).fill('+54 9 11 1234 5678')
+  await page.getByRole('button', { name: 'Continuar', exact: true }).click()
   await expect(page.getByRole('textbox', { name: 'Email' })).toBeVisible()
   await expect(page.getByRole('checkbox', { name: /Leí y acepto los términos/ })).toBeVisible()
   await expect(page.getByRole('link', { name: /términos \(2026-09-21\)/ })).toHaveAttribute('href', 'https://lystohogar.com/terminos')

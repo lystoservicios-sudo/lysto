@@ -9,7 +9,7 @@ export const metadata = { title: 'Crear cuenta | Lysto', robots: { index: false,
 export default async function RegisterPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
   const next = safeCustomerNext((await searchParams).next)
   const policy = await getRegistrationPolicy()
-  return <AuthFrame title="Tu hogar, en buenas manos." description="Creá tu cuenta para pedir servicios y acompañar cada paso desde un mismo lugar.">
+  return <AuthFrame title="Creá tu cuenta" description="">
     {policy ? <RegistrationForm policy={policy} next={next} /> : <p role="status" className="auth-notice">Estamos preparando la apertura de nuevas cuentas. Podés <Link className="auth-link" href="/contacto">contactarnos</Link> para consultar por un servicio.</p>}
     <p className="auth-form-bottom">¿Ya tenés cuenta? <Link href={`/login?next=${encodeURIComponent(next)}`} className="auth-link">Iniciar sesión</Link></p>
   </AuthFrame>

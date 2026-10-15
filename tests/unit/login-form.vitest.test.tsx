@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import {
@@ -22,6 +22,13 @@ function renderForm(overrides: Partial<LoginFormViewProps> = {}) {
 }
 
 describe('mobile login form', () => {
+  it('keeps the recovery action after the password field as in the approved design', () => {
+    renderForm()
+    const password = screen.getByLabelText('Contraseña')
+    const recovery = screen.getByRole('link', { name: 'Olvidé mi contraseña' })
+    expect(password.compareDocumentPosition(recovery) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0)
+    expect(recovery.getAttribute('href')).toBe('/recuperar')
+  })
   it('exposes accessible login fields and the registration path', () => {
     renderForm()
 
@@ -55,6 +62,19 @@ describe('mobile login form', () => {
       .toBe('admin.demo@lysto.com.ar')
     expect(screen.getByRole('alert').textContent)
       .toContain('El email o la contraseña no son correctos.')
+  })
+
+  it('reveals and hides the password without submitting credentials', () => {
+    const { formAction } = renderForm()
+    const password = screen.getByLabelText('Contraseña') as HTMLInputElement
+    fireEvent.change(password, { target: { value: 'segura123' } })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mostrar contraseña' }))
+    expect(password.type).toBe('text')
+    expect(password.value).toBe('segura123')
+    fireEvent.click(screen.getByRole('button', { name: 'Ocultar contraseña' }))
+    expect(password.type).toBe('password')
+    expect(formAction).not.toHaveBeenCalled()
   })
 
   it('prevents duplicate submissions while authentication is pending', () => {

@@ -1,9 +1,30 @@
 import type { ReactNode } from 'react'
+import Image from 'next/image'
+import Link from 'next/link'
 import { ArrowUpRight, Check, House, ShieldCheck, Wind } from 'lucide-react'
 import { PublicShell } from '@/components/layout/page-shell'
 import './auth.css'
 
-export function AuthFrame({ eyebrow = 'TU HOGAR, EN BUENAS MANOS', title, description, children }: { eyebrow?: string; title: string; description: string; children: ReactNode }) {
+export function AuthFrame({ eyebrow, title, description, children, variant = 'customer' }: { eyebrow?: string; title: string; description: string; children: ReactNode; variant?: 'customer' | 'staff' }) {
+  if (variant === 'customer') return <div className="auth-customer">
+    <a className="auth-skip-link" href="#auth-content">Saltar al formulario</a>
+    <header className="auth-masthead">
+      <div className="auth-masthead-inner">
+        <div className="auth-identity">
+          <Link href="/" className="auth-brand" aria-label="Lysto, volver al inicio">lysto<span>.</span></Link>
+          <p>Tu hogar, conectado.</p>
+        </div>
+        <Image className="auth-room" src="/images/room-architecture.webp" alt="" width={256} height={256} priority sizes="(max-width: 600px) 200px, 240px" />
+      </div>
+    </header>
+    <main id="auth-content" className="auth-panel" tabIndex={-1}>
+      {eyebrow && <p className="auth-context">{eyebrow}</p>}
+      <h1>{title}</h1>
+      {description && <p className="auth-intro">{description}</p>}
+      {children}
+    </main>
+  </div>
+
   return <PublicShell><main className="auth-page">
     <aside className="auth-story">
       <span className="auth-eyebrow">MÁS TIEMPO PARA VOS.</span>

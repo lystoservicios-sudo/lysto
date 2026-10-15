@@ -51,13 +51,13 @@ describe('public customer authentication pages', () => {
     provider(false)
     render(await RegisterPage({ searchParams: Promise.resolve({}) }))
     expect(screen.queryByRole('button', { name: 'Continuar con Google' })).toBeNull()
-    expect(screen.getByRole('button', { name: 'Crear mi cuenta' })).toBeDefined()
+    expect(screen.getByRole('button', { name: 'Continuar' })).toBeDefined()
   })
 
   it('does not offer Google registration even if the provider and legal policy are enabled', async () => {
     provider(true)
     render(await RegisterPage({ searchParams: Promise.resolve({}) }))
     expect(screen.queryByRole('button', { name: 'Continuar con Google' })).toBeNull()
-    expect(screen.getByRole('button', { name: 'Crear mi cuenta' })).toBeDefined()
+    expect(screen.getByRole('button', { name: 'Continuar' })).toBeDefined()
   })
 })

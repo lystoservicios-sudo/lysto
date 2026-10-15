@@ -1,4 +1,54 @@
-# Administración Lysto — revisión de UI/UX
+# Acceso cliente Lysto — opción 3
+
+Fecha: 15 de octubre de 2026. Implementación sobre el sistema existente; sin publicación ni cambios de datos en producción.
+
+## Referencia y evidencia
+
+- Fuente visual: `C:/Users/quime/.codex/generated_images/01a113b5-c26c-7343-bd9a-4e894c9a32af/exec-85b1e4e1-c2fb-48a1-ac93-acfa0f17fa2a.png`.
+- La imagen fuente mide 1224 × 1285 y contiene dos pantallas. Se recortaron las regiones de 600 × 1285 de cada pantalla y normalizaron, conservando proporción, a 390 × 844 con espacio blanco residual. No se comparó el tablero completo con una sola pantalla.
+- Capturas reales del navegador integrado: `output/auth-design/login-mobile.png`, `recovery-mobile.png`, `reset-link-missing-mobile.png`, `confirmation-invalid-mobile.png` a 390 × 844. Densidad de comparación 1; sin marco de dispositivo.
+- Registro: `output/auth-design/registration-details-mobile.png` y `registration-access-mobile.png`; componentes reales en una vista aislada con datos legales de ejemplo. No contiene claves, no conecta al backend y rechaza cualquier envío final. El rótulo de ensayo es infraestructura de verificación, no parte de la UI publicada.
+- Comparación conjunta, fuente izquierda y aplicación derecha: `output/auth-design/login-comparison.png`, `registration-comparison.png`.
+- Anchos adicionales comprobados: 320, 768 y 1280; capturas y medidas en `output/auth-design/login-320.png`, `login-768.png`, `login-1280.png`, `responsive.json`. Sin desbordamiento horizontal; acción principal de 48 px en los tres anchos.
+
+## Hallazgos e iteraciones
+
+1. **P2 resuelto: densidad del segundo paso.** La primera comparación conjunta mostraba descripción y título de paso repetidos que desplazaban el envío. Se eliminó la descripción redundante del registro, se conservó el título de paso solo para lectores de pantalla y se ajustaron separaciones a 16 px. La nueva captura y comparación muestran el envío principal completo. El pie puede requerir desplazamiento en móvil por las versiones legales reales y los objetivos táctiles de 44 px; esta diferencia de contenido frente al mock es intencional.
+2. **P2 resuelto: recuperación en Login.** El enlace estaba junto a la etiqueta de contraseña; ahora aparece debajo del campo, alineado a la derecha como en la referencia. Se verificó primero con prueba fallida, después prueba aprobada y recaptura real de la aplicación compilada.
+3. **P2 resuelto: coherencia de confirmación.** La página HTML protegida tenía otras proporciones de marca/imagen. Su CSS estática ahora replica los tamaños de la cabecera móvil y de escritorio del shell cliente.
+
+No quedan hallazgos visuales P0/P1/P2 accionables en el alcance verificado. No se reinterpreta el diseño como página de marketing: no hay menús comerciales, tarjetas exteriores ni navegación autenticada.
+
+## Superficies de fidelidad
+
+- **Tipografía:** Inter/fallback existente, títulos de 26 px (24 a 320 px), campos de 16 px, etiquetas de 14 px. Se conservaron pesos, jerarquía y legibilidad del producto. Las comparaciones a resolución completa permiten leer etiquetas y controles; las medidas DOM complementan la inspección de detalle, por lo que no se necesitaron ampliaciones artificiales.
+- **Espaciado:** cabecera de 208 px móvil y 236 px escritorio, formulario con margen lateral de 24 px, controles de al menos 48 px y radios de 10–12 px. Sin tarjetas ni sombras decorativas. Registro conserva desplazamiento natural, sin ocultar acciones detrás de barras fijas.
+- **Colores:** azul #075cff, tinta #0d1830, secundario #5d6c84, hielo #f0f5fd. Contrastes calculados: secundario/blanco 5,33:1; secundario/hielo 4,86:1; blanco/azul 5,27:1; tinta/blanco 17,64:1.
+- **Imagen:** se reutiliza `public/images/room-architecture.webp`, el mismo ambiente semirrealista de Lysto, sin dibujo CSS ni imagen nueva. Proporción conservada y fondo integrado en hielo. Iconos existentes de Lucide.
+- **Contenido:** registro mantiene datos personales, teléfono, email, contraseñas y consentimiento versionado. Las respuestas de registro/reenvío/recuperación siguen siendo genéricas; no afirman que exista una cuenta ni garantizan entrega de correo. Los errores de enlace ofrecen una recuperación útil.
+
+## Interacciones verificadas
+
+- Navegador integrado: ingreso, mostrar/ocultar contraseña sin escribir credenciales, avance del registro con Enter, retroceso con datos conservados, reenvío desplegado automáticamente desde el enlace de recuperación, recuperar acceso, enlace de restablecimiento ausente y confirmación inválida.
+- Consola de la aplicación compilada revisada durante el recorrido final: sin errores nuevos registrados. No se enviaron registros, emails ni cambios de contraseña reales.
+- Pruebas de componentes: validación por paso, coincidencia y límites de contraseña, conservación tras errores, consentimiento, payload completo, completar cuenta sin stepper, duplicados bloqueados y estados genéricos de revisión del correo.
+- Contratos: POST explícito, token, CSRF, cookie, origen, HTTP status, cache no-store, HTML escapado y CSP restringida a recursos de mismo origen. Si el cambio de contraseña funciona pero falla el cierre global, la acción principal es iniciar sesión, no repetir innecesariamente el cambio.
+- Movimiento: transiciones de 160–200 ms; cabecera compacta con foco móvil, entrada de paso y feedback; estilos alternativos sin movimiento mediante `prefers-reduced-motion` y la preferencia global ya existente.
+
+## Verificación técnica y límites
+
+- Suite completa Vitest: **1765/1765**, 212 archivos, salida 0.
+- Dominio: **174/174**, salida 0.
+- Build completo de producción: salida 0, con chequeo de tipos/lint y 108 páginas estáticas generadas.
+- La primera ejecución se interrumpió por falta de espacio y archivos generados incompletos; se regeneraron los tipos y se repitió la verificación. El intento de salida movida cargaba otra instancia de React desde otro checkout; la compilación definitiva se realizó en el checkout correcto y pasó. No se alteró código de la app para esconder ninguno de esos fallos.
+- La política legal local no está configurada para abrir altas reales. La vista de registro utilizada en la comparación es deliberadamente aislada; las acciones del producto siguen conectadas a sus implementaciones actuales y no se modificaron credenciales ni configuración de producción.
+- No se ejecutó el suite E2E que requiere entorno de datos ni se crearon cuentas. Se adaptó su recorrido de registro sin quitar verificaciones legales.
+
+final result: passed
+
+---
+
+# Administración Lysto — revisión de UI/UX (histórico)
 
 Fecha: 10 de septiembre de 2026.
 

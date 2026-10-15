@@ -16,7 +16,7 @@ export default async function CompleteProfilePage({ searchParams }: { searchPara
   if (!session.verified) redirect('/login?notice=confirm-email')
   const missing = missingCustomerFields(session.profile, session.address)
   if (!missing.length) redirect(next)
-  return <AuthFrame eyebrow="UN ÚLTIMO PASO" title="Contanos un poquito más." description="Solo necesitamos los datos que faltan para ayudarte con tu primer servicio.">
+  return <AuthFrame eyebrow="Tu hogar" title="Prepará tu primer servicio" description="Completá los datos que faltan para poder ayudarte.">
     <div className="auth-progress" aria-hidden="true"><span /></div>
     <div className="auth-saved">Tu cuenta ya está creada. Estos datos quedan guardados para tus próximos servicios.</div>
     <CompleteProfileForm missing={missing} next={next} />

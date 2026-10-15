@@ -20,5 +20,5 @@ export default async function CompleteAccountPage({ searchParams }: { searchPara
   // Provider metadata is only an editable form suggestion, never authorization.
   const text = (value: unknown) => typeof value === 'string' ? value.slice(0, 100) : ''
   const initialValues = { firstName: text(user.user_metadata.first_name ?? user.user_metadata.given_name), lastName: text(user.user_metadata.last_name ?? user.user_metadata.family_name), phone: text(user.user_metadata.phone) }
-  return <AuthFrame eyebrow="UN PASO MÁS" title="Terminemos de conocernos." description="Tu acceso ya existe. Revisá tus datos y los documentos para continuar.">{policy ? <RegistrationForm policy={policy} completing next={next} initialValues={initialValues} /> : <p className="auth-notice" role="status">Todavía no podemos habilitar nuevas cuentas. Tu acceso se conserva.</p>}</AuthFrame>
+  return <AuthFrame eyebrow="Tu cuenta" title="Completá tus datos" description="Tu acceso ya existe. Revisá tus datos y los documentos para continuar.">{policy ? <RegistrationForm policy={policy} completing next={next} initialValues={initialValues} /> : <p className="auth-notice" role="status">Todavía no podemos habilitar nuevas cuentas. Tu acceso se conserva.</p>}</AuthFrame>
 }
