@@ -1,7 +1,7 @@
 'use client'
 
-import styles from '@/components/customer/hogar/customer-hogar.module.css'
+import { CustomerFeedback, uncertainOperationMessage } from '@/components/customer/customer-feedback'
 
 export default function CustomerHogarError({ reset }: { error: Error; reset: () => void }) {
-  return <div className={styles.hogar}><section role="alert" className={styles.error}><h1>No pudimos cargar Hogar</h1><p>Tus datos se conservan. Intentá de nuevo en unos momentos.</p><button type="button" className={styles.secondary} onClick={() => reset()}>Reintentar</button></section></div>
+  return <CustomerFeedback title="No pudimos cargar Hogar" description={`Volvé a consultar tus espacios y equipos. ${uncertainOperationMessage}`} onRetry={reset} />
 }

@@ -1,7 +1,7 @@
 'use client'
 
-import { ErrorState } from '@/components/customer/states'
+import { CustomerFeedback, uncertainOperationMessage } from '@/components/customer/customer-feedback'
 
-export default function CustomerEquipmentError({ reset }: { reset: () => void }) {
-  return <ErrorState title="No pudimos cargar tus equipos" description="Reintentá para recuperar las fichas y su historial." onRetry={reset} />
+export default function CustomerEquipmentError({ reset }: { error: Error; reset: () => void }) {
+  return <CustomerFeedback title="No pudimos cargar tus equipos" description={`Volvé a consultar las fichas y su historial. ${uncertainOperationMessage}`} onRetry={reset} sectionLink={{ href: '/app/hogar', label: 'Volver a Hogar' }} />
 }

@@ -88,17 +88,19 @@ function homePayload(home: CustomerHome) {
   }
 }
 
-export function CustomerHogar(props: { initialData: CustomerHomesSnapshot; customerId?: string }) {
+export function CustomerHogar(props: { initialData: CustomerHomesSnapshot; customerId?: string; entry?: 'hogar' | 'equipo' }) {
   // A different authenticated customer must never inherit the previous account's refs or form.
   return <CustomerHogarScreen key={props.customerId ?? 'unscoped'} {...props} />
 }
 
 function CustomerHogarScreen({
   initialData,
-  customerId
+  customerId,
+  entry
 }: {
   initialData: CustomerHomesSnapshot
   customerId?: string
+  entry?: 'hogar' | 'equipo'
 }) {
   const [data, setData] = useState(initialData)
   const [homeId, setHomeId] = useState(initialData.homes[0]?.id ?? '')
@@ -112,6 +114,7 @@ function CustomerHogarScreen({
   const [gpuUnavailable, setGpuUnavailable] = useState(false)
   const [confirm, setConfirm] = useState<Confirmation | null>(null)
   const headingRef = useRef<HTMLHeadingElement>(null)
+  const entryHandled = useRef(false)
   const pendingRef = useRef<PendingHomeOperation | null>(null)
   const pendingUncertain = useRef(false)
   const [pending, setPending] = useState<PendingHomeOperation | null>(null)
@@ -140,6 +143,29 @@ function CustomerHogarScreen({
     setPendingRecoveryError(recovered.error)
     setPendingReady(true)
   }, [customerId])
+  useEffect(() => {
+    if (!pendingReady || entryHandled.current) return
+    entryHandled.current = true
+    // A shortcut never replaces an uncertain write, corrupt recovery or a draft.
+    if (!entry || newOperationBlocked) return
+    const selected = initialData.homes[0]
+    if (entry === 'hogar' || !selected) {
+      setFlow({ type: 'home', value: configuration(), key: uuid(), existing: false })
+      return
+    }
+    const selectedFloor = selected.floors.find(item => item.rooms.length > 0) ?? selected.floors[0]
+    if (!selectedFloor) return
+    setFloorId(selectedFloor.id)
+    const target = selectedFloor.rooms[0]
+    if (!target) {
+      const next = addHomeRoom(selectedFloor, roomKindsForHome(selected.kind)[0])
+      setFlow({ type: 'room', value: next.rooms.at(-1)!, existing: false })
+      setNotice('Primero añadí un ambiente para ubicar tu aire.')
+      return
+    }
+    setFlow({ type: 'placement', value: { equipmentId: uuid(), roomId: target.id, wall: 'north', offset: 0.5, height: 2 },
+      key: uuid(), register: true, equipment: { nickname: '', equipmentType: 'split', brand: '', model: '', serialNumber: '', frigorias: '' } })
+  }, [entry, initialData, newOperationBlocked, pendingReady])
   useEffect(() => {
     headingRef.current?.focus()
   }, [flow?.type])

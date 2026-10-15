@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
-import { PageScaffold } from '@/components/layout/page-scaffold'
-import { ButtonLink } from '@/components/ui/button'
+import Link from 'next/link'
+import { MorePage, MoreSection, moreStyles } from '@/components/customer/more/more-ui'
+import styles from '@/components/customer/customer-secondary.module.css'
 import { CustomerEquipmentPhotos } from '@/components/customer/customer-equipment-photos'
 import { requirePageSession } from '@/lib/auth/session'
 import { customerEquipmentHistory } from '@/lib/customer-assets/service'
@@ -24,44 +25,44 @@ export default async function CustomerEquipmentDetailPage({
   )
   const { equipment, items, nextCursor } = detail
   return (
-    <PageScaffold
+    <MorePage
       title={equipment.nickname}
-      eyebrow={equipment.archived_at ? 'Equipo archivado' : 'Mi equipo'}
+      backHref="/app/equipos"
+      backLabel="Volver a mis equipos"
       description={
         [equipment.brand, equipment.model].filter(Boolean).join(' · ') ||
         'Marca y modelo sin informar'
       }
     >
-      <ButtonLink href="/app/equipos" variant="secondary">
-        Volver a mis equipos
-      </ButtonLink>
-      <dl className="grid gap-3 rounded-2xl border bg-white p-5 sm:grid-cols-3">
-        <div>
-          <dt className="font-semibold">Tipo</dt>
-          <dd>{equipment.equipment_type || 'Sin informar'}</dd>
-        </div>
-        <div>
-          <dt className="font-semibold">Serie</dt>
-          <dd>{equipment.serial_number || 'Sin informar'}</dd>
-        </div>
-        <div>
-          <dt className="font-semibold">Frigorías</dt>
-          <dd>{equipment.frigorias || 'Sin informar'}</dd>
-        </div>
-      </dl>
-      <section aria-label="Historial del equipo" className="space-y-3">
-        <h2 className="text-xl font-bold">Historial del equipo</h2>
+      {equipment.archived_at ? <p className={moreStyles.notice}>Equipo archivado. Su historial y sus fotos siguen disponibles para consulta.</p> : null}
+      <MoreSection title="Ficha del equipo">
+        <dl className={moreStyles.facts}>
+          <div className={moreStyles.fact}>
+            <dt>Tipo</dt>
+            <dd>{equipment.equipment_type || 'Sin informar'}</dd>
+          </div>
+          <div className={moreStyles.fact}>
+            <dt>Serie</dt>
+            <dd>{equipment.serial_number || 'Sin informar'}</dd>
+          </div>
+          <div className={moreStyles.fact}>
+            <dt>Frigorías</dt>
+            <dd>{equipment.frigorias || 'Sin informar'}</dd>
+          </div>
+        </dl>
+      </MoreSection>
+      <MoreSection title="Historial del equipo">
         {!items.length ? (
-          <p>Todavía no hay intervenciones registradas en esta página.</p>
+          <p className={moreStyles.muted}>Todavía no hay intervenciones registradas en esta página.</p>
         ) : (
           items.map((record) => (
-            <article key={record.id} className="space-y-2 rounded-2xl border bg-white p-5">
-              <p>
+            <article key={record.id} className={styles.historyRow}>
+              <p className={moreStyles.muted}>
                 {new Date(record.created_at).toLocaleDateString('es-AR', {
                   timeZone: 'America/Argentina/Buenos_Aires'
                 })}
               </p>
-              <p>{record.reported_problem || 'Servicio registrado'}</p>
+              <h3>{record.reported_problem || 'Servicio registrado'}</h3>
               {record.real_diagnosis ? <p>Diagnóstico: {record.real_diagnosis}</p> : null}
               {record.work_done ? <p>Trabajo realizado: {record.work_done}</p> : null}
               {record.parts_used ? <p>Repuestos: {record.parts_used}</p> : null}
@@ -72,18 +73,20 @@ export default async function CustomerEquipmentDetailPage({
           ))
         )}
         {nextCursor ? (
-          <ButtonLink
+          <Link
             href={`/app/equipos/${equipment.id}?cursor=${encodeURIComponent(nextCursor)}`}
-            variant="secondary"
+            className={moreStyles.textAction}
           >
             Ver historial anterior
-          </ButtonLink>
+          </Link>
         ) : null}
-      </section>
-      <CustomerEquipmentPhotos
-        equipmentId={equipment.id}
-        archived={Boolean(equipment.archived_at)}
-      />
-    </PageScaffold>
+      </MoreSection>
+      <div className={styles.photos}>
+        <CustomerEquipmentPhotos
+          equipmentId={equipment.id}
+          archived={Boolean(equipment.archived_at)}
+        />
+      </div>
+    </MorePage>
   )
 }

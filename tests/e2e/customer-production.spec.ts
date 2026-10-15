@@ -32,7 +32,7 @@ test('customer reloads the live dashboard and empty request history', async ({
   await expect(page.getByRole('link', { name: 'No enfría', exact: true })).toHaveAttribute('href', '/app/solicitar/aire-acondicionado?problema=no_enfria')
   // The real fixture already owns a saved address, but no equipment.
   await expect(page.getByRole('heading', { name: 'Agregá tu primer equipo', exact: true })).toBeVisible()
-  await expect(page.getByRole('link', { name: 'Agregar equipo', exact: true })).toHaveAttribute('href', '/app/equipos')
+  await expect(page.getByRole('link', { name: 'Agregar equipo', exact: true })).toHaveAttribute('href', '/app/hogar?crear=equipo')
   await page.goto('/app/solicitudes')
   await expect(page.getByRole('heading', { name: 'Mis solicitudes' })).toBeVisible()
   await expect(page.getByText('Todavía no tenés solicitudes')).toBeVisible()
@@ -44,7 +44,16 @@ test('a customer cannot load another customer identifier', async ({ page, accoun
   await expect(page.getByRole('heading', { name: 'No encontramos ese equipo' })).toBeVisible()
 })
 
-test('customer sees a paid confirmed visit, reprogramming and one persisted review', async ({
+test('an unknown customer route has a private app recovery screen with working navigation', async ({ page, accounts }) => {
+  await loginAs(page, accounts.accounts.customerA, 'customerA')
+  await page.goto('/app/ruta-inexistente-qa')
+  await expect(page.getByRole('heading', { name: 'No encontramos esta página', exact: true })).toBeVisible()
+  await expect(page.getByRole('navigation', { name: 'Navegación principal del cliente' })).toBeVisible()
+  await page.getByRole('link', { name: 'Ir a Inicio', exact: true }).click()
+  await expect(page.getByRole('heading', { name: '¿Qué necesitás?' })).toBeVisible()
+})
+
+test('customer sees a paid confirmed visit, updated agenda and one persisted review without rescheduling UI', async ({
   page,
   accounts
 }) => {
@@ -58,7 +67,9 @@ test('customer sees a paid confirmed visit, reprogramming and one persisted revi
     firstScheduleId = randomUUID(),
     secondScheduleId = randomUUID(),
     decisionId = randomUUID(),
-    checkoutId = randomUUID()
+    checkoutId = randomUUID(),
+    equipmentId = randomUUID(),
+    recordId = randomUUID()
   await db.connect()
   try {
     const config = (
@@ -74,14 +85,20 @@ test('customer sees a paid confirmed visit, reprogramming and one persisted revi
       [addressId, accounts.accounts.customerA.entityId]
     )
     await db.query(
-      `insert into public.service_requests(id,customer_id,category_id,issue_type_id,status,address_id)
-       values($1,$2,$3,$4,'assigned',$5)`,
+      `insert into public.customer_equipment(id,customer_id,address_id,category_id,nickname,equipment_type)
+       values($1,$2,$3,$4,'Aire con historial QA','split')`,
+      [equipmentId, accounts.accounts.customerA.entityId, addressId, config.category_id]
+    )
+    await db.query(
+      `insert into public.service_requests(id,customer_id,category_id,issue_type_id,status,address_id,equipment_id)
+       values($1,$2,$3,$4,'assigned',$5,$6)`,
       [
         requestId,
         accounts.accounts.customerA.entityId,
         config.category_id,
         config.issue_id,
-        addressId
+        addressId,
+        equipmentId
       ]
     )
     await db.query(
@@ -130,17 +147,12 @@ test('customer sees a paid confirmed visit, reprogramming and one persisted revi
     await expect(page.getByRole('link', { name: 'Contactar a soporte de Lysto' })).toHaveCount(0)
     await expect(page.getByRole('link', { name: 'Garantías y reclamos', exact: true })).toHaveCount(0)
     await page.goto(`/app/trabajos/${jobId}#reprogramacion`)
-    await expect(page.getByRole('heading', { name: 'Solicitar otra fecha', exact: true })).toBeVisible()
-    await expect(page.getByLabel('Nueva fecha y hora', { exact: true })).toBeVisible()
-    await expect(page.getByLabel('Motivo de la reprogramación', { exact: true })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Enviar solicitud', exact: true })).toBeDisabled()
-    await expect(navigation).toHaveCount(0)
-    await page.getByRole('button', { name: 'Volver al servicio', exact: true }).click()
+    await expect(page.getByRole('heading', { name: 'Solicitar otra fecha', exact: true })).toHaveCount(0)
+    await expect(page.getByLabel('Nueva fecha y hora', { exact: true })).toHaveCount(0)
+    await expect(page.getByRole('button', { name: /^Solicitar reprogramación/ })).toHaveCount(0)
     await expect(navigation).toBeVisible()
     await expect(page.locator('#agenda').getByText(/18 de septiembre/)).toBeVisible()
-    // Closing the focused view does not rewrite its deep-link hash. A hard
-    // reload of #reprogramacion intentionally opens that form again. Enter
-    // the ordinary agenda before testing the newly confirmed date on reload.
+    // Customer rescheduling is deferred; an old hash must not expose that form.
     await page.goto(`/app/trabajos/${jobId}#agenda`)
     await expect(page).toHaveURL(new RegExp(`/app/trabajos/${jobId}#agenda$`))
     await expect(page.getByRole('heading', { name: 'Solicitar otra fecha', exact: true })).toHaveCount(0)
@@ -196,6 +208,22 @@ test('customer sees a paid confirmed visit, reprogramming and one persisted revi
       [jobId, accounts.accounts.customerA.entityId]
     )).rows[0].count).toBe(1)
 
+    await db.query(
+      `insert into public.equipment_service_records(id,equipment_id,job_id,professional_id,real_diagnosis,work_done,next_maintenance_option,next_maintenance_date)
+       values($1,$2,$3,$4,'Filtros revisados','Limpieza y prueba','filters_60_days',current_date+60)`,
+      [recordId, equipmentId, jobId, accounts.accounts.professionalApproved.entityId]
+    )
+    const requestCount = async () => (await db.query(
+      `select count(*)::integer count from public.service_requests where customer_id=$1`, [accounts.accounts.customerA.entityId]
+    )).rows[0].count
+    const beforeMaintenance = await requestCount()
+    await page.goto('/app/mantenimientos')
+    await expect(page.getByRole('heading', { name: 'Aire con historial QA', exact: true })).toBeVisible()
+    await page.getByRole('link', { name: 'Pedir mantenimiento', exact: true }).click()
+    await expect(page).toHaveURL(new RegExp(`/app/solicitar/aire-acondicionado\\?problema=mantenimiento&equipo=${equipmentId}$`))
+    await expect(page.getByRole('radio', { name: 'Mantenimiento', exact: true })).toHaveAttribute('aria-checked', 'true')
+    expect(await requestCount()).toBe(beforeMaintenance)
+
     const logout = await page.request.post('/auth/logout', {
       headers: { Origin: new URL(page.url()).origin }, maxRedirects: 0
     })
@@ -204,11 +232,16 @@ test('customer sees a paid confirmed visit, reprogramming and one persisted revi
     await expect(page).toHaveURL(/\/login(?:\?|$)/)
     await loginAs(page, accounts.accounts.customerB, 'customerB')
     await page.goto(`/app/trabajos/${jobId}`)
-    await expect(page.getByText('No encontramos un trabajo disponible para tu cuenta.')).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'No encontramos ese servicio', exact: true })).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Ir a Inicio', exact: true })).toBeVisible()
+    await page.goto(`/app/solicitudes/${requestId}`)
+    await expect(page.getByRole('heading', { name: 'No encontramos esa solicitud', exact: true })).toBeVisible()
     await page.goto(`/app/trabajos/${jobId}/review`)
     await expect(page.getByRole('heading', { name: 'Calificar servicio' })).toHaveCount(0)
   } finally {
     try {
+      await db.query(`delete from public.maintenance_plans where source_service_record_id=$1`, [recordId])
+      await db.query(`delete from public.equipment_service_records where id=$1 and equipment_id=$2`, [recordId, equipmentId])
       await db.query(`delete from private.outbox_events where aggregate_id=$1`, [jobId])
       await db.query(`delete from public.complaints where job_id=$1`, [jobId])
       await db.query(`delete from public.reviews where job_id=$1 and customer_id=$2`, [jobId, accounts.accounts.customerA.entityId])
@@ -216,6 +249,7 @@ test('customer sees a paid confirmed visit, reprogramming and one persisted revi
       await db.query(`delete from public.marketplace_checkouts where id=$1 and job_id=$2 and customer_id=$3`, [checkoutId, jobId, accounts.accounts.customerA.entityId])
       await db.query(`delete from public.jobs where id=$1 and customer_id=$2`, [jobId, accounts.accounts.customerA.entityId])
       await db.query(`delete from public.service_requests where id=$1 and customer_id=$2`, [requestId, accounts.accounts.customerA.entityId])
+      await db.query(`delete from public.customer_equipment where id=$1 and customer_id=$2`, [equipmentId, accounts.accounts.customerA.entityId])
       await db.query(`delete from public.customer_addresses where id=$1 and customer_id=$2`, [addressId, accounts.accounts.customerA.entityId])
     } finally { await db.end() }
   }

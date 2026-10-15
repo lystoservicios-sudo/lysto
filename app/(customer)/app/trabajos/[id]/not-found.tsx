@@ -1,6 +1,5 @@
-import { ButtonLink } from '@/components/ui/button'
-import { EmptyState } from '@/components/customer/states'
+import { CustomerFeedback, unavailableContentMessage } from '@/components/customer/customer-feedback'
 
 export default function CustomerJobNotFound() {
-  return <EmptyState title="No encontramos ese trabajo" description="El enlace puede ser incorrecto o el trabajo ya no estar disponible." action={<ButtonLink href="/app/trabajos" variant="secondary">Volver a mis trabajos</ButtonLink>} />
+  return <CustomerFeedback kind="not-found" title="No encontramos ese servicio" description={unavailableContentMessage} sectionLink={{ href: '/app/trabajos', label: 'Volver a Servicios' }} />
 }

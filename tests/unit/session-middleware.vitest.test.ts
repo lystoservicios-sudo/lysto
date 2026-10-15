@@ -75,9 +75,16 @@ it('does not cache the closed public receipt or require a user login for it', as
   expect(response.headers.get('cache-control')).toContain('no-store')
   expect(mocks.create).not.toHaveBeenCalled()
 })
-it('fails closed without disclosing refresh errors', async () => {
+it('lets the customer server session guard render a recoverable HTML error when refresh fails', async () => {
   mocks.getClaims.mockRejectedValue(new Error('private infrastructure detail'))
   const response = await middleware(new NextRequest('https://lysto.test/app'))
+  expect(response.headers.get('x-middleware-next')).toBe('1')
+  expect(response.headers.get('cache-control')).toContain('no-store')
+  expect(await response.text()).not.toContain('private infrastructure detail')
+})
+it('preserves the existing closed non-customer outage response', async () => {
+  mocks.getClaims.mockRejectedValue(new Error('private infrastructure detail'))
+  const response = await middleware(new NextRequest('https://lysto.test/admin/dashboard'))
   expect(response.status).toBe(503)
   expect(JSON.stringify(await response.json())).not.toContain('private infrastructure detail')
 })

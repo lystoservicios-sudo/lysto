@@ -190,19 +190,15 @@ describe('customer adaptive service detail', () => {
     expect(screen.getByText('14:00 a 16:00')).toBeTruthy()
     expect(screen.getByText('Martín C.')).toBeTruthy()
   })
-  it('preserves a failed reschedule form and sends the strict existing payload', async () => {
+  it('does not offer deferred customer rescheduling, including its old hash entry', async () => {
     data = fixture('confirmed'); data.visit = visit
     checkouts = [{ id: photoId, job_id: jobId, extra_id: null, status: 'approved' }]
-    mutate = () => Response.json({ error: 'La fecha no está disponible.' }, { status: 409 })
+    window.history.replaceState({}, '', `/app/trabajos/${jobId}#reprogramacion`)
     await open()
-    fireEvent.click(await screen.findByRole('button', { name: /^Solicitar reprogramación/ }))
-    fireEvent.change(screen.getByLabelText('Nueva fecha y hora'), { target: { value: '2030-10-20T14:30' } })
-    fireEvent.change(screen.getByLabelText('Motivo de la reprogramación'), { target: { value: 'Tengo un compromiso familiar.' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Enviar solicitud' }))
-    await screen.findByText('La fecha no está disponible.')
-    expect((screen.getByLabelText('Motivo de la reprogramación') as HTMLTextAreaElement).value).toBe('Tengo un compromiso familiar.')
-    const sent = fetcher.mock.calls.find(([url]) => url === '/api/jobs/reschedule')!
-    expect(JSON.parse(String(sent[1]?.body))).toEqual({ action: 'request', jobId, startsAt: '2030-10-20T17:30:00.000Z', durationMinutes: 120, travelBufferMinutes: 30, reason: 'Tengo un compromiso familiar.', expectedVersion: 3 })
+    await screen.findByText('Pago aprobado')
+    expect(screen.queryByRole('button', { name: /^Solicitar reprogramación/ })).toBeNull()
+    expect(screen.queryByLabelText('Nueva fecha y hora')).toBeNull()
+    expect(fetcher.mock.calls.some(([url]) => url === '/api/jobs/reschedule')).toBe(false)
   })
   it('keeps outcome pending until explicit confirmation and reloads the completed state', async () => {
     data = fixture('completed_pending_customer_confirmation'); data.finalReport = finalReport

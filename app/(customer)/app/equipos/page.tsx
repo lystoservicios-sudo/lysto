@@ -1,8 +1,8 @@
 import { ConnectedCustomerEquipment } from '@/components/customer/connected-customer-equipment'
-import { PageScaffold } from '@/components/layout/page-scaffold'
+import { MoreLink, MorePage } from '@/components/customer/more/more-ui'
+import { Archive } from 'lucide-react'
 import { requirePageSession } from '@/lib/auth/session'
 import { listCustomerAddresses, listCustomerEquipment } from '@/lib/customer-assets/service'
-import { ButtonLink } from '@/components/ui/button'
 
 export default async function CustomerEquipmentPage() {
   const session = await requirePageSession('customer')
@@ -11,15 +11,14 @@ export default async function CustomerEquipmentPage() {
     listCustomerAddresses(session)
   ])
   return (
-    <PageScaffold
+    <MorePage
       title="Mis equipos"
-      eyebrow="Cliente"
       description="Registrá tus equipos y conservá sus datos y fotos."
+      backHref="/app/hogar"
+      backLabel="Volver a Hogar"
     >
-      <ButtonLink href="/app/equipos/archivo" variant="secondary">
-        Ver equipos archivados
-      </ButtonLink>
       <ConnectedCustomerEquipment initialPage={equipment} initialAddresses={addresses} />
-    </PageScaffold>
+      <MoreLink href="/app/equipos/archivo" title="Ver equipos archivados" description="Los equipos que ya no usás conservan su historial." icon={Archive} />
+    </MorePage>
   )
 }

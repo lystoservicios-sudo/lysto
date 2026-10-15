@@ -1,6 +1,6 @@
 import { CustomerRequestList } from '@/components/customer/customer-request-list'
-import { PageScaffold } from '@/components/layout/page-scaffold'
-import { ButtonLink } from '@/components/ui/button'
+import Link from 'next/link'
+import { MorePage, moreStyles } from '@/components/customer/more/more-ui'
 import { requirePageSession } from '@/lib/auth/session'
 import { listCustomerRequestsLive } from '@/lib/customer/live-model'
 
@@ -15,20 +15,21 @@ export default async function CustomerRequestsPage({
     ...(cursor ? { cursor } : {})
   })
   return (
-    <PageScaffold
+    <MorePage
       title="Mis solicitudes"
-      eyebrow="Cliente"
-      description="Revisá borradores, solicitudes que necesitan atención y el próximo paso de cada servicio."
+      description="Consultá el estado de tus solicitudes. Las visitas, los pagos y el seguimiento están en Servicios."
+      backHref="/app/trabajos"
+      backLabel="Volver a Servicios"
     >
       <CustomerRequestList requests={requests.items} />
       {requests.nextCursor ? (
-        <ButtonLink
+        <Link
           href={`/app/solicitudes?cursor=${encodeURIComponent(requests.nextCursor)}`}
-          variant="secondary"
+          className={moreStyles.textAction}
         >
           Ver solicitudes anteriores
-        </ButtonLink>
+        </Link>
       ) : null}
-    </PageScaffold>
+    </MorePage>
   )
 }

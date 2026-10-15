@@ -6,6 +6,8 @@ import { Input, Label } from '@/components/ui/input'
 import { FormFeedback } from './states'
 import { assetError, assetRequest, type AssetPage } from '@/lib/customer-assets/client'
 import { addressInputSchema, type CustomerAssetAddress } from '@/lib/customer-assets/contracts'
+import { moreStyles } from './more/more-ui'
+import styles from './customer-secondary.module.css'
 
 const blankAddress: CustomerAssetAddress = {
   id: '',
@@ -143,10 +145,11 @@ export function ConnectedCustomerAddresses({
     }
   }
   return (
-    <div className="space-y-5">
+    <div className={styles.stack}>
       <FormFeedback state={failed ? 'error' : 'success'} message={message} />
-      <div className="flex flex-wrap gap-3">
+      <div className={moreStyles.actions}>
         <Button
+          className={moreStyles.primary}
           type="button"
           disabled={busy}
           onClick={() => {
@@ -156,30 +159,31 @@ export function ConnectedCustomerAddresses({
         >
           Nueva dirección
         </Button>
-        <Button type="button" variant="secondary" disabled={busy} onClick={() => reload()}>
+        <Button className={moreStyles.secondary} type="button" variant="secondary" disabled={busy} onClick={() => reload()}>
           Recargar direcciones
         </Button>
       </div>
-      <p className="text-sm text-slate-600">
+      <p className={moreStyles.muted}>
         Recargar o elegir otra dirección reemplaza los cambios que todavía no guardaste.
       </p>
-      <div className="grid gap-5 xl:grid-cols-[22rem_minmax(0,1fr)]">
-        <section aria-label="Direcciones registradas" className="space-y-3">
-          <h2 className="text-xl font-bold">Direcciones registradas ({page.total})</h2>
+      <div className={styles.assetLayout}>
+        <section aria-label="Direcciones registradas" className={styles.assetSection}>
+          <h2 className={styles.heading}>Direcciones registradas ({page.total})</h2>
           {page.items.length === 0 ? (
-            <p>Todavía no registraste direcciones.</p>
+            <p className={moreStyles.muted}>Todavía no registraste direcciones.</p>
           ) : (
             page.items.map((address) => (
-              <article key={address.id} className="space-y-2 rounded-2xl border bg-white p-4">
-                <h3 className="font-bold">
+              <article key={address.id} className={styles.assetRow}>
+                <h3>
                   {address.label}
                   {address.isDefault ? ' · Principal' : ''}
                 </h3>
                 <p>
                   {address.street} {address.number}, {address.city}
                 </p>
-                <div className="flex gap-2">
+                <div className={moreStyles.actions}>
                   <Button
+                    className={moreStyles.secondary}
                     type="button"
                     size="sm"
                     variant="secondary"
@@ -192,6 +196,7 @@ export function ConnectedCustomerAddresses({
                     Editar {address.label}
                   </Button>
                   <Button
+                    className={moreStyles.textAction}
                     type="button"
                     size="sm"
                     variant="ghost"
@@ -205,19 +210,19 @@ export function ConnectedCustomerAddresses({
             ))
           )}
           {page.nextCursor ? (
-            <Button type="button" variant="secondary" disabled={busy} onClick={() => reload(true)}>
+            <Button className={moreStyles.textAction} type="button" variant="secondary" disabled={busy} onClick={() => reload(true)}>
               Ver más direcciones
             </Button>
           ) : null}
         </section>
-        <form onSubmit={save} className="space-y-4 rounded-2xl border bg-white p-5">
-          <h2 className="text-xl font-bold">
+        <form onSubmit={save} className={styles.assetForm}>
+          <h2 className={styles.heading}>
             {value.id ? 'Editar dirección' : 'Agregar dirección'}
           </h2>
-          <fieldset disabled={busy} className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2">
+          <fieldset disabled={busy} className={moreStyles.form}>
+            <div className={styles.fields}>
               {fields.map(([name, label, max, required]) => (
-                <div key={name} className="space-y-2">
+                <div key={name} className={moreStyles.field}>
                   <Label htmlFor={`address-${name}`}>
                     {label}
                     {required ? ' *' : ''}
@@ -234,11 +239,10 @@ export function ConnectedCustomerAddresses({
                 </div>
               ))}
             </div>
-            <div className="space-y-2">
+            <div className={moreStyles.field}>
               <Label htmlFor="address-property">Tipo de propiedad</Label>
               <select
                 id="address-property"
-                className="h-12 w-full rounded-xl border px-4"
                 value={value.propertyType}
                 onChange={(event) =>
                   setValue((current) => ({
@@ -253,10 +257,10 @@ export function ConnectedCustomerAddresses({
                 <option value="office">Oficina</option>
               </select>
             </div>
-            <fieldset className="grid gap-3 sm:grid-cols-2">
+            <fieldset className={styles.fields}>
               <legend className="mb-3 font-semibold">Condiciones de acceso</legend>
               {accessFields.map(([key, label]) => (
-                <label key={key} className="flex items-center gap-2">
+                <label key={key} className={styles.choice}>
                   <input
                     type="checkbox"
                     checked={value.access[key] ?? false}
@@ -271,7 +275,7 @@ export function ConnectedCustomerAddresses({
                 </label>
               ))}
             </fieldset>
-            <label className="flex items-center gap-2">
+            <label className={styles.choice}>
               <input
                 type="checkbox"
                 checked={value.isDefault}
@@ -281,7 +285,7 @@ export function ConnectedCustomerAddresses({
               />
               Usar como dirección principal
             </label>
-            <Button type="submit" disabled={busy}>
+            <Button className={moreStyles.primary} type="submit" disabled={busy}>
               {busy ? 'Guardando' : 'Guardar dirección'}
             </Button>
           </fieldset>

@@ -2,6 +2,8 @@ import { randomUUID } from 'node:crypto'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { Client } from 'pg'
 import { createFixtureAccounts } from './fixtures'
+import { listMaintenance } from '@/lib/equipment/maintenance-service'
+import type { Session } from '@/lib/auth/session'
 
 describe('maintenance history and reminders', () => {
   const setup = createFixtureAccounts(),
@@ -94,6 +96,22 @@ describe('maintenance history and reminders', () => {
       diagnosis: 'Filtros saturados',
       workDone: 'Limpieza y prueba completa'
     })
+    const projection = await listMaintenance({ role: 'customer', customerId: fixture.accounts.customerA.entityId,
+      client: fixture.accounts.customerA.client } as unknown as Session)
+    expect(projection.find(item => item.id === planId)).toMatchObject({ contextVerified: true, superseded: false, activeJobId: null })
+    const other = await listMaintenance({ role: 'customer', customerId: fixture.accounts.customerB.entityId,
+      client: fixture.accounts.customerB.client } as unknown as Session)
+    expect(other.some(item => item.id === planId)).toBe(false)
+  })
+  it('resolves an existing owned active job through the real PostgREST relationship', async () => {
+    await db.query(`update public.jobs set status='confirmed' where id=$1`, [jobId])
+    try {
+      const projection = await listMaintenance({ role: 'customer', customerId: fixture.accounts.customerA.entityId,
+        client: fixture.accounts.customerA.client } as unknown as Session)
+      expect(projection.find(item => item.id === planId)).toMatchObject({ contextVerified: true, activeJobId: jobId })
+    } finally {
+      await db.query(`update public.jobs set status='completed' where id=$1`, [jobId])
+    }
   })
   it('moves one recommendation and keeps one active reminder', async () => {
     const due = new Date(Date.now() + 90 * 86400000).toISOString().slice(0, 10),

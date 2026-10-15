@@ -1,12 +1,5 @@
-import { ButtonLink } from '@/components/ui/button'
-import { EmptyState } from '@/components/customer/states'
+import { CustomerFeedback, unavailableContentMessage } from '@/components/customer/customer-feedback'
 
 export default function CustomerRequestNotFound() {
-  return (
-    <EmptyState
-      title="No encontramos esa solicitud"
-      description="El enlace puede ser incorrecto o la solicitud ya no estar disponible."
-      action={<ButtonLink href="/app/solicitudes" variant="secondary">Volver a mis solicitudes</ButtonLink>}
-    />
-  )
+  return <CustomerFeedback kind="not-found" title="No encontramos esa solicitud" description={unavailableContentMessage} sectionLink={{ href: '/app/trabajos', label: 'Volver a Servicios' }} />
 }

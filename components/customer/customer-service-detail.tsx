@@ -31,11 +31,11 @@ export type CustomerServiceDetailData = {
   extras: Extra[]
   customerService?: { issueLabel: string; equipmentName: string | null; addressLabel: string | null }
 }
-type Flow = 'quote' | 'payments' | 'reschedule' | 'report' | 'dispute' | 'scope' | 'extra'
+type Flow = 'quote' | 'payments' | 'report' | 'dispute' | 'scope' | 'extra'
 type Checkout = { id: string; job_id: string; extra_id: string | null; status: string }
 const finalStateLabels: Record<string, string> = { resolved: 'Problema resuelto', partially_resolved: 'Resuelto parcialmente', pending_part: 'Repuesto pendiente', requires_second_visit: 'Segunda visita necesaria', not_resolved: 'Problema sin resolver' }
 const issueLabels: Record<string, string> = { no_enfria: 'No enfría', pierde_agua: 'Pierde agua', hace_ruido: 'Hace ruido', no_enciende: 'No enciende', no_funciona_calor: 'No calienta', instalacion: 'Instalación', mantenimiento: 'Mantenimiento' }
-const flowTitles: Record<Flow, string> = { quote: 'Presupuesto del servicio', payments: 'Pago del servicio', reschedule: 'Solicitar otra fecha', report: 'Informe del servicio', dispute: 'Informar un desacuerdo', scope: 'Diagnóstico y alcance', extra: 'Trabajo adicional' }
+const flowTitles: Record<Flow, string> = { quote: 'Presupuesto del servicio', payments: 'Pago del servicio', report: 'Informe del servicio', dispute: 'Informar un desacuerdo', scope: 'Diagnóstico y alcance', extra: 'Trabajo adicional' }
 const money = (value: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 2 }).format(value)
 const datePart = (value: string, options: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat('es-AR', { timeZone: 'America/Argentina/Buenos_Aires', ...options }).format(new Date(value))
 
@@ -100,7 +100,6 @@ export function CustomerServiceDetail({ data, onReload, reloadError = '', reload
   const onPaymentBusyChange = useCallback((pending: boolean) => { paymentBusyRef.current = pending; setPaymentBusy(pending) }, [])
   const [message, setMessage] = useState('')
   const [reason, setReason] = useState('')
-  const [startsAt, setStartsAt] = useState('')
   const [committed, setCommitted] = useState(false)
   const heading = useRef<HTMLHeadingElement>(null)
   const trigger = useRef<HTMLElement | null>(null)
@@ -147,7 +146,6 @@ export function CustomerServiceDetail({ data, onReload, reloadError = '', reload
       handledEntry.current = url.href
       const hash = url.hash
       if (['retorno', 'pendiente', 'reintentar'].includes(url.searchParams.get('pago') ?? '') || /^#pagos?$/.test(hash)) setFlow('payments')
-      else if (hash === '#reprogramacion' && !terminal && data.visit && ['pending_professional_acceptance', 'confirmed'].includes(status)) setFlow('reschedule')
       else if (hash === '#informe' && data.finalReport) { openedForConfirmation.current = status === 'completed_pending_customer_confirmation'; setFlow('report') }
       else if (hash === '#adicionales' && !terminal && data.extras.some(item => item.status === 'proposed')) { setSelectedExtra(data.extras.find(item => item.status === 'proposed')!.id); setFlow('extra') }
     }
@@ -167,7 +165,7 @@ export function CustomerServiceDetail({ data, onReload, reloadError = '', reload
   }, [flow])
 
   function openFlow(next: Flow, event?: MouseEvent<HTMLButtonElement>, extraId?: string) {
-    if (expiredContract && ['reschedule', 'dispute', 'extra', 'scope'].includes(next)) return
+    if (expiredContract && ['dispute', 'extra', 'scope'].includes(next)) return
     trigger.current = event?.currentTarget ?? document.activeElement as HTMLElement
     triggerLabel.current = event?.currentTarget.textContent ?? null
     openedForConfirmation.current = canConfirm && (next === 'report' || next === 'dispute')
@@ -195,8 +193,8 @@ export function CustomerServiceDetail({ data, onReload, reloadError = '', reload
       if (!response.ok) { serverMessage = typeof body.error === 'string' ? body.error : 'No se pudo completar la operación.'; throw new Error(serverMessage ?? 'No se pudo completar la operación.') }
       if (pending) acknowledgeCommand(sessionStorage, `${data.job.id}:${scope}`, pending.key)
       if (scope === 'customer-decision') setCommitted(true)
-      setMessage(scope === 'reschedule-request' ? 'Solicitud enviada. La fecha actual sigue vigente hasta que se acepte el cambio.' : 'Decisión registrada. Actualizando el servicio…')
-      if (scope !== 'reschedule-request') setFlow(null)
+      setMessage('Decisión registrada. Actualizando el servicio…')
+      setFlow(null)
       onReload(); setPaymentRevision(value => value + 1)
       return true
     } catch {
@@ -204,11 +202,6 @@ export function CustomerServiceDetail({ data, onReload, reloadError = '', reload
       onReload()
       return false
     } finally { busyRef.current = false; setBusy(false) }
-  }
-  async function reschedule() {
-    if (!data.visit || !startsAt || reason.trim().length < 15 || reason.trim().length > 1000) return
-    const success = await command('/api/jobs/reschedule', 'POST', 'reschedule-request', { action: 'request', jobId: data.job.id, startsAt: new Date(`${startsAt}:00-03:00`).toISOString(), durationMinutes: data.visit.durationMinutes, travelBufferMinutes: data.visit.travelBufferMinutes, reason: reason.trim(), expectedVersion: data.visit.scheduleVersion }, false)
-    if (success) { setStartsAt(''); setReason('') }
   }
   function outcome(decision: 'confirmed' | 'disputed') {
     if (!canConfirm || (decision === 'disputed' && (reason.trim().length < 10 || reason.trim().length > 3000))) return
@@ -227,7 +220,6 @@ export function CustomerServiceDetail({ data, onReload, reloadError = '', reload
     {message ? <p role="status" className={styles.notice}>{message}</p> : null}
     {flow === 'payments' && !reloadError && !reloadInProgress ? <div className={styles.reused}><PaymentPanel role="customer" jobId={data.job.id} jobStatus={status} serviceAmount={data.savedQuote?.quote.total} extras={data.extras} readOnly={terminal || status === 'completed' || paymentState === 'unknown'} onBusyChange={onPaymentBusyChange} /></div> : null}
     {flow === 'quote' && data.savedQuote ? <><QuoteBreakdown quote={data.savedQuote.quote} status={data.savedQuote.status} internal={false} /><p className={styles.muted}>Este presupuesto fue aceptado. Los adicionales se deciden por separado.</p></> : null}
-    {flow === 'reschedule' && data.visit ? <form className={styles.form} onSubmit={event => { event.preventDefault(); void reschedule() }}><p className={styles.notice}>La fecha actual sigue vigente hasta que la otra parte acepte el cambio en Lysto.</p><label>Nueva fecha y hora<input type="datetime-local" value={startsAt} onChange={event => setStartsAt(event.target.value)} required /></label><label>Motivo de la reprogramación<textarea value={reason} maxLength={1000} onChange={event => setReason(event.target.value)} required /></label><button className={styles.primaryButton} disabled={blocked || !startsAt || reason.trim().length < 15}>Enviar solicitud</button></form> : null}
     {(flow === 'report' || flow === 'dispute') && data.finalReport ? <><ReportContent report={data.finalReport} photos />{flow === 'report' && canConfirm ? outcomeButtons : null}{flow === 'dispute' && canConfirm ? <form className={styles.form} onSubmit={event => { event.preventDefault(); outcome('disputed') }}><p>Contanos qué no coincide con el resultado. Lysto recibirá el caso para revisarlo.</p><label>Motivo del desacuerdo<textarea maxLength={3000} value={reason} onChange={event => setReason(event.target.value)} required /></label><button className={styles.primaryButton} disabled={blocked || reason.trim().length < 10}>Enviar desacuerdo</button></form> : null}</> : null}
     {flow === 'scope' && data.onsiteDiagnosis ? <section className={styles.section}><dl className={styles.facts}><Fact icon={FileText} label="Diagnóstico presencial">{data.onsiteDiagnosis.actual_diagnosis}</Fact><Fact icon={Wrench} label="Alcance propuesto">{data.onsiteDiagnosis.base_scope}</Fact></dl>{data.onsiteDiagnosis.evidence_ids.length ? <PrivatePhotos ids={data.onsiteDiagnosis.evidence_ids} label="diagnóstico" /> : null}{scopePending ? <div className={styles.form}><p>El presupuesto original no cambia. Cualquier adicional requiere una decisión y un pago separados.</p><button className={styles.primaryButton} disabled={blocked} onClick={() => scopeDecision('accepted')}>Aceptar alcance</button><label>Cambios que necesitás<textarea value={reason} maxLength={2000} onChange={event => setReason(event.target.value)} /></label><button className={styles.secondaryButton} disabled={blocked || reason.trim().length < 10} onClick={() => scopeDecision('changes_requested')}>Pedir cambios</button></div> : null}</section> : null}
     {flow === 'extra' && extra ? <section className={styles.section}><h2>{extra.fault}</h2><p>{extra.description}</p><p className={styles.amount}>{money(extra.amount)}</p><p className={styles.muted}>El presupuesto original no cambia. Si aceptás, el pago de este adicional debe confirmarse antes de iniciar ese alcance.</p>{extra.status === 'proposed' && !terminal ? <div className={styles.inlineActions}>{(['accepted', 'rejected'] as const).map(decision => <button key={decision} disabled={blocked} className={decision === 'accepted' ? styles.primaryButton : styles.secondaryButton} onClick={() => void command('/api/jobs/extras', 'PATCH', `extra:${extra.id}`, { action: 'decide', extraId: extra.id, decision })}>{decision === 'accepted' ? 'Aceptar adicional' : 'Rechazar adicional'}</button>)}</div> : <p className={styles.muted}>La decisión de este adicional ya está registrada.</p>}</section> : null}
@@ -285,7 +277,6 @@ export function CustomerServiceDetail({ data, onReload, reloadError = '', reload
       {data.extras.filter(item => item.status !== 'proposed').map(item => <button key={item.id} className={styles.actionRow} onClick={event => openFlow('extra', event, item.id)}><span>{item.fault}<small>{item.status === 'accepted' ? 'Adicional aceptado' : item.status === 'rejected' ? 'Adicional rechazado' : 'Adicional registrado'} · {money(item.amount)}</small></span><ChevronRight size={19} aria-hidden="true" /></button>)}
       {data.finalReport ? <button className={styles.actionRow} onClick={event => openFlow('report', event)}>Ver informe y fotos<ChevronRight size={19} aria-hidden="true" /></button> : null}
       {canConfirm ? <button className={`${styles.actionRow} ${styles.neutralAction}`} onClick={event => openFlow('dispute', event)}>Informar un desacuerdo<ChevronRight size={19} aria-hidden="true" /></button> : null}
-      {showVisit ? <button id="reprogramacion" className={styles.actionRow} onClick={event => openFlow('reschedule', event)}><span>Solicitar reprogramación<small>La fecha actual sigue vigente hasta que acepten el cambio.</small></span><ChevronRight size={19} aria-hidden="true" /></button> : null}
       {data.savedQuote ? <button className={styles.actionRow} onClick={event => openFlow('quote', event)}>Ver presupuesto aceptado<ChevronRight size={19} aria-hidden="true" /></button> : null}
       {primaryFlow !== 'payments' ? <button id="pagos" className={styles.actionRow} onClick={event => openFlow('payments', event)}><span>{beforeVisit && !paid ? 'Consultar pagos' : 'Ver pagos del servicio'}</span><ReceiptText size={19} aria-hidden="true" /></button> : null}
       {status === 'completed' ? <Link className={styles.actionRow} href={`/app/trabajos/${data.job.id}/review`}>Calificar servicio<ChevronRight size={19} aria-hidden="true" /></Link> : null}

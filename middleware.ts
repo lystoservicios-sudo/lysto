@@ -84,6 +84,10 @@ export async function middleware(request: NextRequest) {
     await supabase.auth.getClaims()
     return response
   } catch {
+    // Middleware only refreshes cookies: customer layouts and data boundaries
+    // still resolve fresh authority before rendering anything private. Let their
+    // error boundary show HTML recovery instead of sending JSON to the browser.
+    if (pathname === '/app' || pathname.startsWith('/app/')) return response
     return withCorrelation(onboardingHeaders(apiErrorResponse(new ApiError('session_unavailable'))))
   }
 }

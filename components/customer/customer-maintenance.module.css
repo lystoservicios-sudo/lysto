@@ -1,0 +1,17 @@
+.content { display: grid; gap: 20px; min-width: 0; }
+.plan { display: grid; gap: 14px; padding: 20px 0 24px; border-bottom: 1px solid #e1e7f0; min-width: 0; }
+.header { display: flex; align-items: center; gap: 12px; }
+.header h2 { font-size: 1.0625rem; font-weight: 650; line-height: 1.4; margin: 2px 0 0; overflow-wrap: anywhere; }
+.icon { display: grid; place-items: center; width: 36px; height: 36px; flex-shrink: 0; border-radius: 10px; background: #f0f5fd; color: #075cff; }
+.status { margin: 0; font-size: .75rem; font-weight: 600; line-height: 1.5; color: #5d6c84; }
+.recommendation { margin: 0; font-size: .9375rem; font-weight: 600; line-height: 1.5; }
+.date { display: flex; align-items: center; gap: 8px; margin: 0; color: #5d6c84; font-size: .8125rem; line-height: 1.6; }
+.date svg { flex-shrink: 0; }
+.dateForm { display: grid; gap: 12px; border-left: 2px solid #e1e7f0; padding-left: 14px; animation: reveal 160ms ease-out both; }
+.dateForm button { justify-self: start; }
+.history { min-width: 0; }
+.history summary { min-height: 44px; padding-block: 12px; color: #075cff; font-size: .8125rem; line-height: 1.5; cursor: pointer; }
+.record { border-left: 2px solid #e1e7f0; padding: 4px 0 4px 14px; margin-top: 12px; font-size: .875rem; line-height: 1.6; overflow-wrap: anywhere; }
+.record p { margin: 3px 0; }
+@keyframes reveal { from { opacity: 0; transform: translateY(-3px); } }
+@media (prefers-reduced-motion: reduce) { .dateForm { animation: none; } }

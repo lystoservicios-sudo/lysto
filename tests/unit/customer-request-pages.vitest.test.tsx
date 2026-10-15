@@ -29,7 +29,7 @@ describe('customer request pages', () => {
     expect(screen.getByText('No enfría')).toBeTruthy()
     expect(screen.getByText('Mantenimiento')).toBeTruthy()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Borradores 1' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Sin enviar 1' }))
     expect(screen.queryByText('No enfría')).toBeNull()
     expect(screen.getByText('Mantenimiento')).toBeTruthy()
   })

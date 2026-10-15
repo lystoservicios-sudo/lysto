@@ -1,14 +1,10 @@
 import { ConnectedCustomerMaintenance } from '@/components/customer/connected-customer-maintenance'
-import { PageScaffold } from '@/components/layout/page-scaffold'
+import { MorePage } from '@/components/customer/more/more-ui'
 
 export default function CustomerMaintenancePage() {
   return (
-    <PageScaffold
-      title="Mantenimientos recomendados"
-      eyebrow="Postventa"
-      description="Entendé qué cuidado necesita cada equipo y cuándo conviene revisarlo."
-    >
+    <MorePage title="Mantenimientos" description="El cuidado recomendado para cada aire, conectado con su historial y sus servicios.">
       <ConnectedCustomerMaintenance />
-    </PageScaffold>
+    </MorePage>
   )
 }

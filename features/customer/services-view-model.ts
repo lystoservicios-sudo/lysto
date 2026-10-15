@@ -129,8 +129,8 @@ export function buildCustomerServiceSummary(
       summary.statusLabel = request.status === 'expired' ? 'Solicitud vencida' : 'Solicitud cancelada'
       summary.description = 'La solicitud está cerrada.'
     } else if (['draft', 'diagnosis_completed', 'address_completed', 'schedule_completed', 'price_selected'].includes(request.status)) {
-      summary.statusLabel = 'Borrador guardado'
-      summary.description = 'La recuperación de este borrador todavía no está disponible.'
+      summary.statusLabel = 'Solicitud sin enviar'
+      summary.description = 'No se contrató un servicio con esta solicitud.'
     } else {
       summary.description = 'El pedido está registrado. Su detalle estará disponible cuando exista un trabajo asociado.'
     }

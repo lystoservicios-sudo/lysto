@@ -103,6 +103,13 @@ beforeEach(() => {
 })
 
 describe('customer services loader', () => {
+  it('omits unsubmitted server drafts while keeping a real job linked to an old request state', async () => {
+    tables.service_requests = [{ ...request(3), status: 'draft' }, { ...request(2), status: 'price_selected' }, request(1)]
+    tables.jobs = [job(2, 'confirmed'), job(1)]
+    const page = await loadCustomerServices(session, { pageSize: 2, source: 'services' }, now)
+    expect(page.items.map(item => item.jobId)).toEqual([id(2, 2), id(2, 1)])
+    expect(page.nextServiceCursor).toBeNull()
+  })
   it('reads an immutable visit snapshot instead of the equipment historical address', async () => {
     tables.service_requests = [{ ...request(1), contract_source: 'automatic_customer_request',
       visit_address_snapshot: { street: 'Corrientes', number: '999', city: 'CABA', floor: '5', apartment: 'A' } }]

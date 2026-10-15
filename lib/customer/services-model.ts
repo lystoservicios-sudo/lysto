@@ -210,6 +210,9 @@ async function scanServices(
     const summaries = await hydrateRequests(session, examined, unavailable, now)
     for (let index = 0; index < examined.length; index++) {
       position = point(examined[index])
+      // Keep old unsubmitted rows in storage, not in the contracted-services hub.
+      // Advance the real scan cursor so filtering cannot strand older real jobs.
+      if (!summaries[index].jobId && ['draft', 'diagnosis_completed', 'address_completed', 'schedule_completed', 'price_selected'].includes(examined[index].status)) continue
       if (matchesCustomerServicesFilter(summaries[index], filter)) items.push(summaries[index])
       if (items.length === pageSize) {
         const more = index < examined.length - 1 || data.length > pageSize

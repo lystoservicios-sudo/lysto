@@ -1,6 +1,5 @@
-import { EmptyState } from '@/components/customer/states'
-import { ButtonLink } from '@/components/ui/button'
+import { CustomerFeedback, unavailableContentMessage } from '@/components/customer/customer-feedback'
 
 export default function CustomerEquipmentNotFound() {
-  return <EmptyState title="No encontramos ese equipo" description="El enlace puede ser incorrecto o la ficha todavía no estar disponible." action={<ButtonLink href="/app/equipos" variant="secondary">Volver a mis equipos</ButtonLink>} />
+  return <CustomerFeedback kind="not-found" title="No encontramos ese equipo" description={unavailableContentMessage} sectionLink={{ href: '/app/hogar', label: 'Volver a Hogar' }} />
 }

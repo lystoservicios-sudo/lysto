@@ -133,6 +133,25 @@ afterEach(() => {
 })
 
 describe('Hogar pending operation identity', () => {
+  it('opens the home shortcut without issuing a request or creating a record', () => {
+    render(<CustomerHogar initialData={empty()} customerId={customerId} entry="hogar" />)
+    expect(screen.getByLabelText('Nombre del hogar')).toBeTruthy()
+    expect(request).not.toHaveBeenCalled()
+  })
+
+  it('opens the equipment shortcut in the existing home', () => {
+    render(<CustomerHogar initialData={existing()} customerId={customerId} entry="equipo" />)
+    expect(screen.getByLabelText('Nombre del aire')).toBeTruthy()
+    expect(request).not.toHaveBeenCalled()
+  })
+
+  it.each(['create-home', 'add-equipment', 'malformed'] as const)('never overrides %s recovery with an entry shortcut', (kind) => {
+    recoverOperation(kind)
+    render(<CustomerHogar initialData={existing()} customerId={customerId} entry="equipo" />)
+    expect(screen.queryByLabelText('Nombre del aire')).toBeNull()
+    expect(screen.queryByLabelText('Nombre del hogar')).toBeNull()
+    expect(request).not.toHaveBeenCalled()
+  })
   it('binds fresh writes, recovery reads and exact replays to the rendered authenticated customer', async () => {
     await beginHome()
     expect(request.mock.calls[0][1].headers).toMatchObject({ 'X-Lysto-Customer-Id': customerId })

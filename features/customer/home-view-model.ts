@@ -61,6 +61,9 @@ export type HomeMaintenanceSource = {
   dueAt: string | null
   status: string
   sourceJobId: string | null
+  activeJobId?: string | null
+  contextVerified?: boolean
+  superseded?: boolean
 }
 
 export type HomeEquipmentSource = { id: string; name: string }
@@ -348,18 +351,7 @@ export function buildCustomerHomeViewModel(source: CustomerHomeSource): Customer
     const contractKey = `request:${request.id}`
     if (closedRequests.has(request.status)) continue
     if (incompleteRequests.has(request.status)) {
-      addActivity(activity, {
-        id: `request:${request.id}`,
-        contractKey,
-        kind: 'draft',
-        priority: 4,
-        eyebrow: 'Solicitud sin terminar',
-        title: request.issueLabel,
-        description: 'Este borrador quedó guardado, pero todavía no se puede recuperar desde Inicio.',
-        action: null,
-        disabledReason: 'La recuperación de borradores todavía no está disponible.',
-        sortAt: request.createdAt
-      })
+      // Unsubmitted historical rows are not customer tasks. Pedir owns local recovery.
       continue
     }
     addActivity(activity, {
@@ -382,6 +374,7 @@ export function buildCustomerHomeViewModel(source: CustomerHomeSource): Customer
 
   const support = items(source.supportCases)
   for (const reminder of items(source.maintenance)) {
+    if (reminder.superseded || reminder.contextVerified === false) continue
     if (['cancelled', 'completed', 'requested'].includes(reminder.status)) continue
     const relatedCase = reminder.sourceJobId
       ? support.find(
@@ -389,7 +382,8 @@ export function buildCustomerHomeViewModel(source: CustomerHomeSource): Customer
         )
       : undefined
     const blocked = reminder.status === 'suppressed_by_case' || Boolean(relatedCase)
-    const relatedJob = reminder.sourceJobId ? jobById.get(reminder.sourceJobId) : undefined
+    const relatedJob = reminder.activeJobId ? jobById.get(reminder.activeJobId)
+      : reminder.sourceJobId ? jobById.get(reminder.sourceJobId) : undefined
     addActivity(activity, {
       id: `maintenance:${reminder.id}`,
       contractKey: relatedJob ? jobContract(relatedJob) : `maintenance:${reminder.id}`,
@@ -399,11 +393,13 @@ export function buildCustomerHomeViewModel(source: CustomerHomeSource): Customer
       title: reminder.equipmentName,
       description: blocked
         ? 'Hay un caso abierto que debe resolverse antes de coordinar otro servicio.'
-        : reminder.recommendation.replaceAll('_', ' '),
+        : getMaintenanceTask(reminder.recommendation as MaintenanceOption)?.label ?? 'Cuidado recomendado por el profesional',
       subject: reminder.equipmentName,
       action: blocked
         ? { label: 'Ver caso', href: supportHref() }
-        : { label: 'Ver mantenimiento', href: '/app/mantenimientos' },
+        : reminder.activeJobId
+          ? { label: 'Ver seguimiento', href: `/app/trabajos/${reminder.activeJobId}` }
+          : { label: 'Ver mantenimiento', href: '/app/mantenimientos' },
       dueAt: reminder.dueAt,
       sortAt: reminder.dueAt ?? source.now
     })
@@ -449,6 +445,7 @@ export function buildCustomerHomeViewModel(source: CustomerHomeSource): Customer
   const nextCare = items(source.maintenance)
     .filter((reminder) =>
       reminder.equipmentId &&
+      !reminder.superseded && reminder.contextVerified !== false &&
       ['planned', 'deferred'].includes(reminder.status) &&
       reminder.recommendation !== 'none' &&
       !support.some((supportCase) =>
@@ -478,8 +475,8 @@ export function buildCustomerHomeViewModel(source: CustomerHomeSource): Customer
         getMaintenanceTask(nextCare.recommendation as MaintenanceOption)?.label ??
         nextCare.recommendation.replaceAll('_', ' '),
       maintenanceId: nextCare.id,
-      action: continuity && nextCare.sourceJobId
-        ? { label: 'Ver seguimiento', href: `/app/trabajos/${nextCare.sourceJobId}` }
+      action: nextCare.activeJobId || (continuity && nextCare.sourceJobId)
+        ? { label: 'Ver seguimiento', href: `/app/trabajos/${nextCare.activeJobId ?? nextCare.sourceJobId}` }
         : { label: 'Ver mantenimiento', href: '/app/mantenimientos' }
     }
   }
@@ -505,7 +502,7 @@ export function buildCustomerHomeViewModel(source: CustomerHomeSource): Customer
       kind: 'address',
       title: 'Agregá tu hogar',
       description: 'Guardá tu dirección para usarla en tus próximos pedidos.',
-      action: { label: 'Agregar hogar', href: '/app/direcciones' },
+      action: { label: 'Agregar hogar', href: '/app/hogar?crear=hogar' },
       deferDays: 7
     }
   } else if (!suppressInvite && addressCount !== null && addressCount > 0 && equipmentCount === 0) {
@@ -513,7 +510,7 @@ export function buildCustomerHomeViewModel(source: CustomerHomeSource): Customer
       kind: 'equipment',
       title: 'Agregá tu primer equipo',
       description: 'Guardá sus datos para no volver a cargarlos al pedir un servicio.',
-      action: { label: 'Agregar equipo', href: '/app/equipos' },
+      action: { label: 'Agregar equipo', href: '/app/hogar?crear=equipo' },
       deferDays: 7
     }
   }

@@ -5,6 +5,8 @@ import { Button, ButtonLink } from '@/components/ui/button'
 import { Input, Label } from '@/components/ui/input'
 import { FormFeedback } from './states'
 import { CustomerEquipmentPhotos } from './customer-equipment-photos'
+import { moreStyles } from './more/more-ui'
+import styles from './customer-secondary.module.css'
 import { assetRequest, assetError, type AssetPage } from '@/lib/customer-assets/client'
 import {
   equipmentInputSchema,
@@ -135,12 +137,13 @@ export function ConnectedCustomerEquipment({
     }
   }
   return (
-    <div className="space-y-5">
+    <div className={styles.stack}>
       <FormFeedback state={failed ? 'error' : 'success'} message={message} />
-      <div className="grid gap-5 lg:grid-cols-2">
-        <section className="space-y-3" aria-label="Equipos registrados">
-          <h2 className="text-xl font-bold">Equipos registrados ({page.total})</h2>
+      <div className={styles.assetLayout}>
+        <section className={styles.assetSection} aria-label="Equipos registrados">
+          <h2 className={styles.heading}>Equipos registrados ({page.total})</h2>
           <Button
+            className={moreStyles.secondary}
             type="button"
             variant="secondary"
             disabled={busy}
@@ -149,20 +152,21 @@ export function ConnectedCustomerEquipment({
             Recargar equipos
           </Button>
           {!page.items.length ? (
-            <p>Todavía no registraste equipos.</p>
+            <p className={moreStyles.muted}>Todavía no registraste equipos.</p>
           ) : (
             page.items.map((equipment) => (
-              <article key={equipment.id} className="space-y-2 rounded-2xl border bg-white p-4">
-                <h3 className="font-bold">{equipment.nickname}</h3>
+              <article key={equipment.id} className={styles.assetRow}>
+                <h3>{equipment.nickname}</h3>
                 <p>
                   {[equipment.brand, equipment.model].filter(Boolean).join(' · ') ||
                     'Marca y modelo sin informar'}
                 </p>
-                <div className="flex flex-wrap gap-2">
-                  <ButtonLink href={'/app/equipos/' + equipment.id} size="sm" variant="secondary">
+                <div className={moreStyles.actions}>
+                  <ButtonLink className={moreStyles.secondary} href={'/app/equipos/' + equipment.id} size="sm" variant="secondary">
                     Ver historial de {equipment.nickname}
                   </ButtonLink>
                   <Button
+                    className={moreStyles.secondary}
                     type="button"
                     size="sm"
                     variant="secondary"
@@ -172,6 +176,7 @@ export function ConnectedCustomerEquipment({
                     Fotos de {equipment.nickname}
                   </Button>
                   <Button
+                    className={moreStyles.textAction}
                     type="button"
                     size="sm"
                     variant="ghost"
@@ -186,6 +191,7 @@ export function ConnectedCustomerEquipment({
           )}
           {page.nextCursor ? (
             <Button
+              className={moreStyles.textAction}
               type="button"
               variant="secondary"
               disabled={busy}
@@ -195,9 +201,9 @@ export function ConnectedCustomerEquipment({
             </Button>
           ) : null}
         </section>
-        <form onSubmit={save} className="space-y-4 rounded-2xl border bg-white p-5">
-          <h2 className="text-xl font-bold">Registrar equipo</h2>
-          <fieldset disabled={busy} className="space-y-4">
+        <form onSubmit={save} className={styles.assetForm}>
+          <h2 className={styles.heading}>Registrar equipo</h2>
+          <fieldset disabled={busy} className={moreStyles.form}>
             {(
               [
                 ['nickname', 'Nombre del equipo'],
@@ -207,7 +213,7 @@ export function ConnectedCustomerEquipment({
                 ['frigorias', 'Frigorías (opcional)']
               ] as const
             ).map(([key, label]) => (
-              <div key={key} className="space-y-2">
+              <div key={key} className={moreStyles.field}>
                 <Label htmlFor={`equipment-${key}`}>{label}</Label>
                 <Input
                   id={`equipment-${key}`}
@@ -224,11 +230,10 @@ export function ConnectedCustomerEquipment({
                 />
               </div>
             ))}
-            <div className="space-y-2">
+            <div className={moreStyles.field}>
               <Label htmlFor="equipment-type">Tipo de equipo</Label>
               <select
                 id="equipment-type"
-                className="h-12 w-full rounded-xl border px-4"
                 value={value.equipmentType}
                 onChange={(event) =>
                   setValue((current) => ({ ...current, equipmentType: event.target.value }))
@@ -248,11 +253,10 @@ export function ConnectedCustomerEquipment({
                 ))}
               </select>
             </div>
-            <div className="space-y-2">
+            <div className={moreStyles.field}>
               <Label htmlFor="equipment-address">Dirección del equipo</Label>
               <select
                 id="equipment-address"
-                className="h-12 w-full rounded-xl border px-4"
                 value={value.addressId}
                 onChange={(event) =>
                   setValue((current) => ({ ...current, addressId: event.target.value }))
@@ -266,20 +270,20 @@ export function ConnectedCustomerEquipment({
                 ))}
               </select>
               {addresses.nextCursor ? (
-                <Button type="button" variant="ghost" onClick={() => loadMore('addresses')}>
+                <Button className={moreStyles.textAction} type="button" variant="ghost" onClick={() => loadMore('addresses')}>
                   Cargar más direcciones
                 </Button>
               ) : null}
             </div>
-            <Button type="submit" disabled={busy}>
+            <Button className={moreStyles.primary} type="submit" disabled={busy}>
               {busy ? 'Guardando' : 'Registrar equipo'}
             </Button>
           </fieldset>
         </form>
       </div>
       {selected ? (
-        <div className="space-y-4 rounded-2xl border bg-white p-5">
-          <h2 className="text-xl font-bold">{selected.nickname}</h2>
+        <div className={styles.photos}>
+          <h2 className={styles.heading}>{selected.nickname}</h2>
           <CustomerEquipmentPhotos key={selected.id} equipmentId={selected.id} />
         </div>
       ) : null}

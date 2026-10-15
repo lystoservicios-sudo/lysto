@@ -226,7 +226,10 @@ export async function loadCustomerHome(
             recommendation: reminder.recommendation,
             dueAt: reminder.dueAt,
             status: reminder.status,
-            sourceJobId: reminder.sourceJobId
+            sourceJobId: reminder.sourceJobId,
+            activeJobId: reminder.activeJobId,
+            contextVerified: reminder.contextVerified,
+            superseded: reminder.superseded
           }))
         )
       : failed('mantenimientos')

@@ -76,14 +76,16 @@ describe('customer home selector', () => {
 
     expect(model.service.href).toBe('/app/solicitar/aire-acondicionado')
     expect(model.setupInvite?.kind).toBe('address')
+    expect(model.setupInvite?.action.href).toBe('/app/hogar?crear=hogar')
   })
 
   it('invites a customer with an address and no equipment to add equipment', () => {
     const model = buildCustomerHomeViewModel(source({ equipment: count(0) }))
     expect(model.setupInvite?.kind).toBe('equipment')
+    expect(model.setupInvite?.action.href).toBe('/app/hogar?crear=equipo')
   })
 
-  it('recognizes a persisted draft but does not invent a resume action', () => {
+  it('keeps unsubmitted server drafts out of launch activity without blocking home setup', () => {
     const model = buildCustomerHomeViewModel(
       source({
         requests: ready([
@@ -99,10 +101,35 @@ describe('customer home selector', () => {
       })
     )
 
-    expect(model.activity).toEqual([
-      expect.objectContaining({ kind: 'draft', action: null, disabledReason: expect.any(String) })
-    ])
-    expect(model.setupInvite).toBeNull()
+    expect(model.activity).toEqual([])
+    expect(model.setupInvite?.kind).toBe('equipment')
+  })
+
+  it.each([{ superseded: true }, { contextVerified: false }])('does not promote unverified or obsolete care %j', (context) => {
+    const model = buildCustomerHomeViewModel(source({ maintenance: ready([{
+      id: 'old-care', equipmentId: 'equipment', equipmentName: 'Aire', recommendation: 'filters_60_days',
+      dueAt: '2026-10-20', status: 'planned', sourceJobId: 'old-job', ...context
+    }]) }))
+    expect(model.activity).toEqual([])
+    expect(model.household).toBeNull()
+  })
+
+  it('directs care with an active job to the existing service instead of another request', () => {
+    const model = buildCustomerHomeViewModel(source({ maintenance: ready([{
+      id: 'care', equipmentId: 'equipment', equipmentName: 'Aire', recommendation: 'filters_60_days',
+      dueAt: '2026-10-20', status: 'planned', sourceJobId: 'old-job', activeJobId: 'active-job', contextVerified: true
+    }]) }))
+    expect(model.household?.action.href).toBe('/app/trabajos/active-job')
+    expect(model.activity[0].action?.href).toBe('/app/trabajos/active-job')
+  })
+
+  it('does not duplicate an active service as a second maintenance task', () => {
+    const model = buildCustomerHomeViewModel(source({ jobs: ready([autoJob]), maintenance: ready([{
+      id: 'care', equipmentId: 'equipment', equipmentName: 'Aire', recommendation: 'filters_60_days',
+      dueAt: '2026-10-20', status: 'planned', sourceJobId: 'old-job', activeJobId: autoJob.id, contextVerified: true
+    }]) }))
+    expect(model.activity).toHaveLength(1)
+    expect(model.activity[0].contractKey).toBe(`request:${autoJob.requestId}`)
   })
 
   it('treats a quote under review as progress, not as a draft or payment', () => {

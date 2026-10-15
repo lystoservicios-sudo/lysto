@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import type { QuoteInput, ServiceQuote } from '@/lib/pricing/service-quote'
 import { QuoteBreakdown } from './quote-breakdown'
+import { moreStyles } from '@/components/customer/more/more-ui'
 type SavedQuote = {
   id: string
   customer_id: string
@@ -39,24 +40,35 @@ export function SavedQuotes({
   const [refresh, setRefresh] = useState(0)
   const [reason, setReason] = useState('')
   const [nextCursor, setNextCursor] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(false)
   useEffect(() => {
     let active = true
-    fetch('/api/pricing/quotes')
+    setLoading(true)
+    setLoadError(false)
+    fetch('/api/pricing/quotes', internal ? undefined : { cache: 'no-store', signal: AbortSignal.timeout(15000) })
       .then(async (res) => {
         const data = await res.json()
         if (!active) return
         if (res.ok) {
+          if (!internal && !Array.isArray(data.quotes)) throw new Error('quotes_unavailable')
           setRows(data.quotes)
           setNextCursor(data.nextCursor ?? null)
-        } else setMessage(data.error)
+        } else if (internal) setMessage(data.error)
+        else setLoadError(true)
       })
       .catch(() => {
-        if (active) setMessage('No se pudieron consultar los presupuestos.')
+        if (!active) return
+        if (internal) setMessage('No se pudieron consultar los presupuestos.')
+        else setLoadError(true)
+      })
+      .finally(() => {
+        if (active) setLoading(false)
       })
     return () => {
       active = false
     }
-  }, [revision, refresh])
+  }, [revision, refresh, internal])
   async function act(row: SavedQuote) {
     if (busy) return
     setBusy(row.id)
@@ -126,18 +138,24 @@ export function SavedQuotes({
       setBusy(null)
     }
   }
+  const readReady = internal || (!loading && !loadError)
   return (
     <section className="space-y-4">
       <div>
         <h2 className="text-2xl font-black">{heading}</h2>
         {description ? <p className="mt-1 text-sm text-slate-600">{description}</p> : null}
       </div>
-      {message ? (
+      {!internal && loading ? <p role="status" aria-busy="true" className={moreStyles.notice}>Cargando presupuestos…</p> : null}
+      {!internal && loadError ? <div role="alert" className={moreStyles.error}>
+        <p>No pudimos consultar tus presupuestos. Volvé a intentarlo para ver el estado actualizado.</p>
+        <button type="button" className={moreStyles.textAction} onClick={() => setRefresh((value) => value + 1)}>Volver a consultar presupuestos</button>
+      </div> : null}
+      {message && readReady ? (
         <p role="status" className="text-sm text-blue-800">
           {message}
         </p>
       ) : null}
-      {!rows.length ? (
+      {readReady && !rows.length ? (
         <Card className="p-5 text-sm text-slate-600">
           No hay presupuestos disponibles para esta cuenta.
         </Card>
@@ -152,7 +170,7 @@ export function SavedQuotes({
           />
         </label>
       ) : null}
-      {rows.map((row) => (
+      {(readReady ? rows : []).map((row) => (
         <details
           key={row.id}
           id={`presupuesto-${row.id}`}
@@ -240,7 +258,7 @@ export function SavedQuotes({
           </div>
         </details>
       ))}
-      {nextCursor ? (
+      {readReady && nextCursor ? (
         <Button variant="secondary" disabled={Boolean(busy)} onClick={() => void more()}>
           Cargar más presupuestos
         </Button>

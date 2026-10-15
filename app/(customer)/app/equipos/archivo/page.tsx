@@ -1,5 +1,6 @@
-import { PageScaffold } from '@/components/layout/page-scaffold'
-import { ButtonLink } from '@/components/ui/button'
+import Link from 'next/link'
+import { Archive } from 'lucide-react'
+import { MoreEmpty, MoreLink, MorePage, moreStyles } from '@/components/customer/more/more-ui'
 import { requirePageSession } from '@/lib/auth/session'
 import { listCustomerEquipment } from '@/lib/customer-assets/service'
 
@@ -12,35 +13,31 @@ export default async function ArchivedEquipmentPage({
   const { cursor } = await searchParams
   const page = await listCustomerEquipment(session, cursor ? { cursor } : {}, true)
   return (
-    <PageScaffold
+    <MorePage
       title="Equipos archivados"
-      eyebrow="Cliente"
       description="Consultá los equipos que ya no usás y sus intervenciones anteriores."
+      backHref="/app/equipos"
+      backLabel="Volver a mis equipos"
     >
-      <ButtonLink href="/app/equipos" variant="secondary">
-        Volver a mis equipos
-      </ButtonLink>
       {!page.total ? (
-        <p>No tenés equipos archivados.</p>
+        <MoreEmpty title="No tenés equipos archivados" description="Si archivás un equipo, vas a poder consultar acá su historial sin perder los servicios anteriores." />
       ) : (
-        <ul className="space-y-3">
+        <ul>
           {page.items.map((equipment) => (
-            <li key={equipment.id} className="rounded-2xl border bg-white p-4">
-              <ButtonLink href={`/app/equipos/${equipment.id}`} variant="ghost">
-                {equipment.nickname} · Ver historial
-              </ButtonLink>
+            <li key={equipment.id}>
+              <MoreLink href={`/app/equipos/${equipment.id}`} title={equipment.nickname} description="Equipo archivado · Ver historial" icon={Archive} />
             </li>
           ))}
         </ul>
       )}
       {page.nextCursor ? (
-        <ButtonLink
+        <Link
           href={`/app/equipos/archivo?cursor=${encodeURIComponent(page.nextCursor)}`}
-          variant="secondary"
+          className={moreStyles.textAction}
         >
           Ver más equipos archivados
-        </ButtonLink>
+        </Link>
       ) : null}
-    </PageScaffold>
+    </MorePage>
   )
 }

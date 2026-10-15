@@ -184,7 +184,8 @@ describe('customer services projection', () => {
     const summary = buildCustomerServiceSummary({ request: { ...request, status: 'draft' } }, now)
     expect(summary.action).toBeNull()
     expect(summary.jobId).toBeNull()
-    expect(summary.description).toContain('recuperación')
+    expect(summary.statusLabel).toBe('Solicitud sin enviar')
+    expect(summary.description).not.toContain('recuperación')
   })
 
   it('keeps missing equipment, amount and address absent instead of filling invented values', () => {
