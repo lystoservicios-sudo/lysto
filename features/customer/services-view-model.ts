@@ -1,5 +1,6 @@
 import type { JobStatus, RequestStatus } from '@/lib/domain/types'
 import { customerJobStatusLabels } from '@/lib/domain/job-status-labels'
+import { isExpiredAutomaticRequest, type RequestVisitContext } from '@/lib/jobs/visit-address'
 
 export type CustomerServicesFilter = 'all' | 'in_progress' | 'scheduled' | 'finished'
 export type CustomerServiceVisit = {
@@ -31,7 +32,7 @@ export type CustomerServicesPage = {
   nextQuoteCursor: string | null
   unavailableSections: string[]
 }
-export type CustomerServiceRequestSource = {
+export type CustomerServiceRequestSource = RequestVisitContext & {
   id: string
   status: RequestStatus
   createdAt: string
@@ -95,9 +96,32 @@ export function buildCustomerServiceSummary(
     id: `request:${source.request.id}`, requestId: source.request.id,
     jobId: job?.id ?? null, quoteId: quote?.id ?? null,
     title: request.issueLabel ?? 'Servicio técnico', subject: request.equipmentName,
-    address: quote?.address ?? request.address, statusLabel: 'Pedido en seguimiento',
+    address: request.contractSource === 'automatic_customer_request' ? request.address : quote?.address ?? request.address,
+    statusLabel: 'Pedido en seguimiento',
     phase: 'in_progress', action: job ? { label: 'Ver servicio', href: `/app/trabajos/${job.id}` } : null,
     amount: job?.finalAmount ?? quote?.total ?? null, createdAt: request.createdAt, visit: null
+  }
+  if (isExpiredAutomaticRequest(request)) {
+    summary.phase = 'cancelled'
+    summary.statusLabel = 'Solicitud vencida'
+    summary.description = 'La solicitud está cerrada. Podés consultar su información.'
+    if (job) {
+      const payment = customerInitialPaymentState(source.checkouts ?? [], job.id)
+      if (source.paymentState === 'error' || payment === 'unknown') {
+        summary.statusLabel = 'Estado del pago por consultar'
+        summary.description = 'La reserva de la visita venció. No pudimos verificar el pago; consultá su estado antes de decidir. No vuelvas a pagar.'
+        summary.action!.label = 'Consultar pago'
+      } else if (payment === 'follow_up') {
+        summary.statusLabel = source.checkouts?.some(checkout => checkout.jobId === job.id && checkout.extraId === null && checkout.status === 'review')
+          ? 'Pago en revisión' : 'Pago en seguimiento'
+        summary.description = 'La reserva de la visita venció y el pago sigue en seguimiento. Consultá la operación. No vuelvas a pagar mientras se verifica.'
+        summary.action!.label = 'Consultar pago'
+      } else if (payment === 'approved') {
+        summary.description = 'El pago está aprobado, pero la reserva de la visita venció. Consultá la operación; no repitas el pago.'
+        summary.action!.label = 'Consultar pago'
+      }
+    }
+    return summary
   }
   if (!job) {
     if (request.status === 'cancelled' || request.status === 'expired') {
@@ -145,7 +169,9 @@ export function buildCustomerServiceSummary(
       summary.action!.label = consultation ? 'Consultar pago' : 'Ver pago'
       summary.description = consultation
         ? 'Consultá el estado confirmado del pago. No vuelvas a pagar hasta que se confirme su estado.'
-        : 'El profesional aceptó el servicio. Revisá el pago para continuar.'
+        : request.contractSource === 'automatic_customer_request'
+          ? 'El profesional está confirmado. Revisá el pago para continuar.'
+          : 'El profesional aceptó el servicio. Revisá el pago para continuar.'
     } else if (source.visit) {
       summary.phase = 'scheduled'
       summary.statusLabel = 'Visita confirmada'

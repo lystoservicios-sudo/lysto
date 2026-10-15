@@ -30,6 +30,7 @@ import {
 import { listMaintenance } from '@/lib/equipment/maintenance-service'
 import { ApiError } from '@/lib/http/api-error'
 import { listSupportCases } from '@/lib/support/service'
+import { isExpiredAutomaticRequest } from '@/lib/jobs/visit-address'
 
 const visitSchema = z
   .object({
@@ -120,12 +121,14 @@ function homeJobSummary(job: CustomerJobViewModel): HomeJobSource {
   return {
     id: job.id,
     requestId: job.requestId,
+    requestStatus: job.requestStatus,
+    contractSource: job.contractSource,
     status: job.status,
     issueLabel: job.issueLabel,
     equipmentId: job.equipmentId,
     equipmentName: job.equipmentName,
     nextStep: job.nextStep,
-    createdAt: job.scheduledAt,
+    createdAt: job.createdAt ?? job.scheduledAt,
     completedAt: job.completedAt,
     visit: null,
     visitState: 'ready'
@@ -142,7 +145,7 @@ async function listHomeJobs(session: Session): Promise<HomeJobSource[]> {
   return Promise.all(
     page.items.map(async (job): Promise<HomeJobSource> => {
       const common = homeJobSummary(job)
-      if (job.status !== 'confirmed') {
+      if (job.status !== 'confirmed' || isExpiredAutomaticRequest({ contractSource: job.contractSource, status: job.requestStatus })) {
         return {
           ...common,
           visit: null,
@@ -206,6 +209,7 @@ export async function loadCustomerHome(
           requests.value.items.map((request) => ({
             id: request.id,
             status: request.status,
+            contractSource: request.contractSource,
             issueLabel: request.issueLabel,
             nextStep: request.nextStep,
             createdAt: request.createdAt

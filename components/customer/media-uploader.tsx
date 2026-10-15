@@ -39,7 +39,7 @@ function MediaFilePreview({ file }: { file: File }) {
   return <div className="grid h-14 w-14 shrink-0 place-items-center rounded-xl bg-blue-50 text-blue-700"><Icon aria-hidden="true" className="h-5 w-5" /></div>
 }
 
-export function MediaUploader({ files, onFilesChange, maxFiles = 5, maxSizeMb = 10, target = { kind: 'request-photo' }, savedPhotos, onSavedPhotosChange, onBusyChange }: {
+export function MediaUploader({ files, onFilesChange, maxFiles = 5, maxSizeMb = 10, target = { kind: 'request-photo' }, savedPhotos, onSavedPhotosChange, onBusyChange, customerId }: {
   files: readonly File[]
   onFilesChange: (files: File[]) => void
   maxFiles?: number
@@ -48,6 +48,7 @@ export function MediaUploader({ files, onFilesChange, maxFiles = 5, maxSizeMb = 
   savedPhotos?: readonly SavedPhoto[]
   onSavedPhotosChange?: (photos: SavedPhoto[]) => void
   onBusyChange?: (busy: boolean) => void
+  customerId?: string
 }) {
   const inputId = useId()
   const [error, setError] = useState<string | null>(null)
@@ -56,25 +57,42 @@ export function MediaUploader({ files, onFilesChange, maxFiles = 5, maxSizeMb = 
   const saved = savedPhotos ?? localSaved
   const handles = useRef(new WeakMap<File, UploadHandle>())
   const draft = useRef<string | undefined>(target?.draftId)
+  const epoch = useRef(0)
+  const controller = useRef<AbortController | null>(null)
+  const callbacks = useRef({ onBusyChange })
+  callbacks.current = { onBusyChange }
+  useEffect(() => {
+    const generation = epoch
+    handles.current = new WeakMap()
+    draft.current = target?.draftId
+    setLocalSaved([]); setBusy(false); setError(null)
+    return () => { generation.current++; controller.current?.abort(); callbacks.current.onBusyChange?.(false) }
+  }, [customerId, target?.kind, target?.entityId, target?.draftId, target?.scope])
   const effectiveMaxMb = Math.min(maxSizeMb, target?.kind === 'job-document' ? 20 : 10)
   const pendingFiles = files.filter(file => !saved.some(item => item.file === file))
   const persist = async () => {
     if (busy || !target) return
+    const generation = epoch.current
+    const active = new AbortController()
+    controller.current = active
+    const current = () => generation === epoch.current && !active.signal.aborted
     setBusy(true); onBusyChange?.(true); setError(null)
     let completed = [...saved]
     try {
       draft.current ??= saved.find(item => item.upload.draftId)?.upload.draftId ?? undefined
       for (const file of pendingFiles) {
         const upload = await uploadPrivateFile(file, { ...target, ...(target.kind === 'request-photo' && !target.entityId ? { draftId: draft.current } : {}) }, handle => {
+          if (!current()) return
           if (!handle) { handles.current.delete(file); return }
           handles.current.set(file, handle)
           draft.current ??= handle.draftId ?? undefined
-        }, handles.current.get(file))
+        }, handles.current.get(file), { customerId, signal: active.signal })
+        if (!current()) return
         completed = [...completed, { file, upload }]
         setLocalSaved(completed); onSavedPhotosChange?.(completed)
       }
-    } catch (failure) { setError(failure instanceof Error ? failure.message : 'No pudimos guardar la foto. Intentá nuevamente.') }
-    finally { setBusy(false); onBusyChange?.(false) }
+    } catch (failure) { if (current()) setError(failure instanceof Error ? failure.message : 'No pudimos guardar la foto. Intentá nuevamente.') }
+    finally { if (current()) { setBusy(false); onBusyChange?.(false) } }
   }
 
   const handleFiles = (event: ChangeEvent<HTMLInputElement>) => {
@@ -149,6 +167,8 @@ export function MediaUploader({ files, onFilesChange, maxFiles = 5, maxSizeMb = 
       {files.length ? (
         <ul aria-label="Archivos seleccionados" className="grid gap-2 sm:grid-cols-2">
           {files.map((file, index) => {
+            const savedPhoto = saved.find(item => item.file === file)
+            const removable = !savedPhoto || (target?.kind === 'request-photo' && !target.entityId && !savedPhoto.upload.entityId)
             return (
               <li key={`${file.name}-${file.lastModified}-${index}`} className="flex min-w-0 items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3">
                 <MediaFilePreview file={file} />
@@ -156,11 +176,17 @@ export function MediaUploader({ files, onFilesChange, maxFiles = 5, maxSizeMb = 
                   <p className="truncate text-sm font-bold text-slate-950">{file.name}</p>
                   <p className="mt-0.5 text-xs text-slate-500"><span>{saved.some(item => item.file === file) ? (saved.find(item => item.file === file)?.upload.entityId ? 'Guardada y verificada' : 'Guardada en borrador privado') : 'Seleccionado en este dispositivo'}</span> · {fileSize(file.size)}</p>
                 </div>
-                {!saved.some(item => item.file === file) ? <button
+                {removable ? <button
                   type="button"
                   aria-label={`Quitar ${file.name}`}
                   disabled={busy}
-                  onClick={() => onFilesChange(files.filter((_, fileIndex) => fileIndex !== index))}
+                  onClick={() => {
+                    if (savedPhoto) {
+                      const remaining = saved.filter(item => item.file !== file)
+                      setLocalSaved(remaining); onSavedPhotosChange?.(remaining)
+                    }
+                    onFilesChange(files.filter((_, fileIndex) => fileIndex !== index))
+                  }}
                   className="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-slate-500 transition-colors hover:bg-red-50 hover:text-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
                 >
                   <Trash2 aria-hidden="true" className="h-4 w-4" />

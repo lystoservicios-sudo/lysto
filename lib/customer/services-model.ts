@@ -19,6 +19,7 @@ import type { Session } from '@/lib/auth/session'
 import { encodeCursor, parsePageInput, type PagePoint } from '@/lib/data-access/pagination'
 import { ApiError } from '@/lib/http/api-error'
 import { Constants } from '@/lib/supabase/database.types'
+import { isExpiredAutomaticRequest, requestVisitAddress } from '@/lib/jobs/visit-address'
 
 export type CustomerServicesInput = {
   filter?: CustomerServicesFilter
@@ -39,7 +40,9 @@ const uuid = z.string().uuid()
 const createdAt = z.string().datetime({ offset: true })
 const requestSchema = z.object({
   id: uuid, created_at: createdAt, status: z.enum(Constants.public.Enums.request_status),
-  issue_type_id: uuid, address_id: uuid.nullable(), equipment_id: uuid.nullable()
+  issue_type_id: uuid, address_id: uuid.nullable(), equipment_id: uuid.nullable(),
+  contract_source: z.literal('automatic_customer_request').nullable().optional(),
+  visit_address_snapshot: z.unknown().optional()
 })
 type RequestRow = z.infer<typeof requestSchema>
 const jobSchema = z.object({
@@ -143,7 +146,11 @@ async function hydrateRequests(session: Session, requests: RequestRow[], unavail
     }
   }
   const visits = new Map<string, CustomerServiceVisit>()
-  await Promise.all(jobs.filter((job) => job.status === 'confirmed' && paymentState === 'ready' &&
+  const requestById = new Map(requests.map((request) => [request.id, request]))
+  await Promise.all(jobs.filter((job) => !isExpiredAutomaticRequest({
+    status: requestById.get(job.request_id)?.status,
+    contractSource: requestById.get(job.request_id)?.contract_source
+  }) && job.status === 'confirmed' && paymentState === 'ready' &&
     customerInitialPaymentState(checkouts, job.id) === 'approved')
     .map(async (job) => {
       try {
@@ -175,7 +182,9 @@ async function hydrateRequests(session: Session, requests: RequestRow[], unavail
         id: request.id, status: request.status, createdAt: request.created_at,
         issueLabel: issueById.get(request.issue_type_id),
         equipmentName: request.equipment_id ? equipmentById.get(request.equipment_id) : undefined,
-        address: request.address_id ? addressById.get(request.address_id) : undefined
+        contractSource: request.contract_source,
+        address: requestVisitAddress({ contractSource: request.contract_source, visitAddressSnapshot: request.visit_address_snapshot },
+          request.address_id ? addressById.get(request.address_id) : undefined)
       }, job, quote: quoteByRequest.get(request.id), checkouts, paymentState,
       visit: job ? visits.get(job.id) ?? null : null
     }, now)
@@ -191,7 +200,7 @@ async function scanServices(
   const queryScope = scope(session, 'services', filter)
   for (let batch = 0; batch < 4; batch++) {
     let query = session.client.from('service_requests')
-      .select('id,created_at,status,issue_type_id,address_id,equipment_id')
+      .select('id,created_at,status,issue_type_id,address_id,equipment_id,contract_source,visit_address_snapshot')
       .eq('customer_id', session.customerId!).order('created_at', { ascending: false })
       .order('id', { ascending: false }).limit(pageSize + 1)
     const expression = continuation(position)

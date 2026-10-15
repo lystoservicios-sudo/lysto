@@ -1,15 +1,7 @@
-import { PageScaffold } from '@/components/layout/page-scaffold'
+import { CustomerMore } from '@/components/customer/more/customer-more'
+import { requirePageSession } from '@/lib/auth/session'
+import { readCustomerMore } from '@/lib/customer-more/hub'
 
-export default function CustomerMorePage() {
-  return (
-    <PageScaffold
-      eyebrow="Cliente"
-      title="Más"
-      description="Acá vas a encontrar los accesos secundarios y la configuración de tu cuenta."
-    >
-      <p className="text-sm text-slate-600">
-        Esta sección estará disponible próximamente.
-      </p>
-    </PageScaffold>
-  )
+export default async function CustomerMorePage() {
+  return <CustomerMore {...await readCustomerMore(await requirePageSession('customer'))} />
 }

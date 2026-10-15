@@ -14,7 +14,7 @@ export const clientNavigationItems = [
   },
   {
     id: 'more', label: 'Más', href: '/app/mas', icon: 'more',
-    activePaths: ['/app/mas', '/app/perfil', '/app/pagos', '/app/garantias', '/app/direcciones', '/app/mantenimientos']
+    activePaths: ['/app/mas', '/app/perfil', '/app/pagos', '/app/garantias', '/app/direcciones', '/app/mantenimientos', '/app/ayuda', '/app/preferencias', '/app/seguridad']
   }
 ] as const
 

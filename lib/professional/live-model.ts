@@ -7,10 +7,12 @@ import { createProfessionalQueries } from '@/lib/data-access/professional-querie
 import type { ReadOptions } from '@/lib/data-access/read-contracts'
 import { customerJobStatusLabels } from '@/lib/domain/job-status-labels'
 import { ApiError } from '@/lib/http/api-error'
+import { isExpiredAutomaticRequest, requestVisitAddress, type RequestVisitContext } from '@/lib/jobs/visit-address'
 
-export type ProfessionalLiveJob = {
+export type ProfessionalLiveJob = RequestVisitContext & {
   id: string
   status: string
+  requestStatus?: string
   statusLabel: string
   scheduledDate: string
   timeWindow: string
@@ -25,7 +27,7 @@ export async function listProfessionalJobsLive(session: Session, input: ReadOpti
   const requests = requestIds.length
     ? await session.client
         .from('service_requests')
-        .select('id,issue_type_id,address_id')
+        .select('id,issue_type_id,address_id,status,contract_source,visit_address_snapshot')
         .in('id', requestIds)
     : { data: [], error: null }
   if (requests.error || !requests.data) throw new ApiError('service_unavailable')
@@ -56,15 +58,17 @@ export async function listProfessionalJobsLive(session: Session, input: ReadOpti
     return {
       id: job.id,
       status: job.status,
-      statusLabel: customerJobStatusLabels[job.status],
+      contractSource: request?.contract_source,
+      requestStatus: request?.status,
+      statusLabel: isExpiredAutomaticRequest({ contractSource: request?.contract_source, status: request?.status })
+        ? 'Solicitud vencida' : customerJobStatusLabels[job.status],
       scheduledDate: job.scheduledDate ?? job.createdAt,
       timeWindow: job.timeWindow ?? 'Horario por confirmar',
       issueLabel: request
         ? (issueMap.get(request.issue_type_id) ?? 'Servicio técnico')
         : 'Servicio técnico',
-      address: request?.address_id
-        ? (addressMap.get(request.address_id) ?? 'Dirección asignada')
-        : 'Dirección por confirmar',
+      address: requestVisitAddress({ contractSource: request?.contract_source, visitAddressSnapshot: request?.visit_address_snapshot },
+        request?.address_id ? addressMap.get(request.address_id) ?? 'Dirección asignada' : undefined) ?? 'Dirección por confirmar',
       finalAmount: job.finalAmount
     }
   })

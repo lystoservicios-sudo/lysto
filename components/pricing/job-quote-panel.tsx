@@ -12,6 +12,7 @@ import { QuoteBreakdown } from './quote-breakdown'
 import { PaymentPanel } from '@/components/payments/payment-panel'
 import { JobCloseoutForm } from '@/components/pro/job-closeout-form'
 import { CustomerServiceDetail, type CustomerServiceDetailData } from '@/components/customer/customer-service-detail'
+import { isExpiredAutomaticRequest } from '@/lib/jobs/visit-address'
 import {
   JobVisitCard,
   type CustomerJobVisit,
@@ -30,7 +31,7 @@ type Diagnosis = {
 }
 type JobData = CustomerServiceDetailData & {
   role: string
-  job: { id: string; status: string; professionalName: string | null }
+  job: CustomerServiceDetailData['job']
   equipmentId: string | null
   visit: CustomerJobVisit | null
   onsiteDiagnosis: Diagnosis | null
@@ -72,6 +73,7 @@ export function JobQuotePanel({ jobId, requestId }: { jobId?: string; requestId?
   const [files, setFiles] = useState<File[]>([]),
     [saved, setSaved] = useState<SavedPhoto[]>([]),
     [savedEvidence, setSavedEvidence] = useState<string[]>([])
+  const expiredContract = isExpiredAutomaticRequest({ contractSource: data?.job.contractSource, status: data?.job.requestStatus })
   useEffect(() => {
     let active = true
     fetch(
@@ -218,9 +220,9 @@ export function JobQuotePanel({ jobId, requestId }: { jobId?: string; requestId?
         <>
           <Card className="space-y-2 p-5">
             <p className="font-bold">
-              Estado: {jobStatusLabels[data.job.status as JobStatus] ?? data.job.status}
+              Estado: {expiredContract ? 'Solicitud vencida' : jobStatusLabels[data.job.status as JobStatus] ?? data.job.status}
             </p>
-            {data.savedQuote ? (
+            {data.job.contractSource != null ? <p>{data.visitAddressLabel ?? 'Domicilio no disponible'}</p> : data.savedQuote ? (
               <p>
                 {data.savedQuote.address.street} {data.savedQuote.address.number} ·{' '}
                 {data.savedQuote.address.city}
@@ -270,8 +272,9 @@ export function JobQuotePanel({ jobId, requestId }: { jobId?: string; requestId?
             jobStatus={data.job.status}
             role={data.role}
             extras={data.extras}
+            readOnly={expiredContract}
           />
-          {data.role === 'professional' && data.job.status === 'in_progress' && data.equipmentId ? (
+          {!expiredContract && data.role === 'professional' && data.job.status === 'in_progress' && data.equipmentId ? (
             <JobCloseoutForm
               jobId={data.job.id}
               equipmentId={data.equipmentId}
@@ -294,7 +297,7 @@ export function JobQuotePanel({ jobId, requestId }: { jobId?: string; requestId?
               </p>
             </Card>
           ) : null}
-          {data.role === 'professional' &&
+          {!expiredContract && data.role === 'professional' &&
           ['confirmed', 'technician_on_way', 'arrived'].includes(data.job.status) ? (
             <Button
               disabled={busy}
@@ -315,7 +318,7 @@ export function JobQuotePanel({ jobId, requestId }: { jobId?: string; requestId?
               }
             </Button>
           ) : null}
-          {data.role === 'professional' &&
+          {!expiredContract && data.role === 'professional' &&
           (data.job.status === 'onsite_diagnosis' ||
             data.onsiteDiagnosis?.status === 'changes_requested') ? (
             <Card className="space-y-4 p-5">

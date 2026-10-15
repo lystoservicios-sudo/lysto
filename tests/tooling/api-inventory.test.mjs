@@ -12,4 +12,7 @@ test('API inventory is regenerated and every method has authority, destination a
  for(const entry of inventory.entries){assert.ok(entry.authority);assert.ok(entry.canonicalDestination);assert.ok(entry.test)}
  const unsafe=inventory.entries.find(e=>e.route==='/api/payments/webhook/apply')
  assert.deepEqual({status:unsafe.status,destination:unsafe.canonicalDestination},{status:'retired',destination:'/api/mercadopago/webhook'})
+ const supportDetail=inventory.entries.filter(e=>e.route==='/api/support/cases/[id]')
+ assert.equal(supportDetail.find(e=>e.method==='GET').authority,'Sesión: customer')
+ assert.equal(supportDetail.find(e=>e.method==='PATCH').authority,'Sesión: customer,professional,admin')
 })

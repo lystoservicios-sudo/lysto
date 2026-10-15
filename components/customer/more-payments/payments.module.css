@@ -1,0 +1,31 @@
+.movement { display: flex; gap: 12px; align-items: center; justify-content: space-between; min-height: 96px; padding: 18px 0; color: var(--more-ink); border-bottom: 1px solid var(--more-line); text-decoration: none; }
+.movement:hover { background: #f8faff; }
+.movementCopy { display: grid; min-width: 0; gap: 6px; }
+.movementCopy > strong { font-size: .9375rem; font-weight: 600; line-height: 1.4; overflow-wrap: anywhere; }
+.movementCopy > span:not(.state) { color: var(--more-muted); font-size: .75rem; line-height: 1.5; }
+.movementAmount { display: flex; align-items: center; gap: 8px; flex-shrink: 0; font-size: .9375rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.movementAmount svg { color: var(--more-muted); }
+.state { width: fit-content; font-size: .75rem; line-height: 1.5; font-weight: 600; color: var(--more-muted); }
+.state[data-tone='action'] { color: var(--more-blue); }
+.state[data-tone='confirmed'] { color: #167333; }
+.state[data-tone='attention'] { color: #855713; }
+.pagination { display: flex; gap: 12px; align-items: center; justify-content: space-between; }
+.checkout { display: grid; gap: 12px; padding: 20px 0; border-bottom: 1px solid var(--more-line); }
+.checkout:first-child { padding-top: 10px; }
+.checkout h3 { margin: 0; font-size: .9375rem; font-weight: 600; line-height: 1.5; }
+.checkoutHeading { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 16px; }
+.checkout p { margin: 0; }
+.checkout :global(a) { min-width: 0; }
+.printable { padding: 20px; border: 1px solid var(--more-line); border-radius: 16px; }
+.recordBrand { margin: 0 0 14px; font-size: 1.0625rem; font-weight: 650; }
+.reference { font-size: .75rem; font-variant-numeric: tabular-nums; }
+@media (max-width: 380px) { .movement { align-items: flex-start; }.movementAmount { font-size: .8125rem; gap: 2px; }.printable { padding: 14px; } }
+@media print {
+  :global(body):has(.printable) * { visibility: hidden !important; }
+  :global(body):has(.printable) .printable,
+  :global(body):has(.printable) .printable * { visibility: visible !important; }
+  :global(body):has(.printable) :global(.client-app-shell) > :not(:global(main)),
+  :global(div):has(> .printable) > :not(.printable) { display: none !important; }
+  :global(body):has(.printable) :global(.client-app-content) { padding: 0 !important; }
+  .printable { position: absolute; inset: 0 auto auto 0; width: 100%; border: 0; padding: 24px; color: #0d1830; background: #fff; }
+}

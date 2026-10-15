@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual } from 'node:crypto'
 import { ZodError } from 'zod'
 import { ApiError, apiErrorResponse, privateJson } from '@/lib/http/api-error'
+import { isAllowedAuthOrigin } from '@/lib/auth/account-lifecycle'
 
 export function marketplaceConfig() {
   const clientId = process.env.MERCADOPAGO_MARKETPLACE_CLIENT_ID
@@ -31,7 +32,7 @@ export function checkIpnToken(checkoutId: string, actual: string, key: string) {
 export function sameOrigin(request: Request) {
   const origin = request.headers.get('origin')
   // Mutation routes require the browser's Origin; webhooks use signatures instead.
-  if (!origin || origin !== new URL(request.url).origin) throw new Error('payment_forbidden')
+  if (!isAllowedAuthOrigin(origin, process.env.NEXT_PUBLIC_APP_URL)) throw new Error('payment_forbidden')
 }
 export function paymentError(error: unknown) {
   if (error instanceof ApiError || error instanceof SyntaxError) return apiErrorResponse(error)

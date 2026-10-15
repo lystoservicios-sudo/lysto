@@ -38,13 +38,16 @@ const verifiedSchema = z.object({
   entityId: z.string().uuid().nullable()
 })
 class ExpiredUploadError extends Error {}
-async function post(path: string, body: unknown) {
+export type UploadExecution = { customerId?: string; signal?: AbortSignal }
+async function post(path: string, body: unknown, execution: UploadExecution) {
+  execution.signal?.throwIfAborted()
   const response = await fetch(path, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...(execution.customerId ? { 'X-Lysto-Customer-Id': execution.customerId } : {}) },
     body: JSON.stringify(body),
-    signal: AbortSignal.timeout(60_000)
+    signal: execution.signal ? AbortSignal.any([execution.signal, AbortSignal.timeout(60_000)]) : AbortSignal.timeout(60_000)
   })
+  execution.signal?.throwIfAborted()
   if (response.status === 410)
     throw new ExpiredUploadError(
       'La subida venció. Volvé a guardar la foto para iniciar un nuevo intento.'
@@ -57,8 +60,11 @@ export async function uploadPrivateFile(
   file: File,
   target: UploadTarget,
   onIntent?: (handle: UploadHandle | null) => void,
-  resume?: UploadHandle
+  resume?: UploadHandle,
+  execution: UploadExecution = {}
 ): Promise<VerifiedUpload> {
+  execution.signal?.throwIfAborted()
+  if (execution.customerId) z.string().uuid().parse(execution.customerId)
   const { scope, ...declaration } = target
   if (scope && target.kind !== 'professional-document')
     throw new Error('El archivo no pertenece a una postulación.')
@@ -70,6 +76,7 @@ export async function uploadPrivateFile(
   if (resume) handle = handleSchema.parse(resume)
   else {
     const hash = await crypto.subtle.digest('SHA-256', await file.arrayBuffer())
+    execution.signal?.throwIfAborted()
     const sha256 = Array.from(new Uint8Array(hash), (byte) =>
       byte.toString(16).padStart(2, '0')
     ).join('')
@@ -79,24 +86,30 @@ export async function uploadPrivateFile(
         mimeType: file.type,
         sizeBytes: file.size,
         sha256
-      })
+      }, execution)
     )
+    execution.signal?.throwIfAborted()
     onIntent?.(handle)
   }
+  execution.signal?.throwIfAborted()
   const { error } = await createClient()
     .storage.from(handle.bucket)
     .uploadToSignedUrl(handle.path, handle.token, file, { contentType: file.type, upsert: false })
+  // The Storage SDK may finish writing quarantine bytes after abort; never finalize or
+  // acknowledge them under another account. Existing expiry cleanup handles orphan intents.
+  execution.signal?.throwIfAborted()
   // An immutable object may already exist when the previous response was lost.
   // The verifier must still prove that its bytes match this intent.
   if (error && !['409', '400'].includes(String(error.statusCode)))
     throw new Error('La subida no se completó. Podés reintentar la misma foto.')
   let verified: z.infer<typeof verifiedSchema>
   try {
-    verified = verifiedSchema.parse(await post(base + '/finalize', { intentId: handle.intentId }))
+    verified = verifiedSchema.parse(await post(base + '/finalize', { intentId: handle.intentId }, execution))
   } catch (error) {
     if (error instanceof ExpiredUploadError) onIntent?.(null)
     throw error
   }
+  execution.signal?.throwIfAborted()
   if (verified.id !== handle.intentId) throw new Error('No pudimos confirmar el archivo guardado.')
   return {
     intentId: verified.id,

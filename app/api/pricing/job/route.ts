@@ -1,6 +1,7 @@
-import { privateJson } from '@/lib/http/api-error'
+import { ApiError, privateJson } from '@/lib/http/api-error'
 import { z } from 'zod'
 import { getPricingSession, pricingError, throwPricingDatabaseError } from '@/lib/pricing/server'
+import { requestVisitAddress } from '@/lib/jobs/visit-address'
 
 const visitSchema = z
   .object({
@@ -55,22 +56,24 @@ export async function GET(request: Request) {
       .select('*')
       .eq('job_id', job.id)
       .order('created_at')
-    const { data: serviceRequest } = await s.client
+    const { data: serviceRequest, error: serviceRequestError } = await s.client
       .from('service_requests')
-      .select('equipment_id')
+      .select('equipment_id,status,contract_source,visit_address_snapshot')
       .eq('id', job.request_id)
       .single()
+    if (serviceRequestError) throwPricingDatabaseError(serviceRequestError)
+    if (!serviceRequest) throw new ApiError('service_unavailable')
     let customerService: { issueLabel: string; equipmentName: string | null; addressLabel: string | null } | undefined
     if (s.role === 'customer' && s.customerId) {
       const requestResult = await s.client.from('service_requests')
-        .select('issue_type_id,equipment_id,address_id').eq('id', job.request_id).eq('customer_id', s.customerId).maybeSingle()
+        .select('issue_type_id,equipment_id,address_id,contract_source,visit_address_snapshot').eq('id', job.request_id).eq('customer_id', s.customerId).maybeSingle()
       if (requestResult.error) throwPricingDatabaseError(requestResult.error)
       const ownedRequest = requestResult.data
       const [equipmentResult, addressResult, issueResult] = await Promise.all([
         ownedRequest?.equipment_id
           ? s.client.from('customer_equipment').select('nickname').eq('id', ownedRequest.equipment_id).eq('customer_id', s.customerId).maybeSingle()
           : Promise.resolve({ data: null, error: null }),
-        ownedRequest?.address_id
+        ownedRequest?.address_id && ownedRequest.contract_source == null
           ? s.client.from('customer_addresses').select('street,number,floor,apartment,city').eq('id', ownedRequest.address_id).eq('customer_id', s.customerId).maybeSingle()
           : Promise.resolve({ data: null, error: null }),
         ownedRequest?.issue_type_id
@@ -84,11 +87,11 @@ export async function GET(request: Request) {
       customerService = {
         issueLabel: issueResult.data?.name ?? 'Aire acondicionado',
         equipmentName: equipmentResult.data?.nickname ?? null,
-        addressLabel: address ? [
+        addressLabel: requestVisitAddress({ contractSource: ownedRequest?.contract_source, visitAddressSnapshot: ownedRequest?.visit_address_snapshot }, address ? [
           [address.street, address.number].filter(Boolean).join(' '),
           [address.floor ? `Piso ${address.floor}` : null, address.apartment ? `Depto. ${address.apartment}` : null].filter(Boolean).join(' '),
           address.city
-        ].filter(Boolean).join(', ') : null
+        ].filter(Boolean).join(', ') : undefined) ?? null
       }
     }
     const onsite = await s.client
@@ -104,13 +107,18 @@ export async function GET(request: Request) {
       .eq('job_id', job.id)
       .maybeSingle()
     return privateJson({
-      job: { ...job, professionalName },
+      job: { ...job, professionalName, ...(serviceRequest?.contract_source ? {
+        contractSource: serviceRequest.contract_source, requestStatus: serviceRequest.status
+      } : {}) },
       savedQuote,
       extras: extras ?? [],
       onsiteDiagnosis: onsite.data ?? null,
       finalReport: finalReport.data ?? null,
       equipmentId: serviceRequest?.equipment_id ?? null,
       visit,
+      ...(serviceRequest?.contract_source ? {
+        visitAddressLabel: requestVisitAddress({ contractSource: serviceRequest.contract_source, visitAddressSnapshot: serviceRequest.visit_address_snapshot }) ?? null
+      } : {}),
       ...(customerService ? { customerService } : {}),
       role: s.role
     })

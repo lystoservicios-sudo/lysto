@@ -39,6 +39,7 @@ export async function dispatchNotifications(batchSize: number, invitationId?: st
     }
   )
   return runOutboxBatch(client, {
+    enforceCustomerPreferences: true,
     appUrl,
     from,
     batchSize,

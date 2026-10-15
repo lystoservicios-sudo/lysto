@@ -7,7 +7,7 @@ export default function CustomerHomeError({ reset }: { error: Error; reset: () =
   return (
     <div className={styles.home}>
       <section role="alert" className={styles.error}>
-        <h1 className={styles.sectionTitle}>No pudimos cargar Inicio</h1>
+        <h1 className={styles.sectionTitle}>No pudimos cargar esta pantalla</h1>
         <p className={styles.description}>Volvé a intentar en unos momentos.</p>
         <button type="button" className={styles.activityAction} onClick={() => reset()}>
           <RotateCcw aria-hidden="true" size={16} />Reintentar

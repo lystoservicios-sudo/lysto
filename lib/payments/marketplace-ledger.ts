@@ -1,14 +1,40 @@
 import { randomUUID } from 'node:crypto'
+import type { PoolClient } from 'pg'
 import type { CreatePreferenceInput } from '@waltergaltieri/mercadopago-split'
 import { checkoutAmounts, checkoutBackUrls, checkoutProtocol, inspectPayment } from './checkout-contract'
 import { paymentDatabase, paymentTransaction, type CheckoutRow } from './marketplace-db'
 import { inspectCanonicalOrder } from './orders'
 
+type LockedJob = { professional_id: string; status: string; request_id: string }
+
+async function lockCanonicalCheckout(db: PoolClient, checkoutId: string) {
+  // Contract preparation takes job -> checkout -> contract/reservation locks.
+  // Resolve the immutable owner without a lock, then follow the same order.
+  const owner = await db.query<Pick<CheckoutRow, 'job_id' | 'customer_id' | 'professional_id'>>(
+    'select job_id,customer_id,professional_id from public.marketplace_checkouts where id=$1', [checkoutId])
+  if (!owner.rows[0]) return null
+  const identity = owner.rows[0]
+  // Pin projection FK parents before retaining a contract. A scheduler may hold
+  // the professional row while waiting for capacity; never acquire that FK late.
+  const customer = await db.query('select id from public.customer_profiles where id=$1 for key share', [identity.customer_id])
+  const professional = await db.query('select id from public.professional_profiles where id=$1 for key share', [identity.professional_id])
+  if (!customer.rows[0] || !professional.rows[0]) throw new Error('checkout_identity_changed')
+  const jobId = identity.job_id
+  const jobs = await db.query<LockedJob>(
+    'select professional_id,status,request_id from public.jobs where id=$1 for update', [jobId])
+  const rows = await db.query<CheckoutRow>('select * from public.marketplace_checkouts where id=$1 for update', [checkoutId])
+  const checkout = rows.rows[0]
+  if (!checkout) return null
+  if (checkout.job_id !== jobId || checkout.customer_id !== identity.customer_id ||
+      checkout.professional_id !== identity.professional_id || !jobs.rows[0]) throw new Error('checkout_identity_changed')
+  return { checkout, job: jobs.rows[0] }
+}
+
 export async function applyCanonicalOrder(checkoutId: string, raw: unknown, eventId: string) {
   return paymentTransaction(async db => {
-    const result = await db.query<CheckoutRow>('select * from public.marketplace_checkouts where id=$1 for update', [checkoutId])
-    const checkout = result.rows[0]
-    if (!checkout || checkoutProtocol(checkout) !== 'orders' || !checkout.order_id) return { ignored: true }
+    const locked = await lockCanonicalCheckout(db, checkoutId)
+    if (!locked || checkoutProtocol(locked.checkout) !== 'orders' || !locked.checkout.order_id) return { ignored: true }
+    const { checkout, job } = locked
     const order = inspectCanonicalOrder(checkout, raw)
     if (order.orderId !== checkout.order_id) order.issues.push('order_id_mismatch')
     const duplicate = await db.query('insert into private.marketplace_applied_events(event_id,checkout_id) values($1,$2) on conflict do nothing returning event_id', [eventId,checkout.id])
@@ -19,10 +45,8 @@ export async function applyCanonicalOrder(checkoutId: string, raw: unknown, even
       return { stale: true }
     if (['approved','partially_refunded','refunded'].includes(existing.rows[0]?.provider_status) &&
         ['ready','pending','rejected','cancelled'].includes(order.status)) order.issues.push('unexpected_status_regression')
-    const job = await db.query<{ professional_id: string; status: string; request_id: string }>(
-      'select professional_id,status,request_id from public.jobs where id=$1', [checkout.job_id])
-    if (job.rows[0]?.professional_id !== checkout.professional_id) order.issues.push('assignment_changed')
-    if (String(job.rows[0]?.status).startsWith('cancelled')) order.issues.push('job_cancelled')
+    if (job.professional_id !== checkout.professional_id) order.issues.push('assignment_changed')
+    if (job.status.startsWith('cancelled')) order.issues.push('job_cancelled')
     if (checkout.status === 'review' &&
         !(['cancellation_requested','professional_replacement_requested'].includes(checkout.review_reason ?? '') &&
           ['cancelled','refunded'].includes(order.status)))
@@ -39,9 +63,10 @@ export async function applyCanonicalOrder(checkoutId: string, raw: unknown, even
       refunded_amount=excluded.refunded_amount,issues=excluded.issues,observed_at=now()`,
       [checkout.order_id,checkout.id,status,order.updatedAt ?? '1970-01-01T00:00:00Z',order.paymentId,
         order.refundedAmount,JSON.stringify(order.issues)])
-    await db.query('update public.marketplace_checkouts set status=$2,review_reason=$3,updated_at=now() where id=$1',
+    const persisted = await db.query<{ status: string }>('update public.marketplace_checkouts set status=$2,review_reason=$3,updated_at=now() where id=$1 returning status',
       [checkout.id,protectedReviewReason ? 'review' : status,
         protectedReviewReason ?? (order.issues.length ? [...new Set(order.issues)].join(',') : null)])
+    if (!persisted.rows[0]) throw new Error('checkout_identity_changed')
     if (!order.issues.length && order.paymentId && order.updatedAt &&
         ['pending','approved','refunded','partially_refunded'].includes(status)) {
       const projection = await db.query<{ id: string }>(`insert into public.payments
@@ -49,7 +74,7 @@ export async function applyCanonicalOrder(checkoutId: string, raw: unknown, even
         values($1,$2,$3,$4,'mercadopago',$5,$6,'ARS',$7,$8,$9,$10,$11)
         on conflict(provider,provider_payment_id) where provider_payment_id is not null
         do update set status=excluded.status,provider_updated_at=excluded.provider_updated_at returning id`,
-        [checkout.job_id,job.rows[0].request_id,checkout.customer_id,checkout.professional_id,
+        [checkout.job_id,job.request_id,checkout.customer_id,checkout.professional_id,
           order.paymentId,checkout.amount,status,checkout.extra_id ? 'extra_split' : 'service_split',
           checkout.marketplace_fee,checkout.professional_amount,order.updatedAt])
       await db.query(`insert into public.payment_events(payment_id,provider,provider_event_id,event_type,raw_payload)
@@ -58,15 +83,15 @@ export async function applyCanonicalOrder(checkoutId: string, raw: unknown, even
           provider_order_id: checkout.order_id, provider_payment_id: order.paymentId,
           provider_updated_at: order.updatedAt, refunded_amount: order.refundedAmount })])
     }
-    return { status }
+    return { status: persisted.rows[0].status }
   })
 }
 
 export async function applyCanonicalPayment(checkoutId: string, raw: unknown, eventId: string) {
   return paymentTransaction(async db => {
-    const row = await db.query<CheckoutRow>('select * from public.marketplace_checkouts where id=$1 for update', [checkoutId])
-    const checkout = row.rows[0]
-    if (!checkout) return { ignored: true }
+    const locked = await lockCanonicalCheckout(db, checkoutId)
+    if (!locked) return { ignored: true }
+    const { checkout, job } = locked
     if (checkoutProtocol(checkout) !== 'preferences') return { ignored: true }
     const payment = inspectPayment(checkout, raw)
     // A payment belonging to another seller/reference cannot poison this job's
@@ -78,9 +103,8 @@ export async function applyCanonicalPayment(checkoutId: string, raw: unknown, ev
     if (existing.rows[0]?.checkout_id && existing.rows[0].checkout_id !== checkout.id) throw new Error('checkout_identity_changed')
     if (existing.rows[0] && new Date(existing.rows[0].provider_updated_at).getTime() >= Date.parse(payment.updatedAt)) return { stale: true }
     if (['approved','partially_refunded','refunded','charged_back'].includes(existing.rows[0]?.provider_status) && ['pending','in_process','rejected','cancelled'].includes(payment.status)) payment.issues.push('unexpected_status_regression')
-    const job = await db.query('select professional_id,status,request_id from public.jobs where id=$1', [checkout.job_id])
-    if (job.rows[0]?.professional_id !== checkout.professional_id) payment.issues.push('assignment_changed')
-    if (String(job.rows[0]?.status).startsWith('cancelled')) payment.issues.push('job_cancelled')
+    if (job.professional_id !== checkout.professional_id) payment.issues.push('assignment_changed')
+    if (job.status.startsWith('cancelled')) payment.issues.push('job_cancelled')
     await db.query(`insert into public.marketplace_payment_observations(provider_payment_id,checkout_id,provider_status,provider_updated_at,refunded_amount,provider_fee,net_received_amount,issues)
       values($1,$2,$3,$4,$5,$6,$7,$8) on conflict(provider_payment_id) do update set provider_status=excluded.provider_status,provider_updated_at=excluded.provider_updated_at,
       refunded_amount=excluded.refunded_amount,provider_fee=excluded.provider_fee,net_received_amount=excluded.net_received_amount,issues=excluded.issues,observed_at=now()`,
@@ -90,19 +114,20 @@ export async function applyCanonicalPayment(checkoutId: string, raw: unknown, ev
     const issues = [...new Set(observations.rows.flatMap(p => p.issues))]
     if (paid.length > 1) issues.push('multiple_payments')
     const status = issues.length ? 'review' : paid.length ? paid[0].provider_status : observations.rows.some(p => p.provider_status === 'refunded') ? 'refunded' : ['pending','in_process'].includes(payment.status) ? payment.status : ['rejected','cancelled'].includes(payment.status) ? payment.status : 'review'
-    await db.query('update public.marketplace_checkouts set status=$2,review_reason=$3,updated_at=now() where id=$1', [checkout.id,status,issues.length ? issues.join(',') : status === 'review' ? 'unknown_provider_status' : null])
+    const persisted = await db.query<{ status: string }>('update public.marketplace_checkouts set status=$2,review_reason=$3,updated_at=now() where id=$1 returning status', [checkout.id,status,issues.length ? issues.join(',') : status === 'review' ? 'unknown_provider_status' : null])
+    if (!persisted.rows[0]) throw new Error('checkout_identity_changed')
     if (!payment.issues.length) {
       const mappedStatus = payment.status === 'charged_back' ? 'failed' : payment.status === 'in_process' || payment.status === 'unknown' ? 'pending' : payment.status
       if (['pending','approved','rejected','cancelled','refunded','partially_refunded','failed'].includes(mappedStatus)) {
         const projection = await db.query(`insert into public.payments(job_id,request_id,customer_id,professional_id,provider,provider_payment_id,amount,currency,status,payment_type,marketplace_fee,professional_amount,provider_updated_at)
           values($1,$2,$3,$4,'mercadopago',$5,$6,'ARS',$7,$8,$9,$10,$11)
           on conflict(provider,provider_payment_id) where provider_payment_id is not null do update set status=excluded.status,provider_updated_at=excluded.provider_updated_at returning id`,
-        [checkout.job_id,job.rows[0].request_id,checkout.customer_id,checkout.professional_id,payment.paymentId,checkout.amount,mappedStatus,checkout.extra_id ? 'extra_split' : 'service_split',checkout.marketplace_fee,checkout.professional_amount,payment.updatedAt])
+        [checkout.job_id,job.request_id,checkout.customer_id,checkout.professional_id,payment.paymentId,checkout.amount,mappedStatus,checkout.extra_id ? 'extra_split' : 'service_split',checkout.marketplace_fee,checkout.professional_amount,payment.updatedAt])
         await db.query(`insert into public.payment_events(payment_id,provider,provider_event_id,event_type,raw_payload) values($1,'mercadopago',$2,$3,$4) on conflict(provider,provider_event_id) do nothing`,
           [projection.rows[0].id,eventId,payment.status,JSON.stringify({ checkout_id: checkout.id, provider_payment_id: payment.paymentId, provider_updated_at: payment.updatedAt, refunded_amount: payment.refundedAmount, provider_fee: payment.providerFee, net_received_amount: payment.netReceived })])
       }
     }
-    return { status }
+    return { status: persisted.rows[0].status }
   })
 }
 

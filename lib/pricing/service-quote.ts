@@ -133,6 +133,7 @@ export const quotePolicySchema = z.object({
   approvedUntil: z.string().date().nullable(),
   safetyRate: z.literal(0.3),
   platformFeeRate: z.number().finite().min(0).max(0.5),
+  // Retained for stored policy compatibility; new quotes do not reserve provider fees.
   paymentCostRate: z.number().finite().min(0).max(0.5),
   priorityMultiplier: z.number().finite().min(1.01).max(2),
   laborIndex: z.number().finite().min(1).max(10),
@@ -176,7 +177,7 @@ export const defaultQuotePolicy: QuotePolicy = {
   approvedUntil: null,
   safetyRate: 0.3,
   platformFeeRate: 0.18,
-  paymentCostRate: 0.06,
+  paymentCostRate: 0,
   priorityMultiplier: 1.25,
   laborIndex: 1,
   perKm: 700,
@@ -325,12 +326,9 @@ export function calculateServiceQuote(
   const platformFee = moneyProduct(total, policy.platformFeeRate)
   const professionalAmount = moneySum(total, -platformFee)
   if (professionalAmount < calculatorSubtotal) throw new Error('professional_cost_floor')
-  const paymentCostBudget = moneyProduct(total, policy.paymentCostRate)
-  if (
-    Math.round(professionalAmount * 100) - Math.round(paymentCostBudget * 100) <
-    Math.round(calculatorSubtotal * 100)
-  )
-    reviewReasons.push('professional_net_floor')
+  // The quote defines the gross marketplace split. Actual provider charges are
+  // observed in the payment ledger, not estimated or used to block this quote.
+  const paymentCostBudget = 0
   const platformContribution = platformFee
   return {
     currency: 'ARS' as const,

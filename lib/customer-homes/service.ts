@@ -17,7 +17,7 @@ function assertCustomer(session: Session) {
 function databaseError(code: string): never {
   if (code === '42501') throw new ApiError('forbidden')
   if (code === 'P0002') throw new ApiError('not_found')
-  if (['40001', '23505'].includes(code)) throw new ApiError('conflict')
+  if (['PT409', '40001', '23505'].includes(code)) throw new ApiError('conflict')
   if (['22023', '22P02', '23514', '23503'].includes(code)) throw new ApiError('invalid_input')
   throw new ApiError('service_unavailable')
 }

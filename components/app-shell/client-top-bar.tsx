@@ -21,11 +21,11 @@ export function ClientTopBar({ identity }: { identity?: AccountIdentity }) {
       </Link>
 
       <div className="flex items-center gap-1">
-        <button type="button" disabled aria-label="Notificaciones próximamente" className="grid h-12 w-12 place-items-center rounded-xl text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2">
+        <Link href="/app/preferencias" aria-label="Notificaciones y preferencias" className="grid h-12 w-12 place-items-center rounded-xl text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2">
           <Bell aria-hidden="true" className="h-5 w-5" />
           <span data-badge-slot aria-hidden="true" />
-        </button>
-        <Link href="/app/perfil" aria-label="Abrir Cuenta" className="grid h-12 w-12 place-items-center rounded-full text-slate-700 transition-colors hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2">
+        </Link>
+        <Link href="/app/mas" aria-label="Abrir Cuenta" className="grid h-12 w-12 place-items-center rounded-full text-slate-700 transition-colors hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2">
           {avatarInitials ? <span className="grid h-8 w-8 place-items-center rounded-full bg-slate-100 text-xs font-bold">{avatarInitials}</span> : <CircleUserRound aria-hidden="true" className="h-6 w-6" />}
         </Link>
       </div>

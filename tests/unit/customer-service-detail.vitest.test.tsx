@@ -30,7 +30,7 @@ const fetcher = vi.fn(async (url: string | Request, init?: RequestInit) => {
 })
 
 describe('customer-only detail metadata projection', () => {
-  function apiSession(role = 'customer', equipmentOwner = photoId) {
+  function apiSession(role = 'customer', equipmentOwner = photoId, requestOverrides: Record<string, unknown> = {}, failedRequest = false) {
     const queried: Array<{table:string;fields:string;filters:Array<[string,unknown]>}> = []
     const session = { role, customerId: photoId, client: {
       rpc: vi.fn(async () => ({ data:null, error:null })),
@@ -39,19 +39,47 @@ describe('customer-only detail metadata projection', () => {
         const row = () => {
           if (table === 'jobs') return { id:jobId, request_id:photoId }
           if (table === 'service_quotes') return data.savedQuote
-          if (table === 'service_requests') return { equipment_id:photoId, address_id:photoId, issue_type_id:photoId }
+          if (table === 'service_requests') return { equipment_id:photoId, address_id:photoId, issue_type_id:photoId, ...requestOverrides }
           if (table === 'service_issue_types') return { name:'Pierde agua',slug:'pierde_agua' }
           if (table === 'customer_addresses') return { street:'Av. Córdoba',number:'1450',floor:'2',apartment:'B',city:'CABA' }
           if (table === 'customer_equipment') return equipmentOwner === photoId && track.filters.some(([field,value]) => field === 'customer_id' && value === photoId) ? { nickname:'Aire del living' } : null
           return null
         }
-        const query = { select:(fields:string) => { track.fields=fields; return query }, eq:(field:string,value:unknown) => { track.filters.push([field,value]); return query }, single:async () => ({data:row(),error:null}), maybeSingle:async () => ({data:row(),error:null}), order:async () => ({data:[],error:null}) }
+        const query = { select:(fields:string) => { track.fields=fields; return query }, eq:(field:string,value:unknown) => { track.filters.push([field,value]); return query }, single:async () => ({data:failedRequest && table === 'service_requests' ? null : row(),error:failedRequest && table === 'service_requests' ? {code:'08006'} : null}), maybeSingle:async () => ({data:row(),error:null}), order:async () => ({data:[],error:null}) }
         return query
       }
     } }
     apiMocks.session.mockResolvedValue(session)
     return queried
   }
+  it('does not turn an unreadable request provenance into an apparently payable legacy job', async () => {
+    apiSession('professional', photoId, {}, true)
+    const response=await getJobDetail(new Request(`http://localhost/api/pricing/job?jobId=${jobId}`))
+    expect(response.status).toBe(503)
+    expect(await response.json()).not.toHaveProperty('job')
+  })
+  it('prefers the actual visit snapshot over a historical asset address', async () => {
+    apiSession('customer', photoId, { contract_source:'automatic_customer_request',status:'pending_payment',
+      visit_address_snapshot:{street:'Corrientes',number:'999',floor:'5',apartment:'A',city:'CABA'} })
+    const response = await getJobDetail(new Request(`http://localhost/api/pricing/job?jobId=${jobId}`))
+    const body = await response.json()
+    expect(body.customerService.addressLabel).toBe('Corrientes 999, Piso 5 Depto. A, CABA')
+    expect(body.job).toMatchObject({ contractSource:'automatic_customer_request',requestStatus:'pending_payment' })
+  })
+  it.each([null, {}, {street:'Destino',number:999,city:'CABA'}])('does not fall back to a historical destination for invalid automatic %j', async (snapshot) => {
+    const queried = apiSession('customer', photoId, { contract_source:'automatic_customer_request',status:'pending_payment',visit_address_snapshot:snapshot })
+    const body = await (await getJobDetail(new Request(`http://localhost/api/pricing/job?jobId=${jobId}`))).json()
+    expect(body.customerService.addressLabel).toBeNull()
+    expect(queried.some(item => item.table === 'customer_addresses')).toBe(false)
+  })
+  it('provides only the immutable contracted address to the professional detail', async () => {
+    apiSession('professional', photoId, { contract_source:'automatic_customer_request',status:'expired',
+      visit_address_snapshot:{street:'Corrientes',number:'999',city:'CABA'} })
+    const body = await (await getJobDetail(new Request(`http://localhost/api/pricing/job?jobId=${jobId}`))).json()
+    expect(body.visitAddressLabel).toBe('Corrientes 999, CABA')
+    expect(body.job).toMatchObject({ contractSource:'automatic_customer_request',requestStatus:'expired' })
+    expect(body).not.toHaveProperty('customerService')
+  })
   it('returns only real metadata and scopes equipment/address to the authenticated customer', async () => {
     const queried = apiSession()
     const response = await getJobDetail(new Request(`http://localhost/api/pricing/job?jobId=${jobId}`))
@@ -82,6 +110,61 @@ afterEach(() => { cleanup(); vi.unstubAllGlobals() })
 async function open() { render(<JobQuotePanel jobId={jobId} />); await screen.findByRole('heading', { level: 1, name: /Reparación de aire|Pago del servicio/ }) }
 
 describe('customer adaptive service detail', () => {
+  it('uses neutral confirmation copy for an automatically assigned service', async () => {
+    data = fixture('confirmed')
+    Object.assign(data.job, {contractSource:'automatic_customer_request',requestStatus:'pending_payment'})
+    await open()
+    await screen.findByText('El profesional está confirmado. El pago se verifica con Mercado Pago.')
+    expect(screen.queryByText(/El profesional aceptó/)).toBeNull()
+  })
+  it('does not replace a missing automatic destination with quote or visit history', async () => {
+    data = fixture('confirmed'); data.visit=visit; data.customerService.addressLabel=null as unknown as string
+    Object.assign(data.job, {contractSource:'automatic_customer_request',requestStatus:'pending_payment'})
+    await open()
+    expect(screen.queryByText('Av. Córdoba 1450, CABA')).toBeNull()
+    expect(screen.getByText('Domicilio no disponible')).toBeTruthy()
+  })
+  it('keeps an expired automatic service closed and payment read-only even on its payment deep link', async () => {
+    data = fixture('confirmed'); data.visit=visit
+    Object.assign(data.job, {contractSource:'automatic_customer_request',requestStatus:'expired'})
+    await open()
+    await screen.findByRole('heading', {name:'Solicitud vencida'})
+    expect(screen.queryByRole('button', {name:'Pagar servicio'})).toBeNull()
+    expect(screen.queryByRole('button', {name:'Solicitar reprogramación'})).toBeNull()
+    fireEvent.click(screen.getByRole('button', {name:'Consultar pagos'}))
+    await screen.findByRole('heading', {level:1,name:'Pago del servicio'})
+    expect(screen.queryByRole('button', {name:/^Pagar/})).toBeNull()
+  })
+  it('does not offer technician arrival for an expired automatic contract', async () => {
+    data = fixture('confirmed'); data.role='professional'
+    Object.assign(data.job, {contractSource:'automatic_customer_request',requestStatus:'expired'})
+    Object.assign(data, {visitAddressLabel:'Corrientes 999, CABA'})
+    render(<JobQuotePanel jobId={jobId} />)
+    await screen.findByText('Corrientes 999, CABA')
+    expect(screen.getByText(/Solicitud vencida/)).toBeTruthy()
+    expect(screen.queryByRole('button', {name:'Marcar en camino'})).toBeNull()
+    expect(screen.queryByText(/Av. Córdoba 1450/)).toBeNull()
+  })
+  it.each(['review', 'pending', 'in_process'])('shows canonical %s without reopening an expired reservation', async (status) => {
+    data=fixture('confirmed');data.visit=visit
+    Object.assign(data.job,{contractSource:'automatic_customer_request',requestStatus:'expired'})
+    checkouts=[{id:extraId,job_id:jobId,extra_id:null,status}]
+    await open()
+    await screen.findByRole('heading',{name:status==='review'?'Pago en revisión':'Pago en proceso'})
+    expect(screen.getByText(/La reserva de la visita venció/)).toBeTruthy()
+    expect(screen.getByRole('button',{name:'Consultar pagos'})).toBeTruthy()
+    expect(screen.queryByRole('button',{name:'Pagar servicio'})).toBeNull()
+    expect(screen.queryByRole('button',{name:'Solicitar reprogramación'})).toBeNull()
+  })
+  it('retains approved payment information when an automatic reservation expires', async () => {
+    data=fixture('confirmed');data.visit=visit
+    Object.assign(data.job,{contractSource:'automatic_customer_request',requestStatus:'expired'})
+    checkouts=[{id:extraId,job_id:jobId,extra_id:null,status:'approved'}]
+    await open()
+    await screen.findByText('Pago aprobado')
+    expect(screen.queryByRole('heading',{name:'Visita confirmada'})).toBeNull()
+    expect(screen.getByRole('button',{name:'Ver pagos del servicio'})).toBeTruthy()
+  })
   it('uses the real problem, equipment and address without the shared internal panel', async () => {
     await open()
     expect(screen.getByRole('heading', { level: 1, name: 'Reparación de aire' })).toBeTruthy()

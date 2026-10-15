@@ -207,7 +207,7 @@ export function PricingCalculator({
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          policy: { ...policy, version: `lysto-${new Date().toISOString()}` },
+          policy: { ...policy, paymentCostRate: 0, version: `lysto-${new Date().toISOString()}` },
           expectedRevision: policyRevision,
           reason: policyReason
         })
@@ -655,8 +655,9 @@ export function PricingCalculator({
             Tarifas y parámetros de la calculadora
           </summary>
           <p className="mt-3 text-sm text-slate-600">
-            Valores iniciales de referencia, pendientes de calibración. La provisión de cobro no es
-            una tarifa verificada de Mercado Pago.
+            Valores iniciales de referencia, pendientes de calibración. El presupuesto se divide
+            entre Lysto y el profesional. Los cargos reales de Mercado Pago se registran por
+            separado cuando confirma el pago.
           </p>
           <div className="mt-4 grid gap-4 sm:grid-cols-3">
             {(
@@ -665,7 +666,6 @@ export function PricingCalculator({
                 ['perKm', 'Costo por kilómetro'],
                 ['perMinute', 'Costo por minuto'],
                 ['minimumTravel', 'Traslado mínimo'],
-                ['paymentCostRate', 'Costo estimado Mercado Pago (0,06 = 6%)'],
                 ['priorityMultiplier', 'Multiplicador de prioridad'],
                 ['difficultAccess', 'Acceso complicado'],
                 ['height', 'Trabajo en altura'],

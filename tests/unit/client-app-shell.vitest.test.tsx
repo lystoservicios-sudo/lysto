@@ -45,6 +45,9 @@ describe('client app shell navigation policy', () => {
     ['/app/pagos', 'more'],
     ['/app/pagos/mercadopago', 'more'],
     ['/app/garantias', 'more'],
+    ['/app/ayuda/consultas/case-1', 'more'],
+    ['/app/preferencias', 'more'],
+    ['/app/seguridad/sesiones', 'more'],
     ['/app/direcciones', 'more'],
     ['/app/mantenimientos', 'more']
   ])('maps %s to the %s navigation group', (pathname, expectedId) => {
@@ -116,8 +119,8 @@ describe('client app shell', () => {
     )
 
     expect(screen.getByRole('link', { name: 'Lysto, inicio' }).getAttribute('href')).toBe('/app')
-    expect(screen.getByRole('button', { name: 'Notificaciones próximamente' })).toBeTruthy()
-    expect(screen.getByRole('link', { name: 'Abrir Cuenta' }).getAttribute('href')).toBe('/app/perfil')
+    expect(screen.getByRole('link', { name: 'Notificaciones y preferencias' }).getAttribute('href')).toBe('/app/preferencias')
+    expect(screen.getByRole('link', { name: 'Abrir Cuenta' }).getAttribute('href')).toBe('/app/mas')
     expect(screen.getByRole('main').textContent).toContain('Contenido actual')
     expect(screen.queryByText('Espacio cliente')).toBeNull()
     expect(screen.queryByRole('button', { name: /navegación/i })).toBeNull()

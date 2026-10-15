@@ -82,3 +82,24 @@ it('does not retry an unrelated missing column', async () => {
   expect(response.status).not.toBe(200)
   expect(state.query).toHaveBeenCalledTimes(1)
 })
+
+it('rejects a stale customer header before reading checkouts', async () => {
+  state.actor.mockResolvedValue({ role: 'customer', customerId: '92000000-0000-4000-8000-000000000002' })
+  state.query.mockResolvedValue({ rows: [] })
+  const response = await GET(new Request('https://lysto.test/api/mercadopago/checkouts', {
+    headers: { 'X-Lysto-Customer-Id': '92000000-0000-4000-8000-000000000003' }
+  }))
+  expect(response.status).toBe(403)
+  expect(state.query).not.toHaveBeenCalled()
+})
+
+it('accepts a matching customer header without using it as ownership authority', async () => {
+  const customerId = '92000000-0000-4000-8000-000000000002'
+  state.actor.mockResolvedValue({ role: 'customer', customerId })
+  state.query.mockResolvedValue({ rows: [] })
+  const response = await GET(new Request('https://lysto.test/api/mercadopago/checkouts', {
+    headers: { 'X-Lysto-Customer-Id': customerId }
+  }))
+  expect(response.status).toBe(200)
+  expect(state.query.mock.calls[0][1]).toEqual([null, false, customerId, null])
+})

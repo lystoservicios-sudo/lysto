@@ -9,6 +9,7 @@ import { CountTabs } from '@/components/customer/count-tabs'
 import { EmptyState } from '@/components/customer/states'
 import { ButtonLink } from '@/components/ui/button'
 import type { ProfessionalLiveJob } from '@/lib/professional/live-model'
+import { isExpiredAutomaticRequest } from '@/lib/jobs/visit-address'
 import { ProFacts, ProPage, ProPanel, ProSearch, ProShortcut } from './pro-ui'
 
 const finished = new Set([
@@ -23,7 +24,9 @@ const confirmation = new Set([
 ])
 const money = (value: number) =>
   value.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })
-function group(status: string) {
+function group(job: ProfessionalLiveJob) {
+  if (isExpiredAutomaticRequest({ contractSource: job.contractSource, status: job.requestStatus })) return 'finished'
+  const status = job.status
   return finished.has(status) ? 'finished' : confirmation.has(status) ? 'closing' : 'active'
 }
 
@@ -77,7 +80,7 @@ export function LiveProfessionalDashboard({
       {canChangePassword && <ButtonLink href="/pro/seguridad" className="mt-3" variant="secondary">Cambiar contraseña</ButtonLink>}
     </ProPanel>
   </ProPage>
-  const active = jobs.filter((job) => group(job.status) === 'active')
+  const active = jobs.filter((job) => group(job) === 'active')
   return (
     <ProPage title={`Hola, ${name}`} description="Tu jornada y tus operaciones confirmadas.">
       <div className="pro-summary-strip">
@@ -138,7 +141,7 @@ export function LiveProfessionalJobs({ jobs }: { jobs: ProfessionalLiveJob[] }) 
     () =>
       jobs.filter(
         (job) =>
-          group(job.status) === filter &&
+          group(job) === filter &&
           `${job.issueLabel} ${job.address} ${job.id}`.toLowerCase().includes(query.toLowerCase())
       ),
     [filter, jobs, query]
@@ -146,7 +149,7 @@ export function LiveProfessionalJobs({ jobs }: { jobs: ProfessionalLiveJob[] }) 
   const tabs = (['active', 'closing', 'finished'] as const).map((id) => ({
     id,
     label: id === 'active' ? 'Activos' : id === 'closing' ? 'Por confirmar' : 'Finalizados',
-    count: jobs.filter((job) => group(job.status) === id).length
+    count: jobs.filter((job) => group(job) === id).length
   }))
   return (
     <ProPage

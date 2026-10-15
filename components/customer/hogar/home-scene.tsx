@@ -6,6 +6,8 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import type { CustomerHome, EquipmentPlacement } from '@/lib/customer-homes/contracts'
 import type { CustomerAssetEquipment } from '@/lib/customer-assets/contracts'
+import { equipmentScreenAnchor, type EquipmentScreenAnchor } from './equipment-anchor'
+import { isCustomerMotionReduced, subscribeCustomerMotionPreference } from '@/lib/customer/motion-preference'
 import { buildHomeFloor, disposeGroup, fitHomeView, getPlacementFromWall, getRoomCenter, pickSelectionFromObject, pickWallSurface, setHomeSelection, updateCutawayWalls } from './scene-builders'
 
 export type HomeSceneProps = {
@@ -20,6 +22,7 @@ export type HomeSceneProps = {
   onSelectEquipment: (id: string) => void
   onPlace?: (patch: Pick<EquipmentPlacement, 'wall' | 'offset' | 'height'>) => void
   onUnavailable?: () => void
+  onEquipmentAnchor?: (anchor: EquipmentScreenAnchor | null) => void
 }
 type Command = 'reset' | 'rotate' | 'zoomIn' | 'zoomOut'
 type Runtime = { update: (props: HomeSceneProps) => void; command: (type: Command) => void }
@@ -63,8 +66,7 @@ export default function HomeScene(props: HomeSceneProps) {
     const camera = new THREE.OrthographicCamera(-6, 6, 6, -6, .1, 180)
     camera.position.set(10, 14, 17)
     const controls = new OrbitControls(camera, canvas)
-    const motion = typeof window.matchMedia === 'function' ? window.matchMedia('(prefers-reduced-motion: reduce)') : null
-    controls.enableDamping = !motion?.matches
+    controls.enableDamping = !isCustomerMotionReduced()
     controls.dampingFactor = .16
     controls.enablePan = true
     controls.screenSpacePanning = true
@@ -95,6 +97,7 @@ export default function HomeScene(props: HomeSceneProps) {
     const savedFloorViews = new Map<string, SavedView>()
 
     const positionLabels = () => {
+      if (latest.current.onEquipmentAnchor) latest.current.onEquipmentAnchor(model && latest.current.selectedEquipmentId ? equipmentScreenAnchor(model, camera, latest.current.selectedEquipmentId, width, height) : null)
       for (const [id, element] of labels.current) {
         const position = labelPositions.get(id)
         if (!position) { element.style.visibility = 'hidden'; continue }
@@ -196,11 +199,12 @@ export default function HomeScene(props: HomeSceneProps) {
       if (document.visibilityState === 'hidden') { if (frame) cancelAnimationFrame(frame); frame = 0 }
       else requestRender()
     }
-    const motionChanged = () => { controls.enableDamping = !motion?.matches; requestRender() }
+    const motionChanged = () => { controls.enableDamping = !isCustomerMotionReduced(); requestRender() }
+    const releaseMotion = subscribeCustomerMotionPreference(motionChanged)
     controls.addEventListener('change', requestRender)
     canvas.addEventListener('pointerdown', pointerDown); canvas.addEventListener('pointermove', pointerMove); canvas.addEventListener('pointerup', pointerUp); canvas.addEventListener('pointercancel', pointerCancel)
     canvas.addEventListener('webglcontextlost', contextLost); canvas.addEventListener('webglcontextrestored', contextRestored)
-    document.addEventListener('visibilitychange', visibilityChanged); motion?.addEventListener('change', motionChanged)
+    document.addEventListener('visibilitychange', visibilityChanged)
     const resizeObserver = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(resize)
     resizeObserver?.observe(host)
     if (!resizeObserver) window.addEventListener('resize', resize)
@@ -225,7 +229,7 @@ export default function HomeScene(props: HomeSceneProps) {
       controls.removeEventListener('change', requestRender); controls.dispose()
       canvas.removeEventListener('pointerdown', pointerDown); canvas.removeEventListener('pointermove', pointerMove); canvas.removeEventListener('pointerup', pointerUp); canvas.removeEventListener('pointercancel', pointerCancel)
       canvas.removeEventListener('webglcontextlost', contextLost); canvas.removeEventListener('webglcontextrestored', contextRestored)
-      document.removeEventListener('visibilitychange', visibilityChanged); motion?.removeEventListener('change', motionChanged)
+      document.removeEventListener('visibilitychange', visibilityChanged); releaseMotion()
       disposeGroup(scene); sun.shadow.map?.dispose(); renderer.dispose(); renderer.forceContextLoss(); canvas.remove()
       savedFloorViews.clear(); labelPositions.clear(); pointers.clear()
     }

@@ -8,6 +8,7 @@ import type {
 import { toCustomerJobSummary } from './view-models'
 import type { EquipmentDto,JobDto,ReadMetrics,ReadPage } from '@/lib/data-access/read-contracts'
 import { mapReadPage } from '@/lib/data-access/read-state'
+import { isExpiredAutomaticRequest } from '@/lib/jobs/visit-address'
 
 export function buildCustomerReadDashboard(source:{customerName:string;metrics:ReadMetrics;jobs:ReadPage<JobDto>;equipment:ReadPage<EquipmentDto>}) {
   for(const key of ['activeJobs','equipment','requests','claims'] as const) {
@@ -49,7 +50,8 @@ type CustomerDashboardSource = {
 const inactiveJobStatuses = new Set(['completed', 'cancelled_by_customer', 'cancelled_by_professional', 'cancelled_by_admin'])
 
 export function buildCustomerDashboardViewModel(source: CustomerDashboardSource): CustomerDashboardViewModel {
-  const activeJobs = source.jobs.filter((job) => !inactiveJobStatuses.has(job.status))
+  const activeJobs = source.jobs.filter((job) => !inactiveJobStatuses.has(job.status) &&
+    !isExpiredAutomaticRequest({ contractSource: job.contractSource, status: job.requestStatus }))
   const actionableMaintenance = source.maintenance.filter((item) => item.urgency !== 'none')
   const activeWarranties = source.warranties.filter((item) => item.status === 'active' || item.status === 'claim_open')
 

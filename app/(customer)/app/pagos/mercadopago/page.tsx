@@ -1,2 +1,2 @@
-import { PaymentPanel } from '@/components/payments/payment-panel'
-export default function Page(){return <PaymentPanel role="customer"/>}
+import { redirect } from 'next/navigation'
+export default function Page() { redirect('/app/pagos') }

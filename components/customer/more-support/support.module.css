@@ -1,0 +1,7 @@
+.media { min-width: 0; }
+.media :global(h3) { font-size: .9375rem; font-weight: 600; }
+.media :global(label) { min-height: 92px; padding: 12px; border-radius: 12px; background: #f8faff; }
+.media :global(label svg) { width: 20px; height: 20px; }
+.media :global(label span) { font-weight: 500; }
+.media :global(li) { border-radius: 12px; }
+.media :global(button) { border-radius: 12px; font-size: .875rem; font-weight: 600; }

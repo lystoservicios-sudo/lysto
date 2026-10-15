@@ -23,6 +23,7 @@ import { customerJobStatusLabels } from '@/lib/domain/job-status-labels'
 import type { JobStatus, RequestStatus, ServiceIssueSlug } from '@/lib/domain/types'
 import { listMaintenance } from '@/lib/equipment/maintenance-service'
 import { ApiError } from '@/lib/http/api-error'
+import { isExpiredAutomaticRequest, requestVisitAddress } from '@/lib/jobs/visit-address'
 
 const terminalJobs = new Set<JobStatus>([
   'completed',
@@ -134,9 +135,10 @@ export async function listCustomerRequestsLive(session: Session, input: ReadOpti
       issue: (issue?.slug ?? 'mantenimiento') as ServiceIssueSlug,
       issueLabel: issue?.name ?? 'Servicio técnico',
       status: item.status,
+      contractSource: item.contractSource,
       statusView: requestStatus(item.status),
       urgency: item.urgency ?? 'flexible',
-      address: addressLabel(item.addressId ? refs.addresses.get(item.addressId) : undefined),
+      address: requestVisitAddress(item, item.addressId ? addressLabel(refs.addresses.get(item.addressId)) : undefined) ?? 'Dirección por confirmar',
       preferredWindow:
         [item.preferredDate, item.preferredWindow].filter(Boolean).join(' · ') ||
         'Horario por confirmar',
@@ -161,8 +163,9 @@ async function hydrateCustomerJobs(session: Session, page: ReadPage<JobDto>) {
     ? await session.client
         .from('service_requests')
         .select(
-          'id,created_at,status,issue_type_id,address_id,equipment_id,preferred_date,preferred_time_window,urgency_level'
+          'id,created_at,status,issue_type_id,address_id,equipment_id,preferred_date,preferred_time_window,urgency_level,contract_source,visit_address_snapshot'
         )
+        .eq('customer_id', session.customerId!)
         .in('id', requestIds)
     : { data: [], error: null }
   if (requestResult.error || !requestResult.data) throw new ApiError('service_unavailable')
@@ -172,6 +175,8 @@ async function hydrateCustomerJobs(session: Session, page: ReadPage<JobDto>) {
     status: item.status,
     issueTypeId: item.issue_type_id,
     addressId: item.address_id,
+    contractSource: item.contract_source,
+    visitAddressSnapshot: item.visit_address_snapshot,
     equipmentId: item.equipment_id,
     preferredDate: item.preferred_date,
     preferredWindow: item.preferred_time_window,
@@ -185,16 +190,19 @@ async function hydrateCustomerJobs(session: Session, page: ReadPage<JobDto>) {
     return {
       id: item.id,
       requestId: item.requestId,
+      requestStatus: request?.status,
+      contractSource: request?.contractSource,
+      createdAt: item.createdAt,
       equipmentId: request?.equipmentId ?? undefined,
       status: item.status,
-      statusView: jobStatus(item.status),
+      statusView: isExpiredAutomaticRequest(request) ? { label: 'Solicitud vencida', tone: 'neutral' } : jobStatus(item.status),
       issueLabel: issue?.name ?? 'Servicio técnico',
-      address: addressLabel(request?.addressId ? refs.addresses.get(request.addressId) : undefined),
+      address: requestVisitAddress(request, request?.addressId ? addressLabel(refs.addresses.get(request.addressId)) : undefined) ?? 'Dirección por confirmar',
       scheduledAt: item.scheduledDate ?? item.createdAt,
       timeWindow: item.timeWindow ?? 'Horario por confirmar',
       amount: item.finalAmount,
       finalAmount: item.finalAmount,
-      nextStep: jobNext(item.status),
+      nextStep: isExpiredAutomaticRequest(request) ? 'La solicitud está cerrada' : jobNext(item.status),
       canReview: item.status === 'completed',
       completedAt: item.completedAt ?? undefined
     }

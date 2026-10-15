@@ -24,6 +24,15 @@ html {
   scroll-behavior: smooth;
 }
 
+html[data-lysto-reduce-motion='true'], html[data-lysto-reduce-motion='true'] *,
+.client-app-shell[data-client-reduce-motion='true'] *,
+html[data-lysto-reduce-motion='true'] *::before, html[data-lysto-reduce-motion='true'] *::after {
+  animation-duration: 0s !important;
+  animation-delay: 0s !important;
+  transition-duration: 0s !important;
+  scroll-behavior: auto !important;
+}
+
 body {
   margin: 0;
   background-color: #f8fafc;

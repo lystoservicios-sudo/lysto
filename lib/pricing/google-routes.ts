@@ -7,9 +7,10 @@ const geoSchema = z.object({ status: z.string(), results: z.array(z.object({
 })) })
 const routeResponse = z.object({ routes: z.array(z.object({ distanceMeters: z.number().finite().nonnegative(), duration: z.string().regex(/^\d+(\.\d+)?s$/), travelAdvisory: z.object({ tollInfo: z.object({ estimatedPrice: z.array(z.object({ currencyCode: z.string(), units: z.string().optional(), nanos: z.number().optional() })).optional() }).optional() }).optional() })).default([]) })
 
-export async function estimateTravel({ address, origin, apiKey, departureTime, now = new Date(), fetcher = fetch }: {
-  address: string; origin: string; apiKey: string; departureTime?: string; now?: Date; fetcher?: typeof fetch
+export async function estimateTravel({ address, origin, apiKey, departureTime, visitDurationMinutes = 120, now = new Date(), fetcher = fetch }: {
+  address: string; origin: string; apiKey: string; departureTime?: string; visitDurationMinutes?: number; now?: Date; fetcher?: typeof fetch
 }): Promise<TravelEstimate> {
+  if (!Number.isInteger(visitDurationMinutes) || visitDurationMinutes < 30 || visitDurationMinutes > 480) throw new Error('invalid_visit_duration')
   if (!apiKey || !origin) throw new Error('routing_not_configured')
   async function geocode(text: string) {
     const params = new URLSearchParams({ address: text, components: 'country:AR', language: 'es', key: apiKey })
@@ -46,7 +47,7 @@ export async function estimateTravel({ address, origin, apiKey, departureTime, n
       tollsVerified, tolls: tollsVerified ? money((prices ?? []).reduce((sum, p) => sum + Number(p.units ?? 0) + (p.nanos ?? 0) / 1e9, 0)) : 0 }
   }
   const outbound = await drive(departure, destination, start)
-  // Two hours is a planning assumption for the visit; the return is routed separately.
-  const back = await drive(destination, departure, new Date(start.getTime() + (outbound.minutes + 120) * 60_000))
+  // Route the return after the approved visit duration; legacy callers default to two hours.
+  const back = await drive(destination, departure, new Date(start.getTime() + (outbound.minutes + visitDurationMinutes) * 60_000))
   return { source: 'google', origin: departure.formatted_address, destination: destination.formatted_address, province: destination.province as TravelEstimate['province'], outboundKm: outbound.km, returnKm: back.km, outboundMinutes: outbound.minutes, returnMinutes: back.minutes, tolls: money(outbound.tolls + back.tolls), tollsVerified: outbound.tollsVerified && back.tollsVerified, measuredAt: now.toISOString() }
 }

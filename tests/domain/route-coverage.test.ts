@@ -107,20 +107,20 @@ test('all MVP API route contracts exist', () => {
   expect(missing).toEqual([])
 })
 
-test('customer wizard leads to saved quotes without simulated payment or fulfillment', () => {
+test('customer wizard contracts contextual requests through real preparation and canonical payment', () => {
   const content = read('features/service-request/air-conditioning-wizard.tsx')
+  const screens = read('features/service-request/request-screen-parts.tsx')
   for (const text of [
-    'Problema',
-    'Detalles',
-    'Diagnóstico',
-    'Dirección',
-    'Horario',
-    'Presupuesto',
-    'Pago',
-    '/app/presupuestos'
+    "'issue'", "'location'", "'details'", "'orientation'", "'schedule'", "'review'", "'payment'",
+    '/api/customer/requests/preview', '/api/customer/requests/prepare',
+    '/api/mercadopago/create-preference', '/api/mercadopago/checkouts?jobId=',
+    '/app/trabajos', 'X-Lysto-Customer-Id', 'Pagar con Mercado Pago'
   ]) {
     expect(content).toIncludeText(text)
   }
+  for (const text of ['¿Qué está pasando con tu aire?', 'Contanos un poco más', 'Qué vamos a revisar', '¿Cuándo podrías recibirnos?', 'Revisá tu pedido']) expect(screens).toIncludeText(text)
+  expect(content.includes('window.location.assign(url)')).toBeTruthy()
+  expect(/canonical\??\.status === 'approved'/.test(content)).toBeTruthy()
   for (const text of [
     'Buscando el mejor profesional',
     'Técnico confirmado',

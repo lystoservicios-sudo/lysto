@@ -10,6 +10,7 @@ import { QuoteBreakdown } from '@/components/pricing/quote-breakdown'
 import { acknowledgeCommand, recoverCommand } from '@/lib/jobs/recoverable-command'
 import { jobStatusLabels } from '@/lib/domain/job-status-labels'
 import { customerInitialPaymentState } from '@/features/customer/services-view-model'
+import { isExpiredAutomaticRequest } from '@/lib/jobs/visit-address'
 import type { JobStatus } from '@/lib/domain/types'
 import type { ServiceQuote } from '@/lib/pricing/service-quote'
 import type { CustomerJobVisit } from './job-visit-card'
@@ -20,7 +21,8 @@ type Diagnosis = { id: string; actual_diagnosis: string; base_scope: string; evi
 type FinalReport = { id: string; real_diagnosis: string; work_done: string; parts_used?: string | null; final_state: string; maintenance_option: string; next_maintenance_date?: string | null; warranty_days?: number; after_photo_ids: string[]; version: number; created_at: string }
 export type CustomerServiceDetailData = {
   role: string
-  job: { id: string; status: string; professionalName: string | null }
+  job: { id: string; status: string; professionalName: string | null; contractSource?: string | null; requestStatus?: string }
+  visitAddressLabel?: string | null
   equipmentId: string | null
   visit: CustomerJobVisit | null
   onsiteDiagnosis: Diagnosis | null
@@ -109,15 +111,17 @@ export function CustomerServiceDetail({ data, onReload, reloadError = '', reload
   const detailHeading = useRef<HTMLHeadingElement>(null)
   useClientFocusedFlow(flow !== null)
   const status = data.job.status
-  const terminal = status.startsWith('cancelled') || status === 'disputed' || status === 'warranty_claim'
-  const canConfirm = status === 'completed_pending_customer_confirmation' && Boolean(data.finalReport) && !committed
+  const expiredContract = isExpiredAutomaticRequest({ contractSource: data.job.contractSource, status: data.job.requestStatus })
+  const terminal = expiredContract || status.startsWith('cancelled') || status === 'disputed' || status === 'warranty_claim'
+  const canConfirm = !terminal && status === 'completed_pending_customer_confirmation' && Boolean(data.finalReport) && !committed
   const scopePending = !terminal && data.onsiteDiagnosis?.status === 'submitted'
   const proposedExtras = terminal ? [] : data.extras.filter(extra => extra.status === 'proposed')
   const extra = data.extras.find(item => item.id === selectedExtra)
   const issue = data.savedQuote?.input?.issue
   const issueLabel = data.customerService?.issueLabel ?? issueLabels[issue ?? ''] ?? 'Aire acondicionado'
   const equipmentName = data.customerService?.equipmentName
-  const address = data.customerService?.addressLabel ?? data.visit?.addressLabel ?? (data.savedQuote ? [data.savedQuote.address.street, data.savedQuote.address.number, data.savedQuote.address.city].filter(Boolean).join(' ') : null)
+  const address = data.job.contractSource != null ? data.customerService?.addressLabel ?? data.visitAddressLabel ?? null
+    : data.customerService?.addressLabel ?? data.visit?.addressLabel ?? (data.savedQuote ? [data.savedQuote.address.street, data.savedQuote.address.number, data.savedQuote.address.city].filter(Boolean).join(' ') : null)
   const title = issue === 'mantenimiento' ? 'Mantenimiento de aire' : issue === 'instalacion' ? 'Instalación de aire' : 'Reparación de aire'
   const initialCheckout = checkouts?.find(item => item.extra_id === null)
   const paymentState = checkouts ? customerInitialPaymentState(checkouts.map(item => ({ jobId: item.job_id, extraId: item.extra_id, status: item.status })), data.job.id) : 'unknown'
@@ -143,13 +147,13 @@ export function CustomerServiceDetail({ data, onReload, reloadError = '', reload
       handledEntry.current = url.href
       const hash = url.hash
       if (['retorno', 'pendiente', 'reintentar'].includes(url.searchParams.get('pago') ?? '') || /^#pagos?$/.test(hash)) setFlow('payments')
-      else if (hash === '#reprogramacion' && data.visit && ['pending_professional_acceptance', 'confirmed'].includes(status)) setFlow('reschedule')
+      else if (hash === '#reprogramacion' && !terminal && data.visit && ['pending_professional_acceptance', 'confirmed'].includes(status)) setFlow('reschedule')
       else if (hash === '#informe' && data.finalReport) { openedForConfirmation.current = status === 'completed_pending_customer_confirmation'; setFlow('report') }
-      else if (hash === '#adicionales' && data.extras.some(item => item.status === 'proposed')) { setSelectedExtra(data.extras.find(item => item.status === 'proposed')!.id); setFlow('extra') }
+      else if (hash === '#adicionales' && !terminal && data.extras.some(item => item.status === 'proposed')) { setSelectedExtra(data.extras.find(item => item.status === 'proposed')!.id); setFlow('extra') }
     }
     checkEntry(); window.addEventListener('hashchange', checkEntry)
     return () => window.removeEventListener('hashchange', checkEntry)
-  }, [data.job.id, data.visit, data.finalReport, data.extras, status])
+  }, [data.job.id, data.visit, data.finalReport, data.extras, status, terminal])
 
   useEffect(() => {
     if (flow) heading.current?.focus()
@@ -163,6 +167,7 @@ export function CustomerServiceDetail({ data, onReload, reloadError = '', reload
   }, [flow])
 
   function openFlow(next: Flow, event?: MouseEvent<HTMLButtonElement>, extraId?: string) {
+    if (expiredContract && ['reschedule', 'dispute', 'extra', 'scope'].includes(next)) return
     trigger.current = event?.currentTarget ?? document.activeElement as HTMLElement
     triggerLabel.current = event?.currentTarget.textContent ?? null
     openedForConfirmation.current = canConfirm && (next === 'report' || next === 'dispute')
@@ -180,7 +185,7 @@ export function CustomerServiceDetail({ data, onReload, reloadError = '', reload
     ;(trigger.current?.isConnected ? trigger.current : equivalent ?? detailHeading.current)?.focus()
   }
   async function command(url: string, method: 'POST' | 'PATCH', scope: string, payload: Record<string, unknown>, recoverable = true) {
-    if (busyRef.current || reloadInProgress || reloadError) return false
+    if (expiredContract || busyRef.current || reloadInProgress || reloadError) return false
     busyRef.current = true; setBusy(true); setMessage('')
     let serverMessage: string | null = null
     try {
@@ -233,7 +238,16 @@ export function CustomerServiceDetail({ data, onReload, reloadError = '', reload
   let primaryFlow: Flow | null = null
   let primaryLabel = ''
   let attention = false
-  if (terminal) { heroTitle = status.startsWith('cancelled') ? 'Servicio cancelado' : status === 'disputed' ? 'Desacuerdo en revisión' : 'Garantía en seguimiento'; heroCopy = status === 'disputed' ? 'Lysto revisa el caso. El estado se mostrará aquí cuando se actualice.' : status === 'warranty_claim' ? 'Consultá el estado del servicio y las garantías registradas en tu cuenta.' : 'La cancelación quedó registrada. Podés consultar los movimientos disponibles.' }
+  if (expiredContract) {
+    heroTitle = checkouts !== null && paymentState === 'unknown' ? 'Pago por verificar' : initialCheckout?.status === 'review'
+      ? 'Pago en revisión' : ['pending', 'in_process'].includes(initialCheckout?.status ?? '') ? 'Pago en proceso'
+        : paymentState === 'follow_up' ? 'Pago con seguimiento' : 'Solicitud vencida'
+    heroCopy = paymentState === 'approved' ? 'La reserva de la visita venció. El pago está aprobado; consultá la operación antes de coordinar otra visita.'
+      : paymentState === 'follow_up' || (checkouts !== null && paymentState === 'unknown')
+        ? 'La reserva de la visita venció. El pago requiere seguimiento; no vuelvas a pagar mientras se verifica.'
+        : 'La reserva de la visita venció. Podés consultar la información y los movimientos del servicio.'
+  }
+  else if (terminal) { heroTitle = status.startsWith('cancelled') ? 'Servicio cancelado' : status === 'disputed' ? 'Desacuerdo en revisión' : 'Garantía en seguimiento'; heroCopy = status === 'disputed' ? 'Lysto revisa el caso. El estado se mostrará aquí cuando se actualice.' : status === 'warranty_claim' ? 'Consultá el estado del servicio y las garantías registradas en tu cuenta.' : 'La cancelación quedó registrada. Podés consultar los movimientos disponibles.' }
   else if (canConfirm) { heroTitle = 'Resultado disponible'; heroCopy = 'Revisá el informe antes de confirmar.'; primaryFlow = 'report'; primaryLabel = 'Revisar y confirmar'; attention = true }
   else if (scopePending) { heroTitle = 'Diagnóstico para revisar'; heroCopy = 'El profesional compartió lo encontrado y el alcance propuesto.'; primaryFlow = 'scope'; primaryLabel = 'Revisar diagnóstico y alcance'; attention = true }
   else if (proposedExtras.length) { heroTitle = 'Adicional para revisar'; heroCopy = proposedExtras[0].fault; primaryFlow = 'extra'; primaryLabel = `Revisar adicional: ${proposedExtras[0].fault}`; attention = true }
@@ -241,7 +255,7 @@ export function CustomerServiceDetail({ data, onReload, reloadError = '', reload
   else if (status === 'pending_assignment') { heroTitle = 'Buscando un profesional'; heroCopy = 'Lysto está coordinando la asignación. El pago todavía no está habilitado.' }
   else if (status === 'pending_professional_acceptance') { heroTitle = 'Esperando al profesional'; heroCopy = 'Cuando acepte el servicio, vas a poder realizar el pago.' }
   else if (status === 'confirmed' && checkouts === null) { heroTitle = paymentError ? 'Consultá el estado del pago' : 'Consultando el pago'; heroCopy = paymentError || 'Verificamos el estado registrado antes de mostrar el próximo paso.'; if (paymentError) { primaryFlow = 'payments'; primaryLabel = 'Consultar pagos' } }
-  else if (status === 'confirmed' && !paid) { heroTitle = paymentState === 'unknown' ? 'Pago por verificar' : initialCheckout?.status === 'review' ? 'Pago en revisión' : ['pending', 'in_process'].includes(initialCheckout?.status ?? '') ? 'Pago en proceso' : paymentState === 'follow_up' ? 'Pago con seguimiento' : 'Ya podés pagar'; heroCopy = paymentBlocked ? 'Consultá el estado de la operación. No vuelvas a pagar mientras se verifica.' : 'El profesional aceptó el servicio. El pago se verifica con Mercado Pago.'; primaryFlow = 'payments'; primaryLabel = paymentBlocked ? 'Consultar pagos' : 'Pagar servicio'; attention = !paymentBlocked }
+  else if (status === 'confirmed' && !paid) { heroTitle = paymentState === 'unknown' ? 'Pago por verificar' : initialCheckout?.status === 'review' ? 'Pago en revisión' : ['pending', 'in_process'].includes(initialCheckout?.status ?? '') ? 'Pago en proceso' : paymentState === 'follow_up' ? 'Pago con seguimiento' : 'Ya podés pagar'; heroCopy = paymentBlocked ? 'Consultá el estado de la operación. No vuelvas a pagar mientras se verifica.' : data.job.contractSource === 'automatic_customer_request' ? 'El profesional está confirmado. El pago se verifica con Mercado Pago.' : 'El profesional aceptó el servicio. El pago se verifica con Mercado Pago.'; primaryFlow = 'payments'; primaryLabel = paymentBlocked ? 'Consultar pagos' : 'Pagar servicio'; attention = !paymentBlocked }
   else if (status === 'confirmed' && paid && data.visit) { heroTitle = 'Visita confirmada'; heroCopy = datePart(data.visit.startsAt, { weekday: 'long', day: 'numeric', month: 'long' }) }
   else if (status === 'confirmed' && paid) { heroTitle = 'Coordinando tu visita'; heroCopy = 'El pago está aprobado. La fecha y el horario todavía no están confirmados.' }
   else if (status === 'technician_on_way') { heroTitle = 'El profesional está en camino'; heroCopy = 'El profesional informó su salida. No hay ubicación en tiempo real disponible.' }
@@ -249,7 +263,7 @@ export function CustomerServiceDetail({ data, onReload, reloadError = '', reload
   else if (status === 'onsite_diagnosis') { heroTitle = 'Revisando el equipo'; heroCopy = 'El profesional está preparando el diagnóstico presencial.' }
   else if (status === 'in_progress') { heroTitle = 'Trabajo en curso'; heroCopy = 'El profesional está realizando el alcance aprobado.' }
   else if (status === 'completed_pending_customer_confirmation') { heroTitle = 'Consultando el informe'; heroCopy = 'Todavía no pudimos mostrar el informe necesario para confirmar. Volvé a consultar.' }
-  const showVisit = status === 'confirmed' && paid && Boolean(data.visit)
+  const showVisit = !terminal && status === 'confirmed' && paid && Boolean(data.visit)
   return <div className={styles.detail} ref={root}>
     <Link className={styles.back} href="/app/trabajos"><ArrowLeft size={18} aria-hidden="true" />Servicios</Link>
     <header><h1 className={styles.pageTitle} ref={detailHeading} tabIndex={-1}>{title}</h1><p className={styles.subtitle}>{equipmentName || 'Equipo del servicio'} <span>· #{data.job.id.slice(0, 8)}</span></p></header>
@@ -258,7 +272,7 @@ export function CustomerServiceDetail({ data, onReload, reloadError = '', reload
       {attention ? <span className={styles.pill}>{canConfirm ? 'Pendiente de tu confirmación' : 'Requiere tu atención'}</span> : <span className={styles.status}><CheckCircle2 size={19} aria-hidden="true" />{status === 'completed' ? 'Confirmación registrada' : 'Seguimiento del servicio'}</span>}
       <h2>{heroTitle}</h2><p>{heroCopy}</p>
       {showVisit && data.visit ? <p className={styles.visitTime}>{datePart(data.visit.startsAt, { hour: '2-digit', minute: '2-digit', hour12: false })} a {datePart(data.visit.endsAt, { hour: '2-digit', minute: '2-digit', hour12: false })}</p> : null}
-      {paid && !terminal ? <p className={styles.paid}><CheckCircle2 size={18} aria-hidden="true" />Pago aprobado</p> : null}
+      {paid && (!terminal || expiredContract) ? <p className={styles.paid}><CheckCircle2 size={18} aria-hidden="true" />Pago aprobado</p> : null}
       {attention && primaryFlow === 'payments' && data.savedQuote ? <p className={styles.amount}>{money(data.savedQuote.quote.total)}</p> : null}
       {primaryFlow ? <button className={styles.heroAction} disabled={blocked || committed} onClick={event => openFlow(primaryFlow!, event, primaryFlow === 'extra' ? proposedExtras[0]?.id : undefined)}>{primaryLabel}<ArrowRight size={20} aria-hidden="true" /></button> : null}
     </section>

@@ -34,6 +34,7 @@ export type OutboxOptions = {
   workerId?: string
   now?: () => Date
   sendEmail?: (snapshot: DeliverySnapshot) => Promise<EmailResult>
+  enforceCustomerPreferences?: boolean
 }
 class DeliveryDatabaseError extends Error {
   constructor(readonly code?: string) {
@@ -108,6 +109,15 @@ export async function runOutboxBatch(client: OutboxRpcClient, options: OutboxOpt
       continue
     }
     try {
+      const suppressIfOptedOut = async () => {
+        if (event.channel !== 'email' || !options.enforceCustomerPreferences) return false
+        const allowed = z.boolean().parse(await call('customer_outbox_email_allowed', args))
+        if (allowed) return false
+        await call('stop_outbox_delivery', { ...args, p_code: 'customer_preference', p_suppressed: true })
+        result.suppressed++
+        return true
+      }
+      if (await suppressIfOptedOut()) continue
       const delivery = z
         .object({
           recipientEmail: z.string().email(),
@@ -136,6 +146,7 @@ export async function runOutboxBatch(client: OutboxRpcClient, options: OutboxOpt
       }
       // Revalidate after preparation, immediately before touching the provider.
       await call('resolve_outbox_delivery', args)
+      if (await suppressIfOptedOut()) continue
       if (Date.parse(event.locked_until) - now().getTime() < 10000) {
         await fail('delivery_lease_too_short', true)
         continue
@@ -158,7 +169,7 @@ export async function runOutboxBatch(client: OutboxRpcClient, options: OutboxOpt
         result.accepted++
       else result.lostClaims++
     } catch (error) {
-      if (error instanceof DeliveryDatabaseError && error.code === '40001') {
+      if (error instanceof DeliveryDatabaseError && ['40001', 'PT409'].includes(error.code ?? '')) {
         result.lostClaims++
         continue
       }

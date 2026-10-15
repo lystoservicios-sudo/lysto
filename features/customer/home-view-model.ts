@@ -1,11 +1,13 @@
 import { getMaintenanceTask } from '@/lib/customer/maintenance-plan'
 import type { JobStatus, MaintenanceOption, RequestStatus } from '@/lib/domain/types'
+import { isExpiredAutomaticRequest, type RequestVisitContext } from '@/lib/jobs/visit-address'
+import { customerInitialPaymentState } from '@/features/customer/services-view-model'
 
 export type HomeDataset<T> =
   | { state: 'ready'; items: T[] }
   | { state: 'error'; label: string }
 
-export type HomeRequestSource = {
+export type HomeRequestSource = RequestVisitContext & {
   id: string
   status: RequestStatus
   issueLabel: string
@@ -20,9 +22,10 @@ export type HomeVisitSource = {
   professionalName: string
 }
 
-export type HomeJobSource = {
+export type HomeJobSource = RequestVisitContext & {
   id: string
   requestId: string
+  requestStatus?: RequestStatus
   status: JobStatus
   issueLabel: string
   equipmentId?: string
@@ -153,7 +156,6 @@ const incompleteRequests = new Set<RequestStatus>([
   'price_selected'
 ])
 const closedRequests = new Set<RequestStatus>(['cancelled', 'expired'])
-const paidCheckoutStatuses = new Set(['approved', 'captured'])
 const activeSupportStatuses = new Set([
   'open',
   'in_review',
@@ -257,6 +259,21 @@ export function buildCustomerHomeViewModel(source: CustomerHomeSource): Customer
       subject: job.equipmentName ?? job.issueLabel,
       sortAt: job.createdAt
     }
+    if (isExpiredAutomaticRequest({ contractSource: job.contractSource, status: job.requestStatus })) {
+      const payment = source.checkouts.state === 'ready'
+        ? customerInitialPaymentState(checkoutByJob.get(job.id) ?? [], job.id) : 'unknown'
+      if (payment !== 'payable') {
+        const review = payment === 'follow_up' && (checkoutByJob.get(job.id) ?? []).some(checkout => checkout.extraId === null && checkout.status === 'review')
+        addActivity(activity, {
+          ...common, kind: 'decision', priority: 1, eyebrow: 'Reserva vencida',
+          title: payment === 'approved' ? 'Pago confirmado · Reserva vencida' : review ? 'Pago en revisión' : 'Consultá el estado del pago',
+          description: payment === 'approved' ? 'El pago está aprobado, pero la reserva de la visita venció. Consultá la operación; no repitas el pago.'
+            : 'La reserva de la visita venció. El pago requiere seguimiento; no vuelvas a pagar mientras se verifica.',
+          action: { label: 'Consultar pago', href: `/app/trabajos/${job.id}` }
+        })
+      }
+      continue
+    }
     if (job.status === 'waiting_customer_approval') {
       addActivity(activity, {
         ...common,
@@ -282,24 +299,25 @@ export function buildCustomerHomeViewModel(source: CustomerHomeSource): Customer
       continue
     }
     if (job.status === 'confirmed' && source.checkouts.state === 'ready') {
-      const initialCheckouts = (checkoutByJob.get(job.id) ?? []).filter(
-        (checkout) => checkout.extraId === null
-      )
-      const paid = initialCheckouts.some((checkout) => paidCheckoutStatuses.has(checkout.status))
-      if (!paid) {
+      const payment = customerInitialPaymentState(checkoutByJob.get(job.id) ?? [], job.id)
+      if (payment !== 'approved') {
+        const consultation = payment !== 'payable'
         addActivity(activity, {
           ...common,
           kind: 'decision',
           priority: 1,
-          eyebrow: 'Pago habilitado',
-          title: 'El profesional confirmó el servicio',
-          description: 'Revisá el detalle y el estado del pago antes de continuar.',
-          action: { label: 'Ver pago', href: `/app/trabajos/${job.id}` }
+          eyebrow: consultation ? 'Pago en seguimiento' : 'Pago habilitado',
+          title: consultation ? 'Consultá el estado del pago' : job.contractSource === 'automatic_customer_request'
+            ? 'El profesional está confirmado' : 'El profesional confirmó el servicio',
+          description: consultation ? 'No vuelvas a pagar mientras se verifica la operación.'
+            : 'Revisá el detalle y el estado del pago antes de continuar.',
+          action: { label: consultation ? 'Consultar pago' : 'Ver pago', href: `/app/trabajos/${job.id}` }
         })
         continue
       }
     }
-    if (job.status === 'confirmed' && job.visitState === 'ready' && job.visit) {
+    if (job.status === 'confirmed' && source.checkouts.state === 'ready' &&
+      customerInitialPaymentState(checkoutByJob.get(job.id) ?? [], job.id) === 'approved' && job.visitState === 'ready' && job.visit) {
       addActivity(activity, {
         ...common,
         kind: 'visit',
@@ -353,7 +371,9 @@ export function buildCustomerHomeViewModel(source: CustomerHomeSource): Customer
       title: request.issueLabel,
       description:
         request.status === 'pending_payment'
-          ? 'El pedido sigue en revisión. El pago se habilita cuando un profesional acepta el trabajo.'
+          ? request.contractSource === 'automatic_customer_request'
+            ? 'Consultá el servicio y el estado registrado del pago.'
+            : 'El pedido sigue en revisión. El pago se habilita cuando un profesional acepta el trabajo.'
           : request.nextStep,
       action: { label: 'Ver pedido', href: '/app/solicitudes' },
       sortAt: request.createdAt

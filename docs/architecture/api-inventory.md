@@ -1,6 +1,6 @@
 # Inventario de API
 
-Generado desde los métodos exportados en `app/api/**/route.ts`. Total: **108 métodos**. El control automático falla si aparece o desaparece un método sin regenerar este archivo.
+Generado desde los métodos exportados en `app/api/**/route.ts`. Total: **120 métodos**. El control automático falla si aparece o desaparece un método sin regenerar este archivo.
 
 | Método | Ruta | Estado | Autoridad | Destino canónico | Prueba contractual |
 |---|---|---|---|---|---|
@@ -26,6 +26,12 @@ Generado desde los métodos exportados en `app/api/**/route.ts`. Total: **108 m�
 | `GET` | `/api/admin/professionals` | Activa | Sesión: sesión; permiso operations | `/api/admin/professionals` | `tests/integration/api-inventory.test.ts` |
 | `POST` | `/api/admin/professionals/suspend` | Activa | Sesión: admin; permiso operations | `/api/admin/professionals/suspend` | `tests/integration/api-inventory.test.ts` |
 | `POST` | `/api/contact` | Activa | Sesión y autorización verificadas por el servicio de la ruta | `/api/contact` | `tests/integration/api-inventory.test.ts` |
+| `GET` | `/api/customer/account/export` | Activa | Sesión: customer | `/api/customer/account/export` | `tests/integration/api-inventory.test.ts` |
+| `POST` | `/api/customer/account/password` | Activa | Sesión: customer | `/api/customer/account/password` | `tests/integration/api-inventory.test.ts` |
+| `GET` | `/api/customer/account/privacy` | Activa | Sesión: customer | `/api/customer/account/privacy` | `tests/integration/api-inventory.test.ts` |
+| `POST` | `/api/customer/account/privacy` | Activa | Sesión: customer | `/api/customer/account/privacy` | `tests/integration/api-inventory.test.ts` |
+| `GET` | `/api/customer/account/sessions` | Activa | Sesión: customer | `/api/customer/account/sessions` | `tests/integration/api-inventory.test.ts` |
+| `POST` | `/api/customer/account/sessions` | Activa | Sesión: customer | `/api/customer/account/sessions` | `tests/integration/api-inventory.test.ts` |
 | `GET` | `/api/customer/addresses` | Activa | Sesión: customer | `/api/customer/addresses` | `tests/integration/api-inventory.test.ts` |
 | `POST` | `/api/customer/addresses` | Activa | Sesión: customer | `/api/customer/addresses` | `tests/integration/api-inventory.test.ts` |
 | `PUT` | `/api/customer/addresses` | Activa | Sesión: customer | `/api/customer/addresses` | `tests/integration/api-inventory.test.ts` |
@@ -38,10 +44,15 @@ Generado desde los métodos exportados en `app/api/**/route.ts`. Total: **108 m�
 | `POST` | `/api/customer/homes` | Activa | Sesión: customer | `/api/customer/homes` | `tests/integration/api-inventory.test.ts` |
 | `PUT` | `/api/customer/homes` | Activa | Sesión: customer | `/api/customer/homes` | `tests/integration/api-inventory.test.ts` |
 | `DELETE` | `/api/customer/homes` | Activa | Sesión: customer | `/api/customer/homes` | `tests/integration/api-inventory.test.ts` |
+| `GET` | `/api/customer/payments/[id]/record` | Activa | Sesión: customer | `/api/customer/payments/[id]/record` | `tests/integration/api-inventory.test.ts` |
+| `GET` | `/api/customer/preferences` | Activa | Sesión: customer | `/api/customer/preferences` | `tests/integration/api-inventory.test.ts` |
+| `PUT` | `/api/customer/preferences` | Activa | Sesión: customer | `/api/customer/preferences` | `tests/integration/api-inventory.test.ts` |
 | `POST` | `/api/customer/profile/email` | Activa | Sesión: customer | `/api/customer/profile/email` | `tests/integration/api-inventory.test.ts` |
 | `GET` | `/api/customer/profile` | Activa | Sesión: customer | `/api/customer/profile` | `tests/integration/api-inventory.test.ts` |
 | `PUT` | `/api/customer/profile` | Activa | Sesión: customer | `/api/customer/profile` | `tests/integration/api-inventory.test.ts` |
 | `POST` | `/api/customer/request/submit` | Activa | Sesión y autorización verificadas por el servicio de la ruta | `/api/customer/request/submit` | `tests/integration/api-inventory.test.ts` |
+| `POST` | `/api/customer/requests/prepare` | Activa | Sesión: customer | `/api/customer/requests/prepare` | `tests/integration/api-inventory.test.ts` |
+| `POST` | `/api/customer/requests/preview` | Activa | Sesión: customer | `/api/customer/requests/preview` | `tests/integration/api-inventory.test.ts` |
 | `GET` | `/api/customer/services` | Activa | Sesión: customer | `/api/customer/services` | `tests/integration/api-inventory.test.ts` |
 | `POST` | `/api/diagnosis/generate` | Activa | Sesión: customer,admin | `/api/diagnosis/generate` | `tests/unit/diagnosis-route.vitest.test.ts` |
 | `POST` | `/api/equipment/register` | Activa | Sesión: customer | `/api/equipment/register` | `tests/integration/api-inventory.test.ts` |
@@ -54,8 +65,8 @@ Generado desde los métodos exportados en `app/api/**/route.ts`. Total: **108 m�
 | `POST` | `/api/jobs/cancel` | Activa | Sesión: admin; permiso operations | `/api/jobs/cancel` | `tests/integration/api-inventory.test.ts` |
 | `POST` | `/api/jobs/confirm` | Activa | Sesión: customer | `/api/jobs/confirm` | `tests/integration/api-inventory.test.ts` |
 | `GET` | `/api/jobs/extras` | Activa | Sesión: professional,customer,admin | `/api/jobs/extras` | `tests/integration/api-inventory.test.ts` |
-| `POST` | `/api/jobs/extras` | Activa | Sesión: professional,customer,admin | `/api/jobs/extras` | `tests/integration/api-inventory.test.ts` |
-| `PATCH` | `/api/jobs/extras` | Activa | Sesión: professional,customer,admin | `/api/jobs/extras` | `tests/integration/api-inventory.test.ts` |
+| `POST` | `/api/jobs/extras` | Activa | Sesión: professional | `/api/jobs/extras` | `tests/integration/api-inventory.test.ts` |
+| `PATCH` | `/api/jobs/extras` | Activa | Sesión: customer | `/api/jobs/extras` | `tests/integration/api-inventory.test.ts` |
 | `POST` | `/api/jobs/final-report` | Activa | Sesión: professional | `/api/jobs/final-report` | `tests/integration/api-inventory.test.ts` |
 | `POST` | `/api/jobs/reschedule` | Activa | Sesión: customer,professional,admin | `/api/jobs/reschedule` | `tests/integration/api-inventory.test.ts` |
 | `POST` | `/api/jobs/update-status` | Retirada 410 | Pública; contrato retirado, sin mutación | `/api/pricing/job/status` | `tests/unit/api-route-contracts.vitest.test.ts` |
@@ -72,7 +83,7 @@ Generado desde los métodos exportados en `app/api/**/route.ts`. Total: **108 m�
 | `POST` | `/api/mercadopago/webhook` | Activa | Proveedor; firma y consulta canónica | `/api/mercadopago/webhook` | `tests/integration/api-inventory.test.ts` |
 | `POST` | `/api/notifications/emit` | Activa | Sesión y autorización verificadas por el servicio de la ruta | `/api/notifications/emit` | `tests/integration/api-inventory.test.ts` |
 | `GET` | `/api/payments/refund-requests` | Activa | Sesión: admin | `/api/payments/refund-requests` | `tests/integration/api-inventory.test.ts` |
-| `POST` | `/api/payments/refund-requests` | Activa | Sesión: admin | `/api/payments/refund-requests` | `tests/integration/api-inventory.test.ts` |
+| `POST` | `/api/payments/refund-requests` | Activa | Sesión: admin; permiso finance | `/api/payments/refund-requests` | `tests/integration/api-inventory.test.ts` |
 | `POST` | `/api/payments/webhook/apply` | Retirada 410 | Pública; contrato retirado, sin mutación | `/api/mercadopago/webhook` | `tests/unit/api-route-contracts.vitest.test.ts` |
 | `GET` | `/api/pricing/job` | Activa | Sesión y autorización verificadas por el servicio de la ruta | `/api/pricing/job` | `tests/integration/api-inventory.test.ts` |
 | `POST` | `/api/pricing/job/status` | Activa | Sesión: professional,customer | `/api/pricing/job/status` | `tests/integration/api-inventory.test.ts` |
@@ -104,6 +115,7 @@ Generado desde los métodos exportados en `app/api/**/route.ts`. Total: **108 m�
 | `GET` | `/api/scheduling/availability` | Activa | Sesión: professional,admin | `/api/scheduling/availability` | `tests/integration/api-inventory.test.ts` |
 | `PUT` | `/api/scheduling/availability` | Activa | Sesión: professional,admin | `/api/scheduling/availability` | `tests/integration/api-inventory.test.ts` |
 | `POST` | `/api/service-request/preview` | Retirada 410 | Pública; contrato retirado, sin mutación | `/api/pricing/quote` | `tests/unit/api-route-contracts.vitest.test.ts` |
+| `GET` | `/api/support/cases/[id]` | Activa | Sesión: customer | `/api/support/cases/[id]` | `tests/integration/api-inventory.test.ts` |
 | `PATCH` | `/api/support/cases/[id]` | Activa | Sesión: customer,professional,admin | `/api/support/cases/[id]` | `tests/integration/api-inventory.test.ts` |
 | `GET` | `/api/support/cases` | Activa | Sesión: customer,professional,admin | `/api/support/cases` | `tests/integration/api-inventory.test.ts` |
 | `POST` | `/api/support/cases` | Activa | Sesión: customer,professional,admin | `/api/support/cases` | `tests/integration/api-inventory.test.ts` |

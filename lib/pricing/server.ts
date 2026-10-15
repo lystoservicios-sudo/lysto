@@ -89,7 +89,7 @@ export async function getQuotePolicyRecord(client: PricingSession['client']) {
 }
 export function throwPricingDatabaseError(error: { code?: string; message?: string }): never {
   if (error.code === '42501') throw new ApiError('forbidden')
-  if (error.code === '40001' || error.code === '23505') throw new ApiError('conflict')
+  if (error.code === 'PT409' || error.code === '40001' || error.code === '23505') throw new ApiError('conflict')
   if (error.code === 'P0002') throw new ApiError('not_found')
   if (error.message?.includes('expired')) throw new Error('quote_expired')
   if (error.message?.includes('Current approved tariff required'))

@@ -44,9 +44,7 @@ export function applyOwnerMaintenanceTestPrice<T extends QuoteAmounts>(quote: T,
   const professionalAmount = money(OWNER_MAINTENANCE_TEST_PRICE - platformFee)
   const calculatorSubtotal = money(OWNER_MAINTENANCE_TEST_PRICE / 1.3)
   const safetyAmount = money(OWNER_MAINTENANCE_TEST_PRICE - calculatorSubtotal)
-  const paymentCostBudget = money(
-    Math.min(OWNER_MAINTENANCE_TEST_PRICE * 0.06, professionalAmount - calculatorSubtotal)
-  )
+  const paymentCostBudget = 0
   const reviewReasons = quote.reviewReasons.filter(
     (reason) => reason !== 'tariffs_unapproved' && reason !== 'professional_net_floor'
   )

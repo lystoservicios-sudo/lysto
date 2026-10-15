@@ -63,7 +63,7 @@ const caseResult = z
   })
   .passthrough()
 const mapError = (error: { code?: string } | null) => {
-  if (error?.code === '40001') return new ApiError('conflict')
+  if (error?.code === '40001' || error?.code === 'PT409') return new ApiError('conflict')
   if (error?.code === 'P0002') return new ApiError('not_found')
   if (error?.code === '22023') return new ApiError('invalid_input')
   if (error?.code === '42501') return new ApiError('forbidden')
@@ -114,7 +114,7 @@ export async function openWarrantyClaim(session: Session, raw: unknown) {
 export async function updateSupportCase(session: Session, caseId: string, raw: unknown) {
   const id = uuid.parse(caseId),
     i = updateSchema.parse(raw)
-  return caseResult.parse(
+  const result = caseResult.parse(
     await rpc(session, 'update_support_case', {
       p_case_id: id,
       p_action: i.action,
@@ -127,9 +127,15 @@ export async function updateSupportCase(session: Session, caseId: string, raw: u
       p_communication_failed: i.communicationFailed ?? false
     })
   )
+  return session.role === 'admin' ? result : caseResult.strip().parse(result)
+}
+export async function replyCustomerSupportCase(session: Session, caseId: string, raw: unknown) {
+  if (session.role !== 'customer' || !session.customerId) throw new ApiError('forbidden')
+  const input = z.object({ action: z.literal('customer_replied'), expectedVersion: z.number().int().positive(), publicMessage: z.string().trim().min(2).max(3000), evidenceIds: z.array(uuid).max(10).default([]), idempotencyKey: uuid }).strict().parse(raw)
+  return caseResult.strip().parse(await rpc(session, 'reply_customer_support_case', { p_case_id: uuid.parse(caseId), p_expected_version: input.expectedVersion, p_public_message: input.publicMessage, p_evidence_ids: input.evidenceIds, p_idempotency_key: input.idempotencyKey }))
 }
 export async function listSupportCases(session: Session, limit: number) {
-  return z
+  const cases = z
     .array(
       z.object({
         id: uuid,
@@ -172,6 +178,18 @@ export async function listSupportCases(session: Session, limit: number) {
         p_limit: z.number().int().min(1).max(100).parse(limit)
       })
     )
+  return cases.map((item) => ({
+    id: item.id, jobId: item.jobId, category: item.category, status: item.status,
+    severity: item.severity, description: item.description, dueAt: item.dueAt,
+    publicResolution: item.publicResolution, version: item.version, createdAt: item.createdAt,
+    warrantyClaim: item.warrantyClaim,
+    ...(session.role === 'admin' ? { assignedTo: item.assignedTo } : {}),
+    events: item.events.map((event) => ({
+      id: event.id, type: event.type, fromStatus: event.fromStatus, toStatus: event.toStatus,
+      message: event.message, evidenceIds: event.evidenceIds, createdAt: event.createdAt,
+      ...(session.role === 'admin' ? { internalNote: event.internalNote } : {})
+    }))
+  }))
 }
 export async function decideWarrantyClaim(session: Session, claimId: string, raw: unknown) {
   const id = uuid.parse(claimId),

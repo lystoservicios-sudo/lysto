@@ -4,6 +4,7 @@ import { paymentActor, visibleCheckout } from '@/lib/payments/marketplace-sessio
 import { paymentDatabase } from '@/lib/payments/marketplace-db'
 import { paymentError, sameOrigin } from '@/lib/payments/marketplace-config'
 import { reconcileCheckout, renewCheckout } from '@/lib/payments/marketplace'
+import { assertPaymentCustomerRequestActor } from '@/lib/payments/customer-request-actor'
 import { enforceRateLimit, RateLimitExceeded, rateLimitResponse } from '@/lib/security/rate-limit'
 
 export const runtime = 'nodejs'
@@ -15,6 +16,7 @@ const legacyCheckoutListSql = `select c.id,c.job_id,c.extra_id,c.amount,c.market
 export async function GET(request: Request) {
   try {
     const actor = await paymentActor()
+    assertPaymentCustomerRequestActor(request, actor)
     const job = new URL(request.url).searchParams.get('jobId')
     if (job) z.string().uuid().parse(job)
     const params = [job, actor.role === 'admin', actor.customerId ?? null, actor.professionalId ?? null]
@@ -42,6 +44,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const actor = await paymentActor()
+    assertPaymentCustomerRequestActor(request, actor)
     sameOrigin(request)
     const { checkoutId, action } = z.object({
       checkoutId: z.string().uuid(),

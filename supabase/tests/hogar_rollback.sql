@@ -103,7 +103,7 @@ begin
   select count(*) into count_rows from public.customer_equipment where address_id=(a1->>'id')::uuid;
   if count_rows<>1 then raise exception 'QA duplicate equipment'; end if;
   rejected:=false;
-  begin perform public.write_customer_home('save',(home->>'id')::uuid,1,input-'idempotencyKey'); exception when serialization_failure then rejected:=true; end;
+  begin perform public.write_customer_home('save',(home->>'id')::uuid,1,input-'idempotencyKey'); exception when sqlstate 'PT409' then rejected:=true; end;
   if not rejected then raise exception 'QA stale version accepted'; end if;
   -- Explicit address revisions retain a stable home and the equipment's old address.
   revision:=public.write_customer_asset('address',(a1->>'id')::uuid,(a1->>'version')::int,'{"label":"QA corregida","street":"Test street","number":"124","city":"CABA","province":"CABA","propertyType":"house","access":{},"isDefault":false}',false);

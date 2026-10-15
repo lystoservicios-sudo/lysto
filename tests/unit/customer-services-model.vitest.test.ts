@@ -32,6 +32,66 @@ const visit = {
 const paid = [{ jobId: job.id, extraId: null, status: 'approved' }]
 
 describe('customer services projection', () => {
+  it('describes an automatically assigned professional as confirmed, not personally accepted', () => {
+    const summary = buildCustomerServiceSummary({
+      request: { ...request, contractSource: 'automatic_customer_request' } as CustomerServiceRequestSource,
+      job, checkouts: []
+    }, now)
+    expect(summary.description).toBe('El profesional está confirmado. Revisá el pago para continuar.')
+  })
+
+  it('closes an expired automatic request even when its job remains confirmed', () => {
+    const summary = buildCustomerServiceSummary({
+      request: { ...request, status: 'expired', contractSource: 'automatic_customer_request' } as CustomerServiceRequestSource,
+      job, quote, checkouts: paid, visit
+    }, now)
+    expect(summary).toMatchObject({ phase: 'cancelled', statusLabel: 'Solicitud vencida', visit: null })
+    expect(summary.action?.label).toBe('Consultar pago')
+    expect(matchesCustomerServicesFilter(summary, 'scheduled')).toBe(false)
+  })
+
+  it('keeps legacy accepted jobs active when only the originating request is expired', () => {
+    const summary = buildCustomerServiceSummary({ request: { ...request, status: 'expired' }, job, checkouts: paid, visit }, now)
+    expect(summary.phase).toBe('scheduled')
+  })
+
+  it.each(['review', 'pending', 'in_process'])('keeps canonical %s visible after an automatic reservation expires', (status) => {
+    const summary = buildCustomerServiceSummary({
+      request: { ...request, status: 'expired', contractSource: 'automatic_customer_request' }, job, quote, visit,
+      checkouts: [{ jobId: job.id, extraId: null, status }]
+    }, now)
+    expect(summary.statusLabel).toBe(status === 'review' ? 'Pago en revisión' : 'Pago en seguimiento')
+    expect(summary).toMatchObject({ phase: 'cancelled', visit: null, amount: 40000 })
+    expect(summary.action?.label).toBe('Consultar pago')
+    expect(summary.description).toContain('venció')
+    expect(summary.description).toContain('No vuelvas a pagar')
+  })
+
+  it('does not hide approved funds when the automatic visit reservation is expired', () => {
+    const summary = buildCustomerServiceSummary({
+      request: { ...request, status: 'expired', contractSource: 'automatic_customer_request' }, job, quote, checkouts: paid
+    }, now)
+    expect(summary.description).toContain('El pago está aprobado')
+    expect(summary.action?.label).toBe('Consultar pago')
+    expect(summary.visit).toBeNull()
+  })
+
+  it('uses the automatic visit address rather than a stale quote address', () => {
+    const summary = buildCustomerServiceSummary({
+      request: { ...request, address: 'Destino actual', contractSource: 'automatic_customer_request' } as CustomerServiceRequestSource,
+      job, quote: { ...quote, address: 'Domicilio anterior' }
+    }, now)
+    expect(summary.address).toBe('Destino actual')
+  })
+
+  it('does not fill a missing automatic visit snapshot from its historical quote', () => {
+    const summary = buildCustomerServiceSummary({
+      request: { ...request, address: undefined, contractSource: 'automatic_customer_request' } as CustomerServiceRequestSource,
+      job, quote: { ...quote, address: 'Domicilio anterior' }
+    }, now)
+    expect(summary.address).toBeUndefined()
+  })
+
   it('uses one stable request identity when request, job and accepted quote are related', () => {
     const summary = buildCustomerServiceSummary({ request, job, quote, checkouts: paid, visit }, now)
     expect(summary).toMatchObject({

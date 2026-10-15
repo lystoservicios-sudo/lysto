@@ -54,7 +54,7 @@ export async function writeCustomerAsset(
       throw new ApiError('address_has_home')
     if (result.error.code === '42501') throw new ApiError('forbidden')
     if (result.error.code === 'P0002') throw new ApiError('not_found')
-    if (result.error.code === '40001' || result.error.code === '23505')
+    if (result.error.code === 'PT409' || result.error.code === '40001' || result.error.code === '23505')
       throw new ApiError('conflict')
     if (['22023', '22P02', '23514'].includes(result.error.code)) throw new ApiError('invalid_input')
     throw new ApiError('service_unavailable')

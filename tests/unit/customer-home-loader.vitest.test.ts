@@ -64,6 +64,14 @@ beforeEach(() => {
 })
 
 describe('customer home loader summaries', () => {
+  it('preserves automatic contract expiry and avoids loading a visit for it', async () => {
+    mocks.jobs.mockResolvedValue({ items: [{ ...completedJob, status: 'confirmed',
+      contractSource: 'automatic_customer_request', requestStatus: 'expired', createdAt: now }], total: 1, nextCursor: null })
+    const model = await loadCustomerHome(session, now)
+    expect(model.activity).toEqual([])
+    expect(model.unavailableSections).not.toContain('visitas')
+  })
+
   it('loads a separate completed page for the same authorized customer', async () => {
     const model = await loadCustomerHome(session, now)
 

@@ -4,6 +4,7 @@ import { getPricingSession } from '@/lib/pricing/server'
 import { marketplaceConfig, paymentError, sameOrigin } from '@/lib/payments/marketplace-config'
 import { prepareCheckout } from '@/lib/payments/marketplace-ledger'
 import { createCheckoutPreference } from '@/lib/payments/marketplace'
+import { assertPaymentCustomerRequestActor } from '@/lib/payments/customer-request-actor'
 import { requireNewCheckouts } from '@/lib/release/runtime-switches'
 import {
   enforceRateLimit,
@@ -16,6 +17,7 @@ export async function POST(request: Request) {
   try {
     const session = await getPricingSession()
     if (session.role !== 'customer' || !session.customerId) throw new Error('payment_forbidden')
+    assertPaymentCustomerRequestActor(request, session)
     sameOrigin(request)
     requireNewCheckouts()
     await enforceRateLimit('private_mutation', `${session.profileId}:${requestSubject(request)}`)
@@ -34,12 +36,13 @@ export async function POST(request: Request) {
       return privateJson({ checkoutId: checkout.id, status: checkout.status })
     const result = await createCheckoutPreference(checkout)
     if (result.status !== 'ready') throw new Error('checkout_review')
+    if (result.live_mode !== config.liveMode) throw new Error('payment_mode_mismatch')
     if (result.checkout_protocol === 'orders' &&
         (!result.order_id || result.order_id.startsWith('ORDTST') === config.liveMode))
       throw new Error('payment_mode_mismatch')
     const initPoint = result.checkout_protocol === 'orders'
       ? result.checkout_url
-      : config.liveMode ? result.init_point : result.sandbox_init_point
+      : result.init_point
     if (!initPoint) throw new Error('invalid_provider_response')
     return privateJson({ checkoutId: result.id, status: result.status, initPoint })
   } catch (error) {

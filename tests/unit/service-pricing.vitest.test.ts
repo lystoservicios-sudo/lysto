@@ -3,6 +3,7 @@ import {
   calculateServiceQuote,
   defaultQuotePolicy,
   money,
+  quotePolicySchema,
   referenceCatalog,
   scenarioCodes,
   type QuoteInput
@@ -36,7 +37,10 @@ const input: QuoteInput = {
 const policy = { ...defaultQuotePolicy, approvedUntil: '2026-10-01', paymentCostRate: 0.06 }
 
 describe('service proposals', () => {
-  it('compares professional cost coverage in cents at the exact boundary', () => {
+  it('does not assume a provider processing charge in the default policy', () => {
+    expect(defaultQuotePolicy.paymentCostRate).toBe(0)
+  })
+  it('preserves the gross split without reserving a provider cost at a cent boundary', () => {
     const q = calculateServiceQuote(
       {
         ...input,
@@ -52,7 +56,7 @@ describe('service proposals', () => {
       now
     )
     expect(q.professionalAmount).toBe(104.16)
-    expect(q.paymentCostBudget).toBe(4.01)
+    expect(q.paymentCostBudget).toBe(0)
     expect(q.reviewReasons).not.toContain('professional_net_floor')
   })
   it('keeps tariff validity through the approved Buenos Aires calendar day', () => {
@@ -98,7 +102,23 @@ describe('service proposals', () => {
     expect(q.professionalAmount + q.platformFee).toBe(q.total)
     expect(q.professionalAmount).toBeGreaterThanOrEqual(q.calculatorSubtotal)
     expect(q.platformContribution).toBe(40248)
-    expect(q.reviewReasons).toEqual(['professional_net_floor'])
+    expect(q.paymentCostBudget).toBe(0)
+    expect(q.reviewReasons).toEqual([])
+    expect(q.readyToOffer).toBe(true)
+  })
+  it.each([0, 0.06, 0.5])('accepts legacy paymentCostRate %s without changing the new gross split', (paymentCostRate) => {
+    const legacyPolicy = { ...policy, paymentCostRate }
+    expect(quotePolicySchema.parse(legacyPolicy).paymentCostRate).toBe(paymentCostRate)
+    const q = calculateServiceQuote(input, legacyPolicy, now)
+    expect(q).toMatchObject({
+      total: 223600,
+      platformFee: 40248,
+      professionalAmount: 183352,
+      paymentCostBudget: 0,
+      readyToOffer: true,
+      reviewReasons: []
+    })
+    expect(legacyPolicy.paymentCostRate).toBe(paymentCostRate)
   })
   it('never silently treats missing routing, unpriced materials or expired tariffs as ready', () => {
     const q = calculateServiceQuote(

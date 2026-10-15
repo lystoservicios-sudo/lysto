@@ -10,6 +10,7 @@ import type {
 
 import type { JobDto } from '@/lib/data-access/read-contracts'
 import { customerJobStatusLabels } from '@/lib/domain/job-status-labels'
+import type { RequestVisitContext } from '@/lib/jobs/visit-address'
 
 export function toCustomerJobSummary(job: JobDto) {
   return { ...job, statusLabel: customerJobStatusLabels[job.status] }
@@ -23,7 +24,7 @@ export type CustomerStatusViewModel = {
   tone: CustomerUiTone
 }
 
-export type CustomerRequestViewModel = {
+export type CustomerRequestViewModel = RequestVisitContext & {
   id: string
   issue: ServiceIssueSlug
   issueLabel: string
@@ -40,9 +41,11 @@ export type CustomerRequestViewModel = {
   assignedProfessionalName?: string
 }
 
-export type CustomerJobViewModel = {
+export type CustomerJobViewModel = RequestVisitContext & {
   id: string
   requestId: string
+  requestStatus?: RequestStatus
+  createdAt?: string
   equipmentId?: string
   status: JobStatus
   statusView: CustomerStatusViewModel

@@ -41,6 +41,7 @@ describe('owner maintenance test price', () => {
     expect(result.professionalAmount).toBe(820)
     expect(result.platformFeeRate).toBe(0.18)
     expect(result.platformContribution).toBe(180)
+    expect(result.paymentCostBudget).toBe(0)
     expect(result.specialPricing).toEqual({ kind: 'owner_maintenance_test', amount: 1000 })
     expect(result.reviewReasons).not.toContain('tariffs_unapproved')
     expect(result.reviewReasons).toContain('owner_maintenance_test_review')
@@ -49,6 +50,8 @@ describe('owner maintenance test price', () => {
 
   it('leaves every other quote unchanged', () => {
     expect(applyOwnerMaintenanceTestPrice(quote, false)).toEqual(quote)
+    expect(applyOwnerMaintenanceTestPrice(quote, false)).toBe(quote)
+    expect(quote.paymentCostBudget).toBe(13416)
   })
 
   it('shows the special amount in the owner preview only for maintenance', () => {

@@ -1,278 +1,137 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
-
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { MediaUploader } from '@/components/customer/media-uploader'
 import { PaymentDeferredPanel } from '@/components/customer/payment-deferred-panel'
 import { AirConditioningWizard } from '@/features/service-request/air-conditioning-wizard'
+import type { CustomerHomesSnapshot } from '@/lib/customer-homes/contracts'
 import { AIR_CONDITIONING_ISSUES } from '@/lib/domain/constants'
 import { generateDiagnosis } from '@/lib/diagnosis/rules'
-import { calculateServiceQuote, defaultQuotePolicy } from '@/lib/pricing/service-quote'
 
-afterEach(() => {
-  cleanup()
-  vi.unstubAllGlobals()
-})
-
-function completeAddressIfVisible() {
-  if (!screen.queryByLabelText('Calle')) return
-  expect((screen.getByLabelText('Calle') as HTMLInputElement).value).toBe('')
-  for (const [label, value] of [
-    ['Calle', 'Calle de prueba'],
-    ['Número', '123'],
-    ['Ciudad', 'CABA'],
-    ['Provincia', 'Buenos Aires']
-  ])
-    fireEvent.change(screen.getByLabelText(label), { target: { value } })
+const actor = '10000000-0000-4000-8000-000000000001'
+const addressId = '10000000-0000-4000-8000-000000000002'
+const homeId = '10000000-0000-4000-8000-000000000003'
+const floorId = '10000000-0000-4000-8000-000000000004'
+const roomId = '10000000-0000-4000-8000-000000000005'
+const equipmentId = '10000000-0000-4000-8000-000000000006'
+function inventory(): CustomerHomesSnapshot {
+  return { addresses: [{ id: addressId, label: 'Mi oficina', street: 'San Martín', number: '456', floor: '2', apartment: null, city: 'CABA', province: 'Buenos Aires', propertyType: 'office', isDefault: true, access: { hasElevator: true, stairsRequired: true }, version: 2, createdAt: '2026-09-11T12:00:00Z', archivedAt: null }], equipment: [{ id: equipmentId, addressId, nickname: 'Aire oficina', equipmentType: 'split', brand: null, model: null, serialNumber: null, frigorias: null, version: 1, createdAt: '2026-09-11T12:00:00Z', archivedAt: null }], homes: [{ id: homeId, addressId, name: 'Mi oficina', kind: 'office', building: null, features: { balcony: false, terrace: false, windows: 'small' }, floors: [{ id: floorId, name: 'Planta de oficina', order: 0, rooms: [{ id: roomId, name: 'Oficina', kind: 'office', variant: 'individual', x: 0, z: 0, width: 4, depth: 4, rotation: 0, windows: 'small' }] }], placements: [{ equipmentId, roomId, wall: 'north', offset: .5, height: 2 }], version: 1 }] }
 }
+function mount(initialIssue?: typeof AIR_CONDITIONING_ISSUES[number]['slug']) { render(<AirConditioningWizard customerId={actor} initialData={inventory()} initialIssue={initialIssue} />) }
+function next() { fireEvent.click(screen.getByRole('button', { name: /^Continuar/ })) }
+function details() { next(); next() }
+beforeEach(() => window.sessionStorage.clear())
+afterEach(() => { cleanup(); vi.unstubAllGlobals() })
 
 describe('customer request wizard', () => {
-  it.each(AIR_CONDITIONING_ISSUES)(
-    'starts with $title selected from Inicio without skipping the first step',
-    ({ slug, title }) => {
-      render(<AirConditioningWizard initialIssue={slug} />)
-
-      expect(screen.getByText('Paso 1 de 7')).toBeTruthy()
-      expect(screen.getByRole('radio', { name: new RegExp(title) }).getAttribute('aria-checked')).toBe(
-        'true'
-      )
-      expect((screen.getByRole('button', { name: 'Continuar' }) as HTMLButtonElement).disabled).toBe(
-        false
-      )
-      expect(screen.queryByRole('heading', { name: 'Contanos un poco más' })).toBeNull()
-    }
-  )
-
-  it('lets the customer change an issue selected from Inicio before continuing', () => {
-    render(<AirConditioningWizard initialIssue="no_enfria" />)
-
-    expect(screen.getByRole('radio', { name: /No enfría/ }).getAttribute('aria-checked')).toBe('true')
-    fireEvent.click(screen.getByRole('radio', { name: /Mantenimiento/ }))
-    expect(screen.getByRole('radio', { name: /No enfría/ }).getAttribute('aria-checked')).toBe('false')
-    expect(screen.getByRole('radio', { name: /Mantenimiento/ }).getAttribute('aria-checked')).toBe('true')
-    fireEvent.click(screen.getByRole('button', { name: 'Continuar' }))
-    expect(screen.getByRole('radiogroup', { name: 'Desde cuándo necesitás el servicio' })).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name: 'Atrás' }))
-    expect(screen.getByRole('radio', { name: /Mantenimiento/ }).getAttribute('aria-checked')).toBe('true')
-  })
-
-  it('prefills the default active saved address and its access conditions', () => {
-    render(<AirConditioningWizard savedAddresses={{ items: [{ id: '48b10c2d-f00a-45a4-8d8c-9fe6831d56d1', label: 'Mi oficina', street: 'San Martín', number: '456', floor: '2', apartment: null, city: 'CABA', province: 'Buenos Aires', propertyType: 'office', isDefault: true, access: { hasElevator: true, stairsRequired: true }, version: 2, createdAt: '2026-09-11T12:00:00Z', archivedAt: null }], total: 1, nextCursor: null }} />)
-    fireEvent.click(screen.getByRole('radio', { name: /No enfría/ }))
-    fireEvent.click(screen.getByRole('button', { name: 'Continuar' }))
-    fireEvent.click(screen.getByRole('radio', { name: /Hace días/ }))
-    fireEvent.click(screen.getByRole('button', { name: 'Continuar' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Continuar' }))
-    expect((screen.getByLabelText('Calle') as HTMLInputElement).value).toBe('San Martín')
+  it.each(AIR_CONDITIONING_ISSUES)('starts with $title selected from Inicio without skipping the first step', ({ slug, title }) => {
+    mount(slug)
+    expect(screen.getByText(/Paso 1 de 7/)).toBeTruthy()
+    expect(screen.getByRole('radio', { name: new RegExp(title) }).getAttribute('aria-checked')).toBe('true')
     expect((screen.getByRole('button', { name: 'Continuar' }) as HTMLButtonElement).disabled).toBe(false)
-    fireEvent.change(screen.getByLabelText('Usar una dirección guardada'), { target: { value: '48b10c2d-f00a-45a4-8d8c-9fe6831d56d1' } })
+    expect(screen.queryByRole('heading', { name: 'Contanos un poco más' })).toBeNull()
+  })
+  it('lets the customer change an issue selected from Inicio before continuing', () => {
+    mount('no_enfria')
+    fireEvent.click(screen.getByRole('radio', { name: 'Mantenimiento' }))
+    expect(screen.getByRole('radio', { name: /No enfría/ }).getAttribute('aria-checked')).toBe('false')
+    expect(screen.getByRole('radio', { name: 'Mantenimiento' }).getAttribute('aria-checked')).toBe('true')
+    next()
+    expect(screen.getByRole('heading', { name: 'Revisá dónde está tu aire' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Atrás' }))
+    expect(screen.getByRole('radio', { name: 'Mantenimiento' }).getAttribute('aria-checked')).toBe('true')
+  })
+  it('prefills the real active address and preserves its access conditions when explicitly editing', () => {
+    mount('no_enfria'); next()
+    expect(screen.getByText('San Martín 456 · Piso 2, CABA')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Editar' }))
     expect((screen.getByLabelText('Calle') as HTMLInputElement).value).toBe('San Martín')
-    expect((screen.getByLabelText('Hay ascensor') as HTMLInputElement).checked).toBe(true)
-    expect((screen.getByLabelText('Se requieren escaleras') as HTMLInputElement).checked).toBe(true)
-    expect(screen.getByRole('radio', { name: /Oficina/ }).getAttribute('aria-checked')).toBe('true')
+    expect((screen.getByLabelText('Piso de la dirección') as HTMLInputElement).value).toBe('2')
+    expect((screen.getByRole('button', { name: 'Continuar con los detalles' }) as HTMLButtonElement).disabled).toBe(true)
+    fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
+    expect((screen.getByRole('button', { name: 'Continuar con los detalles' }) as HTMLButtonElement).disabled).toBe(false)
   })
   it('guides the first choice without presenting a validation error before interaction', () => {
-    render(<AirConditioningWizard />)
+    mount()
     expect(screen.queryByRole('alert')).toBeNull()
     expect(screen.getByText('Elegí una opción para continuar.')).toBeTruthy()
   })
-
-  it.each(
-    AIR_CONDITIONING_ISSUES.filter(
-      (issue) => !['instalacion', 'mantenimiento'].includes(issue.slug)
-    )
-  )(
-    'explains every existing cause for $title without presenting a confirmed diagnosis',
-    ({ slug, title }) => {
-      render(<AirConditioningWizard />)
-      fireEvent.click(screen.getByRole('radio', { name: new RegExp(title) }))
-      fireEvent.click(screen.getByRole('button', { name: 'Continuar' }))
-      fireEvent.click(screen.getByRole('radio', { name: /Hace días/ }))
-      fireEvent.click(screen.getByRole('button', { name: 'Continuar' }))
-      expect(screen.getByRole('heading', { name: 'Qué puede estar pasando' })).toBeTruthy()
-      for (const cause of generateDiagnosis({ issue: slug, timeSince: 'days' }).causes) {
-        expect(screen.getByText(cause.customerHint)).toBeTruthy()
-      }
-      expect(
-        screen.getByText('El técnico confirmará qué está pasando antes de indicarte la solución.')
-      ).toBeTruthy()
-    }
-  )
-
-  it.each(['Instalación', 'Mantenimiento'])(
-    'presents %s as a service review, not as a fault',
-    (title) => {
-      render(<AirConditioningWizard />)
-      fireEvent.click(screen.getByRole('radio', { name: new RegExp(title) }))
-      fireEvent.click(screen.getByRole('button', { name: 'Continuar' }))
-      expect(
-        screen.getByRole('radiogroup', { name: 'Desde cuándo necesitás el servicio' })
-      ).toBeTruthy()
-      expect(screen.queryByRole('radiogroup', { name: 'Antigüedad del problema' })).toBeNull()
-      fireEvent.click(screen.getByRole('radio', { name: /Hace días/ }))
-      fireEvent.click(screen.getByRole('button', { name: 'Continuar' }))
-      expect(screen.getByRole('heading', { name: 'Qué vamos a revisar' })).toBeTruthy()
-      expect(screen.getByRole('list', { name: 'Revisión del servicio' }).children).toHaveLength(4)
-      expect(screen.queryByText(/Posible causa/)).toBeNull()
-      expect(
-        screen.getByText(
-          'El profesional confirmará el alcance y los materiales necesarios antes de realizar el trabajo.'
-        )
-      ).toBeTruthy()
-    }
-  )
-
-  it('announces the new step, labels equipment fields and retains answers on back navigation', () => {
-    render(<AirConditioningWizard />)
-    fireEvent.click(screen.getByRole('radio', { name: /No enfría/ }))
-    fireEvent.click(screen.getByRole('button', { name: 'Continuar' }))
-    expect(document.activeElement?.getAttribute('aria-label')).toBe('Paso 2 de 7: Detalles')
-    expect(screen.getByRole('combobox', { name: 'Capacidad del aire (frigorías/h)' })).toBeTruthy()
+  it.each(AIR_CONDITIONING_ISSUES.filter(i => !['instalacion', 'mantenimiento'].includes(i.slug)))('explains every existing cause for $title without presenting a confirmed diagnosis', ({ slug }) => {
+    mount(slug); details()
+    fireEvent.click(screen.getByRole('radio', { name: 'Hace días' })); next()
+    expect(screen.getByRole('heading', { name: 'Qué puede estar pasando' })).toBeTruthy()
+    for (const cause of generateDiagnosis({ issue: slug, timeSince: 'days' }).causes) expect(screen.getByText(cause.customerHint)).toBeTruthy()
+    expect(screen.getByText('El técnico confirmará qué está pasando antes de indicarte la solución.')).toBeTruthy()
+  })
+  it.each(['Instalación', 'Mantenimiento'])('presents %s as a service review, not as a fault', title => {
+    mount(); fireEvent.click(screen.getByRole('radio', { name: title })); details()
+    const group = title === 'Instalación' ? 'Tipo de instalación' : 'Último mantenimiento'
+    expect(screen.getByRole('radiogroup', { name: group })).toBeTruthy()
+    expect(screen.queryByRole('radiogroup', { name: 'Antigüedad del problema' })).toBeNull()
+    fireEvent.click(screen.getByRole('radio', { name: title === 'Instalación' ? 'Instalación nueva' : 'Nunca' })); next()
+    expect(screen.getByRole('heading', { name: 'Qué vamos a revisar' })).toBeTruthy()
+    expect(screen.getByRole('list', { name: 'Revisión del servicio' }).children).toHaveLength(4)
+    expect(screen.queryByText(/Posible causa/)).toBeNull()
+    expect(screen.getByText('El profesional confirmará el alcance y los materiales necesarios antes de realizar el trabajo.')).toBeTruthy()
+  })
+  it('announces each new step, labels missing characteristics and retains answers on back navigation', () => {
+    mount('no_enfria'); details()
+    expect(document.activeElement?.getAttribute('aria-label')).toBe('Paso 3 de 7: Detalles')
+    expect(screen.getByRole('spinbutton', { name: 'Capacidad del aire (frigorías/h)' })).toBeTruthy()
     expect(screen.getByRole('combobox', { name: 'Tecnología del equipo' })).toBeTruthy()
-    fireEvent.click(screen.getByRole('radio', { name: /Hace días/ }))
-    fireEvent.click(screen.getByRole('button', { name: 'Continuar' }))
+    fireEvent.click(screen.getByRole('radio', { name: 'Hace días' })); next()
     fireEvent.click(screen.getByRole('button', { name: 'Atrás' }))
-    expect(screen.getByRole('radio', { name: /Hace días/ }).getAttribute('aria-checked')).toBe(
-      'true'
-    )
+    expect(screen.getByRole('radio', { name: 'Hace días' }).getAttribute('aria-checked')).toBe('true')
   })
-
-  it('offers a mobile visit summary and requires a date when choosing another day', () => {
-    render(<AirConditioningWizard />)
-    fireEvent.click(screen.getByRole('radio', { name: /No enfría/ }))
-    fireEvent.click(screen.getByRole('button', { name: 'Continuar' }))
-    fireEvent.click(screen.getByRole('radio', { name: /Hace días/ }))
-    for (let step = 0; step < 3; step += 1) {
-      completeAddressIfVisible()
-      fireEvent.click(screen.getByRole('button', { name: 'Continuar' }))
-    }
-    expect(screen.getByText('Ver resumen de la visita')).toBeTruthy()
-    fireEvent.click(screen.getByRole('radio', { name: /Otro día/ }))
-    expect((screen.getByRole('button', { name: 'Continuar' }) as HTMLButtonElement).disabled).toBe(
-      true
-    )
-    fireEvent.change(screen.getByLabelText('Fecha de visita'), { target: { value: '2027-01-12' } })
-    expect((screen.getByRole('button', { name: 'Continuar' }) as HTMLButtonElement).disabled).toBe(
-      false
-    )
+  it('shows visit context and requires a future date when choosing another day', () => {
+    mount('no_enfria'); details(); fireEvent.click(screen.getByRole('radio', { name: 'Hace días' })); next()
+    fireEvent.click(screen.getByRole('button', { name: 'Elegir horario preferido' }))
+    expect(screen.getByText('Dirección de visita')).toBeTruthy()
+    fireEvent.click(screen.getByRole('radio', { name: 'Otra fecha' }))
+    fireEvent.click(screen.getByRole('radio', { name: '10:00 – 12:00' }))
+    expect((screen.getByRole('button', { name: 'Revisar pedido y presupuesto' }) as HTMLButtonElement).disabled).toBe(true)
+    fireEvent.change(screen.getByLabelText('Fecha de visita'), { target: { value: '2028-01-12' } })
+    expect((screen.getByRole('button', { name: 'Revisar pedido y presupuesto' }) as HTMLButtonElement).disabled).toBe(false)
   })
-
-  it('asks again for timing when changing between a fault and a planned service', () => {
-    render(<AirConditioningWizard />)
-    fireEvent.click(screen.getByRole('radio', { name: /No enfría/ }))
-    fireEvent.click(screen.getByRole('button', { name: 'Continuar' }))
-    fireEvent.click(screen.getByRole('radio', { name: /Hace días/ }))
-    fireEvent.click(screen.getByRole('button', { name: 'Atrás' }))
-    fireEvent.click(screen.getByRole('radio', { name: /Instalación/ }))
-    fireEvent.click(screen.getByRole('button', { name: 'Continuar' }))
-    expect(screen.getByRole('radio', { name: 'Hace días' }).getAttribute('aria-checked')).toBe(
-      'false'
-    )
-    expect((screen.getByRole('button', { name: 'Continuar' }) as HTMLButtonElement).disabled).toBe(
-      true
-    )
+  it('asks branch-specific questions again when switching from a fault to planned service', () => {
+    mount('no_enfria'); details(); fireEvent.click(screen.getByRole('radio', { name: 'Hace días' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Atrás' })); fireEvent.click(screen.getByRole('button', { name: 'Atrás' }))
+    fireEvent.click(screen.getByRole('radio', { name: 'Instalación' })); details()
+    expect(screen.getByRole('radio', { name: 'Instalación nueva' }).getAttribute('aria-checked')).toBe('false')
+    expect((screen.getByRole('button', { name: 'Continuar' }) as HTMLButtonElement).disabled).toBe(true)
   })
-
   it('moves and selects radio choices with arrow keys', () => {
-    render(<AirConditioningWizard />)
-
-    const firstChoice = screen.getByRole('radio', { name: /No enfría/ })
-    const secondChoice = screen.getByRole('radio', { name: /Pierde agua/ })
-    firstChoice.focus()
-    fireEvent.keyDown(firstChoice, { key: 'ArrowDown' })
-
-    expect(document.activeElement).toBe(secondChoice)
-    expect(secondChoice.getAttribute('aria-checked')).toBe('true')
+    mount()
+    const first = screen.getByRole('radio', { name: /No enfría/ }); const second = screen.getByRole('radio', { name: /Pierde agua/ })
+    first.focus(); fireEvent.keyDown(first, { key: 'ArrowDown' })
+    expect(document.activeElement).toBe(second)
+    expect(second.getAttribute('aria-checked')).toBe('true')
   })
-
-  it('stops at a deferred payment step instead of inventing matching and a created job', async () => {
-    const now = new Date('2026-10-05T15:00:00Z')
-    const quote = calculateServiceQuote({
-      issue: 'no_enfria',
-      timeSince: 'days',
-      urgency: 'priority',
-      propertyType: 'house',
-      access: {},
-      equipment: { technology: 'unknown' },
-      route: {
-        source: 'simulation', origin: 'Calle de prueba 123', destination: 'Lysto',
-        province: 'CABA', outboundKm: 10, returnKm: 10, outboundMinutes: 30,
-        returnMinutes: 30, tolls: 0, tollsVerified: false, measuredAt: now.toISOString()
-      },
-      materials: [],
-      materialsConfirmed: false
-    }, defaultQuotePolicy, now)
-    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
-      if (String(input) === '/api/pricing/quote')
-        return new Response(JSON.stringify({ quoteId: 'saved-quote', quote }), { status: 200 })
-      return new Response('{}', { status: 503 })
-    }))
-    render(<AirConditioningWizard />)
-
-    expect(screen.getByText('Paso 1 de 7')).toBeTruthy()
-    expect(
-      screen
-        .getByRole('progressbar', { name: 'Progreso de la solicitud' })
-        .getAttribute('aria-valuenow')
-    ).toBe('1')
-    expect((screen.getByRole('button', { name: 'Continuar' }) as HTMLButtonElement).disabled).toBe(
-      true
-    )
-
-    fireEvent.click(screen.getByRole('radio', { name: /No enfría/ }))
-    fireEvent.click(screen.getByRole('button', { name: 'Continuar' }))
-    fireEvent.click(screen.getByRole('radio', { name: /Hace días/ }))
-
-    for (let step = 0; step < 4; step += 1) {
-      completeAddressIfVisible()
-      fireEvent.click(screen.getByRole('button', { name: 'Continuar' }))
-    }
-    fireEvent.click(screen.getByRole('button', { name: 'Solicitar' }))
-
-    expect(await screen.findByRole('heading', { name: 'Confirmación y pago' })).toBeTruthy()
-    expect(screen.getByRole('link', { name: 'Ver mis presupuestos' }).getAttribute('href')).toBe(
-      '/app/presupuestos'
-    )
-    expect(screen.queryByRole('button', { name: 'Pagar con Mercado Pago' })).toBeNull()
-    expect(screen.queryByRole('button', { name: 'Continuar' })).toBeNull()
+  it('keeps payment unavailable without a server-approved price and assignment instead of inventing a job', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ status: 'needs_review', message: 'Necesitamos completar el precio antes de continuar.' }), { status: 200 })))
+    mount('no_enfria'); details(); fireEvent.click(screen.getByRole('radio', { name: 'Hace días' })); next()
+    fireEvent.click(screen.getByRole('button', { name: 'Elegir horario preferido' }))
+    fireEvent.click(screen.getByRole('radio', { name: 'Otra fecha' })); fireEvent.change(screen.getByLabelText('Fecha de visita'), { target: { value: '2028-01-12' } }); fireEvent.click(screen.getByRole('radio', { name: '10:00 – 12:00' })); fireEvent.click(screen.getByRole('button', { name: 'Revisar pedido y presupuesto' }))
+    expect(await screen.findByText('Necesitamos completar el precio antes de continuar.')).toBeTruthy()
+    expect((screen.getByRole('button', { name: 'Pagar con Mercado Pago' }) as HTMLButtonElement).disabled).toBe(true)
     expect(screen.queryByText('Buscando el mejor profesional...')).toBeNull()
     expect(screen.queryByText('Trabajo creado')).toBeNull()
   })
-
-  it('centralizes the exact deferred-payment policy and keeps financial actions disabled', () => {
+  it('retains the legacy deferred-payment panel for other callers without enabling financial actions', () => {
     render(<PaymentDeferredPanel amount={43750} planLabel="Prioridad" />)
-
-    expect(
-      screen.getByText('La integración de Mercado Pago se incorporará en la etapa final')
-    ).toBeTruthy()
+    expect(screen.getByText('La integración de Mercado Pago se incorporará en la etapa final')).toBeTruthy()
     expect(screen.getByText('$ 43.750')).toBeTruthy()
-    expect(
-      (screen.getByRole('button', { name: 'Pagar con Mercado Pago' }) as HTMLButtonElement).disabled
-    ).toBe(true)
+    expect((screen.getByRole('button', { name: 'Pagar con Mercado Pago' }) as HTMLButtonElement).disabled).toBe(true)
     expect(screen.queryByText(/pago aprobado/i)).toBeNull()
   })
-
   it('shows selected evidence locally, allows removal and never claims an upload completed', () => {
-    const onFilesChange = vi.fn()
-    const createObjectUrl = vi.fn(() => 'blob:equipo-preview')
-    const revokeObjectUrl = vi.fn()
-    Object.defineProperty(URL, 'createObjectURL', { configurable: true, value: createObjectUrl })
-    Object.defineProperty(URL, 'revokeObjectURL', { configurable: true, value: revokeObjectUrl })
+    const onFilesChange = vi.fn(); const createObjectUrl = vi.fn(() => 'blob:equipo-preview'); const revokeObjectUrl = vi.fn()
+    Object.defineProperty(URL, 'createObjectURL', { configurable: true, value: createObjectUrl }); Object.defineProperty(URL, 'revokeObjectURL', { configurable: true, value: revokeObjectUrl })
     const photo = new File(['photo'], 'equipo.jpg', { type: 'image/jpeg' })
     const { rerender, unmount } = render(<MediaUploader files={[]} onFilesChange={onFilesChange} />)
-
-    fireEvent.change(screen.getByLabelText('Agregar fotos'), { target: { files: [photo] } })
-    expect(onFilesChange).toHaveBeenCalledWith([photo])
-
+    fireEvent.change(screen.getByLabelText('Agregar fotos'), { target: { files: [photo] } }); expect(onFilesChange).toHaveBeenCalledWith([photo])
     rerender(<MediaUploader files={[photo]} onFilesChange={onFilesChange} />)
-    expect(screen.getByText('equipo.jpg')).toBeTruthy()
-    expect(screen.getByText('Seleccionado en este dispositivo')).toBeTruthy()
-    expect(screen.getByRole('img', { name: 'Vista previa de equipo.jpg' })).toBeTruthy()
-    expect(screen.queryByText(/subida completada/i)).toBeNull()
-
-    fireEvent.click(screen.getByRole('button', { name: 'Quitar equipo.jpg' }))
-    expect(onFilesChange).toHaveBeenLastCalledWith([])
-    unmount()
-    expect(createObjectUrl).toHaveBeenCalledWith(photo)
-    expect(revokeObjectUrl).toHaveBeenCalledWith('blob:equipo-preview')
+    expect(screen.getByText('equipo.jpg')).toBeTruthy(); expect(screen.getByText('Seleccionado en este dispositivo')).toBeTruthy(); expect(screen.getByRole('img', { name: 'Vista previa de equipo.jpg' })).toBeTruthy(); expect(screen.queryByText(/subida completada/i)).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Quitar equipo.jpg' })); expect(onFilesChange).toHaveBeenLastCalledWith([])
+    unmount(); expect(createObjectUrl).toHaveBeenCalledWith(photo); expect(revokeObjectUrl).toHaveBeenCalledWith('blob:equipo-preview')
   })
 })

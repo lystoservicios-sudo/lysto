@@ -1,4 +1,5 @@
 import type { Database } from '@/lib/supabase/database.types'
+import type { RequestVisitContext } from '@/lib/jobs/visit-address'
 export type ReadRole = 'customer' | 'professional' | 'admin'
 export type ReadResource =
   | 'requests'
@@ -9,7 +10,7 @@ export type ReadResource =
   | 'claims'
 type Enums = Database['public']['Enums']
 type Dated = { id: string; createdAt: string }
-export type RequestDto = Dated & {
+export type RequestDto = Dated & RequestVisitContext & {
   status: Enums['request_status']
   issueTypeId: string
   addressId: string | null

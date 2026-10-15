@@ -3,9 +3,11 @@ import { privateRoute } from '@/lib/http/route-handler'
 import { ApiError, privateJson } from '@/lib/http/api-error'
 import { readPrivateJsonBody } from '@/lib/http/private-json-body'
 import { authOrigin } from '@/lib/auth/account-lifecycle'
+import { assertCustomerHomeRequestActor } from '@/lib/customer-homes/request-actor'
 
 const inputSchema = z.object({ email: z.string().trim().toLowerCase().email().max(254) }).strict()
 export const POST = privateRoute({ roles: ['customer'] }, async (request, session) => {
+  if (request.headers.has('X-Lysto-Customer-Id')) assertCustomerHomeRequestActor(request, session)
   const input = inputSchema.parse(await readPrivateJsonBody(request))
   const { error } = await session.client.auth.updateUser(
     { email: input.email },

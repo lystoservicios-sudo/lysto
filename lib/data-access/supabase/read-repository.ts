@@ -35,6 +35,8 @@ const schemas = {
     status: z.enum(Constants.public.Enums.request_status),
     issue_type_id: uuid,
     address_id: uuid.nullable(),
+    contract_source: nullableString.optional(),
+    visit_address_snapshot: z.unknown().optional(),
     equipment_id: uuid.nullable(),
     preferred_date: nullableString,
     preferred_time_window: nullableString,
@@ -90,7 +92,7 @@ const definitions = {
   requests: {
     table: 'service_requests',
     columns:
-      'id,created_at,status,issue_type_id,address_id,equipment_id,preferred_date,preferred_time_window,urgency_level'
+      'id,created_at,status,issue_type_id,address_id,equipment_id,preferred_date,preferred_time_window,urgency_level,contract_source,visit_address_snapshot'
   },
   jobs: {
     table: 'jobs',
@@ -219,6 +221,8 @@ function project<R extends ReadRole, K extends ReadResource>(
         status: r.status,
         issueTypeId: r.issue_type_id,
         addressId: r.address_id,
+        contractSource: r.contract_source,
+        visitAddressSnapshot: r.visit_address_snapshot,
         equipmentId: r.equipment_id,
         preferredDate: r.preferred_date,
         preferredWindow: r.preferred_time_window,

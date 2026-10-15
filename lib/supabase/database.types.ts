@@ -287,6 +287,61 @@ export type Database = {
         }
         Relationships: []
       }
+      customer_account_privacy_requests: {
+        Row: {
+          created_at: string
+          customer_id: string
+          id: string
+          idempotency_key: string
+          pending_snapshot: Json
+          requested_by: string
+          session_id: string
+          support_case_id: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          id?: string
+          idempotency_key: string
+          pending_snapshot: Json
+          requested_by: string
+          session_id: string
+          support_case_id: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          id?: string
+          idempotency_key?: string
+          pending_snapshot?: Json
+          requested_by?: string
+          session_id?: string
+          support_case_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_account_privacy_requests_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: true
+            referencedRelation: "customer_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_account_privacy_requests_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_account_privacy_requests_support_case_id_fkey"
+            columns: ["support_case_id"]
+            isOneToOne: true
+            referencedRelation: "complaints"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customer_addresses: {
         Row: {
           apartment: string | null
@@ -378,22 +433,31 @@ export type Database = {
           commercial_reminders_enabled: boolean
           customer_id: string
           email_enabled: boolean
+          email_support_updates: boolean
           in_app_enabled: boolean
+          reduce_motion: boolean
           updated_at: string
+          version: number
         }
         Insert: {
           commercial_reminders_enabled?: boolean
           customer_id: string
           email_enabled?: boolean
+          email_support_updates?: boolean
           in_app_enabled?: boolean
+          reduce_motion?: boolean
           updated_at?: string
+          version?: number
         }
         Update: {
           commercial_reminders_enabled?: boolean
           customer_id?: string
           email_enabled?: boolean
+          email_support_updates?: boolean
           in_app_enabled?: boolean
+          reduce_motion?: boolean
           updated_at?: string
+          version?: number
         }
         Relationships: [
           {
@@ -1475,6 +1539,7 @@ export type Database = {
           accepted_at: string | null
           arrived_at: string | null
           assignment_version: number
+          automatic_assignment_at: string | null
           billing_policy: string | null
           cancelled_at: string | null
           completed_at: string | null
@@ -1498,6 +1563,7 @@ export type Database = {
           accepted_at?: string | null
           arrived_at?: string | null
           assignment_version?: number
+          automatic_assignment_at?: string | null
           billing_policy?: string | null
           cancelled_at?: string | null
           completed_at?: string | null
@@ -1521,6 +1587,7 @@ export type Database = {
           accepted_at?: string | null
           arrived_at?: string | null
           assignment_version?: number
+          automatic_assignment_at?: string | null
           billing_policy?: string | null
           cancelled_at?: string | null
           completed_at?: string | null
@@ -3722,6 +3789,8 @@ export type Database = {
         Row: {
           address_id: string | null
           category_id: string
+          context_snapshot: Json | null
+          contract_source: string | null
           created_at: string
           customer_id: string
           equipment_id: string | null
@@ -3736,10 +3805,14 @@ export type Database = {
           time_since: string | null
           updated_at: string
           urgency_level: Database["public"]["Enums"]["urgency_level"] | null
+          visit_address_id: string | null
+          visit_address_snapshot: Json | null
         }
         Insert: {
           address_id?: string | null
           category_id: string
+          context_snapshot?: Json | null
+          contract_source?: string | null
           created_at?: string
           customer_id: string
           equipment_id?: string | null
@@ -3754,10 +3827,14 @@ export type Database = {
           time_since?: string | null
           updated_at?: string
           urgency_level?: Database["public"]["Enums"]["urgency_level"] | null
+          visit_address_id?: string | null
+          visit_address_snapshot?: Json | null
         }
         Update: {
           address_id?: string | null
           category_id?: string
+          context_snapshot?: Json | null
+          contract_source?: string | null
           created_at?: string
           customer_id?: string
           equipment_id?: string | null
@@ -3772,6 +3849,8 @@ export type Database = {
           time_since?: string | null
           updated_at?: string
           urgency_level?: Database["public"]["Enums"]["urgency_level"] | null
+          visit_address_id?: string | null
+          visit_address_snapshot?: Json | null
         }
         Relationships: [
           {
@@ -3786,6 +3865,13 @@ export type Database = {
             columns: ["address_id", "customer_id"]
             isOneToOne: false
             referencedRelation: "customer_addresses"
+            referencedColumns: ["id", "customer_id"]
+          },
+          {
+            foreignKeyName: "service_requests_canonical_equipment_owner_fk"
+            columns: ["equipment_id", "customer_id"]
+            isOneToOne: false
+            referencedRelation: "customer_equipment"
             referencedColumns: ["id", "customer_id"]
           },
           {
@@ -3846,6 +3932,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "price_options"
             referencedColumns: ["id", "request_id"]
+          },
+          {
+            foreignKeyName: "service_requests_visit_address_owner_fk"
+            columns: ["visit_address_id", "customer_id"]
+            isOneToOne: false
+            referencedRelation: "customer_addresses"
+            referencedColumns: ["id", "customer_id"]
           },
         ]
       }
@@ -4247,6 +4340,17 @@ export type Database = {
         Args: { p_intent_id: string; p_lease_token: string }
         Returns: boolean
       }
+      configure_customer_request_contract: {
+        Args: {
+          p_approved_until: string
+          p_enabled: boolean
+          p_expected_version: number
+          p_quote_policy_id: string
+          p_reason: string
+          p_scopes: Json
+        }
+        Returns: Json
+      }
       confirm_job_outcome: {
         Args: {
           p_decision: string
@@ -4341,6 +4445,10 @@ export type Database = {
         Args: never
         Returns: Database["public"]["Enums"]["user_role"]
       }
+      customer_outbox_email_allowed: {
+        Args: { p_claim_token: string; p_event_id: string }
+        Returns: boolean
+      }
       decide_job_extra: {
         Args: { p_decision: string; p_extra_id: string }
         Returns: Json
@@ -4396,6 +4504,7 @@ export type Database = {
       }
       expire_assignment_offers: { Args: { p_limit?: number }; Returns: number }
       expire_schedule_holds: { Args: never; Returns: number }
+      export_customer_account: { Args: never; Returns: Json }
       fail_outbox_event: {
         Args: {
           p_claim_token: string
@@ -4497,6 +4606,10 @@ export type Database = {
       get_session_context: { Args: never; Returns: Json }
       get_upload_intent: { Args: { p_intent_id: string }; Returns: Json }
       is_admin: { Args: never; Returns: boolean }
+      issue_customer_account_reauth: {
+        Args: { p_auth_user_id: string; p_session_id: string }
+        Returns: Json
+      }
       list_admin_workflow: {
         Args: {
           p_cursor_at: string
@@ -4515,6 +4628,7 @@ export type Database = {
         }
         Returns: Json
       }
+      list_customer_account_sessions: { Args: never; Returns: Json }
       list_customer_maintenance: { Args: never; Returns: Json }
       list_financial_exceptions: {
         Args: { p_before?: string; p_limit?: number }
@@ -4629,6 +4743,25 @@ export type Database = {
         }
         Returns: Json
       }
+      persist_customer_request_preview: {
+        Args: {
+          p_actor_session_id: string
+          p_actor_user_id: string
+          p_customer_id: string
+          p_payload: Json
+        }
+        Returns: Json
+      }
+      prepare_customer_request: {
+        Args: {
+          p_actor_session_id: string
+          p_actor_user_id: string
+          p_command_id: string
+          p_customer_id: string
+          p_preview_id: string
+        }
+        Returns: Json
+      }
       preview_professional_policy_activation: {
         Args: { p_category_id: string; p_version: string }
         Returns: Json
@@ -4660,7 +4793,28 @@ export type Database = {
         Returns: Json
       }
       prune_rate_limits: { Args: { p_limit?: number }; Returns: number }
+      read_customer_account_privacy: { Args: never; Returns: Json }
       read_customer_homes: { Args: never; Returns: Json }
+      read_customer_preferences: { Args: never; Returns: Json }
+      read_customer_request_context: {
+        Args: {
+          p_actor_session_id: string
+          p_actor_user_id: string
+          p_customer_id: string
+          p_input: Json
+        }
+        Returns: Json
+      }
+      read_customer_request_preview: {
+        Args: {
+          p_actor_session_id: string
+          p_actor_user_id: string
+          p_command_id: string
+          p_customer_id: string
+          p_preview_id: string
+        }
+        Returns: Json
+      }
       read_professional_invitation_admin: {
         Args: { p_id: string }
         Returns: Json
@@ -4696,6 +4850,20 @@ export type Database = {
           p_professional_id: string
           p_windows: Json
         }
+        Returns: Json
+      }
+      reply_customer_support_case: {
+        Args: {
+          p_case_id: string
+          p_evidence_ids: string[]
+          p_expected_version: number
+          p_idempotency_key: string
+          p_public_message: string
+        }
+        Returns: Json
+      }
+      request_customer_account_deletion: {
+        Args: { p_idempotency_key: string; p_receipt_id: string }
         Returns: Json
       }
       request_job_cancellation: {
@@ -4803,6 +4971,10 @@ export type Database = {
           p_quote_id: string
           p_reason: string
         }
+        Returns: Json
+      }
+      revoke_customer_account_sessions: {
+        Args: { p_all_others: boolean; p_session_id: string }
         Returns: Json
       }
       save_professional_address: {
@@ -4925,6 +5097,16 @@ export type Database = {
           p_expected_version: number
           p_id: string
           p_operation: string
+        }
+        Returns: Json
+      }
+      write_customer_preferences: {
+        Args: {
+          p_email_maintenance: boolean
+          p_email_support_updates: boolean
+          p_expected_version: number
+          p_marketing_email: boolean
+          p_reduce_motion: boolean
         }
         Returns: Json
       }
@@ -5197,4 +5379,3 @@ export const Constants = {
     },
   },
 } as const
-

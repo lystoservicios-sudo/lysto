@@ -103,6 +103,35 @@ beforeEach(() => {
 })
 
 describe('customer services loader', () => {
+  it('reads an immutable visit snapshot instead of the equipment historical address', async () => {
+    tables.service_requests = [{ ...request(1), contract_source: 'automatic_customer_request',
+      visit_address_snapshot: { street: 'Corrientes', number: '999', city: 'CABA', floor: '5', apartment: 'A' } }]
+    tables.jobs = [job(1, 'confirmed')]
+    const page = await loadCustomerServices(session, { source: 'services' }, now)
+    expect(page.items[0].address).toBe('Corrientes 999, Piso 5 Depto. A, CABA')
+    expect(page.items[0].description).not.toContain('aceptó')
+  })
+
+  it.each([null, {}, { street: '', number: '1', city: 'CABA' }, { street: 'Destino', number: 1, city: 'CABA' }])(
+    'does not use a historical address for an invalid automatic snapshot %j', async (snapshot) => {
+      tables.service_requests = [{ ...request(1), contract_source: 'automatic_customer_request', visit_address_snapshot: snapshot }]
+      tables.jobs = [job(1, 'confirmed')]
+      tables.service_quotes = [quote(1, { request_id: id(1, 1), status: 'accepted' })]
+      const page = await loadCustomerServices(session, { source: 'services' }, now)
+      expect(page.items[0].address).toBeUndefined()
+    }
+  )
+
+  it('does not fetch or announce a visit for an expired automatic reservation', async () => {
+    tables.service_requests = [{ ...request(1), status: 'expired', contract_source: 'automatic_customer_request',
+      visit_address_snapshot: { street: 'Corrientes', number: '999', city: 'CABA' } }]
+    tables.jobs = [job(1, 'confirmed')]
+    tables.marketplace_checkouts = [{ customer_id: owner, job_id: id(2, 1), extra_id: null, status: 'approved' }]
+    const page = await loadCustomerServices(session, { source: 'services' }, now)
+    expect(page.items[0]).toMatchObject({ phase: 'cancelled', statusLabel: 'Solicitud vencida' })
+    expect(rpcCalls).toEqual([])
+  })
+
   it('finds the job related to the request page, even when its own creation order differs', async () => {
     tables.service_requests = [request(1), request(2)]
     tables.jobs = [job(1), job(2)]

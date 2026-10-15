@@ -32,3 +32,28 @@ it('does not invent a travel price when credentials or routes are missing', asyn
   const fetcher = vi.fn().mockResolvedValueOnce(response(geocode())).mockResolvedValueOnce(response(geocode())).mockResolvedValue(response({ routes: [] }))
   await expect(estimateTravel({ address: 'CABA', origin: 'CABA', apiKey: 'test', now, fetcher })).rejects.toThrow('route_unavailable')
 })
+
+function scheduledRouteFetcher() {
+  return vi.fn().mockResolvedValueOnce(response(geocode())).mockResolvedValueOnce(response(geocode()))
+    .mockImplementation(async () => response({ routes: [{ distanceMeters: 10000, duration: '1800s' }] }))
+}
+
+it('routes the return after the approved visit duration, not a hardcoded two hours', async () => {
+  const fetcher = scheduledRouteFetcher()
+  const input = { address: 'CABA', origin: 'CABA', apiKey: 'test', now, departureTime: '2026-09-11T15:00:00Z', visitDurationMinutes: 240, fetcher }
+  await estimateTravel(input)
+  expect(JSON.parse(fetcher.mock.calls[3][1].body).departureTime).toBe('2026-09-11T19:30:00.000Z')
+})
+
+it('preserves the legacy two-hour planning assumption when no duration is supplied', async () => {
+  const fetcher = scheduledRouteFetcher()
+  await estimateTravel({ address: 'CABA', origin: 'CABA', apiKey: 'test', now, departureTime: '2026-09-11T15:00:00Z', fetcher })
+  expect(JSON.parse(fetcher.mock.calls[3][1].body).departureTime).toBe('2026-09-11T17:30:00.000Z')
+})
+
+it.each([0, 29, 481, 31.5, Infinity, NaN])('rejects an invalid approved visit duration before making routing requests (%s)', async visitDurationMinutes => {
+  const fetcher = scheduledRouteFetcher()
+  const input = { address: 'CABA', origin: 'CABA', apiKey: 'test', now, visitDurationMinutes, fetcher }
+  await expect(estimateTravel(input)).rejects.toThrow('invalid_visit_duration')
+  expect(fetcher).not.toHaveBeenCalled()
+})

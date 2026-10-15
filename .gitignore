@@ -36,3 +36,4 @@ output/
 .worktrees/
 .vercel
 .env*
+!.env.example

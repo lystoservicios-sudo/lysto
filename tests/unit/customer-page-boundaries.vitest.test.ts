@@ -6,7 +6,7 @@ import { customerScreenRoutes } from '@/features/customer/screen-contract'
 
 describe('customer page layout boundary', () => {
   it('keeps server route props required for Next generated PageProps validation', () => {
-    for (const path of ['app/(customer)/app/presupuestos/page.tsx', 'app/(customer)/app/trabajos/page.tsx', 'app/(customer)/app/solicitar/aire-acondicionado/page.tsx']) {
+    for (const path of ['app/(customer)/app/presupuestos/page.tsx', 'app/(customer)/app/trabajos/page.tsx', 'app/(customer)/app/solicitar/aire-acondicionado/page.tsx', 'app/(customer)/app/pagos/page.tsx']) {
       const source = readFileSync(resolve(process.cwd(), path), 'utf8')
       expect(source).not.toMatch(/}\s*=\s*\{\}\s*\)/)
     }
@@ -19,7 +19,8 @@ describe('customer page layout boundary', () => {
     expect(loading).toContain('Cargando Inicio')
     expect(loading).toContain('role="status"')
     expect(error).toContain("'use client'")
-    expect(error).toContain('No pudimos cargar Inicio')
+    expect(error).toContain('No pudimos cargar esta pantalla')
+    expect(error).not.toContain('No pudimos cargar Inicio')
     expect(error).toContain('reset()')
   })
 
@@ -34,15 +35,15 @@ describe('customer page layout boundary', () => {
     expect(layoutSource).not.toContain('<AppShell role="Cliente"')
   })
 
-  it('registers the sixteen required customer routes', () => {
-    expect(customerScreenRoutes).toHaveLength(16)
+  it('registers the approved customer routes including More subpages', () => {
+    expect(customerScreenRoutes).toHaveLength(34)
     expect(customerScreenRoutes).toContainEqual(expect.objectContaining({
       id: 'CUS-16',
       href: '/app/mas',
       file: 'app/(customer)/app/mas/page.tsx',
       title: 'Más opciones'
     }))
-    expect(new Set(customerScreenRoutes.map((route) => route.href)).size).toBe(16)
+    expect(new Set(customerScreenRoutes.map((route) => route.href)).size).toBe(34)
     expect(customerScreenRoutes).toContainEqual(expect.objectContaining({
       href: '/app/hogar',
       file: 'app/(customer)/app/hogar/page.tsx',
@@ -50,11 +51,12 @@ describe('customer page layout boundary', () => {
     }))
   })
 
-  it('keeps the Más placeholder minimal and free of invented interactions', () => {
+  it('connects Más to its authorized canonical loader without demo records', () => {
     const source = readFileSync(resolve(process.cwd(), 'app/(customer)/app/mas/page.tsx'), 'utf8')
 
-    expect(source).toContain('PageScaffold')
-    expect(source).toContain('title="Más"')
+    expect(source).toContain('CustomerMore')
+    expect(source).toContain('readCustomerMore')
+    expect(source).toContain("requirePageSession('customer')")
     expect(source).not.toMatch(/fixture|mock|fetch\(|\.from\(|<form\b|<nav\b|<Link\b|<button\b|<Card\b|<a\b|\/api\//i)
   })
 
@@ -74,7 +76,8 @@ describe('customer page layout boundary', () => {
         /AppSidebar/,
         /AppTopbar/,
         /AppShellProvider/,
-        /<nav\b/i,
+        // A named local status filter is not another app navigation shell.
+        /<nav\b(?![^>]*aria-label=["']Estado de las consultas["'])/i,
         /<aside\b/i,
         /min-h-screen/
       ]
@@ -157,8 +160,8 @@ describe('customer page layout boundary', () => {
     const source = readFileSync(resolve(process.cwd(), warrantyRoute!.file), 'utf8')
 
     expect(source).not.toContain('@/lib/mock/lysto-data')
-    expect(source).toContain('CustomerWarrantyCenter')
-    expect(source).toContain('customerLiveData')
+    expect(source).toContain('loadWarrantyServices(session, input)')
+    expect(source).toContain('<MorePage')
     expect(source).toContain("requirePageSession('customer')")
     expect(source).not.toContain('customerDemoFixtures')
   })
@@ -169,7 +172,9 @@ describe('customer page layout boundary', () => {
     const source = readFileSync(resolve(process.cwd(), paymentRoute!.file), 'utf8')
 
     expect(source).not.toContain('@/lib/mock/lysto-data')
-    expect(source).toContain('PaymentPanel')
+    expect(source).toContain('CustomerPaymentsList')
+    expect(source).toContain('listCustomerPayments(session, await searchParams)')
+    expect(source).toContain("requirePageSession('customer')")
     expect(source).not.toContain('customerDemoFixtures.payments')
     expect(source).not.toMatch(/fetch\(|createPreference|payment approved/i)
   })

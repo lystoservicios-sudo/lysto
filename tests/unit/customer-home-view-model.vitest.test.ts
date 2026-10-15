@@ -29,6 +29,46 @@ function source(overrides: Partial<CustomerHomeSource> = {}): CustomerHomeSource
 }
 
 describe('customer home selector', () => {
+  const autoJob = { id: 'auto-job', requestId: 'auto-request', status: 'confirmed' as const, issueLabel: 'Pierde agua',
+    nextStep: 'Consultar servicio', createdAt: now, visit: null, visitState: 'ready' as const,
+    contractSource: 'automatic_customer_request', requestStatus: 'pending_payment' as const }
+
+  it('does not attribute automatic confirmation to an individual technician decision', () => {
+    const model = buildCustomerHomeViewModel(source({ jobs: ready([autoJob]) }))
+    expect(model.activity[0].title).toBe('El profesional está confirmado')
+  })
+
+  it('omits expired automatic contracts from the active and payable activity', () => {
+    const model = buildCustomerHomeViewModel(source({ jobs: ready([{ ...autoJob, requestStatus: 'expired' }]) }))
+    expect(model.activity).toEqual([])
+  })
+
+  it.each(['review', 'pending', 'in_process', 'approved'])('keeps canonical %s consultable for an expired automatic reservation', (status) => {
+    const model = buildCustomerHomeViewModel(source({ jobs: ready([{ ...autoJob, requestStatus: 'expired' }]),
+      checkouts: ready([{jobId:autoJob.id,extraId:null,status}]) }))
+    expect(model.activity).toHaveLength(1)
+    expect(model.activity[0].action?.label).toBe('Consultar pago')
+    expect(model.activity[0].description).toContain('venció')
+    expect(model.activity[0].kind).not.toBe('visit')
+    expect(model.activity[0].eyebrow).not.toBe('Pago habilitado')
+  })
+
+  it.each(['review', 'pending', 'in_process', 'charged_back'])(
+    'offers consultation rather than a new payment for canonical %s', (status) => {
+      const model = buildCustomerHomeViewModel(source({ jobs: ready([autoJob]), checkouts: ready([{ jobId: autoJob.id, extraId: null, status }]) }))
+      expect(model.activity[0].action?.label).toBe('Consultar pago')
+      expect(model.activity[0].eyebrow).not.toBe('Pago habilitado')
+    }
+  )
+
+  it('does not announce a visit with contradictory approved and review checkouts', () => {
+    const model = buildCustomerHomeViewModel(source({ jobs: ready([{ ...autoJob, visit: {
+      startsAt: '2026-10-15T15:00:00Z', endsAt: '2026-10-15T17:00:00Z', timezone: 'America/Argentina/Buenos_Aires', professionalName: 'Ana'
+    } }]), checkouts: ready([{ jobId: autoJob.id, extraId: null, status: 'approved' }, { jobId: autoJob.id, extraId: null, status: 'review' }]) }))
+    expect(model.activity[0].kind).not.toBe('visit')
+    expect(model.activity[0].action?.label).toBe('Consultar pago')
+  })
+
   it('offers the service and one address invitation to a new customer', () => {
     const model = buildCustomerHomeViewModel(
       source({ addresses: count(0), equipment: count(0) })
