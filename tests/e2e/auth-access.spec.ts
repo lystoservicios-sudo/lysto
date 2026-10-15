@@ -17,7 +17,7 @@ test('a suspended professional cannot create an application session', async ({
   await page.goto('/equipo/login')
   const form = loginCredentialsForm(page)
   await form.getByLabel('Email').fill(account.email)
-  await form.getByLabel('Contraseña').fill(account.password)
+  await form.getByLabel('Contraseña', { exact: true }).fill(account.password)
   await form.getByRole('button', { name: 'Ingresar' }).click()
   await expect(page.getByText('Tu perfil técnico todavía no está aprobado por Lysto.')).toBeVisible()
   await expect(page).toHaveURL(/\/equipo\/login/)

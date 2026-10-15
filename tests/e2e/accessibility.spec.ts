@@ -20,4 +20,6 @@ test('mobile pages do not overflow and primary targets meet minimum height', asy
   await expect(button).toBeVisible()
   expect((await button.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44)
   await expect(loginCredentialsForm(page).getByLabel('Email')).toHaveAttribute('type', 'email')
+  await expect(loginCredentialsForm(page).getByLabel('Contraseña', { exact: true })).toHaveAttribute('type', 'password')
+  await expect(page.getByRole('button', { name: 'Mostrar contraseña', exact: true })).toBeVisible()
 })

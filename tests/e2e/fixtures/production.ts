@@ -64,7 +64,7 @@ export async function loginAs(page: Page, account: FixtureAccount, name: Account
   await page.goto(name === 'customerA' || name === 'customerB' ? '/login' : '/equipo/login')
   const form = loginCredentialsForm(page)
   await form.getByLabel('Email').fill(account.email)
-  await form.getByLabel('Contraseña').fill(account.password)
+  await form.getByLabel('Contraseña', { exact: true }).fill(account.password)
   await form.getByRole('button', { name: 'Ingresar' }).click()
   if (account.mfaSecret) {
     await expect(page).toHaveURL(/\/seguridad/, { timeout: 15_000 })
