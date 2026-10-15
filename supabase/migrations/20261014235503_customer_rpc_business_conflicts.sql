@@ -75,7 +75,17 @@ begin
       or pg_get_functiondef(v_oid) is distinct from v_expected_definition
       or v_after.prosrc is distinct from v_expected_source
       or (to_jsonb(v_after)-'prosrc') is distinct from (to_jsonb(v_before)-'prosrc') then
-      raise exception 'Business conflict helper changed beyond approved raises: %',v_target.signature;
+      raise exception 'Business conflict helper changed beyond approved raises: %',v_target.signature
+        using detail=jsonb_build_object(
+          'same_oid',to_regprocedure(v_target.signature)::oid is not distinct from v_oid,
+          'same_definition',pg_get_functiondef(v_oid) is not distinct from v_expected_definition,
+          'same_source',v_after.prosrc is not distinct from v_expected_source,
+          'changed_metadata_keys',(select jsonb_agg(item.key order by item.key)
+            from jsonb_each(to_jsonb(v_before)-'prosrc') item
+            where item.value is distinct from (to_jsonb(v_after)->item.key)),
+          'defaults_before',v_before.proargdefaults::text,
+          'defaults_after',v_after.proargdefaults::text
+        )::text;
     end if;
   end loop;
 
