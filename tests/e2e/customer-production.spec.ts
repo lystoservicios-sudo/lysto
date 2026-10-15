@@ -38,14 +38,10 @@ test('customer reloads the live dashboard and empty request history', async ({
   await expect(page.getByText('Todavía no tenés solicitudes')).toBeVisible()
 })
 
-test('a customer cannot load another customer identifier', async ({ page, accounts }) => {
+test('a customer cannot load another customer identifier and can recover an unknown route', async ({ page, accounts }) => {
   await loginAs(page, accounts.accounts.customerA, 'customerA')
   await page.goto(`/app/equipos/${accounts.accounts.customerB.entityId}`)
   await expect(page.getByRole('heading', { name: 'No encontramos ese equipo' })).toBeVisible()
-})
-
-test('an unknown customer route has a private app recovery screen with working navigation', async ({ page, accounts }) => {
-  await loginAs(page, accounts.accounts.customerA, 'customerA')
   await page.goto('/app/ruta-inexistente-qa')
   await expect(page.getByRole('heading', { name: 'No encontramos esta página', exact: true })).toBeVisible()
   await expect(page.getByRole('navigation', { name: 'Navegación principal del cliente' })).toBeVisible()

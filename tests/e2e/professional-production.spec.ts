@@ -150,7 +150,15 @@ test('administration provisions an invited identity without exposing credentials
     await expect(invitedRow).toContainText('Invitado')
     await expect(invitedRow).toContainText('Registro sin completar')
     await expect(invitedRow).toContainText('No puede recibir')
-    await invitedRow.getByRole('link', { name: 'Ver perfil', exact: true }).click()
+    const profileLink = invitedRow.getByRole('link', { name: 'Ver perfil', exact: true })
+    const profilePath = await profileLink.getAttribute('href')
+    expect(profilePath).toMatch(/^\/admin\/profesionales\/[a-f0-9-]{36}$/)
+    // Wait for the actual navigation before asserting data on the next screen.
+    // Keep the content assertions and the global timeouts unchanged.
+    await Promise.all([
+      page.waitForURL(new URL(profilePath!, page.url()).href, { timeout: 15_000 }),
+      profileLink.click()
+    ])
     await expect(page.getByText('Invitación pendiente de envío', { exact: true })).toBeVisible()
     await expect(page.getByText('El acceso no vence. Puede retomar el registro iniciando sesión.', {
       exact: true
