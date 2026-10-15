@@ -61,11 +61,15 @@ export function loginCredentialsForm(page: Page) {
 }
 
 export async function loginAs(page: Page, account: FixtureAccount, name: AccountName) {
-  await page.goto(name === 'customerA' || name === 'customerB' ? '/login' : '/equipo/login')
+  const loginPath = name === 'customerA' || name === 'customerB' ? '/login' : '/equipo/login'
+  await page.goto(loginPath)
   const form = loginCredentialsForm(page)
   await form.getByLabel('Email').fill(account.email)
   await form.getByLabel('Contraseña', { exact: true }).fill(account.password)
-  await form.getByRole('button', { name: 'Ingresar' }).click()
+  await Promise.all([
+    page.waitForResponse(response => response.request().method() === 'POST' && new URL(response.url()).pathname === loginPath),
+    form.getByRole('button', { name: 'Ingresar' }).click()
+  ])
   if (account.mfaSecret) {
     await expect(page).toHaveURL(/\/seguridad/, { timeout: 15_000 })
     const code = page.getByLabel('Código del autenticador')

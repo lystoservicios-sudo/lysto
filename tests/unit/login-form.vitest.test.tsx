@@ -1,8 +1,11 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { renderToString } from 'react-dom/server'
+import { hydrateRoot } from 'react-dom/client'
 
 import {
   LoginFormView,
+  LoginForm,
   type LoginFormViewProps
 } from '../../app/(auth)/login/login-form'
 
@@ -22,6 +25,31 @@ function renderForm(overrides: Partial<LoginFormViewProps> = {}) {
 }
 
 describe('mobile login form', () => {
+  it('does not accept input or submit before its client action is ready', () => {
+    const host = document.createElement('div')
+    host.innerHTML = renderToString(<LoginForm />)
+    expect((host.querySelector('input[name="email"]') as HTMLInputElement).disabled).toBe(true)
+    expect((host.querySelector('input[name="password"]') as HTMLInputElement).disabled).toBe(true)
+    expect((host.querySelector('button[type="submit"]') as HTMLButtonElement).disabled).toBe(true)
+  })
+
+  it('enables the server-rendered login controls after real hydration', async () => {
+    const host = document.createElement('div')
+    host.innerHTML = renderToString(<LoginForm />)
+    document.body.appendChild(host)
+    let root: ReturnType<typeof hydrateRoot> | undefined
+    try {
+      expect((host.querySelector('button[type="submit"]') as HTMLButtonElement).disabled).toBe(true)
+      await act(async () => { root = hydrateRoot(host, <LoginForm />) })
+      expect((host.querySelector('input[name="email"]') as HTMLInputElement).disabled).toBe(false)
+      expect((host.querySelector('input[name="password"]') as HTMLInputElement).disabled).toBe(false)
+      expect((host.querySelector('button[type="submit"]') as HTMLButtonElement).disabled).toBe(false)
+    } finally {
+      await act(async () => { root?.unmount() })
+      host.remove()
+    }
+  })
+
   it('keeps the recovery action after the password field as in the approved design', () => {
     renderForm()
     const password = screen.getByLabelText('Contraseña')
