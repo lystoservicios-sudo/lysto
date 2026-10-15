@@ -40,18 +40,36 @@ test('migration requires exact preimages and counts before replacing only explic
   assert.doesNotMatch(sql, /^\s*(?:grant|revoke|alter\s+(?:role|table|policy)|update\s+(?:public|private)\.|delete\s+from|drop\s+)/im)
 })
 
-test('replacement preserves exact source remainder, OIDs and all function metadata and excludes non-target changes', () => {
+test('replacement preserves exact source remainder, OIDs and semantic function metadata and excludes non-target changes', () => {
   const sql = migration()
   assert.match(sql, /to_regprocedure\(v_target\.signature\)/)
   assert.match(sql, /to_regprocedure\(v_target\.signature\)::oid is distinct from v_oid/)
   assert.match(sql, /pg_get_functiondef\(v_oid\) is distinct from v_expected_definition/)
   assert.match(sql, /v_after\.prosrc is distinct from v_expected_source/)
-  assert.match(sql, /\(to_jsonb\(v_after\)-'prosrc'\) is distinct from \(to_jsonb\(v_before\)-'prosrc'\)/)
+  assert.match(sql, /\(to_jsonb\(v_after\)-'prosrc'-'proargdefaults'\) is distinct from \(to_jsonb\(v_before\)-'prosrc'-'proargdefaults'\)/)
+  assert.match(sql, /regexp_replace\(v_after\.proargdefaults::text,\s*':location -\?\[0-9\]\+', ':location -1', 'g'\)/)
+  assert.match(sql, /regexp_replace\(v_before\.proargdefaults::text,\s*':location -\?\[0-9\]\+', ':location -1', 'g'\)/)
+  assert.match(sql, /pg_get_expr\(v_after\.proargdefaults,0\) is distinct from pg_get_expr\(v_before\.proargdefaults,0\)/)
   assert.match(sql, /v_non_target_after is distinct from v_non_target_before/)
   assert.match(sql, /not\(p\.oid=any\(v_target_oids\)\)/)
   assert.match(sql, /v_security_after is distinct from v_security_before/)
   assert.match(sql, /pg_policies/)
   assert.doesNotMatch(sql, /exception when serialization_failure/i)
+})
+
+test('Postgres 15 default metadata ignores only parser positions, not default expressions', () => {
+  const sql = migration()
+  const normalizers = [...sql.matchAll(/regexp_replace\(v_(?:after|before)\.proargdefaults::text,\s*'([^']+)', '([^']+)', 'g'\)/g)]
+  assert.equal(normalizers.length, 2, 'Both defaults must be checked with the same narrow normalization')
+  const normalize = value => value === null ? null : value.replace(new RegExp(normalizers[0][1], 'g'), normalizers[0][2])
+  assert.equal(normalizers[0][1], normalizers[1][1])
+  assert.equal(normalizers[0][2], normalizers[1][2])
+  const before = '({CONST :consttype 16 :constvalue 1 [ 0 ] :location 220})'
+  assert.equal(normalize(before), normalize(before.replace('220', '161')))
+  assert.equal(normalize(before), normalize(before.replace('220', '-1')))
+  assert.notEqual(normalize(before), normalize(before.replace('[ 0 ]', '[ 1 ]')))
+  assert.notEqual(normalize(before), normalize(before.replace(':consttype 16', ':consttype 23')))
+  assert.notEqual(normalize(before), normalize(null))
 })
 
 test('rollback harnesses expect PT409 business conflicts rather than serialization retry signals', () => {

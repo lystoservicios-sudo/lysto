@@ -74,7 +74,15 @@ begin
     if to_regprocedure(v_target.signature)::oid is distinct from v_oid
       or pg_get_functiondef(v_oid) is distinct from v_expected_definition
       or v_after.prosrc is distinct from v_expected_source
-      or (to_jsonb(v_after)-'prosrc') is distinct from (to_jsonb(v_before)-'prosrc') then
+      -- PostgreSQL 15 stores parser offsets in default-expression ASTs. Replaying
+      -- pg_get_functiondef changes those offsets, especially after a rename.
+      -- Keep the entire AST exact except those non-semantic source positions.
+      or (to_jsonb(v_after)-'prosrc'-'proargdefaults') is distinct from (to_jsonb(v_before)-'prosrc'-'proargdefaults')
+      or regexp_replace(v_after.proargdefaults::text,
+           ':location -?[0-9]+', ':location -1', 'g')
+        is distinct from regexp_replace(v_before.proargdefaults::text,
+           ':location -?[0-9]+', ':location -1', 'g')
+      or pg_get_expr(v_after.proargdefaults,0) is distinct from pg_get_expr(v_before.proargdefaults,0) then
       raise exception 'Business conflict helper changed beyond approved raises: %',v_target.signature
         using detail=jsonb_build_object(
           'same_oid',to_regprocedure(v_target.signature)::oid is not distinct from v_oid,
