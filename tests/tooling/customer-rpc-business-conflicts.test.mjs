@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { readFileSync, readdirSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { test } from 'node:test'
 
 const expected = [
@@ -73,10 +73,22 @@ test('Postgres 15 default metadata ignores only parser positions, not default ex
 })
 
 test('rollback harnesses expect PT409 business conflicts rather than serialization retry signals', () => {
-  const request = readFileSync('supabase/tests/customer_request_contract_rollback.sql', 'utf8')
+  const request = readFileSync('supabase/checks/customer_request_contract_rollback.sql', 'utf8')
   const home = readFileSync('supabase/tests/hogar_rollback.sql', 'utf8')
   assert.equal((request.match(/'PT409'/g) ?? []).length, 3)
   assert.doesNotMatch(request, /'40001'/)
   assert.match(home, /exception when sqlstate 'PT409' then rejected:=true/)
   assert.doesNotMatch(home, /exception when serialization_failure then rejected:=true/)
+})
+
+test('Owner-only rollback harness is preserved outside automatic pgTAP discovery', () => {
+  assert.equal(existsSync('supabase/tests/customer_request_contract_rollback.sql'), false)
+  assert.equal(existsSync('supabase/checks/customer_request_contract_rollback.sql'), true)
+  const manual = readFileSync('supabase/checks/customer_request_contract_rollback.sql', 'utf8')
+  assert.match(manual, /Existing Owner administrative membership required/)
+  assert.match(manual, /set local role lysto_marketplace/)
+  assert.match(manual, /rollback;\s*$/)
+  const prepare = readFileSync('scripts/prepare-ci-database.mjs', 'utf8')
+  assert.match(prepare, /\['migrations', 'tests', 'seed\.sql'\]/)
+  assert.doesNotMatch(prepare, /filter:|customer_request_contract_rollback|\['migrations', 'checks'/)
 })

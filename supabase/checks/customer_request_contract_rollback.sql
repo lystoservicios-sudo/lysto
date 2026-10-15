@@ -1,3 +1,4 @@
+-- Manual Owner-only check, intentionally outside automatic pgTAP discovery.
 -- Run WHOLE FILE on ONE dedicated connection, only after reviewed migration.
 -- No pgtap/Docker/provider/account credentials are required. Every actor, OAuth
 -- placeholder, quote, job and reservation is synthetic and is ROLLED BACK.

@@ -37,7 +37,7 @@ La antigua ruta `/api/service-request/preview` devuelve 410. La antigua función
 
 - `npm test -- --maxWorkers=2 --minWorkers=1`: pruebas de dominio y componentes.
 - `npm run typecheck`, `npm run lint`, `npm run build`.
-- `supabase/tests/customer_request_contract_rollback.sql`: controles reales de permisos, roles y transacciones mediante el comando Owner aislado, dentro de ROLLBACK y sin Docker. La concurrencia separada usa únicamente el QA explícito y manifiestos propios.
+- `supabase/checks/customer_request_contract_rollback.sql`: comprobación manual con la infraestructura Owner existente, dentro de ROLLBACK y sin Docker; no pertenece a la colección pgTAP automática de una base vacía. La concurrencia separada usa únicamente el QA explícito y manifiestos propios.
 - `node --experimental-strip-types scripts/pricing-simulation.ts`: genera el informe, resumen y matriz CSV en `output/pricing/`.
 
 La comparación recorre 301.056 combinaciones con el mismo destino y el mismo traslado sintético. El informe explicita las hipótesis y los costos pendientes. No constituye una lista de precios finales aptos para cobrar.
