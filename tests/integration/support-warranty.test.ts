@@ -153,7 +153,7 @@ describe('support and warranty operations', () => {
           p_idempotency_key: randomUUID()
         })
       ).error?.code
-    ).toBe('40001')
+    ).toBe('PT409')
     const decision = await fixture.accounts.quality.client.rpc('decide_warranty_claim', {
       p_claim_id: claim.data.id,
       p_decision: 'approve',

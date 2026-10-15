@@ -10,7 +10,7 @@ import type { CustomerHomesSnapshot } from '@/lib/customer-homes/contracts'
 import type { ServiceIssueSlug } from '@/lib/domain/types'
 import { privateRequest, PrivateRequestError, requestError } from '@/lib/http/private-client'
 import type { RequestPreviewInput } from '@/lib/customer-requests/contracts'
-import { createRequestDraft, getSelectedRequestAnswers, getRequestStepErrors, requestDraftReducer, type RequestDraftAction, type RequestLocationSelection, type RequestStep } from './request-draft'
+import { createRequestDraft, getSelectedRequestAnswers, getRequestServiceIssue, getRequestStepErrors, requestDraftReducer, type RequestDraftAction, type RequestLocationSelection, type RequestStep } from './request-draft'
 import { listRequestEquipment, resolveRequestContext } from './request-context'
 import { argentinaDay, clearPendingPayment, clearRequestDraft, clearRequestPhotos, paymentPresentation, readPendingPayment, readRequestDraft, readRequestPhotos, safeCheckoutUrl, storePendingPayment, storeRequestDraft, storeRequestPhotos, type PendingRequestPayment, type PreparedRequest, type RequestPreview, type RetainedRequestPhoto } from './request-flow-client'
 import { airAsset, DetailsScreen, EquipmentRow, IssueScreen, OrientationScreen, ReviewScreen, ScheduleScreen } from './request-screen-parts'
@@ -93,10 +93,14 @@ function RequestWizard({ customerId = '', initialData = emptyInventory, initialI
     if (customerId) {
       const recovered = readPendingPayment(customerId)
       const restored = readRequestDraft(customerId)
-      const explicitEntry = initialIssue !== undefined || initialData.equipment.some(e => e.id === initialEquipmentId && !e.archivedAt)
-      // A new shortcut supersedes an unfinished draft, never an uncertain payment command.
-      if (explicitEntry && !recovered.payment && !recovered.error) setDraft(initialDraft(customerId, initialData, initialIssue, initialEquipmentId))
-      else if (restored && (!restored.selectedEquipmentId || initialData.equipment.some(e => e.id === restored.selectedEquipmentId && !e.archivedAt))) setDraft(restored)
+      const requestedEquipment = initialData.equipment.find(e => e.id === initialEquipmentId && !e.archivedAt)
+      const restorable = restored && (!restored.selectedEquipmentId || initialData.equipment.some(e => e.id === restored.selectedEquipmentId && !e.archivedAt))
+      const sameEntry = restorable && (!requestedEquipment || restored.selectedEquipmentId === requestedEquipment.id)
+        && (initialIssue === undefined || getRequestServiceIssue(restored) === initialIssue)
+      // A changed shortcut starts a new draft; the same URL survives reloads.
+      // Neither may supersede an uncertain payment command or its blocking error.
+      if ((initialIssue !== undefined || requestedEquipment) && !sameEntry && !recovered.payment && !recovered.error) setDraft(initialDraft(customerId, initialData, initialIssue, initialEquipmentId))
+      else if (restorable) setDraft(restored)
       setMediaByEquipment(Object.fromEntries(Object.entries(readRequestPhotos(customerId)).map(([id, retained]) => [id, { files: [], saved: [], retained }])))
       pendingRef.current = recovered.payment; setPending(recovered.payment); setPendingError(recovered.error)
       if (recovered.payment) setDraft(current => ({ ...current, step: recovered.payment?.jobId ? 'payment' : 'review' }))

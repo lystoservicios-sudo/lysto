@@ -46,7 +46,7 @@ describe('persistent customer Hogar ownership and layouts', () => {
     const valid = await actor.rpc('write_customer_home', { p_operation: 'save', p_id: home.id, p_expected_version: 1, p_data: { ...saveData(home), name: 'Nombre editado' } })
     expect(valid.error).toBeNull()
     expect(valid.data.home.version).toBe(2)
-    expect((await actor.rpc('write_customer_home', { p_operation: 'save', p_id: home.id, p_expected_version: 1, p_data: saveData(home) })).error?.code).toBe('40001')
+    expect((await actor.rpc('write_customer_home', { p_operation: 'save', p_id: home.id, p_expected_version: 1, p_data: saveData(home) })).error?.code).toBe('PT409')
   })
   it('replays home creation and equipment registration without duplicates', async () => {
     const { home, input } = await createHome()
@@ -61,7 +61,7 @@ describe('persistent customer Hogar ownership and layouts', () => {
     expect(repeated.error).toBeNull()
     expect(repeated.data.equipment.id).toBe(result.data.equipment.id)
     expect(repeated.data.home.placements).toHaveLength(1)
-    expect((await actor.rpc('write_customer_home', { p_operation: 'equipment', p_id: home.id, p_expected_version: 2, p_data: { ...data, equipment: { nickname: 'Otro', equipmentType: 'split' } } })).error?.code).toBe('40001')
+    expect((await actor.rpc('write_customer_home', { p_operation: 'equipment', p_id: home.id, p_expected_version: 2, p_data: { ...data, equipment: { nickname: 'Otro', equipmentType: 'split' } } })).error?.code).toBe('PT409')
     const invalid = await actor.rpc('write_customer_home', { p_operation: 'equipment', p_id: home.id, p_expected_version: 2, p_data: { ...data, idempotencyKey: randomUUID(), placement: { ...data.placement, roomId: randomUUID() } } })
     expect(invalid.error?.code).toBe('P0002')
     const inventory = await actor.from('customer_equipment').select('id').eq('address_id', home.addressId)
@@ -82,7 +82,7 @@ describe('persistent customer Hogar ownership and layouts', () => {
     const failed = await actor.rpc('write_customer_home', { p_operation: 'create', p_id: null, p_expected_version: null, p_data: { ...data, newAddress: invalidAddress, floors: [], idempotencyKey: randomUUID() } })
     expect(failed.error?.code).toBe('22023')
     expect((await actor.from('customer_addresses').select('id').eq('label', invalidAddress.label)).data).toEqual([])
-    expect((await actor.rpc('write_customer_home', { p_operation: 'create', p_id: null, p_expected_version: null, p_data: { ...data, addressId: created.data.address.id } })).error?.code).toBe('40001')
+    expect((await actor.rpc('write_customer_home', { p_operation: 'create', p_id: null, p_expected_version: null, p_data: { ...data, addressId: created.data.address.id } })).error?.code).toBe('PT409')
   })
   it('does not adopt a floor identity during concurrent create commands from two owners', async () => {
     const actors = [fixture.accounts.customerA.client, fixture.accounts.customerB.client]

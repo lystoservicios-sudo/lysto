@@ -417,7 +417,7 @@ describe('persistent customer profiles, addresses and equipment', () => {
       await page.goto(`${app!.baseURL}/app/perfil`)
       await page.getByLabel('Nombre', { exact: true }).fill('Cliente navegador')
       await page.getByRole('button', { name: 'Guardar cambios', exact: true }).click()
-      await page.getByText('Tus cambios quedaron guardados.').waitFor()
+      await page.getByText('Tus datos quedaron guardados.', { exact: true }).waitFor()
       await page.reload()
       expect(await page.getByLabel('Nombre', { exact: true }).inputValue()).toBe(
         'Cliente navegador'

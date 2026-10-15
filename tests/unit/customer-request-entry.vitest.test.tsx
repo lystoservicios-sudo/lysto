@@ -6,6 +6,7 @@ import { AirConditioningWizard } from '@/features/service-request/air-conditioni
 import { createRequestDraft, requestDraftReducer } from '@/features/service-request/request-draft'
 import { readRequestDraft, storePendingPayment, storeRequestDraft } from '@/features/service-request/request-flow-client'
 import type { CustomerHomesSnapshot } from '@/lib/customer-homes/contracts'
+import type { ServiceIssueSlug } from '@/lib/domain/types'
 
 const mocks = vi.hoisted(() => ({ session: vi.fn(), homes: vi.fn() }))
 vi.mock('@/lib/auth/session', () => ({ requirePageSession: mocks.session }))
@@ -32,8 +33,55 @@ function entryInventory(): CustomerHomesSnapshot {
 function retainOldDraft() {
   storeRequestDraft(requestDraftReducer(createRequestDraft(authority.customerId, airA), { type: 'issue', issue: 'pierde_agua' }))
 }
+function retainReviewDraft(issue: ServiceIssueSlug = 'pierde_agua', equipmentId = airA) {
+  let draft = createRequestDraft(authority.customerId, equipmentId)
+  draft = requestDraftReducer(draft, issue === 'mantenimiento' || issue === 'instalacion'
+    ? { type: 'purpose', purpose: issue === 'mantenimiento' ? 'maintenance' : 'installation' }
+    : { type: 'issue', issue })
+  draft = requestDraftReducer(draft, { type: 'schedule', schedule: { preferredDate: '2026-12-01', preferredTimeWindow: '09:00 - 12:00', urgency: 'flexible' } })
+  draft = requestDraftReducer(draft, { type: 'go-step', step: 'review' })
+  storeRequestDraft(draft)
+  return draft
+}
 
 describe('explicit request entry versus saved draft', () => {
+  it('preserves the review draft when the same equipment shortcut remains after a reload', () => {
+    const saved = retainReviewDraft()
+    const props = { customerId: authority.customerId, initialData: entryInventory(), initialEquipmentId: airA }
+    const first = render(<AirConditioningWizard {...props} />)
+    expect(screen.getByRole('heading', { name: 'Revisá tu pedido' })).toBeTruthy()
+    first.unmount()
+    render(<AirConditioningWizard {...props} />)
+    expect(screen.getByRole('heading', { name: 'Revisá tu pedido' })).toBeTruthy()
+    expect(readRequestDraft(authority.customerId)).toEqual(saved)
+    expect((screen.getByRole('button', { name: 'Pagar con Mercado Pago' }) as HTMLButtonElement).disabled).toBe(true)
+  })
+  it.each(AIR_CONDITIONING_ISSUES)('restores review for the same equipment and $slug shortcut without restoring a price', ({ slug }) => {
+    const saved = retainReviewDraft(slug)
+    render(<AirConditioningWizard customerId={authority.customerId} initialData={entryInventory()} initialEquipmentId={airA} initialIssue={slug} />)
+    expect(screen.getByRole('heading', { name: 'Revisá tu pedido' })).toBeTruthy()
+    expect(readRequestDraft(authority.customerId)).toEqual(saved)
+    expect((screen.getByRole('button', { name: 'Pagar con Mercado Pago' }) as HTMLButtonElement).disabled).toBe(true)
+  })
+  it('restores the matching issue shortcut for the selected air rather than switching to the first air', () => {
+    const saved = retainReviewDraft('pierde_agua', airB)
+    render(<AirConditioningWizard customerId={authority.customerId} initialData={entryInventory()} initialIssue="pierde_agua" />)
+    expect(screen.getByRole('heading', { name: 'Revisá tu pedido' })).toBeTruthy()
+    expect(readRequestDraft(authority.customerId)).toEqual(saved)
+  })
+  it('starts a new issue on the same equipment instead of restoring another service draft', () => {
+    retainReviewDraft()
+    render(<AirConditioningWizard customerId={authority.customerId} initialData={entryInventory()} initialEquipmentId={airA} initialIssue="no_enfria" />)
+    expect(screen.getByText(/Paso 1 de 7/)).toBeTruthy()
+    expect(readRequestDraft(authority.customerId)?.answersByEquipment[airA]).toMatchObject({ issue: 'no_enfria', schedule: null })
+  })
+  it('does not restore another actor review even when equipment and issue shortcut strings match', () => {
+    retainReviewDraft()
+    const otherActor = '20000000-0000-4000-8000-000000000002'
+    render(<AirConditioningWizard customerId={otherActor} initialData={entryInventory()} initialEquipmentId={airA} initialIssue="pierde_agua" />)
+    expect(screen.getByText(/Paso 1 de 7/)).toBeTruthy()
+    expect(readRequestDraft(otherActor)?.answersByEquipment[airA]).toMatchObject({ issue: 'pierde_agua', schedule: null })
+  })
   it('opens the explicitly chosen equipment rather than an unfinished draft for another air', () => {
     retainOldDraft()
     render(<AirConditioningWizard customerId={authority.customerId} initialData={entryInventory()} initialEquipmentId={airB} />)
