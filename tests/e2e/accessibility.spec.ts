@@ -11,6 +11,7 @@ test('public navigation and policy links work with keyboard focus', async ({ pag
 })
 
 test('mobile pages do not overflow and primary targets meet minimum height', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.goto('/login')
   const overflow = await page.evaluate(
     () => document.documentElement.scrollWidth > document.documentElement.clientWidth
@@ -22,4 +23,17 @@ test('mobile pages do not overflow and primary targets meet minimum height', asy
   await expect(loginCredentialsForm(page).getByLabel('Email')).toHaveAttribute('type', 'email')
   await expect(loginCredentialsForm(page).getByLabel('Contraseña', { exact: true })).toHaveAttribute('type', 'password')
   await expect(page.getByRole('button', { name: 'Mostrar contraseña', exact: true })).toBeVisible()
+  let submissions = 0
+  page.on('request', request => {
+    if (request.method() === 'POST' && new URL(request.url()).pathname === '/login') submissions++
+  })
+  const form = loginCredentialsForm(page)
+  await form.getByLabel('Email', { exact: true }).fill('native-validation@example.com')
+  const password = form.getByLabel('Contraseña', { exact: true })
+  await password.fill('')
+  await button.click()
+  // A first tap must activate native required-field validation, not be lost
+  // when the focused input blurs and the header changes geometry.
+  await expect(password).toBeFocused()
+  expect(submissions).toBe(0)
 })

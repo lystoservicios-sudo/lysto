@@ -25,21 +25,21 @@ function renderForm(overrides: Partial<LoginFormViewProps> = {}) {
 }
 
 describe('mobile login form', () => {
-  it('does not accept input or submit before its client action is ready', () => {
+  it('keeps native login controls usable in the server-rendered HTML', () => {
     const host = document.createElement('div')
     host.innerHTML = renderToString(<LoginForm />)
-    expect((host.querySelector('input[name="email"]') as HTMLInputElement).disabled).toBe(true)
-    expect((host.querySelector('input[name="password"]') as HTMLInputElement).disabled).toBe(true)
-    expect((host.querySelector('button[type="submit"]') as HTMLButtonElement).disabled).toBe(true)
+    expect((host.querySelector('input[name="email"]') as HTMLInputElement).disabled).toBe(false)
+    expect((host.querySelector('input[name="password"]') as HTMLInputElement).disabled).toBe(false)
+    expect((host.querySelector('button[type="submit"]') as HTMLButtonElement).disabled).toBe(false)
   })
 
-  it('enables the server-rendered login controls after real hydration', async () => {
+  it('preserves native login controls through real hydration', async () => {
     const host = document.createElement('div')
     host.innerHTML = renderToString(<LoginForm />)
     document.body.appendChild(host)
     let root: ReturnType<typeof hydrateRoot> | undefined
     try {
-      expect((host.querySelector('button[type="submit"]') as HTMLButtonElement).disabled).toBe(true)
+      expect((host.querySelector('button[type="submit"]') as HTMLButtonElement).disabled).toBe(false)
       await act(async () => { root = hydrateRoot(host, <LoginForm />) })
       expect((host.querySelector('input[name="email"]') as HTMLInputElement).disabled).toBe(false)
       expect((host.querySelector('input[name="password"]') as HTMLInputElement).disabled).toBe(false)

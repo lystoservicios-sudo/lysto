@@ -104,14 +104,7 @@
   .auth-room { width: 240px; height: 236px; margin-right: 0; }
   .auth-customer .auth-panel { width: 420px; padding-top: 36px; }
 }
-@media (max-width: 760px) {
-  /* Compact only this bounded header so a mobile keyboard leaves room for the field. */
-  .auth-masthead-inner { transition: height 200ms cubic-bezier(.16,1,.3,1); }
-  .auth-room, .auth-identity { transition: transform 200ms cubic-bezier(.16,1,.3,1); }
-  .auth-customer:has(input:focus, select:focus) .auth-masthead-inner { height: 112px; }
-  .auth-customer:has(input:focus, select:focus) .auth-room { transform: scale(.55); transform-origin: center; }
-  .auth-customer:has(input:focus, select:focus) .auth-identity { transform: scale(.8); transform-origin: left center; }
-}
+/* Keep layout stable on focus so blur cannot move a control during a tap. */
 @media (max-width: 359px) {
   .auth-masthead-inner { width: calc(100% - 32px); height: 184px; }
   .auth-brand { font-size: 42px; }
