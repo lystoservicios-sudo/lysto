@@ -24,9 +24,9 @@ insert into public.customer_addresses(id,customer_id,street,number,city,province
 ('97200000-0000-4000-8000-000000000001','97100000-0000-4000-8000-000000000001','Historical street','1','CABA','Buenos Aires','house','OLD access'),
 ('97200000-0000-4000-8000-000000000002','97100000-0000-4000-8000-000000000001','Contracted street','2','CABA','Buenos Aires','house','Current mutable access'),
 ('97200000-0000-4000-8000-000000000003','97100000-0000-4000-8000-000000000001','Other private home','3','CABA','Buenos Aires','house',null);
-insert into public.customer_equipment(id,customer_id,address_id,nickname,equipment_type,brand,frigorias) values
-('97300000-0000-4000-8000-000000000001','97100000-0000-4000-8000-000000000001','97200000-0000-4000-8000-000000000001','Assigned air','inverter','Fixture','3500'),
-('97300000-0000-4000-8000-000000000002','97100000-0000-4000-8000-000000000001','97200000-0000-4000-8000-000000000002','Unrelated air','split','Private fixture','4500');
+insert into public.customer_equipment(id,customer_id,address_id,nickname,equipment_type,brand,frigorias,category_id) values
+('97300000-0000-4000-8000-000000000001','97100000-0000-4000-8000-000000000001','97200000-0000-4000-8000-000000000001','Assigned air','inverter','Fixture','3500',(select id from public.service_categories where slug='aire_acondicionado')),
+('97300000-0000-4000-8000-000000000002','97100000-0000-4000-8000-000000000001','97200000-0000-4000-8000-000000000002','Unrelated air','split','Private fixture','4500',(select id from public.service_categories where slug='aire_acondicionado'));
 insert into public.customer_homes(id,customer_id,current_address_id,name,kind,windows) values
 ('97400000-0000-4000-8000-000000000001','97100000-0000-4000-8000-000000000001','97200000-0000-4000-8000-000000000002','Contracted home','house','small'),
 ('97400000-0000-4000-8000-000000000002','97100000-0000-4000-8000-000000000001','97200000-0000-4000-8000-000000000003','Unrelated home','house','small');
