@@ -306,3 +306,9 @@ it('renders all empty private document uploads without dereferencing a nonexiste
   expect(screen.getAllByRole('button',{name:'Elegir documento de prueba'})).toHaveLength(3)
   expect(screen.queryByRole('link',{name:/Abrir documento privado/})).toBeNull()
 })
+it('exposes the presentation name separately from its optional help for accessible form navigation', () => {
+  const context = complete(); context.application.licenseNumber = ''
+  render(<ConnectedProfessionalOnboarding initial={context} />)
+  const presentation = screen.getByRole('textbox', {name:'Presentación'})
+  expect(presentation.getAttribute('aria-describedby')).toBe('registration-bio-help')
+})
