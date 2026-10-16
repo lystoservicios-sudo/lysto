@@ -128,6 +128,39 @@ describe('request location durable recovery', () => {
     expect((responses[0].headers as Record<string, string>)['X-Lysto-Customer-Id']).toBe(actor)
     expect(JSON.parse(responses[0].body as string)).toEqual(input)
   })
+  it('renews only the signed proof before replaying an uncertain idempotent home creation', async () => {
+    const calls: { url: string; body: Record<string, unknown> }[] = []
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, options?: RequestInit) => {
+      const url = String(input), body = JSON.parse(String(options?.body)) as Record<string, unknown>
+      calls.push({ url, body })
+      if (url === '/api/location/renew') return new Response(JSON.stringify({ proof: 'renewed-proof' }), { status: 200 })
+      return new Response(JSON.stringify({ home }), { status: 201 })
+    }))
+    const { expectedVersion, id, addressId, ...configuration } = homeSaveInput(home)
+    void expectedVersion; void id; void addressId
+    const newAddress = { label: 'Casa', street: 'San Martín', number: '120', city: 'Buenos Aires', province: 'CABA', propertyType: 'house' as const, access: {}, isDefault: false, locationProof: 'expired-proof' }
+    const command = { kind: 'create-home' as const, input: { ...configuration, addressId: null, newAddress, idempotencyKey: '40000000-0000-4000-8000-000000000007' } }
+    await expect(replayRequestHomeCommand(actor, command, true)).resolves.toEqual({ home })
+    expect(calls.map(call => call.url)).toEqual(['/api/location/renew', '/api/customer/homes'])
+    expect((calls[1].body.newAddress as Record<string, unknown>).locationProof).toBe('renewed-proof')
+    expect(command.input.newAddress.locationProof).toBe('expired-proof')
+  })
+  it('renews a selected address before retrying an uncertain versioned address save', async () => {
+    const calls: { url: string; body?: Record<string, unknown> }[] = []
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, options?: RequestInit) => {
+      const url = String(input), body = options?.body ? JSON.parse(String(options.body)) as Record<string, unknown> : undefined
+      calls.push({ url, body })
+      if ((options?.method ?? 'GET') === 'GET') return new Response(JSON.stringify({ homes: [], addresses: [{ ...address, version: 2 }], equipment: [] }), { status: 200 })
+      if (url === '/api/location/renew') return new Response(JSON.stringify({ proof: 'renewed-proof' }), { status: 200 })
+      return new Response(JSON.stringify({ address: { ...address, version: 3 } }), { status: 200 })
+    }))
+    const command = addressCommand() as ReturnType<typeof addressCommand> & { input: ReturnType<typeof addressCommand>['input'] & { locationProof: string } }
+    command.input.locationProof = 'expired-proof'
+    await expect(replayRequestHomeCommand(actor, command, true)).resolves.toEqual({ address: { ...address, version: 3 } })
+    expect(calls.map(call => call.url)).toEqual(['/api/customer/homes', '/api/location/renew', '/api/customer/addresses'])
+    expect(calls[2].body?.locationProof).toBe('renewed-proof')
+    expect(command.input.locationProof).toBe('expired-proof')
+  })
   it('blocks corrupted pending location storage instead of creating a second record', () => {
     window.sessionStorage.setItem(`lysto:pedir:location:${actor}`, '{}')
     expect(readRequestHomeCommand(actor).error).toContain('No pudimos recuperar')

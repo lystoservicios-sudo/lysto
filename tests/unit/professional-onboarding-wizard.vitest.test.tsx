@@ -74,7 +74,7 @@ it('shows seven focused steps and saves personal data and address with successiv
   await waitFor(() => expect(screen.getByRole('heading', { name: 'Tu oficio' })).toBeTruthy())
   expect((screen.getByRole('button', { name: 'Guardar y continuar' }) as HTMLButtonElement).disabled).toBe(false)
   expect(screen.queryByRole('button', { name: /Descartar mis cambios/ })).toBeNull()
-  expect(mocks.request).toHaveBeenCalledWith('/api/professional/onboarding/address', 'POST', { address: personal.address, expectedVersion: 2 })
+  expect(mocks.request).toHaveBeenCalledWith('/api/professional/onboarding/address', 'POST', { address: personal.address, locationProof: '', expectedVersion: 2 })
 })
 it('validates only the current group without requesting incomplete future groups', () => {
   render(<ConnectedProfessionalOnboarding initial={initial} />)

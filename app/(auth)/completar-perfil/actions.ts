@@ -6,6 +6,7 @@ import { assertAccountMutationOrigin } from '@/lib/auth/account-server'
 import { requireRole } from '@/lib/auth/session'
 import { enforceRateLimit } from '@/lib/security/rate-limit'
 import { writeCustomerAsset } from '@/lib/customer-assets/service'
+import { canonicalizeAddressMutation } from '@/lib/location/mutation'
 import type { AuthActionState } from '../actions'
 
 export async function completeProfileAction(_state: AuthActionState, formData: FormData): Promise<AuthActionState> {
@@ -25,16 +26,24 @@ export async function completeProfileAction(_state: AuthActionState, formData: F
     }
     if (missing.some((key) => ['street', 'number', 'city', 'province', 'property_type'].includes(key))) {
       const current = session.address
+      const needsLocation = missing.some((key) => ['street', 'number', 'city', 'province'].includes(key))
       const access = Object.fromEntries(Object.entries({
         hasElevator: current?.has_elevator, hasParking: current?.has_parking,
         stairsRequired: current?.stairs_required, outdoorUnitAtHeight: current?.outdoor_unit_at_height,
         outdoorUnitOnBalcony: current?.outdoor_unit_on_balcony, difficultAccess: current?.difficult_access
       }).filter(([, value]) => typeof value === 'boolean'))
-      await writeCustomerAsset(authority, 'address', {
+      const addressData = {
         label: current?.label || 'Mi hogar', street: data.street, number: data.number, city: data.city, province: data.province, propertyType: data.property_type,
         floor: current?.floor ?? null, apartment: current?.apartment ?? null, reference: current?.reference ?? null, postalCode: current?.postal_code ?? null,
-        isDefault: current?.is_default ?? true, access
-      }, current?.id ?? null, current?.version ?? null)
+        isDefault: current?.is_default ?? true, access, locationProof: textValue(formData, 'location_proof')
+      }
+      let canonical: Omit<typeof addressData, 'locationProof'>
+      try {
+        canonical = canonicalizeAddressMutation(addressData, needsLocation ? null : current && {
+          street: current.street, number: current.number, city: current.city, province: current.province
+        })
+      } catch { return errorState('Revisá los datos pendientes. Elegí una dirección válida de la lista.') }
+      await writeCustomerAsset(authority, 'address', canonical, current?.id ?? null, current?.version ?? null)
     }
     const saved = await readCustomerSession(authority.client)
     if (saved.kind !== 'customer' || missingCustomerFields(saved.profile, saved.address).length) return errorState('Todavía faltan datos para completar tu perfil. Revisalos e intentá nuevamente.')

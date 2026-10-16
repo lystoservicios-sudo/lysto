@@ -1,16 +1,16 @@
 'use client'
 
 import { z } from 'zod'
-import { addHomeEquipmentSchema, createHomeSchema, saveHomeSchema, type CustomerHome, type CustomerHomesSnapshot } from '@/lib/customer-homes/contracts'
-import { addressInputSchema, addressUpdateSchema } from '@/lib/customer-assets/contracts'
+import { addHomeEquipmentSchema, createHomeMutationSchema, saveHomeSchema, type CustomerHome, type CustomerHomesSnapshot } from '@/lib/customer-homes/contracts'
+import { addressInputSchema, addressMutationUpdateSchema } from '@/lib/customer-assets/contracts'
 import type { CustomerAssetEquipment } from '@/lib/customer-assets/contracts'
 import { privateRequest } from '@/lib/http/private-client'
 
 const commandSchema = z.discriminatedUnion('kind', [
-  z.object({ kind: z.literal('create-home'), input: createHomeSchema }).strict(),
+  z.object({ kind: z.literal('create-home'), input: createHomeMutationSchema }).strict(),
   z.object({ kind: z.literal('add-equipment'), input: addHomeEquipmentSchema }).strict(),
   z.object({ kind: z.literal('save-home'), input: saveHomeSchema }).strict(),
-  z.object({ kind: z.literal('save-address'), input: addressUpdateSchema }).strict()
+  z.object({ kind: z.literal('save-address'), input: addressMutationUpdateSchema }).strict()
 ])
 export type RequestHomeCommand = z.infer<typeof commandSchema>
 type ReplayResult = { home?: CustomerHome; equipment?: CustomerAssetEquipment }
@@ -93,8 +93,22 @@ export async function replayRequestHomeCommand(actor: string, command: RequestHo
       if (address.version !== command.input.expectedVersion) throw new Error('La dirección cambió desde otro lugar. Revisala antes de continuar.')
     }
   }
+  let outbound = command
+  if (uncertain && command.kind === 'create-home' && command.input.newAddress?.locationProof) {
+    const address = command.input.newAddress
+    const renewed = await privateRequest<{ proof: string }>('/api/location/renew', 'POST', {
+      proof: address.locationProof, street: address.street, number: address.number, city: address.city, province: address.province
+    }, headers)
+    outbound = { ...command, input: { ...command.input, newAddress: { ...address, locationProof: renewed.proof } } }
+  } else if (uncertain && command.kind === 'save-address' && command.input.locationProof) {
+    const address = command.input
+    const renewed = await privateRequest<{ proof: string }>('/api/location/renew', 'POST', {
+      proof: address.locationProof, street: address.street, number: address.number, city: address.city, province: address.province
+    }, headers)
+    outbound = { ...command, input: { ...command.input, locationProof: renewed.proof } }
+  }
   const path = command.kind === 'add-equipment' ? '/api/customer/homes/equipment' : command.kind === 'save-address' ? '/api/customer/addresses' : '/api/customer/homes'
   const method = command.kind === 'save-home' || command.kind === 'save-address' ? 'PUT' : 'POST'
-  const result = await privateRequest<ReplayResult>(path, method, command.input, headers)
+  const result = await privateRequest<ReplayResult>(path, method, outbound.input, headers)
   return result
 }

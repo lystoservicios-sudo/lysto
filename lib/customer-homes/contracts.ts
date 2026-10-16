@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { addressInputSchema, type CustomerAssetAddress, type CustomerAssetEquipment } from '@/lib/customer-assets/contracts'
+import { addressInputSchema, addressMutationInputSchema, type CustomerAssetAddress, type CustomerAssetEquipment } from '@/lib/customer-assets/contracts'
 
 export const HOME_KIND_OPTIONS = [
   { value: 'house', label: 'Casa' }, { value: 'apartment', label: 'Departamento' },
@@ -80,6 +80,11 @@ function validateHome(value: Pick<z.infer<z.ZodObject<typeof homeShape>>, 'floor
   }
 }
 export const createHomeSchema = z.object({ ...homeShape, addressId: z.string().uuid().nullable(), newAddress: addressInputSchema.optional(), idempotencyKey: z.string().uuid() }).strict().superRefine((value, ctx) => {
+  validateHome(value, ctx)
+  if ((value.addressId !== null) === (value.newAddress !== undefined)) ctx.addIssue({ code: 'custom', path: ['addressId'], message: 'Elegí una dirección guardada o completá una nueva, no ambas.' })
+  if (value.placements.length) ctx.addIssue({ code: 'custom', path: ['placements'], message: 'Primero creá el hogar y después ubicá sus equipos.' })
+})
+export const createHomeMutationSchema = z.object({ ...homeShape, addressId: z.string().uuid().nullable(), newAddress: addressMutationInputSchema.optional(), idempotencyKey: z.string().uuid() }).strict().superRefine((value, ctx) => {
   validateHome(value, ctx)
   if ((value.addressId !== null) === (value.newAddress !== undefined)) ctx.addIssue({ code: 'custom', path: ['addressId'], message: 'Elegí una dirección guardada o completá una nueva, no ambas.' })
   if (value.placements.length) ctx.addIssue({ code: 'custom', path: ['placements'], message: 'Primero creá el hogar y después ubicá sus equipos.' })

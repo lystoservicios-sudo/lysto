@@ -19,6 +19,6 @@ export default async function CompleteProfilePage({ searchParams }: { searchPara
   return <AuthFrame eyebrow="Tu hogar" title="Prepará tu primer servicio" description="Completá los datos que faltan para poder ayudarte.">
     <div className="auth-progress" aria-hidden="true"><span /></div>
     <div className="auth-saved">Tu cuenta ya está creada. Estos datos quedan guardados para tus próximos servicios.</div>
-    <CompleteProfileForm missing={missing} next={next} />
+          <CompleteProfileForm missing={missing} next={next} address={session.address} />
   </AuthFrame>
 }

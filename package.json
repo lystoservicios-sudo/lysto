@@ -31,6 +31,7 @@
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.45.0",
     "@waltergaltieri/mercadopago-split": "file:vendor/waltergaltieri-mercadopago-split-0.1.0.tgz",
+    "downshift": "^9.0.10",
     "lucide-react": "^0.468.0",
     "next": "15.5.27",
     "pg": "8.23.0",

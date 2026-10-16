@@ -1,6 +1,7 @@
 import 'server-only'
 import { createClient } from '@supabase/supabase-js'
 import { z } from 'zod'
+import { verifyFormattedLocationProof } from '@/lib/location/proof'
 import type { Session } from '@/lib/auth/session'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { assertPublicSupabaseEnv } from '@/lib/supabase/env'
@@ -274,10 +275,14 @@ export async function readProfessionalReview(client: Session['client'], professi
 }
 export async function saveProfessionalAddress(input: unknown) {
   const data = z.object({ address: z.string().trim().min(5).max(200),
+    locationProof: z.string().max(4096),
     expectedVersion: z.number().int().positive() }).strict().parse(input)
   const client = await onboardingIdentity()
+  let address
+  try { address = verifyFormattedLocationProof(data.locationProof, data.address).formattedAddress }
+  catch { throw new ApiError('invalid_input') }
   const result = await client.rpc('save_professional_address', {
-    p_address: data.address, p_expected_version: data.expectedVersion
+    p_address: address, p_expected_version: data.expectedVersion
   })
   if (result.error) fail(result.error.code)
   const parsed = onboardingSchema.safeParse(result.data)

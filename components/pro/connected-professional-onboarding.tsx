@@ -13,6 +13,7 @@ import { privateRequest, PrivateRequestError, requestError } from '@/lib/http/pr
 import { MediaUploader } from '@/components/customer/media-uploader'
 import { ProfessionalPasswordForm } from './professional-password-form'
 import { RegistrationPayments, useRegistrationAccount } from './registration-payments'
+import { FullAddressCombobox } from '@/components/location/full-address-combobox'
 import styles from './professional-registration.module.css'
 
 export const professionalStatusLabels: Record<string, string> = {
@@ -69,6 +70,7 @@ function Registration({ initial }: { initial: OnboardingContext }) {
   const [pendingDocuments, setPendingDocuments] = useState<string[]>([])
   const [documentUrl, setDocumentUrl] = useState<{ id: string; url: string } | null>(null)
   const [viewApplication, setViewApplication] = useState(false)
+  const [locationProof, setLocationProof] = useState('')
   const mounted = useRef(true)
   const locked = useRef(false)
   const readEpoch = useRef(0)
@@ -175,7 +177,7 @@ function Registration({ initial }: { initial: OnboardingContext }) {
         setContext((current) => ({ ...current, application: acknowledged })); setDraft((current) => ({ ...current, version: saved.version, status: saved.status }))
       }
       if ((draft.address ?? '') !== (acknowledged.address ?? '')) {
-        const savedAddress = onboardingSchema.parse(await privateRequest<ProfessionalApplication>('/api/professional/onboarding/address', 'POST', { address: draft.address, expectedVersion: acknowledged.version }))
+        const savedAddress = onboardingSchema.parse(await privateRequest<ProfessionalApplication>('/api/professional/onboarding/address', 'POST', { address: draft.address, locationProof, expectedVersion: acknowledged.version }))
         acknowledged = { ...savedAddress, address: savedAddress.address ?? draft.address ?? '' }
         if (!mounted.current) return
         setContext((current) => ({ ...current, application: acknowledged })); setDraft(acknowledged)
@@ -254,6 +256,15 @@ function Registration({ initial }: { initial: OnboardingContext }) {
         onChange={(event) => update(key, (type === 'number' ? Number(event.target.value) : event.target.value) as never)} />
       {errors[key] && <small id={`${id}-error`} className={styles.fieldError}>{errors[key]}</small>}{extra}</label>
   }
+  function addressField() {
+    const id = 'registration-address'
+    return <><FullAddressCombobox id={id} label="Dirección" value={draft.address ?? ''} disabled={disabled}
+      className={styles.field}
+      ariaInvalid={!!errors.address} ariaDescribedBy={errors.address ? `${id}-error` : undefined}
+      onChange={(value) => { setLocationProof(''); update('address', value) }}
+      onResolved={({ value, proof }) => { setLocationProof(proof); update('address', value) }} />
+      {errors.address && <small id={`${id}-error`} className={styles.fieldError}>{errors.address}</small>}</>
+  }
   function groupError(key: string) { return errors[key] ? <p className={styles.fieldError} role="alert">{errors[key]}</p> : null }
   const requiredDocuments = requiredRegistrationDocuments(context)
   const expiryDocuments = context.requirements?.policies.flatMap((policy) => policy.expiryDocuments) ?? []
@@ -295,7 +306,7 @@ function Registration({ initial }: { initial: OnboardingContext }) {
           <fieldset disabled={disabled || !editable && step !== 4 && step !== 5} className={styles.fields}>
             <legend className={styles.srOnly}>{titles[step]}</legend>
             {step === 0 && <><div className={styles.columns}>{field('firstName')}{field('lastName')}{field('phone', 'tel')}{field('dni')}</div>
-              {field('cuil')}{field('birthdate', 'date')}{field('address')}
+              {field('cuil')}{field('birthdate', 'date')}{addressField()}
               <p className={styles.hint}>Correo de tu invitación: {draft.email}</p></>}
             {step === 1 && <>
               <fieldset className={styles.options}><legend>Especialidad</legend>

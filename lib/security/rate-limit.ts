@@ -9,6 +9,7 @@ export type RateLimitCategory =
   | 'registration'
   | 'recovery'
   | 'quote'
+  | 'location'
   | 'receipt'
   | 'private_mutation'
   | 'payment_reconcile'
@@ -18,6 +19,7 @@ const policies: Record<RateLimitCategory, { limit: number; windowSeconds: number
   registration: { limit: 5, windowSeconds: 3600 },
   recovery: { limit: 5, windowSeconds: 3600 },
   quote: { limit: 20, windowSeconds: 300 },
+  location: { limit: 90, windowSeconds: 60 },
   receipt: { limit: 30, windowSeconds: 300 },
   private_mutation: { limit: 60, windowSeconds: 60 },
   payment_reconcile: { limit: 10, windowSeconds: 60 },

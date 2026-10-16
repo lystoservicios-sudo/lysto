@@ -1,9 +1,10 @@
 import { ApiError, privateJson } from '@/lib/http/api-error'
 import { readPrivateJsonBody } from '@/lib/http/private-json-body'
 import { privateRoute } from '@/lib/http/route-handler'
-import { archiveHomeSchema, createHomeSchema, saveHomeSchema } from '@/lib/customer-homes/contracts'
+import { archiveHomeSchema, createHomeMutationSchema, createHomeSchema, saveHomeSchema } from '@/lib/customer-homes/contracts'
 import { readCustomerHomes, writeCustomerHome } from '@/lib/customer-homes/service'
 import { assertCustomerHomeRequestActor } from '@/lib/customer-homes/request-actor'
+import { canonicalizeAddressMutation } from '@/lib/location/mutation'
 
 export const GET = privateRoute({ roles: ['customer'] }, async (request, session) => {
   assertCustomerHomeRequestActor(request, session)
@@ -12,7 +13,11 @@ export const GET = privateRoute({ roles: ['customer'] }, async (request, session
 })
 export const POST = privateRoute({ roles: ['customer'] }, async (request, session) => {
   assertCustomerHomeRequestActor(request, session)
-  const input = createHomeSchema.parse(await readPrivateJsonBody(request, 524288))
+  const mutation = createHomeMutationSchema.parse(await readPrivateJsonBody(request, 524288))
+  let input
+  try {
+    input = createHomeSchema.parse({ ...mutation, ...(mutation.newAddress ? { newAddress: canonicalizeAddressMutation(mutation.newAddress, null) } : {}) })
+  } catch { throw new ApiError('invalid_input') }
   return privateJson(await writeCustomerHome(session, 'create', input), { status: 201 })
 })
 export const PUT = privateRoute({ roles: ['customer'] }, async (request, session) => {

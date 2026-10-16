@@ -17,6 +17,7 @@ import {
   type RoomKind
 } from '@/lib/customer-homes/contracts'
 import { roomKindsForHome } from '@/lib/customer-homes/model'
+import { ArgentineAddressFields } from '@/components/location/argentine-address-fields'
 import styles from './customer-hogar.module.css'
 
 export const airTypes = [
@@ -118,6 +119,7 @@ export function HomeForm({
   const hasBalconyRoom = configuredRooms.some((room) => room.kind === 'balcony')
   const hasTerraceRoom = configuredRooms.some((room) => room.kind === 'terrace')
   const [newAddress, setNewAddress] = useState(blankAddress)
+  const [locationProof, setLocationProof] = useState('')
   const [addressMode, setAddressMode] = useState<'existing' | 'new'>(
     addresses.some((a) => !homes.some((h) => h.addressId === a.id)) ? 'existing' : 'new'
   )
@@ -149,7 +151,7 @@ export function HomeForm({
       setFormError('Elegí una dirección y un nombre para tu hogar.')
       return
     }
-    await onSave(value, !flow.existing && addressMode === 'new' ? candidate : undefined)
+    await onSave(value, !flow.existing && addressMode === 'new' ? { ...candidate, ...(locationProof ? { locationProof } : {}) } : undefined)
   }
   const patch = (part: Partial<HomeConfig>) => onChange({ ...value, ...part })
   return (
@@ -332,30 +334,22 @@ export function HomeForm({
                 </select>
               </Field>
             ) : (
-              <div className={styles.formGrid}>
-                {(
-                  [
-                    ['street', 'Calle', 200, true],
-                    ['number', 'Número', 30, true],
-                    ['floor', 'Piso de la dirección', 100, false],
-                    ['apartment', 'Departamento / unidad', 100, false],
-                    ['city', 'Ciudad', 100, true],
-                    ['province', 'Provincia', 100, true],
-                    ['postalCode', 'Código postal', 30, false],
-                    ['reference', 'Referencia', 500, false]
-                  ] as const
-                ).map(([key, label, max, required]) => (
-                  <Field key={key} label={label} id={`new-address-${key}`}>
-                    <input
-                      id={`new-address-${key}`}
-                      required={required}
-                      maxLength={max}
-                      value={newAddress[key]}
-                      onChange={(e) => setNewAddress({ ...newAddress, [key]: e.target.value })}
-                    />
-                  </Field>
-                ))}
-              </div>
+              <>
+                <ArgentineAddressFields
+                  value={{ street: newAddress.street, number: newAddress.number, city: newAddress.city, province: newAddress.province }}
+                  onChange={(location) => setNewAddress((current) => ({ ...current, ...location }))}
+                  onProofChange={setLocationProof}
+                  labels={{ street: 'Calle', number: 'Número', city: 'Ciudad', province: 'Provincia' }}
+                  idPrefix="new-address"
+                  groupClassName={styles.formGrid}
+                  fieldClassName={styles.field}
+                  disabled={busy || locked}
+                  after={{
+                    number: <>{([['floor', 'Piso de la dirección', 100], ['apartment', 'Departamento / unidad', 100]] as const).map(([key, label, max]) => <Field key={key} label={label} id={`new-address-${key}`}><input id={`new-address-${key}`} maxLength={max} value={newAddress[key]} onChange={(e) => setNewAddress({ ...newAddress, [key]: e.target.value })} /></Field>)}</>,
+                    province: <>{([['postalCode', 'Código postal', 30], ['reference', 'Referencia', 500]] as const).map(([key, label, max]) => <Field key={key} label={label} id={`new-address-${key}`}><input id={`new-address-${key}`} maxLength={max} value={newAddress[key]} onChange={(e) => setNewAddress({ ...newAddress, [key]: e.target.value })} /></Field>)}</>
+                  }}
+                />
+              </>
             )}
             <p className={styles.small}>
               El piso de la dirección no define las plantas internas del hogar.

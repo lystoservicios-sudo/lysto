@@ -42,6 +42,17 @@ export const addressInputSchema = z
 export const addressUpdateSchema = addressInputSchema
   .extend({ id: z.string().uuid(), expectedVersion: z.number().int().positive() })
   .strict()
+export const locationProofSchema = z.string().max(4096).optional()
+export const addressMutationInputSchema = addressInputSchema
+  .extend({ locationProof: locationProofSchema })
+  .strict()
+export const addressMutationUpdateSchema = addressInputSchema
+  .extend({
+    locationProof: locationProofSchema,
+    id: z.string().uuid(),
+    expectedVersion: z.number().int().positive()
+  })
+  .strict()
 export const archiveAssetSchema = z
   .object({ id: z.string().uuid(), expectedVersion: z.number().int().positive() })
   .strict()

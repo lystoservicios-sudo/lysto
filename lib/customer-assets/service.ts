@@ -62,6 +62,20 @@ export async function writeCustomerAsset(
   if (!result.data) throw new ApiError('service_unavailable')
   return result.data
 }
+export async function readCustomerAddressLocation(session: Session, id: string) {
+  const owner = customer(session)
+  if (!z.string().uuid().safeParse(id).success) throw new ApiError('not_found')
+  const { data, error } = await session.client
+    .from('customer_addresses')
+    .select('street,number,city,province')
+    .eq('id', id)
+    .eq('customer_id', owner)
+    .is('archived_at', null)
+    .maybeSingle()
+  if (error) throw new ApiError('service_unavailable')
+  if (!data) throw new ApiError('not_found')
+  return data
+}
 function pageInput(input: unknown, scope: string) {
   try {
     return parsePageInput(input, scope)

@@ -1,16 +1,23 @@
 import { readPrivateJsonBody } from '@/lib/http/private-json-body'
 import { privateRoute } from '@/lib/http/route-handler'
-import { privateJson } from '@/lib/http/api-error'
+import { ApiError, privateJson } from '@/lib/http/api-error'
 import {
-  addressInputSchema,
-  addressUpdateSchema,
+  addressMutationInputSchema,
+  addressMutationUpdateSchema,
   archiveAssetSchema
 } from '@/lib/customer-assets/contracts'
 import {
   assetPageQuery,
   listCustomerAddresses,
+  readCustomerAddressLocation,
   writeCustomerAsset
 } from '@/lib/customer-assets/service'
+import { canonicalizeAddressMutation } from '@/lib/location/mutation'
+
+function canonical(input: Parameters<typeof canonicalizeAddressMutation>[0], existing: Parameters<typeof canonicalizeAddressMutation>[1]) {
+  try { return canonicalizeAddressMutation(input, existing) }
+  catch { throw new ApiError('invalid_input') }
+}
 
 export const GET = privateRoute({ roles: ['customer'] }, async (request, session) =>
   privateJson(await listCustomerAddresses(session, assetPageQuery(request)))
@@ -20,7 +27,7 @@ export const POST = privateRoute({ roles: ['customer'] }, async (request, sessio
     await writeCustomerAsset(
       session,
       'address',
-      addressInputSchema.parse(await readPrivateJsonBody(request)),
+      canonical(addressMutationInputSchema.parse(await readPrivateJsonBody(request)), null),
       null,
       null
     ),
@@ -28,10 +35,11 @@ export const POST = privateRoute({ roles: ['customer'] }, async (request, sessio
   )
 )
 export const PUT = privateRoute({ roles: ['customer'] }, async (request, session) => {
-  const { id, expectedVersion, ...data } = addressUpdateSchema.parse(
+  const { id, expectedVersion, ...data } = addressMutationUpdateSchema.parse(
     await readPrivateJsonBody(request)
   )
-  return privateJson(await writeCustomerAsset(session, 'address', data, id, expectedVersion))
+  const existing = await readCustomerAddressLocation(session, id)
+  return privateJson(await writeCustomerAsset(session, 'address', canonical(data, existing), id, expectedVersion))
 })
 export const DELETE = privateRoute({ roles: ['customer'] }, async (request, session) => {
   const { id, expectedVersion } = archiveAssetSchema.parse(await readPrivateJsonBody(request))

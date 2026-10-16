@@ -7,6 +7,7 @@ import { FormFeedback } from './states'
 import { assetError, assetRequest, type AssetPage } from '@/lib/customer-assets/client'
 import { addressInputSchema, type CustomerAssetAddress } from '@/lib/customer-assets/contracts'
 import { moreStyles } from './more/more-ui'
+import { ArgentineAddressFields } from '@/components/location/argentine-address-fields'
 import styles from './customer-secondary.module.css'
 
 const blankAddress: CustomerAssetAddress = {
@@ -25,12 +26,8 @@ const blankAddress: CustomerAssetAddress = {
 }
 const fields = [
   ['label', 'Nombre de la dirección', 80, true],
-  ['street', 'Calle', 200, true],
-  ['number', 'Número', 30, true],
   ['floor', 'Piso', 100, false],
   ['apartment', 'Departamento', 100, false],
-  ['city', 'Ciudad', 100, true],
-  ['province', 'Provincia', 100, true],
   ['postalCode', 'Código postal', 30, false],
   ['reference', 'Referencia', 500, false]
 ] as const
@@ -50,6 +47,7 @@ export function ConnectedCustomerAddresses({
 }) {
   const [page, setPage] = useState(initialPage)
   const [value, setValue] = useState<CustomerAssetAddress>(blankAddress)
+  const [locationProof, setLocationProof] = useState('')
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState('')
   const [failed, setFailed] = useState(false)
@@ -72,6 +70,7 @@ export function ConnectedCustomerAddresses({
       )
       if (!more) {
         setValue(blankAddress)
+        setLocationProof('')
         setMessage('Direcciones actualizadas.')
         setFailed(false)
       }
@@ -103,9 +102,10 @@ export function ConnectedCustomerAddresses({
       const result = await assetRequest<{ address: CustomerAssetAddress }>(
         '/api/customer/addresses',
         value.id ? 'PUT' : 'POST',
-        { ...parsed.data, ...(value.id ? { id: value.id, expectedVersion: value.version } : {}) }
+        { ...parsed.data, locationProof, ...(value.id ? { id: value.id, expectedVersion: value.version } : {}) }
       )
       setValue(result.address)
+      setLocationProof('')
       setFailed(false)
       setMessage('La dirección quedó guardada.')
       // A new default also changes the previous default's version.
@@ -134,7 +134,7 @@ export function ConnectedCustomerAddresses({
         total: current.total - 1,
         items: current.items.filter((item) => item.id !== address.id)
       }))
-      if (value.id === address.id) setValue(blankAddress)
+      if (value.id === address.id) { setValue(blankAddress); setLocationProof('') }
       setFailed(false)
       setMessage('Dirección archivada. Los servicios anteriores conservan sus datos.')
     } catch (error) {
@@ -154,6 +154,7 @@ export function ConnectedCustomerAddresses({
           disabled={busy}
           onClick={() => {
             setValue(blankAddress)
+            setLocationProof('')
             setMessage('')
           }}
         >
@@ -190,6 +191,7 @@ export function ConnectedCustomerAddresses({
                     disabled={busy}
                     onClick={() => {
                       setValue(address)
+                      setLocationProof('')
                       setMessage('')
                     }}
                   >
@@ -221,24 +223,27 @@ export function ConnectedCustomerAddresses({
           </h2>
           <fieldset disabled={busy} className={moreStyles.form}>
             <div className={styles.fields}>
-              {fields.map(([name, label, max, required]) => (
-                <div key={name} className={moreStyles.field}>
-                  <Label htmlFor={`address-${name}`}>
-                    {label}
-                    {required ? ' *' : ''}
-                  </Label>
-                  <Input
-                    id={`address-${name}`}
-                    required={required}
-                    maxLength={max}
-                    value={value[name] ?? ''}
-                    onChange={(event) =>
-                      setValue((current) => ({ ...current, [name]: event.target.value }))
-                    }
-                  />
-                </div>
-              ))}
+              <div className={moreStyles.field}>
+                <Label htmlFor="address-label">Nombre de la dirección *</Label>
+                <Input id="address-label" required maxLength={80} value={value.label}
+                  onChange={(event) => setValue((current) => ({ ...current, label: event.target.value }))} />
+              </div>
             </div>
+            <ArgentineAddressFields
+                value={{ street: value.street, number: value.number, city: value.city, province: value.province }}
+                onChange={(location) => setValue((current) => ({ ...current, ...location }))}
+                onProofChange={setLocationProof}
+                labels={{ street: 'Calle *', number: 'Número *', city: 'Ciudad *', province: 'Provincia *' }}
+                idPrefix="address-location"
+                revisionKey={value.id || 'new'}
+                groupClassName={styles.fields}
+                fieldClassName={moreStyles.field}
+                disabled={busy}
+                after={{
+                  number: <>{fields.filter(([name]) => name === 'floor' || name === 'apartment').map(([name, label, max]) => <div key={name} className={moreStyles.field}><Label htmlFor={`address-${name}`}>{label}</Label><Input id={`address-${name}`} maxLength={max} value={value[name] ?? ''} onChange={(event) => setValue((current) => ({ ...current, [name]: event.target.value }))} /></div>)}</>,
+                  province: <>{fields.filter(([name]) => name === 'postalCode' || name === 'reference').map(([name, label, max]) => <div key={name} className={moreStyles.field}><Label htmlFor={`address-${name}`}>{label}</Label><Input id={`address-${name}`} maxLength={max} value={value[name] ?? ''} onChange={(event) => setValue((current) => ({ ...current, [name]: event.target.value }))} /></div>)}</>
+                }}
+            />
             <div className={moreStyles.field}>
               <Label htmlFor="address-property">Tipo de propiedad</Label>
               <select

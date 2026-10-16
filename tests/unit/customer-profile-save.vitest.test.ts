@@ -7,12 +7,14 @@ vi.mock('@/lib/security/rate-limit', () => ({ enforceRateLimit: vi.fn() }))
 vi.mock('@/lib/customer-assets/service', () => ({ writeCustomerAsset: mocks.write }))
 vi.mock('next/navigation', () => ({ redirect: (path: string) => { throw new Error(`REDIRECT:${path}`) } }))
 import { completeProfileAction } from '../../app/(auth)/completar-perfil/actions'
+import { issueLocationProof } from '@/lib/location/proof'
 const profile = { id: 'profile-id', first_name: 'Ana', last_name: 'Pérez', phone: '+541112345678', version: 3, notification_preference: 'email' }
 const address = { id: 'address-id', label: 'Casa', street: 'Corrientes', number: '1234', city: 'Buenos Aires', province: 'Buenos Aires', property_type: 'apartment', version: 2 }
 const session = { kind: 'customer', verified: true, customer: { id: 'customer-id' }, profile, address }
 const authority = { profileId: profile.id, customerId: 'customer-id', client: {}, role: 'customer' }
 const initial = { status: 'idle' as const, email: '', message: '' }
-beforeEach(() => { vi.resetAllMocks(); mocks.role.mockResolvedValue(authority); mocks.write.mockResolvedValue({ saved: true }) })
+const proofSecret = 'customer-profile-location-proof-secret'
+beforeEach(() => { vi.resetAllMocks(); process.env.LOCATION_PROOF_SECRET = proofSecret; mocks.role.mockResolvedValue(authority); mocks.write.mockResolvedValue({ saved: true }) })
 describe('profile persistence through guarded versioned assets', () => {
   it('rejects invalid input without writing', async () => {
     mocks.read.mockResolvedValue({ ...session, address: null })
@@ -45,6 +47,7 @@ describe('profile persistence through guarded versioned assets', () => {
   it('creates an address with session ownership and ignores submitted owner ids', async () => {
     mocks.read.mockResolvedValueOnce({ ...session, address: null }).mockResolvedValueOnce(session)
     const form = new FormData(); Object.entries(address).forEach(([key, value]) => form.set(key, String(value))); form.set('customer_id', 'someone-else')
+    form.set('location_proof', issueLocationProof({ street: address.street, number: address.number, city: address.city, province: address.province, provinceId: '06', cityId: '06014010', streetId: '0601401000001', formattedAddress: 'Corrientes 1234, Buenos Aires, Argentina', latitude: -34.6, longitude: -58.4, precision: 'rooftop', source: 'georef_google' }, proofSecret))
     await expect(completeProfileAction(initial, form)).rejects.toThrow('REDIRECT:/app')
     expect(mocks.write).toHaveBeenCalledWith(authority, 'address', expect.objectContaining({ street: 'Corrientes', isDefault: true }), null, null)
     expect(mocks.write.mock.calls[0][2]).not.toHaveProperty('customer_id')
