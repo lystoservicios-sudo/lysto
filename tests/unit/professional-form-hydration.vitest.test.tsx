@@ -1,7 +1,8 @@
-import { expect, it } from 'vitest'
+import { expect, it, vi } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { ConnectedProfessionalOnboarding } from '@/components/pro/connected-professional-onboarding'
 import type { OnboardingContext } from '@/lib/professional/onboarding-context'
+vi.mock('next/navigation', () => ({ useRouter: () => ({ replace: vi.fn() }) }))
 
 it('keeps a server-rendered draft disabled until event handlers can preserve edits', () => {
   const initial: OnboardingContext = {

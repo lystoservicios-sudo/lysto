@@ -7,13 +7,14 @@ vi.mock('next/navigation', () => ({ useRouter: () => ({ replace: mocks.replace, 
 vi.mock('@/lib/http/private-client', () => ({ privateRequest: mocks.request, requestError: String }))
 afterEach(() => { cleanup(); mocks.request.mockReset(); mocks.replace.mockReset(); mocks.refresh.mockReset() })
 
-it('accepts an invitation by setting an 8–12 character password without another button', async () => {
+it('keeps setting an 8–12 character password only in explicit legacy invitation compatibility', async () => {
   const token = 'a'.repeat(43)
   mocks.request.mockResolvedValue({ professionalId: '96000000-0000-4000-8000-000000000001' })
   render(<InvitationEntry token={token} />)
+  fireEvent.click(screen.getByRole('button', { name: 'Tengo una invitación anterior sin clave provisoria' }))
   await waitFor(() => expect(screen.getByRole('button', { name: 'Continuar' }).hasAttribute('disabled')).toBe(false))
   expect(screen.getByRole('heading', { name: 'Creá tu contraseña' })).toBeTruthy()
-  expect(screen.getByText(/Invitación profesional/)).toBeTruthy()
+  expect(screen.getByText(/Invitación anterior/)).toBeTruthy()
   const password = screen.getByLabelText('Contraseña') as HTMLInputElement
   expect(password.minLength).toBe(8)
   expect(password.maxLength).toBe(12)
@@ -31,6 +32,7 @@ it('lets an older invitation use a password that was already created', async () 
   const token = 'b'.repeat(43)
   mocks.request.mockResolvedValue({ professionalId: '96000000-0000-4000-8000-000000000001' })
   render(<InvitationEntry token={token} />)
+  fireEvent.click(screen.getByRole('button', { name: 'Tengo una invitación anterior sin clave provisoria' }))
   await waitFor(() => expect(screen.getByRole('button', { name: 'Continuar' }).hasAttribute('disabled')).toBe(false))
   fireEvent.click(screen.getByLabelText('Ya había creado una contraseña con una invitación anterior'))
   const password = screen.getByLabelText('Contraseña') as HTMLInputElement

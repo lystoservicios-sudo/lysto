@@ -26,11 +26,25 @@ export async function professionalCatalog(client: Session['client']) {
     zones: z.array(catalogSchema).parse(zones.data)
   }
 }
-export async function ownOnboardingContext() {
+type RegistrationContext = Awaited<ReturnType<typeof readProfessionalReview>> & {
+  catalog: Awaited<ReturnType<typeof professionalCatalog>>
+  legal: Awaited<ReturnType<typeof getRegistrationPolicy>>
+  canChangePassword?: boolean
+}
+
+export async function ownOnboardingContext(): Promise<RegistrationContext> {
   const client = await onboardingIdentity()
   const review = await readProfessionalReview(client)
+  let canChangePassword = false
+  try {
+    const permission = await client.rpc('professional_password_change_ready')
+    canChangePassword = !permission.error && permission.data === true
+  } catch {
+    // An optional account action must never be authorized from an unavailable check.
+  }
   return {
     ...review,
+    canChangePassword,
     catalog: await professionalCatalog(client),
     legal: await getRegistrationPolicy()
   }

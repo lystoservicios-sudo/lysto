@@ -35,6 +35,12 @@ describe('staff session recovery keeps the correct login surface', () => {
     const page = await StaffLoginPage({ searchParams: Promise.resolve({ next }) })
     expect(page.props.children.props).toMatchObject({ staff: true, next })
   })
+  it.each(['/pro/onboarding', `/pro/onboarding/${'a'.repeat(43)}`])('uses focused invitation access only for %s', async next => {
+    const page = await StaffLoginPage({ searchParams: Promise.resolve({ next }) })
+    expect(page.type).toBe('main')
+    expect(page.props.children.props).toMatchObject({ token: next === '/pro/onboarding' ? undefined : 'a'.repeat(43) })
+    expect(page.props.children.type.name).toBe('InvitationEntry')
+  })
   it.each(['https://attacker.test', '//attacker.test', '/app', '/admin/../../app'])('does not carry an unsafe or customer next into the staff flow: %s', async next => {
     const page = await StaffLoginPage({ searchParams: Promise.resolve({ next }) })
     const actual = page.props.children.props.next

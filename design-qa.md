@@ -172,3 +172,54 @@ No se conectaron nuevas API, envíos de emails/WhatsApp, liquidaciones, devoluci
 final result: passed
 
 Resultado aprobado para el alcance de adaptación visual y comportamiento demostrativo. El aviso de lint global preexistente y las integraciones pendientes están documentados; no se presenta esta entrega como operación real de pagos, envíos o asignaciones.
+
+---
+
+# Alta del técnico — 2026-10-16
+
+## Alcance y fuentes
+
+Implementación del registro conectado, no del rediseño administrativo histórico documentado arriba. Las tres láminas aprobadas corresponden a una sola dirección visual:
+
+- `C:/Users/quime/.codex/generated_images/01a113b5-c26c-7343-bd9a-4e894c9a32af/exec-060408ec-bbe6-418f-b907-b48af5d09bcf.png` — acceso y datos/oficio; 1451 × 1084 px.
+- `C:/Users/quime/.codex/generated_images/01a113b5-c26c-7343-bd9a-4e894c9a32af/exec-769f0a85-3fae-4ef3-b8c8-dfa842802fca.png` — cobertura, horarios, documentos; 1451 × 1084 px.
+- `C:/Users/quime/.codex/generated_images/01a113b5-c26c-7343-bd9a-4e894c9a32af/exec-6493c235-29ef-4670-9a6f-acf092a440a1.png` — envío, cobros y estados; 1031 × 1525 px.
+
+Componentes reales comprobados en navegador integrado de Codex, con transporte local descartable y datos ficticios. Ninguna de las imágenes personales/documentos de las maquetas se convirtió en dato predeterminado del producto. El avatar AP y documentos genéricos del harness son fixtures locales, no recursos productivos. El aire de la especialidad reutiliza el recurso existente del producto.
+
+## Capturas y normalización
+
+Directorio: `C:/Users/quime/.codex/worktrees/customer-request-checkout/Lysto/output/professional-registration-qa/screenshots/`.
+
+- Comparación conjunta fuente/implementación: `comparison-personal.png`, `comparison-review.png`, `comparison-hours-current.png`.
+- Detalle conjunto de etiquetas, inputs, iconos y franjas: `comparison-hours-focus.png`.
+- Evidencia de estados: `access-mobile.png`, `review-mobile.png`, `linking-current.png`, `reviewed-mobile.png`, `corrections-mobile.png`, `approved_pending-mobile.png`, `ready-mobile.png`, `suspended-mobile.png`, `inactive-mobile.png`, `missing_policy-mobile.png`, `missing_legal-mobile.png`, `account_error-mobile.png`, `account_test-mobile.png`, `empty-docs-mobile.png`.
+- Responsive: `access-320.png`, `docs-320.png`, `review-320.png`, y equivalentes de 768/1280 px.
+
+Viewport principal CSS 390 × 844, densidad 1. Capturas producidas por el navegador de 375–390 px de ancho útil según scrollbar; páginas completas de 844–1035 px o más según contenido. La primera pasada de horarios/resumen contenía diferente cantidad de datos y fue sólo orientativa: no se juzgó densidad usando esas alturas comprimidas. En `comparison-hours-current.png` se recortó el frame fuente (405 × 904), se normalizaron ambos anchos útiles a 390 y se preservó la proporción/altura de cada documento, sin estirar el contenido para hacerlo caber. Horarios finales: lunes con 09–13 y 14–18 y cuatro días elegidos para copiar, igual a la lámina. La captura real está en modo edición desde el resumen, por eso el CTA dice «Volver a revisión».
+
+## Superficies de fidelidad
+
+- **Tipografía:** misma pila Inter/system del producto; jerarquía de título 25 px, cuerpo 14 px, ayudas 12 px, sin titulares de landing. El harness no descarga fuentes externas; se comprobó el fallback. Variaciones ópticas de la imagen generada se consideran P3, no un cambio de sistema tipográfico.
+- **Espaciado y layout:** superficie blanca continua, cabecera compacta, siete segmentos, columnas de datos, divisores y CTA de 48 px; ancho máximo 760 px. Se conservaron controles nativos y espacio táctil. La versión operativa muestra también sábados/domingos, resumen de datos reales, correo de invitación y actualización manual: puede requerir más scroll que la maqueta resumida, sin esconder controles mediante overflow.
+- **Colores:** azul `#075cff`, tinta `#0d1830`, secundarios `#5d6c84`, fondos `#f0f5fd` y líneas `#e1e7f0`. Verde sólo para confirmaciones comprobadas; modo MP test usa aviso neutro y no habilita trabajos.
+- **Imágenes/iconos:** iconos pequeños de la biblioteca existente; aire existente de Lysto; foto real sólo desde avatar guardado. No hay retratos/documentos inventados instalados. «Mercado Pago» es un rótulo de proveedor neutro, no una imitación de su logo; reemplazo por asset oficial sería pulido opcional.
+- **Contenido:** siete pasos, requisitos de política real, privacidad de documentos, envío y revisión separados de habilitación. No hay datos comerciales ficticios, plazos de aprobación inventados ni guardado anunciado antes de respuesta. Vigencia revisada por Operaciones según el contrato real, no un campo de fecha sin persistencia.
+
+## Historial de hallazgos y correcciones
+
+1. **P1, actualización tardía:** podía reemplazar una edición nueva. Corregido con revisión de edición y tickets de lectura; el guardado propio no cuenta como edición concurrente. Regresiones de lectura diferida, guardado posterior y cambio de estado correctas; navegación real de cobertura a horarios queda habilitada tras guardar.
+2. **P2, estados/cobros:** cuenta test podía parecer completa y fallo OAuth válido terminaba en JSON. Corregidos tono y estado test, retorno firmado de fallo/cancelación, relectura real y reintento. Verificados `account_test-mobile.png`, fallo local de autorizar y recuperación hasta botón nuevamente habilitado.
+3. **P2, adjuntos/reentrada:** archivos sólo seleccionados podían perderse al continuar/salir. Ahora bloquea esas salidas, explica cómo guardar/quitar y conserva el resto del borrador. Selección, bloqueo, subida/finalización y posterior desbloqueo comprobados en navegador.
+4. **P2, estado restringido/pendientes:** se agregó vista server auténtica limitada para suspensión/inactividad; foto pendiente puede completarse sin desbloquear edición del expediente. Ayuda documental apunta a `/contacto`, disponible aun sin elegibilidad.
+5. **P0, documentos vacíos:** abrir el paso sin documento/preview causaba excepción por comparar dos IDs ausentes. Reproducido en navegador y en test RED. Guard explícito corregido; test verde y recaptura final `empty-docs-mobile.png` en 390 px más `docs-320.png`, `docs-768.png`, `docs-1280.png` finales con tres subidas utilizables. Captura de eventos posterior: ninguna excepción nueva.
+
+## Interacciones y accesibilidad comprobadas
+
+Cobertura múltiple, búsqueda, movilidad, copia de horarios, guardado y recuperación parcial de domicilio, subida por el cliente real/Storage SDK contra transporte local, enlace privado temporal, resumen/editar, envío, conexión fallida y reintento. Foco de encabezado al cambiar paso y controles etiquetados. Movimiento reducido emulado y comprobado como `animation: none`, luego restablecido. Matriz de seis pantallas en 320, 768 y 1280 px sin desbordamiento horizontal; trece estados adicionales en 390 px. No se usaron navegadores personales.
+
+## Resultado y límites
+
+Sin hallazgos P0/P1/P2 abiertos para esta entrega. P3 opcionales: asset oficial de marca de Mercado Pago y mayor síntesis de ayudas en vistas largas. La verificación de este documento es visual/interactiva: no afirma un OAuth ni una escritura de expediente con identidad real en producción. La evidencia y límites de backend están en `docs/technician-registration-verification.md`.
+
+final result: passed

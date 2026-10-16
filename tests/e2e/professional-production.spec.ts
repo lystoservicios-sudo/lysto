@@ -46,9 +46,10 @@ test('an invalid Flow3 invitation cannot claim or convert a customer identity', 
     // endpoint is not a substitute for its canonical token/recipient denial.
     const landing = await page.goto(`/pro/onboarding/${token}`)
     expect(landing?.status()).toBe(200)
-    await expect(page.getByRole('heading', { name: 'Creá tu contraseña', exact: true })).toBeVisible()
-    await expect(page.getByLabel('Contraseña', { exact: true })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Continuar', exact: true })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Ingresá para comenzar', exact: true })).toBeVisible()
+    await expect(page.getByLabel('Correo electrónico', { exact: true })).toBeVisible()
+    await expect(page.getByLabel('Contraseña provisoria o actual', { exact: true })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Ingresar y continuar', exact: true })).toBeVisible()
     const headers = { Origin: new URL(page.url()).origin }
     const anonymous = await page.request.post('/api/professional/onboarding/accept', {
       headers, data: { token }

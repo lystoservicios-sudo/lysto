@@ -39,7 +39,7 @@ function MediaFilePreview({ file }: { file: File }) {
   return <div className="grid h-14 w-14 shrink-0 place-items-center rounded-xl bg-blue-50 text-blue-700"><Icon aria-hidden="true" className="h-5 w-5" /></div>
 }
 
-export function MediaUploader({ files, onFilesChange, maxFiles = 5, maxSizeMb = 10, target = { kind: 'request-photo' }, savedPhotos, onSavedPhotosChange, onBusyChange, customerId }: {
+export function MediaUploader({ files, onFilesChange, maxFiles = 5, maxSizeMb = 10, target = { kind: 'request-photo' }, savedPhotos, onSavedPhotosChange, onBusyChange, customerId, labels }: {
   files: readonly File[]
   onFilesChange: (files: File[]) => void
   maxFiles?: number
@@ -49,6 +49,7 @@ export function MediaUploader({ files, onFilesChange, maxFiles = 5, maxSizeMb = 
   onSavedPhotosChange?: (photos: SavedPhoto[]) => void
   onBusyChange?: (busy: boolean) => void
   customerId?: string
+  labels?: { title: string; description: string; add: string; save: string }
 }) {
   const inputId = useId()
   const [error, setError] = useState<string | null>(null)
@@ -128,8 +129,8 @@ export function MediaUploader({ files, onFilesChange, maxFiles = 5, maxSizeMb = 
     <section aria-labelledby={`${inputId}-title`} className="space-y-3">
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div>
-          <h3 id={`${inputId}-title`} className="font-black text-slate-950">Fotos</h3>
-          <p className="mt-1 text-sm leading-6 text-slate-600">Seleccioná las fotos y guardalas para adjuntarlas de forma privada.</p>
+          <h3 id={`${inputId}-title`} className="font-black text-slate-950">{labels?.title ?? 'Fotos'}</h3>
+          <p className="mt-1 text-sm leading-6 text-slate-600">{labels?.description ?? 'Seleccioná las fotos y guardalas para adjuntarlas de forma privada.'}</p>
         </div>
         <span className="text-xs font-semibold tabular-nums text-slate-500">{files.length} de {maxFiles}</span>
       </div>
@@ -143,12 +144,12 @@ export function MediaUploader({ files, onFilesChange, maxFiles = 5, maxSizeMb = 
         )}
       >
         <ImagePlus aria-hidden="true" className="h-6 w-6 text-blue-700" />
-        <span className="mt-2 text-sm font-bold text-slate-950">Agregar fotos</span>
+        <span className="mt-2 text-sm font-bold text-slate-950">{labels?.add ?? 'Agregar fotos'}</span>
         <span className="mt-1 text-xs text-slate-500">JPG, PNG o WebP · máximo {effectiveMaxMb} MB</span>
         <input
           id={inputId}
           type="file"
-          aria-label="Agregar fotos"
+          aria-label={labels?.add ?? 'Agregar fotos'}
           multiple
           accept="image/jpeg,image/png,image/webp"
           disabled={busy || files.length >= maxFiles}
@@ -196,7 +197,7 @@ export function MediaUploader({ files, onFilesChange, maxFiles = 5, maxSizeMb = 
           })}
         </ul>
       ) : null}
-      {pendingFiles.length ? <button type="button" disabled={busy || !target} onClick={() => void persist()} className="min-h-11 rounded-xl bg-blue-700 px-4 py-2 font-semibold text-white disabled:opacity-50">{busy ? 'Guardando y verificando…' : 'Guardar fotos'}</button> : null}
+      {pendingFiles.length ? <button type="button" disabled={busy || !target} onClick={() => void persist()} className="min-h-11 rounded-xl bg-blue-700 px-4 py-2 font-semibold text-white disabled:opacity-50">{busy ? 'Guardando y verificando…' : labels?.save ?? 'Guardar fotos'}</button> : null}
       {!target ? <p className="text-sm text-slate-600">El trabajo debe estar guardado para adjuntar fotos.</p> : null}
     </section>
   )
