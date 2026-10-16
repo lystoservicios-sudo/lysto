@@ -55,7 +55,20 @@ describe('professional production route contracts', () => {
       const source = read(file)
       expect(source).toContain('z.string().uuid().safeParse(id)')
       expect(source).toContain('notFound()')
-      expect(source).toContain('JobQuotePanel')
+      expect(source).toContain('ProfessionalJobWorkspace')
+      expect(source).not.toContain('JobQuotePanel')
+    }
+  })
+
+  it('preserves the customer and admin job panel boundaries', () => {
+    for (const file of [
+      'app/(customer)/app/trabajos/[id]/page.tsx',
+      'app/(customer)/app/solicitudes/[id]/page.tsx',
+      'app/(admin)/admin/trabajos/[id]/page.tsx',
+      'app/(admin)/admin/solicitudes/[id]/page.tsx'
+    ]) {
+      expect(read(file), file).toContain('JobQuotePanel')
+      expect(read(file), file).not.toContain('ProfessionalJobWorkspace')
     }
   })
 })

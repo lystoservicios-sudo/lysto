@@ -1,4 +1,46 @@
-# Acceso cliente Lysto — opción 3
+# Detalle técnico Lysto — Expediente compacto
+
+Fecha: 15 de octubre de 2026. Última revisión: detalle profesional y sus pasos; el informe anterior de acceso cliente se conserva al final.
+
+## Referencia, alcance y evidencia actual
+
+- Fuente visual aprobada: `C:/Users/quime/.codex/generated_images/01a113b5-c26c-7343-bd9a-4e894c9a32af/exec-ef07b4e0-c147-406e-98a1-fd0cdccb0a80.png` (1182 × 1330; tablero de ocho pantallas).
+- Implementación: componentes reales `ProfessionalJobWorkspace`, `JobCloseoutForm`, `MediaUploader` y `HomeScene`; navegador integrado de Codex. Harness descartable en `output/professional-job-qa/`, con transporte ficticio exclusivamente local y sin credenciales. El panel de pagos del harness es una sustitución local explícita; no es evidencia de un cobro real.
+- Evidencia en `output/professional-job-qa/screenshots/`: `detail-before.png`, `detail-final.png`, `equipment-top-final.png`, `diagnosis.png`, `extra-pending.png`, `report-final.png`, `report-after.png`, `report-summary-final.png`, `detail-320.png`, `detail-desktop.png` y `unavailable.png`.
+- Comparaciones conjuntas, referencia izquierda e implementación derecha: `comparison-detail.png` y `comparison-report-final.png`. Se recortaron las pantallas 1 (267 × 622) y 8 (260 × 509), conservando proporción y con relleno blanco, a regiones de 393 × 852. La captura móvil de la herramienta mide 378 × 819 para un viewport CSS 393 × 852; también se normalizó, sin estirar, a 393 × 852. No se presenta como cotejo de píxeles 1:1 ni se comparó el tablero completo con una sola pantalla.
+- Estados comparados: visita confirmada/pago aprobado y cierre enviado/pendiente de conformidad. Los textos, fechas, marca y fotos del ensayo son datos locales más extensos que los del concepto. No se inventan domicilios, horarios ni evidencias en el producto.
+
+## Hallazgos e iteraciones actuales
+
+1. **P2 resuelto — densidad y foco del detalle.** La primera captura tenía metadatos apilados verticalmente, descripción genérica redundante y un contorno de foco en todo el contenido. Se agruparon los metadatos con sus iconos, se eliminó la descripción, se recuperó la miniatura reutilizada del cliente y se reservó el foco visible para controles. `detail-final.png` y `comparison-detail.png` muestran fecha, domicilio, problema, equipo y acción principal sin el contorno accidental.
+2. **P2 resuelto — acciones y plantas.** El pie acompaña los márgenes de cada breakpoint; los botones de plantas son compactos y sólo aparecen cuando corresponde. Medidas reales: a 320 px no hay overflow horizontal y el CTA mide 48 px de alto; a 1280 px el contenido está centrado a 760 px y no desborda. El desplazamiento vertical sigue disponible detrás del pie, con espacio reservado para llegar al último contenido.
+3. **P2 resuelto — resumen posterior al cierre.** La primera revisión mostraba todo el informe y separaciones excesivas entre título y texto. Ahora la primera vista reproduce el resumen por etapas y la conformidad pendiente; «Ver informe» abre diagnóstico, trabajo, resultado, repuestos, mantenimiento y fotos. No se fabrica una hora de finalización del trabajo: se muestra «Resultado registrado» cuando sólo consta el informe. `comparison-report-final.png` verifica el cambio frente a la fuente; `report-after.png` verifica la compactación del informe expandido.
+
+## Superficies obligatorias
+
+- **Tipografía:** familia/fallback del producto, títulos de 24 px (22 a 320), texto de 14 y navegación de 11. Jerarquía consistente con el cliente; etiquetas y contenido extensos se ajustan sin cortar controles.
+- **Espaciado:** superficies blancas, separadores finos, márgenes de 16/24/32 según ancho, controles principales de 48 px y pie estable. Las comparaciones conjuntas permiten leer las regiones críticas —encabezado, contenido y pie— sin otra ampliación artificial.
+- **Color:** azul `#075cff`, tinta `#0d1830`, secundario `#5d6c84`, hielo `#f0f5fd`, líneas `#e1e7f0`; estados de aprobación y espera diferenciados con texto, no sólo color. Correspondencia visual y con los tokens existentes, no una medición colorimétrica del mock rasterizado.
+- **Imágenes:** miniatura existente del cliente, visor Three.js real reutilizado de Hogar y fotos privadas reales cuando existen. La ilustración fallback se identifica como orientativa. Sin hogar configurado se informa la ausencia, sin representar un ambiente ficticio como guardado. Las fotos de ensayo no son evidencia de servicios reales.
+- **Contenido y controles:** domicilio contratado, falla y equipo asignado; progreso manual, espera de aprobación, pago separado de autorización de adicionales y cierre pendiente del cliente. Sin GPS, reprogramación, confirmación del técnico por el cliente ni acciones decorativas.
+- **Accesibilidad y movimiento:** controles etiquetados, foco sin cambio de medidas y navegación retirada durante formularios enfocados. La emulación `prefers-reduced-motion: reduce` verificó animación `none` y transición `0s`; se retiró al terminar. El visor también dispone de controles y ficha textual.
+
+## Recorrido comprobado y límites
+
+- Navegador integrado: avance manual en camino/llegada, selección de equipo, cambio de planta una por vez, ficha preservando la ubicación guardada, enfoque del equipo y 3D real.
+- Formulario real de diagnóstico: texto, selección/guardado verificado de foto local, envío y espera inmutable. Formulario real de cierre: trabajo, foto verificada, envío, informe y conformidad pendiente.
+- Adicional aceptado aún sin pagar, ausencia de acción de partida con pago pendiente, pantalla de error sin datos del cliente, navegación y retorno al comienzo de la nueva vista. Consola: sin errores durante los recorridos inspeccionados.
+- No se probaron cobros ni se crearon servicios/clientes de prueba en producción. El lector nuevo se verificó en PostgreSQL real por permisos, aislamiento y rechazo sin identidad; no hay trabajos asignados reales para una prueba positiva autenticada. El pgTAP con fixtures queda preparado para CI, no se ejecutó en producción ni se usó Docker.
+
+No quedan hallazgos P0/P1/P2 accionables en el alcance visual revisado. Como P3 opcional, se puede separar la galería final en una vista dedicada; actualmente se consulta dentro del informe completo.
+
+**Checklist:** referencia y capturas conjuntas revisadas; hallazgos corregidos y recapturados; recorridos principales y responsive comprobados; datos reales protegidos; sin publicación implícita.
+
+final result: passed
+
+---
+
+## Histórico conservado: acceso cliente Lysto — opción 3
 
 Fecha: 15 de octubre de 2026. Implementación sobre el sistema existente; sin publicación ni cambios de datos en producción.
 

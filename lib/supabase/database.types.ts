@@ -4819,6 +4819,10 @@ export type Database = {
         Args: { p_id: string }
         Returns: Json
       }
+      read_professional_job_context: {
+        Args: { p_job_id: string }
+        Returns: Json
+      }
       read_professional_onboarding: { Args: never; Returns: Json }
       record_policy_acceptance: {
         Args: {
