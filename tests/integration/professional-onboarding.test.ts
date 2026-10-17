@@ -7,6 +7,7 @@ import sharp from 'sharp'
 import { chromium, type Page } from '@playwright/test'
 import { createFixtureAccounts, type AccountName, type FixtureAccount } from './fixtures'
 import { fixtureCookieHeader, startTestApp } from './http'
+import { fixtureLocation, fixtureLocationProof, selectFixtureLocation } from './location-fixture'
 import { clearOwnedProfessionalOnboardingOutbox } from './professional-onboarding-cleanup'
 import { assertTestEnvironment, readTestIdentity } from '../../scripts/lib/test-environment.mjs'
 
@@ -449,7 +450,7 @@ describe('professional invitation and review lifecycle', () => {
     expect(/<h1[^>]*>Ingresá para comenzar<\/h1>/.test(html)).toBe(true)
     expect(html.includes('Correo electrónico')).toBe(true)
     expect(html.includes('Contraseña provisoria o actual')).toBe(true)
-    expect(html.includes('autocomplete="current-password"')).toBe(true)
+    expect(/<input\b[^>]*\bautocomplete="current-password"[^>]*>/i.test(html)).toBe(true)
     expect(html.includes('Creá tu contraseña')).toBe(false)
     expect(/<button[^>]*type="submit"[^>]*>Ingresar y continuar<\/button>/.test(html)).toBe(true)
   }, 120000)
@@ -627,8 +628,7 @@ describe('professional invitation and review lifecycle', () => {
       await page.goto(app!.baseURL + '/pro/onboarding')
       await page.getByRole('heading', { name: 'Tus datos', exact: true }).waitFor()
       await page.locator('[role="progressbar"][aria-valuenow="1"]').waitFor()
-      await page.getByRole('textbox', { name: 'Dirección', exact: true })
-        .fill('Dirección de navegador 123, Buenos Aires')
+      await selectFixtureLocation(page, { full: true })
       await page.getByRole('button', { name: 'Guardar y continuar', exact: true }).click()
       await page.locator('[role="progressbar"][aria-valuenow="2"]').waitFor()
       await page
@@ -664,7 +664,7 @@ describe('professional invitation and review lifecycle', () => {
     })
     const persisted = await (await request('/api/professional/onboarding', 'applicant')).json()
     expect(persisted.bio).toBe('Borrador profesional persistido desde el navegador T11')
-    expect(persisted.address).toBe('Dirección de navegador 123, Buenos Aires')
+    expect(persisted.address).toBe(fixtureLocation.formattedAddress)
   }, 120000)
   it('paginates actual invitations and professionals and keeps administrative dossiers private', async () => {
     expect((await request('/api/admin/professionals', 'quality')).status).toBe(403)
@@ -783,10 +783,10 @@ describe('professional invitation and review lifecycle', () => {
   it('saves a verified avatar and owned address required by the Flow3 dossier', async () => {
     const before = await (await request('/api/professional/onboarding', 'applicant')).json()
     const address = await request('/api/professional/onboarding/address', 'applicant', 'POST', {
-      address: 'Dirección sintética 123, Buenos Aires', expectedVersion: before.version
+      address: fixtureLocation.formattedAddress, locationProof: fixtureLocationProof(), expectedVersion: before.version
     })
     expect(address.status).toBe(200)
-    expect((await address.json()).address).toBe('Dirección sintética 123, Buenos Aires')
+    expect((await address.json()).address).toBe(fixtureLocation.formattedAddress)
     const bytes = await sharp({
       create: { width: 24, height: 24, channels: 3, background: '#456789' }
     }).png().toBuffer()

@@ -27,7 +27,7 @@ import {
   HOME_KIND_OPTIONS,
   ROOM_CATALOG,
   addHomeEquipmentSchema,
-  createHomeSchema,
+  createHomeMutationSchema,
   saveHomeSchema,
   type CustomerHome,
   type CustomerHomesSnapshot
@@ -223,10 +223,19 @@ function CustomerHogarScreen({
     const operation = pendingRef.current
     if (!operation) return
     if (operation.kind === 'create-home') {
+      let input = operation.input
+      if (pendingUncertain.current && input.newAddress?.locationProof) {
+        const address = input.newAddress
+        const renewed = await assetRequest<{ proof: string }>('/api/location/renew', 'POST', {
+          proof: address.locationProof, street: address.street, number: address.number,
+          city: address.city, province: address.province
+        })
+        input = { ...input, newAddress: { ...address, locationProof: renewed.proof } }
+      }
       const result = await assetRequest<{ home: CustomerHome; address?: CustomerAssetAddress }>(
         '/api/customer/homes',
         'POST',
-        operation.input
+        input
       )
       if (result.address)
         setData((current) => ({
@@ -492,7 +501,7 @@ function CustomerHogarScreen({
             const floors = value.suggested
               ? createHomePreset(value.kind, value.features)
               : [{ id: uuid(), name: 'Planta baja', order: 0, rooms: [] }]
-            const parsed = createHomeSchema.safeParse({
+            const parsed = createHomeMutationSchema.safeParse({
               name: value.name,
               addressId: newAddress ? null : addressId,
               ...(newAddress ? { newAddress } : {}),

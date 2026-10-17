@@ -7,6 +7,7 @@ import { combineChunks, stringFromBase64URL } from '@supabase/ssr'
 import type { Database } from '../../lib/supabase/database.types'
 import { assertTestEnvironment, readTestIdentity } from '../../scripts/lib/test-environment.mjs'
 import { startTestApp } from './http'
+import { fixtureLocation, fixtureLocationProof } from './location-fixture'
 
 function decodeHtml(value: string) { return value.replace(/&quot;/g,'"').replace(/&#x27;|&#39;/g,"'").replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&') }
 function attrs(tag: string) { return Object.fromEntries([...tag.matchAll(/([^\s=<>]+)="([^"]*)"/g)].map(match => [match[1],decodeHtml(match[2])])) }
@@ -58,14 +59,15 @@ describe('customer lifecycle with real Auth, email delivery and HTTP cookies', (
     expect(blocked.status).toBe(307)
     expect(new URL(blocked.headers.get('location')!, app!.baseURL).pathname).toBe('/completar-perfil')
     const completed = await submit('/completar-perfil?next=%2Fapp', {
-      street: 'Calle de Prueba', number: '123', city: 'Buenos Aires', province: 'Buenos Aires', property_type: 'house'
+      street: fixtureLocation.street, number: fixtureLocation.number, city: fixtureLocation.city, province: fixtureLocation.province,
+      location_proof: fixtureLocationProof(), property_type: 'house'
     })
     expect(completed.status).toBe(303)
     expect(new URL(completed.headers.get('location')!, app!.baseURL).pathname).toBe('/app')
     expect((await database.query(
       'select a.street,a.number,a.property_type from public.customer_addresses a join public.customer_profiles cp on cp.id=a.customer_id join public.profiles p on p.id=cp.profile_id where p.auth_user_id=$1 and a.archived_at is null',
       [authId]
-    )).rows).toEqual([expect.objectContaining({ street: 'Calle de Prueba', number: '123', property_type: 'house' })])
+    )).rows).toEqual([expect.objectContaining({ street: fixtureLocation.street, number: fixtureLocation.number, property_type: 'house' })])
   }
   async function mailbox(emailAddress: string) {
     const response = await fetch(`${mailOrigin}/api/v1/search?query=${encodeURIComponent(`to:${emailAddress}`)}`,{redirect:'error',signal:AbortSignal.timeout(10_000)})

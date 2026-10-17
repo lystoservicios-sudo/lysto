@@ -11,6 +11,7 @@ export function createTestServerEnvironment(env, cwd = process.cwd()) {
   const isolated = { ...env }
   for (const key of Object.keys(isolated)) if (key.startsWith('MERCADOPAGO_')) delete isolated[key]
   delete isolated.GOOGLE_MAPS_SERVER_API_KEY
+  delete isolated.LOCATION_PROOF_SECRET
   delete isolated.RESEND_API_KEY
   delete isolated.NOTIFICATIONS_EMAIL_FROM
   delete isolated.OUTBOX_WORKER_SECRET

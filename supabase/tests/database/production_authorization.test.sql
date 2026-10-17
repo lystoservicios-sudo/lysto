@@ -1,0 +1,14 @@
+begin;
+select plan(7);
+select ok(not (select prosecdef from pg_proc where oid='public.get_schedule_availability(uuid,date,date)'::regprocedure),'schedule read API is invoker');
+select ok(not (select prosecdef from pg_proc where oid='public.replace_professional_schedule_settings(uuid,jsonb,jsonb,integer)'::regprocedure),'schedule write API is invoker');
+select ok(not (select prosecdef from pg_proc where oid='public.request_job_reschedule(uuid,timestamptz,integer,integer,text,integer)'::regprocedure),'reschedule request API is invoker');
+select ok(not (select prosecdef from pg_proc where oid='public.respond_job_reschedule(uuid,text,integer)'::regprocedure),'reschedule response API is invoker');
+select ok(not has_function_privilege('anon','private.guarded_get_schedule_availability(uuid,date,date)','execute'),'anonymous role cannot execute private implementation');
+set local role authenticated;
+set local request.jwt.claims='{}';
+select throws_ok($$select public.get_schedule_availability('00000000-0000-4000-8000-000000000000',current_date,current_date)$$,'42501','schedule_read_forbidden','missing session cannot read a professional agenda');
+select throws_ok($$select public.get_schedule_availability(null,current_date,current_date)$$,'42501','schedule_read_forbidden','null professional never authorizes a global expiry/read');
+reset role;
+select * from finish();
+rollback;

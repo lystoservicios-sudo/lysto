@@ -4,6 +4,7 @@ import { randomUUID } from 'node:crypto'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { createFixtureAccounts, type AccountName } from './fixtures'
 import { fixtureCookieHeader, startTestApp } from './http'
+import { fixtureLocationProof, selectFixtureLocation } from './location-fixture'
 import { assertTestEnvironment, readTestIdentity } from '../../scripts/lib/test-environment.mjs'
 
 describe('persistent customer profiles, addresses and equipment', () => {
@@ -87,10 +88,17 @@ describe('persistent customer profiles, addresses and equipment', () => {
     isDefault: true
   }
   async function address() {
-    const response = await request('/api/customer/addresses', 'customerA', 'POST', addressInput)
+    const response = await request('/api/customer/addresses', 'customerA', 'POST', { ...addressInput, locationProof: fixtureLocationProof(addressInput) })
     expect(response.status).toBe(201)
     return (await response.json()).address as { id: string; version: number }
   }
+  it('rejects missing, forged and mismatched location proofs without writing an address', async () => {
+    const before = await (await request('/api/customer/addresses')).json()
+    for (const locationProof of ['', fixtureLocationProof(addressInput) + 'forged', fixtureLocationProof({ ...addressInput, number: '9999' })]) {
+      expect((await request('/api/customer/addresses', 'customerA', 'POST', { ...addressInput, locationProof })).status).toBe(400)
+    }
+    expect((await (await request('/api/customer/addresses')).json()).total).toBe(before.total)
+  })
   it('persists editable profile fields, retains Auth identity and rejects stale versions', async () => {
     const initial = await request('/api/customer/profile')
     expect(initial.status).toBe(200)
@@ -269,6 +277,7 @@ describe('persistent customer profiles, addresses and equipment', () => {
       id: saved.id,
       expectedVersion: saved.version,
       street: 'Nueva calle',
+      locationProof: fixtureLocationProof({ ...addressInput, street: 'Nueva calle' }),
       propertyType: 'office'
     })
     expect(edited.status).toBe(200)
@@ -423,14 +432,8 @@ describe('persistent customer profiles, addresses and equipment', () => {
         'Cliente navegador'
       )
       await page.goto(`${app!.baseURL}/app/direcciones`)
-      for (const [name, value] of [
-        ['Nombre de la dirección', 'Oficina navegador'],
-        ['Calle', 'San Martín'],
-        ['Número', '432'],
-        ['Ciudad', 'Buenos Aires'],
-        ['Provincia', 'Buenos Aires']
-      ])
-        await page.getByLabel(name, { exact: false }).fill(value)
+      await page.getByLabel('Nombre de la dirección', { exact: false }).fill('Oficina navegador')
+      await selectFixtureLocation(page, { starred: true })
       await page.getByLabel('Tipo de propiedad').selectOption('office')
       await page.getByRole('button', { name: 'Guardar dirección', exact: true }).click()
       await page.getByText('La dirección quedó guardada.', { exact: true }).waitFor()

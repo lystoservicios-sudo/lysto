@@ -84,6 +84,19 @@ describe('transactional scheduling capacity', () => {
     expect(results.filter((result) => result.error?.code === '40001')).toHaveLength(1)
   })
 
+  it('denies customer and suspended-professional agenda access without changing settings', async () => {
+    const professional = fixture.accounts.professionalApproved.entityId
+    const before = (await database.query('select schedule_settings_version from public.professional_profiles where id=$1', [professional])).rows[0]
+    for (const actor of [fixture.accounts.customerA, fixture.accounts.customerB, fixture.accounts.professionalSuspended]) {
+      const read = await actor.client.rpc('get_schedule_availability', { p_professional_id: professional, p_from: startsAt.slice(0, 10), p_to: startsAt.slice(0, 10) })
+      expect(read.error?.code).toBe('42501')
+      const write = await actor.client.rpc('replace_professional_schedule_settings', { p_professional_id: professional, p_windows: [], p_absences: [], p_expected_version: before.schedule_settings_version })
+      expect(write.error?.code).toBe('42501')
+    }
+    expect((await database.query('select schedule_settings_version from public.professional_profiles where id=$1', [professional])).rows[0]).toEqual(before)
+    expect((await fixture.accounts.professionalApproved.client.rpc('get_schedule_availability', { p_professional_id: professional, p_from: startsAt.slice(0, 10), p_to: startsAt.slice(0, 10) })).error).toBeNull()
+  })
+
   it('rejects a suspended professional before consuming capacity', async () => {
     const result = await fixture.accounts.operations.client.rpc('reserve_job_schedule', {
       p_job_id: jobIds[2],

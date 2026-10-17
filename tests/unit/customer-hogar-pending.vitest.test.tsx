@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { CustomerHogar } from '@/components/customer/hogar/customer-hogar'
+import { selectUnitAddress, withLocationProvider } from './location-provider-fixture'
 import { ClientAppShell } from '@/components/app-shell/client-app-shell'
 import type { CustomerHome, CustomerHomesSnapshot } from '@/lib/customer-homes/contracts'
 import { storePendingHomeOperation } from '@/lib/customer-homes/pending-operation'
@@ -96,10 +97,7 @@ async function beginHome() {
   render(<CustomerHogar initialData={empty()} customerId={customerId} />)
   click('Crear mi primer hogar')
   change('Nombre del hogar', 'Casa nueva')
-  change('Calle', 'Corrientes')
-  change('Número', '123')
-  change('Ciudad', 'Buenos Aires')
-  change('Provincia', 'Buenos Aires')
+  await selectUnitAddress()
   click('Crear hogar')
   await waitFor(() => expect(screen.getByRole('alert')).toBeTruthy())
 }
@@ -123,7 +121,7 @@ function createdHome(input: ReturnType<typeof submitted>) {
 beforeEach(() => {
   sessionStorage.clear()
   request = vi.fn().mockRejectedValue(new TypeError('Network response lost'))
-  vi.stubGlobal('fetch', request)
+  vi.stubGlobal('fetch', withLocationProvider(request))
 })
 afterEach(() => {
   cleanup()

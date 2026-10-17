@@ -50,8 +50,9 @@ test('Next dotenv files cannot reintroduce remote configuration', () => {
 test('quote integration cannot inherit a billable routing credential', () => {
   const fixture = setup()
   try {
-    const actual = environment.createTestServerEnvironment({ ...fixture.env, GOOGLE_MAPS_SERVER_API_KEY: 'billable-provider-secret' }, fixture.cwd)
+    const actual = environment.createTestServerEnvironment({ ...fixture.env, GOOGLE_MAPS_SERVER_API_KEY: 'billable-provider-secret', LOCATION_PROOF_SECRET: 'real-location-secret' }, fixture.cwd)
     assert.equal(actual.GOOGLE_MAPS_SERVER_API_KEY, undefined)
+    assert.equal(actual.LOCATION_PROOF_SECRET, undefined)
   } finally { fixture.cleanup() }
 })
 

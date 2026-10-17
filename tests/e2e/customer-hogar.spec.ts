@@ -7,6 +7,7 @@ import type { FixtureAccount } from './fixtures/accounts'
 import type { CustomerAssetAddress, CustomerAssetEquipment } from '@/lib/customer-assets/contracts'
 import type { CustomerHome, CustomerHomesSnapshot, HomeKind } from '@/lib/customer-homes/contracts'
 import { assertTestEnvironment, readTestIdentity } from '../../scripts/lib/test-environment.mjs'
+import { selectFixtureLocation } from '../integration/location-fixture'
 
 type CreatedAssets = { homeIds: string[]; addressIds: string[]; equipmentIds: string[] }
 const createdAssets = (): CreatedAssets => ({ homeIds: [], addressIds: [], equipmentIds: [] })
@@ -114,11 +115,8 @@ async function createHome(page: Page, created: CreatedAssets, options: { name: s
   await page.getByLabel('Distribución inicial').selectOption('empty')
   if (options.newAddress) {
     await page.getByRole('radio', { name: 'Crear una dirección', exact: true }).check()
-    await page.getByLabel('Calle', { exact: true }).fill('Calle Hogar QA')
-    await page.getByLabel('Número', { exact: true }).fill('456')
+    await selectFixtureLocation(page)
     await page.getByLabel('Piso de la dirección').fill('8')
-    await page.getByLabel('Ciudad', { exact: true }).fill('Buenos Aires')
-    await page.getByLabel('Provincia', { exact: true }).fill('Buenos Aires')
   } else {
     expect(options.addressId).toMatch(uuidPattern)
     await page.getByRole('radio', { name: 'Usar una dirección guardada', exact: true }).check()

@@ -151,6 +151,10 @@ export function HomeForm({
       setFormError('Elegí una dirección y un nombre para tu hogar.')
       return
     }
+    if (!flow.existing && addressMode === 'new' && !locationProof) {
+      setFormError('Elegí una dirección de las opciones del número para confirmar la ubicación.')
+      return
+    }
     await onSave(value, !flow.existing && addressMode === 'new' ? { ...candidate, ...(locationProof ? { locationProof } : {}) } : undefined)
   }
   const patch = (part: Partial<HomeConfig>) => onChange({ ...value, ...part })

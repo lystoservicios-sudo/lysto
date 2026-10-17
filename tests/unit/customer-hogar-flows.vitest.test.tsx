@@ -2,6 +2,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testi
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ClientAppShell } from '@/components/app-shell/client-app-shell'
 import { CustomerHogar } from '@/components/customer/hogar/customer-hogar'
+import { selectUnitAddress, withLocationProvider } from './location-provider-fixture'
 import type { HomeSceneProps } from '@/components/customer/hogar/home-scene'
 import type { CustomerAssetAddress, CustomerAssetEquipment } from '@/lib/customer-assets/contracts'
 import type { CustomerHome, CustomerHomesSnapshot, HomeFloor } from '@/lib/customer-homes/contracts'
@@ -59,9 +60,7 @@ function beginCreation(data: CustomerHomesSnapshot, kind = 'apartment') {
   change('Tipo de lugar', kind)
 }
 function chooseSavedAddress() { change('Dirección', ids.address) }
-function populateNewAddress() {
-  change('Calle', 'Corrientes'); change('Número', '456'); change('Ciudad', 'Buenos Aires'); change('Provincia', 'Buenos Aires')
-}
+const populateNewAddress = selectUnitAddress
 function placedData(): CustomerHomesSnapshot {
   const data = snapshot()
   data.homes[0].placements.push({ equipmentId: ids.air, roomId: ids.room, wall: 'north', offset: .5, height: 2 })
@@ -75,7 +74,7 @@ beforeEach(() => {
     if (path === '/api/customer/homes' && options.method === 'DELETE') return response({ archived: true })
     throw new Error(`Unexpected API request: ${options.method} ${path}`)
   })
-  vi.stubGlobal('fetch', request)
+  vi.stubGlobal('fetch', withLocationProvider(request))
 })
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); sceneBoundary.current = null })
 
@@ -102,7 +101,7 @@ describe('Hogar complete functional flows', () => {
       return response({ home: savedHome({ ...body, addressId: ids.newAddress }), address: { ...address, ...body.newAddress, id: ids.newAddress } })
     })
     beginCreation({ homes: [], addresses: [], equipment: [] }, 'ph')
-    populateNewAddress()
+    await populateNewAddress()
     change('Piso de la dirección', '8')
     change('Departamento / unidad', 'A')
     click('Crear hogar')
@@ -154,7 +153,7 @@ describe('Hogar complete functional flows', () => {
       return response({ home: savedHome({ ...body, addressId: ids.newAddress }), address: { ...address, ...body.newAddress, id: ids.newAddress } })
     })
     beginCreation({ homes: [], addresses: [], equipment: [] }, 'house')
-    populateNewAddress(); click('Crear hogar')
+    await populateNewAddress(); click('Crear hogar')
     await waitFor(() => expect(screen.getByRole('alert')).toBeTruthy())
     expect(screen.getByLabelText('Calle')).toHaveProperty('value', 'Corrientes')
     expect(screen.getByLabelText('Calle').matches(':disabled')).toBe(true)

@@ -34,4 +34,15 @@ describe('customer location entry points', () => {
     expect(screen.getByRole('combobox', { name: 'Calle' })).toBeTruthy()
     expect(screen.getByRole('combobox', { name: 'Número' })).toBeTruthy()
   })
+
+  it('explains an unconfirmed new home address before attempting persistence', () => {
+    const save = vi.fn()
+    const { container } = render(<HomeForm flow={{ type: 'home', value: { ...configuration(), name: 'Casa' }, key: 'key', existing: false }} addresses={[]} homes={[]} busy={false} locked={false} onChange={vi.fn()} onSave={save} onCancel={vi.fn()} />)
+    for (const [name, value] of [['Calle', 'Corrientes'], ['Número', '1234'], ['Ciudad', 'CABA'], ['Provincia', 'CABA']]) {
+      fireEvent.change(screen.getByRole('combobox', { name }), { target: { value } })
+    }
+    fireEvent.submit(container.querySelector('form')!)
+    expect(save).not.toHaveBeenCalled()
+    expect(screen.getByRole('alert').textContent).toContain('Elegí una dirección de las opciones')
+  })
 })

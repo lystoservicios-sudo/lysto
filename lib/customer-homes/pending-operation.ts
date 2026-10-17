@@ -1,10 +1,10 @@
 'use client'
 
 import { z } from 'zod'
-import { addHomeEquipmentSchema, createHomeSchema } from './contracts'
+import { addHomeEquipmentSchema, createHomeMutationSchema } from './contracts'
 
 const pendingOperationSchema = z.discriminatedUnion('kind', [
-  z.object({ kind: z.literal('create-home'), input: createHomeSchema }).strict(),
+  z.object({ kind: z.literal('create-home'), input: createHomeMutationSchema }).strict(),
   z.object({ kind: z.literal('add-equipment'), input: addHomeEquipmentSchema }).strict()
 ])
 export type PendingHomeOperation = z.infer<typeof pendingOperationSchema>
