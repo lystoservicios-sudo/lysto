@@ -7,7 +7,7 @@ import type { FixtureAccount } from './fixtures/accounts'
 import type { CustomerAssetAddress, CustomerAssetEquipment } from '@/lib/customer-assets/contracts'
 import type { CustomerHome, CustomerHomesSnapshot, HomeKind } from '@/lib/customer-homes/contracts'
 import { assertTestEnvironment, readTestIdentity } from '../../scripts/lib/test-environment.mjs'
-import { selectFixtureLocation } from '../integration/location-fixture'
+import { fixtureLocation, selectFixtureLocation } from '../integration/location-fixture'
 
 type CreatedAssets = { homeIds: string[]; addressIds: string[]; equipmentIds: string[] }
 const createdAssets = (): CreatedAssets => ({ homeIds: [], addressIds: [], equipmentIds: [] })
@@ -368,7 +368,7 @@ test.describe('authenticated customer Hogar with a disposable backend', () => {
       const original = await createHome(page, created, { name: 'Casa QA', kind: 'house', newAddress: true })
       expect(original.floors).toHaveLength(1)
       expect(original.floors[0].rooms).toHaveLength(0)
-      await expect(page.getByText('Calle Hogar QA 456 · Piso 8, Buenos Aires', { exact: true })).toBeVisible()
+      await expect(page.getByText(`${fixtureLocation.street} ${fixtureLocation.number} · Piso 8, ${fixtureLocation.city}`, { exact: true })).toBeVisible()
       await page.getByRole('button', { name: 'Configurar hogar', exact: true }).click()
       await page.getByLabel('Nombre del hogar').fill('Casa QA configurada')
       await page.getByLabel('Tiene balcón').check()
@@ -389,7 +389,10 @@ test.describe('authenticated customer Hogar with a disposable backend', () => {
       await page.reload()
       const persisted = await readHomes(page, customer)
       expect(persisted.homes.some(home => home.id === original.id)).toBe(false)
-      expect(persisted.addresses.some(address => address.id === original.addressId && !address.archivedAt)).toBe(true)
+      expect(persisted.addresses.find(address => address.id === original.addressId)).toMatchObject({
+        street: fixtureLocation.street, number: fixtureLocation.number, city: fixtureLocation.city,
+        province: fixtureLocation.province, floor: '8', archivedAt: null
+      })
       await expect(page.getByRole('button', { name: 'Crear mi primer hogar', exact: true })).toBeVisible()
     } finally { await cleanupCreated(customer, created) }
   })
