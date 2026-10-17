@@ -93,7 +93,21 @@ export function renderProfessionalTemporaryInvitation(
     subject,
     url,
     text: `${subject}\n\n${body}\n\nEmail: ${email}\nContraseña provisoria: ${temporaryPassword}\n\nIngresar y completar mi perfil: ${url}\n\nLa contraseña es provisoria. No la compartas.`,
-    html: emailShell(subject, `<h1 style="margin:0 0 12px;font-size:28px;line-height:1.2">${escapeHtml(subject)}</h1><p style="line-height:1.6;color:#334155">${escapeHtml(body)}</p><div style="border-radius:14px;background:#eff6ff;padding:18px"><p><strong>Email:</strong> ${escapeHtml(email)}</p><p><strong>Contraseña provisoria:</strong> ${escapeHtml(temporaryPassword)}</p></div><p>${button('Ingresar y completar mi perfil', url)}</p><p style="color:#64748b;font-size:13px">La contraseña es provisoria. No la compartas.</p>`)
+    html: emailShell({
+      origin,
+      family: 'professionals',
+      preheader: 'Tus datos de acceso para comenzar el alta profesional.',
+      eyebrow: 'Comunidad profesional',
+      title: subject,
+      intro: body,
+      content: detailPanel([
+        ['Email', email],
+        ['Contraseña provisoria', temporaryPassword]
+      ]),
+      primary: { label: 'Ingresar y completar mi perfil', href: url },
+      note: 'La contraseña es provisoria. No la compartas y cambiala al completar tu cuenta.',
+      reason: 'Recibís este correo porque Lysto te invitó a completar una cuenta profesional.'
+    })
   }
 }
 
@@ -112,15 +126,57 @@ function formatVisitInstant(value: string, timezone: string, kind: 'date' | 'tim
   return new Intl.DateTimeFormat('es-AR', options).format(new Date(value)).replace(',', '')
 }
 
-function emailShell(preheader: string, content: string) {
-  return `<div style="display:none;max-height:0;overflow:hidden;opacity:0">${escapeHtml(preheader)}</div><div style="margin:0;background:#f1f5f9;padding:24px 12px;font-family:Arial,sans-serif;color:#0f172a"><div style="margin:0 auto;max-width:600px;overflow:hidden;border:1px solid #dbeafe;border-radius:20px;background:#ffffff"><div style="background:#1d4ed8;padding:22px 28px;color:#ffffff;font-size:24px;font-weight:800">Lysto</div><div style="padding:28px">${content}</div></div></div>`
+type EmailFamily = 'visits' | 'requests' | 'payments' | 'security' | 'support' | 'professionals'
+
+const familyAsset: Record<EmailFamily, string> = {
+  visits: 'email-visits.jpg',
+  requests: 'email-requests.jpg',
+  payments: 'email-payments.jpg',
+  security: 'email-security.jpg',
+  support: 'email-support.jpg',
+  professionals: 'email-professionals.jpg'
 }
 
-function button(label: string, href: string, secondary = false) {
-  const colors = secondary
-    ? 'background:#ffffff;color:#1d4ed8;border:1px solid #93c5fd'
-    : 'background:#1d4ed8;color:#ffffff;border:1px solid #1d4ed8'
-  return `<a href="${escapeHtml(href)}" style="display:inline-block;margin:6px 6px 6px 0;padding:12px 16px;border-radius:12px;text-decoration:none;font-weight:700;${colors}">${escapeHtml(label)}</a>`
+function button(label: string, href: string) {
+  return `<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%"><tr><td style="border-radius:14px;background:#1d4ed8;text-align:center"><a href="${escapeHtml(href)}" style="display:block;padding:15px 22px;color:#ffffff;text-decoration:none;font-size:16px;font-weight:800;line-height:1.25">${escapeHtml(label)}</a></td></tr></table>`
+}
+
+function detailPanel(rows: Array<[string, string]>) {
+  return `<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="border-radius:16px;background:#eef5ed">${rows
+    .map(
+      ([label, value], index) =>
+        `<tr><td style="padding:${index === 0 ? '20px' : '16px 20px'};${index ? 'border-top:1px solid #d9e5d7;' : ''}"><div style="margin:0 0 4px;color:#5d687d;font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase">${escapeHtml(label)}</div><div style="color:#101e43;font-size:17px;font-weight:750;line-height:1.45">${escapeHtml(value)}</div></td></tr>`
+    )
+    .join('')}</table>`
+}
+
+function emailShell(input: {
+  origin: string
+  family: EmailFamily
+  preheader: string
+  eyebrow: string
+  title: string
+  intro: string
+  content?: string
+  primary: { label: string; href: string }
+  secondary?: Array<{ label: string; href: string }>
+  note?: string
+  reason: string
+}) {
+  const logo = new URL('/images/email/lysto-logo.png', input.origin).href
+  const illustration = new URL(`/images/email/${familyAsset[input.family]}`, input.origin).href
+  const secondary = input.secondary?.length
+    ? `<div style="padding-top:18px;text-align:center">${input.secondary
+        .map(
+          (action) =>
+            `<a href="${escapeHtml(action.href)}" style="display:inline-block;margin:4px 10px;color:#1554f0;font-size:14px;font-weight:750;text-decoration:underline;text-underline-offset:3px">${escapeHtml(action.label)}</a>`
+        )
+        .join('')}</div>`
+    : ''
+  const note = input.note
+    ? `<div style="margin-top:22px;padding:16px 18px;border-radius:14px;background:#f4f7f2;color:#426b50;font-size:13px;line-height:1.6">${escapeHtml(input.note)}</div>`
+    : ''
+  return `<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent">${escapeHtml(input.preheader)}</div><table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="width:100%;margin:0;background:#f7f7f2;font-family:Arial,'Helvetica Neue',sans-serif;color:#101e43"><tr><td align="center" style="padding:24px 12px"><table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="width:100%;max-width:640px;overflow:hidden;border:1px solid #e4e9e1;border-radius:22px;background:#fffefa"><tr><td style="padding:26px 34px 20px"><img src="${escapeHtml(logo)}" width="196" alt="Lysto" style="display:block;width:196px;max-width:52%;height:auto;border:0"></td></tr><tr><td style="padding:0 20px"><img src="${escapeHtml(illustration)}" width="600" alt="" role="presentation" style="display:block;width:100%;height:auto;border:0;border-radius:18px"></td></tr><tr><td style="padding:30px 34px 34px"><div style="margin:0 0 10px;color:#426b50;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase">${escapeHtml(input.eyebrow)}</div><h1 style="margin:0;color:#101e43;font-size:32px;line-height:1.12;letter-spacing:-.02em">${escapeHtml(input.title)}</h1><p style="margin:14px 0 24px;color:#5d687d;font-size:16px;line-height:1.65">${escapeHtml(input.intro)}</p>${input.content ? `<div style="margin-bottom:24px">${input.content}</div>` : ''}${button(input.primary.label, input.primary.href)}${secondary}${note}</td></tr><tr><td style="padding:22px 34px;border-top:1px solid #e4e9e1;background:#eef5ed;color:#5d687d;font-size:12px;line-height:1.6;text-align:center"><strong style="color:#426b50">Lysto cuida tu hogar.</strong><br>${escapeHtml(input.reason)}</td></tr></table></td></tr></table>`
 }
 
 /** The dispatcher supplies a database-derived context, never a caller's message. */
@@ -137,10 +193,28 @@ export function renderOutboxNotification(raw: unknown, baseUrl: string): Rendere
     const facts = `${date} · ${start}–${end}`
     const subject = 'Tu visita con Lysto está confirmada'
     const text = `${subject}\n\nServicio: ${context.serviceName}\nFecha y horario: ${facts}\nDirección: ${context.addressLabel}\nProfesional: ${context.professionalName}\n\nVer servicio: ${links.detail}\nCómo llegar: ${links.directions}\nSolicitar reprogramación: ${links.reschedule}\nContactar desde Lysto: ${links.contact}\n\nUna reprogramación sólo queda confirmada cuando Lysto muestra la nueva fecha.`
-    const html = emailShell(
-      `${context.serviceName}: ${facts}`,
-      `<h1 style="margin:0 0 10px;font-size:28px;line-height:1.2">${escapeHtml(subject)}</h1><p style="margin:0 0 22px;color:#475569">Tu profesional y el horario ya están confirmados.</p><div style="border-radius:16px;background:#eff6ff;padding:20px"><p style="margin:0 0 12px;font-size:20px;font-weight:800">${escapeHtml(facts)}</p><p style="margin:6px 0"><strong>Servicio:</strong> ${escapeHtml(context.serviceName)}</p><p style="margin:6px 0"><strong>Dirección:</strong> ${escapeHtml(context.addressLabel)}</p><p style="margin:6px 0"><strong>Profesional:</strong> ${escapeHtml(context.professionalName)}</p></div><div style="margin-top:20px">${button('Ver servicio', links.detail)}${button('Cómo llegar', links.directions, true)}${button('Solicitar reprogramación', links.reschedule, true)}${button('Contactar desde Lysto', links.contact, true)}</div><p style="margin:20px 0 0;color:#64748b;font-size:13px">Una reprogramación sólo queda confirmada cuando Lysto muestra la nueva fecha.</p>`
-    )
+    const html = emailShell({
+      origin,
+      family: 'visits',
+      preheader: `${context.serviceName}: ${facts}`,
+      eyebrow: 'Visita confirmada',
+      title: subject,
+      intro: 'Ya coordinamos el horario y el profesional para tu servicio.',
+      content: detailPanel([
+        ['Fecha y horario', facts],
+        ['Servicio', context.serviceName],
+        ['Tu profesional', context.professionalName],
+        ['Dirección del servicio', context.addressLabel]
+      ]),
+      primary: { label: 'Ver mi servicio', href: links.detail },
+      secondary: [
+        { label: 'Cómo llegar', href: links.directions },
+        { label: 'Necesito reprogramar', href: links.reschedule },
+        { label: 'Contactar desde Lysto', href: links.contact }
+      ],
+      note: 'Una reprogramación sólo queda confirmada cuando Lysto muestra la nueva fecha.',
+      reason: 'Recibís este correo porque tenés un servicio activo en Lysto.'
+    })
     return { version: 'transactional-v2', subject, text, html, url: links.detail }
   }
 
@@ -153,10 +227,17 @@ export function renderOutboxNotification(raw: unknown, baseUrl: string): Rendere
       version: 'transactional-v2',
       subject,
       text: `${subject}\n\n${body}\n\nCalificar servicio: ${links.review}`,
-      html: emailShell(
-        subject,
-        `<h1 style="margin:0 0 12px;font-size:28px;line-height:1.2">${escapeHtml(subject)}</h1><p style="margin:0 0 20px;line-height:1.6;color:#334155">${escapeHtml(body)}</p>${button('Calificar servicio', links.review)}`
-      ),
+      html: emailShell({
+        origin,
+        family: 'visits',
+        preheader: subject,
+        eyebrow: 'Tu experiencia',
+        title: subject,
+        intro: body,
+        primary: { label: 'Calificar servicio', href: links.review },
+        note: 'La calificación es opcional y no modifica el cierre ni el pago del servicio.',
+        reason: 'Recibís este correo porque finalizaste un servicio con Lysto.'
+      }),
       url: links.review
     }
   }
@@ -175,7 +256,16 @@ export function renderOutboxNotification(raw: unknown, baseUrl: string): Rendere
     return {
       version: 'transactional-v1', subject, url,
       text: `${body}\n\nTerminar de crear mi cuenta: ${url}`,
-      html: emailShell(subject, `<p>${escapeHtml(body)}</p><p>${button('Terminar de crear mi cuenta', url)}</p>`)
+      html: emailShell({
+        origin,
+        family: 'professionals',
+        preheader: subject,
+        eyebrow: 'Comunidad profesional',
+        title: subject,
+        intro: body,
+        primary: { label: 'Terminar de crear mi cuenta', href: url },
+        reason: 'Recibís este correo porque Lysto te invitó a crear una cuenta profesional.'
+      })
     }
   } else if (event === 'professional.application.submitted') {
     allow('operations')
@@ -250,11 +340,38 @@ export function renderOutboxNotification(raw: unknown, baseUrl: string): Rendere
           : '/admin/reclamos'
   }
   const url = new URL(path, origin).href
+  const family: EmailFamily = event.startsWith('professional.')
+    ? 'professionals'
+    : event.startsWith('payment.')
+      ? 'payments'
+      : event === 'support.opened'
+        ? 'support'
+        : event.startsWith('job.')
+          ? 'visits'
+          : 'requests'
+  const eyebrow = event.startsWith('professional.')
+    ? 'Cuenta profesional'
+    : event.startsWith('payment.')
+      ? 'Movimiento de pago'
+      : event === 'support.opened'
+        ? 'Acompañamiento Lysto'
+        : event.startsWith('job.')
+          ? 'Tu servicio'
+          : 'Tu solicitud'
   return {
     version: 'transactional-v1',
     subject,
     text: `${body}\n\n${url}`,
-    html: `<p>${escapeHtml(body)}</p><p><a href="${escapeHtml(url)}">Abrir Lysto</a></p>`,
+    html: emailShell({
+      origin,
+      family,
+      preheader: subject,
+      eyebrow,
+      title: subject,
+      intro: body,
+      primary: { label: 'Abrir Lysto', href: url },
+      reason: 'Recibís este correo porque hay una actualización en tu cuenta de Lysto.'
+    }),
     url
   }
 }

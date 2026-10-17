@@ -8,4 +8,16 @@ describe('Supabase authentication configuration', () => {
 
     expect(config).toMatch(/^minimum_password_length = 6$/m)
   })
+
+  it.each([
+    ['confirmation.html', 'email-security.jpg'],
+    ['recovery.html', 'email-security.jpg'],
+    ['email-change.html', 'email-security.jpg']
+  ])('uses the branded security email shell in %s', (file, illustration) => {
+    const template = readFileSync(join(process.cwd(), 'supabase', 'templates', file), 'utf8')
+    expect(template).toContain('{{ .SiteURL }}/images/email/lysto-logo.png')
+    expect(template).toContain(`{{ .SiteURL }}/images/email/${illustration}`)
+    expect(template).toContain('max-width:640px')
+    expect(template).toContain('role="presentation"')
+  })
 })

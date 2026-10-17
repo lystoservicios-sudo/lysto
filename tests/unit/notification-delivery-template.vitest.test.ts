@@ -1,10 +1,49 @@
 import { describe, expect, it } from 'vitest'
-import { renderOutboxNotification } from '@/lib/notifications/delivery-template'
+import {
+  renderOutboxNotification,
+  renderProfessionalTemporaryInvitation
+} from '@/lib/notifications/delivery-template'
 
 const id = 'a1000000-0000-4000-8000-000000000001'
 const token = 'A'.repeat(43)
 const origin = 'https://app.lysto.test'
 describe('versioned transactional notification templates', () => {
+  it.each([
+    { eventType: 'quote.ready', aggregateId: id, audience: 'customer' },
+    { eventType: 'payment.approved', aggregateId: id, audience: 'customer' },
+    { eventType: 'support.opened', aggregateId: id, audience: 'customer' },
+    { eventType: 'professional.approved', aggregateId: id, audience: 'professional' }
+  ] as const)('uses the official responsive Lysto email shell for $eventType', (context) => {
+    const message = renderOutboxNotification(context, origin)
+    expect(message.html).toContain(`${origin}/images/email/lysto-logo.png`)
+    expect(message.html).toContain('role="presentation"')
+    expect(message.html).toContain('max-width:640px')
+    expect(message.html).toContain('Recibís este correo porque')
+  })
+
+  it.each([
+    ['quote.ready', 'customer', 'email-requests.jpg'],
+    ['request.created', 'customer', 'email-requests.jpg'],
+    ['request.cancelled', 'customer', 'email-requests.jpg'],
+    ['job.assigned', 'professional', 'email-visits.jpg'],
+    ['job.confirmed', 'customer', 'email-visits.jpg'],
+    ['job.technician_on_way', 'customer', 'email-visits.jpg'],
+    ['job.arrived', 'customer', 'email-visits.jpg'],
+    ['job.completed_pending_customer_confirmation', 'customer', 'email-visits.jpg'],
+    ['job.completed', 'customer', 'email-visits.jpg'],
+    ['payment.approved', 'customer', 'email-payments.jpg'],
+    ['payment.failed', 'customer', 'email-payments.jpg'],
+    ['payment.refunded', 'customer', 'email-payments.jpg'],
+    ['support.opened', 'customer', 'email-support.jpg'],
+    ['professional.application.submitted', 'operations', 'email-professionals.jpg'],
+    ['professional.approved', 'professional', 'email-professionals.jpg'],
+    ['professional.rejected', 'professional', 'email-professionals.jpg'],
+    ['professional.suspended', 'professional', 'email-professionals.jpg']
+  ] as const)('uses a purpose-specific visual family for %s', (eventType, audience, asset) => {
+    const message = renderOutboxNotification({ eventType, aggregateId: id, audience }, origin)
+    expect(message.html).toContain(`${origin}/images/email/${asset}`)
+  })
+
   it('builds a private invitation from the stored token and the configured origin', () => {
     const message = renderOutboxNotification(
       {
@@ -95,7 +134,18 @@ describe('versioned transactional notification templates', () => {
     expect(message.html).toContain(`${origin}/app/trabajos/${id}#agenda`)
     expect(message.html).toContain(`${origin}/app/trabajos/${id}#reprogramacion`)
     expect(message.html).toContain(`${origin}/app/trabajos/${id}#contacto`)
+    expect(message.html).toContain(`${origin}/images/email/email-visits.jpg`)
     expect(message.html).not.toMatch(/tel:|<script|onerror=/i)
+  })
+
+  it('uses the professional visual family for temporary credentials', () => {
+    const message = renderProfessionalTemporaryInvitation(
+      { email: 'tecnica@lysto.test', invitationToken: token, temporaryPassword: '1234567' },
+      origin
+    )
+    expect(message.html).toContain(`${origin}/images/email/lysto-logo.png`)
+    expect(message.html).toContain(`${origin}/images/email/email-professionals.jpg`)
+    expect(message.html).toContain('Contraseña provisoria')
   })
   it('renders an optional authenticated review request', () => {
     const message = renderOutboxNotification(

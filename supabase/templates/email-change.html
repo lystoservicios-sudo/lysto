@@ -1,6 +1,13 @@
 <!doctype html>
-<html lang="es"><body><h1>Cambiar tu correo en Lysto</h1>
-<p>Recibiste este mensaje porque se solicitó un cambio de correo. Para completarlo, confirmá los enlaces enviados al correo actual y al nuevo.</p>
-<p><a href="{{ .SiteURL }}/auth/change-email?token_hash={{ .TokenHash }}">Revisar y confirmar el cambio</a></p>
-<p>Si no solicitaste este cambio, no confirmes el enlace y revisá la seguridad de tu cuenta.</p>
-</body></html>
+<html lang="es">
+<body style="margin:0;background:#f7f7f2;font-family:Arial,'Helvetica Neue',sans-serif;color:#101e43">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent">Confirmá el cambio de correo de tu cuenta Lysto.</div>
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="width:100%;background:#f7f7f2"><tr><td align="center" style="padding:24px 12px">
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="width:100%;max-width:640px;overflow:hidden;border:1px solid #e4e9e1;border-radius:22px;background:#fffefa">
+<tr><td style="padding:26px 34px 20px"><img src="{{ .SiteURL }}/images/email/lysto-logo.png" width="196" alt="Lysto" style="display:block;width:196px;max-width:52%;height:auto;border:0"></td></tr>
+<tr><td style="padding:0 20px"><img src="{{ .SiteURL }}/images/email/email-security.jpg" width="600" alt="" role="presentation" style="display:block;width:100%;height:auto;border:0;border-radius:18px"></td></tr>
+<tr><td style="padding:30px 34px 34px"><div style="margin:0 0 10px;color:#426b50;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase">Datos de tu cuenta</div><h1 style="margin:0;color:#101e43;font-size:32px;line-height:1.12;letter-spacing:-.02em">Confirmá el cambio de correo</h1><p style="margin:14px 0 24px;color:#5d687d;font-size:16px;line-height:1.65">Para proteger tu cuenta, confirmá los enlaces enviados al correo actual y al nuevo.</p><table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%"><tr><td style="border-radius:14px;background:#1d4ed8;text-align:center"><a href="{{ .SiteURL }}/auth/change-email?token_hash={{ .TokenHash }}" style="display:block;padding:15px 22px;color:#ffffff;text-decoration:none;font-size:16px;font-weight:800;line-height:1.25">Revisar y confirmar el cambio</a></td></tr></table><div style="margin-top:22px;padding:16px 18px;border-radius:14px;background:#f4f7f2;color:#426b50;font-size:13px;line-height:1.6">Si no solicitaste este cambio, no confirmes el enlace y revisá la seguridad de tu cuenta.</div></td></tr>
+<tr><td style="padding:22px 34px;border-top:1px solid #e4e9e1;background:#eef5ed;color:#5d687d;font-size:12px;line-height:1.6;text-align:center"><strong style="color:#426b50">Lysto cuida tu hogar.</strong><br>Recibís este correo porque se solicitó cambiar la dirección de tu cuenta.</td></tr>
+</table></td></tr></table>
+</body>
+</html>
