@@ -41,12 +41,13 @@ export async function selectFixtureLocation(page: Page, options: { full?: boolea
     const suffix = options.starred ? ' *' : ''
     for (const [name, value] of [['Provincia', 'CABA'], ['Ciudad', 'San Nicolás'], ['Calle', 'Rivadavia']]) {
       await page.getByRole('combobox', { name: name + suffix, exact: true }).fill(value)
-      await page.getByRole('option').first().click()
+      await page.getByRole('listbox', { name: `${name}${suffix} opciones`, exact: true }).getByRole('option').first().click()
     }
     await page.getByRole('combobox', { name: 'Número' + suffix, exact: true }).fill('1234')
   }
   const resolved = page.waitForResponse(response => new URL(response.url()).pathname === '/api/location/resolve' && response.request().method() === 'POST')
-  await page.getByRole('option').first().click()
+  const label = options.full ? 'Dirección' : 'Número' + (options.starred ? ' *' : '')
+  await page.getByRole('listbox', { name: `${label} opciones`, exact: true }).getByRole('option').first().click()
   expect((await resolved).ok()).toBe(true)
   if (options.full) await expect(page.getByRole('combobox', { name: 'Dirección', exact: true })).toHaveValue(fixtureLocation.formattedAddress)
   else await expect(page.getByRole('combobox', { name: 'Calle' + (options.starred ? ' *' : ''), exact: true })).toHaveValue(fixtureLocation.street)

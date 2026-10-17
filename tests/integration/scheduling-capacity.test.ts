@@ -174,6 +174,7 @@ describe('transactional scheduling capacity', () => {
         .then(result => result.rows[0], error => ({ error: error.code }))
       let blocked = false
       for (let attempt = 0; attempt < 50; attempt += 1) {
+        await database.query('select pg_stat_clear_snapshot()')
         blocked = (await database.query("select wait_event_type='Lock' blocked from pg_stat_activity where pid=$1", [pid])).rows[0]?.blocked === true
         if (blocked) break
         await new Promise(resolve => setTimeout(resolve, 50))
