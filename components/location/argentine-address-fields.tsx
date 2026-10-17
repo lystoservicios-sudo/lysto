@@ -16,13 +16,15 @@ export function ArgentineAddressFields({ value, onChange, onProofChange, labels,
     order?: (keyof AddressFieldValue)[]; placeholders?: Partial<Record<keyof AddressFieldValue, string>>;
     after?: Partial<Record<keyof AddressFieldValue, ReactNode>>; revisionKey?: string | number }) {
   const [ids, setIds] = useState<{ provinceId?: string; cityId?: string; streetId?: string }>({})
+  const [resolutionError, setResolutionError] = useState('')
   const revision = useRef(0)
   const active = useRef<AbortController | null>(null)
   useEffect(() => () => active.current?.abort(), [])
-  useEffect(() => { revision.current += 1; active.current?.abort() }, [revisionKey])
+  useEffect(() => { revision.current += 1; active.current?.abort(); setResolutionError('') }, [revisionKey])
   const invalidate = () => {
     revision.current += 1
     active.current?.abort()
+    setResolutionError('')
     onProofChange?.('')
   }
   const patch = (next: Partial<AddressFieldValue>) => onChange({ ...value, ...next })
@@ -44,14 +46,15 @@ export function ArgentineAddressFields({ value, onChange, onProofChange, labels,
     try {
       const response = await fetch('/api/location/resolve', { method: 'POST', credentials: 'same-origin', signal: controller.signal, headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ street: item.street, number: item.number, city: item.city, province: item.province, provinceId: item.provinceId, cityId: item.cityId, streetId: item.streetId }) })
-      if (!response.ok) return
+      if (!response.ok) throw new Error('address_resolution_failed')
       const payload = await response.json() as { address: ResolvedAddress; proof: string }
       if (controller.signal.aborted || ticket !== revision.current) return
       setIds({ provinceId: payload.address.provinceId, cityId: payload.address.cityId, streetId: payload.address.streetId })
       onChange({ street: payload.address.street, number: payload.address.number, city: payload.address.city, province: payload.address.province })
       onProofChange?.(payload.proof)
-    } catch (error) {
-      if (!(error instanceof DOMException && error.name === 'AbortError')) return
+    } catch {
+      if (!controller.signal.aborted && ticket === revision.current)
+        setResolutionError('No pudimos confirmar la dirección. Volvé a elegir una opción del número para reintentar.')
     }
   }
   const edit = (key: keyof AddressFieldValue, next: string) => {
@@ -67,8 +70,8 @@ export function ArgentineAddressFields({ value, onChange, onProofChange, labels,
     if (key === 'province') return <LocationCombobox {...common} kind="province" onChange={(next) => edit('province', next)} onSelect={selectProvince} />
     if (key === 'city') return <LocationCombobox {...common} kind="city" context={{ provinceId: ids.provinceId, province: value.province }} onChange={(next) => edit('city', next)} onSelect={selectCity} />
     if (key === 'street') return <LocationCombobox {...common} kind="street" context={{ provinceId: ids.provinceId, province: value.province, cityId: ids.cityId, city: value.city }} onChange={(next) => edit('street', next)} onSelect={selectStreet} />
-    return <LocationCombobox {...common} kind="address" context={{ provinceId: ids.provinceId, province: value.province, cityId: ids.cityId, city: value.city, streetId: ids.streetId, street: value.street }} onChange={(next) => edit('number', next)} onSelect={(item) => void resolve(item)} />
+    return <LocationCombobox {...common} kind="address" ariaInvalid={Boolean(resolutionError)} ariaDescribedBy={resolutionError ? `${idPrefix}-resolution-error` : undefined} context={{ provinceId: ids.provinceId, province: value.province, cityId: ids.cityId, city: value.city, streetId: ids.streetId, street: value.street }} onChange={(next) => edit('number', next)} onSelect={(item) => void resolve(item)} />
   }
-  return <div className={groupClassName}>{order.map(key => <Fragment key={key}>{field(key)}{after?.[key]}</Fragment>)}</div>
+  return <div className={groupClassName}>{order.map(key => <Fragment key={key}>{field(key)}{after?.[key]}</Fragment>)}{resolutionError && <p id={`${idPrefix}-resolution-error`} role="alert">{resolutionError}</p>}</div>
 }
 

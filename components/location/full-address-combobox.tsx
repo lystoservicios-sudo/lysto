@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { LocationSuggestion, ResolvedAddress } from '@/lib/location/contracts'
 import { LocationCombobox } from './location-combobox'
 
@@ -9,33 +9,37 @@ export function FullAddressCombobox({ id, label, name, value, onChange, onResolv
     onResolved: (value: { value: string; proof: string; address: ResolvedAddress }) => void; disabled?: boolean;
     required?: boolean; className?: string; inputClassName?: string; ariaInvalid?: boolean; ariaDescribedBy?: string; revisionKey?: string | number }) {
   const revision = useRef(0)
+  const [resolutionError, setResolutionError] = useState('')
   const active = useRef<AbortController | null>(null)
   useEffect(() => () => active.current?.abort(), [])
-  useEffect(() => { revision.current += 1; active.current?.abort() }, [revisionKey])
+  useEffect(() => { revision.current += 1; active.current?.abort(); setResolutionError('') }, [revisionKey])
   const change = (next: string) => {
     revision.current += 1
     active.current?.abort()
+    setResolutionError('')
     onChange(next)
   }
   const resolve = async (item: LocationSuggestion) => {
     if (!item.street || !item.number || !item.city || !item.province) return
     const ticket = ++revision.current
+    setResolutionError('')
     active.current?.abort()
     const controller = new AbortController()
     active.current = controller
     try {
       const response = await fetch('/api/location/resolve', { method: 'POST', credentials: 'same-origin', signal: controller.signal, headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ street: item.street, number: item.number, city: item.city, province: item.province, provinceId: item.provinceId, cityId: item.cityId, streetId: item.streetId }) })
-      if (!response.ok) return
+      if (!response.ok) throw new Error('address_resolution_failed')
       const payload = await response.json() as { address: ResolvedAddress; proof: string }
       if (controller.signal.aborted || ticket !== revision.current) return
       onResolved({ value: payload.address.formattedAddress, address: payload.address, proof: payload.proof })
-    } catch (error) {
-      if (!(error instanceof DOMException && error.name === 'AbortError')) return
+    } catch {
+      if (!controller.signal.aborted && ticket === revision.current)
+        setResolutionError('No pudimos confirmar la dirección. Volvé a elegir una opción para reintentar.')
     }
   }
-  return <LocationCombobox id={id} name={name} label={label} value={value} kind="address" minChars={5} disabled={disabled} required={required}
-    className={className} inputClassName={inputClassName} ariaInvalid={ariaInvalid} ariaDescribedBy={ariaDescribedBy}
-    onChange={change} onSelect={(item) => void resolve(item)} />
+  return <><LocationCombobox id={id} name={name} label={label} value={value} kind="address" minChars={5} disabled={disabled} required={required}
+    className={className} inputClassName={inputClassName} ariaInvalid={Boolean(resolutionError) || ariaInvalid} ariaDescribedBy={[ariaDescribedBy, resolutionError ? `${id}-resolution-error` : undefined].filter(Boolean).join(' ') || undefined}
+    onChange={change} onSelect={(item) => void resolve(item)} />{resolutionError && <p id={`${id}-resolution-error`} role="alert">{resolutionError}</p>}</>
 }
 

@@ -9,6 +9,25 @@ const json = (value: unknown) => Promise.resolve(new Response(JSON.stringify(val
 
 afterEach(() => vi.unstubAllGlobals())
 
+it.each(['fields', 'full'] as const)('shows a retryable resolution failure in %s without confirming an address', async (mode) => {
+  const confirmed = vi.fn()
+  const suggestion = { kind: 'address', id: 'address', label: 'Corrientes 123, CABA', street: 'Corrientes', number: '123', city: 'CABA', province: 'CABA' }
+  vi.stubGlobal('fetch', vi.fn((input: RequestInfo | URL) => String(input).includes('/suggestions')
+    ? json({ suggestions: [suggestion] })
+    : Promise.resolve(new Response('{}', { status: 503 }))))
+  function Harness() {
+    const [value, setValue] = useState('')
+    return mode === 'full'
+      ? <FullAddressCombobox id="failure" label="Dirección" value={value} onChange={setValue} onResolved={confirmed} />
+      : <AddressHarness confirmed={confirmed} />
+  }
+  render(<Harness />)
+  fireEvent.change(screen.getByLabelText(mode === 'full' ? 'Dirección' : 'Altura'), { target: { value: mode === 'full' ? 'Corrientes 123' : '123' } })
+  fireEvent.click(await screen.findByRole('option', { name: suggestion.label }))
+  expect((await screen.findByRole('alert')).textContent).toContain('No pudimos confirmar la dirección')
+  expect(confirmed.mock.calls.every(([proof]) => proof === '')).toBe(true)
+})
+
 function AddressHarness({ confirmed = vi.fn() }: { confirmed?: (proof: string) => void }) {
   const [value, setValue] = useState({ street: '', number: '', city: '', province: '' })
   return <ArgentineAddressFields value={value} onChange={setValue} onProofChange={confirmed}

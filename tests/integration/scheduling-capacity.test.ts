@@ -149,6 +149,49 @@ describe('transactional scheduling capacity', () => {
     expect(after.rows[0].schedule_version).toBe(scheduled.rows[0].version + 1)
   })
 
+  it('locks the job before its reschedule request to avoid proposal/response deadlocks', async () => {
+    const jobId = jobIds[0]
+    const version = (await database.query('select schedule_version from public.jobs where id=$1', [jobId])).rows[0].schedule_version
+    const proposal = await fixture.accounts.customerA.client.rpc('request_job_reschedule', {
+      p_job_id: jobId, p_starts_at: new Date(start.getTime() + 3 * 86_400_000).toISOString(),
+      p_duration_minutes: 60, p_travel_buffer_minutes: 0,
+      p_reason: 'Necesitamos coordinar una nueva fecha para recibir al profesional.', p_expected_version: version
+    })
+    expect(proposal.error).toBeNull()
+    const responder = new Client({ connectionString: process.env.LYSTO_TEST_DATABASE_URL })
+    let response: Promise<unknown> | undefined
+    await responder.connect()
+    try {
+      const pid = (await responder.query('select pg_backend_pid() pid')).rows[0].pid
+      await responder.query('begin')
+      await responder.query("set local statement_timeout='10s'")
+      const claims = JSON.parse(Buffer.from(fixture.accounts.professionalApproved.accessToken.split('.')[1], 'base64url').toString('utf8'))
+      await responder.query("select set_config('request.jwt.claims',$1,true)", [JSON.stringify(claims)])
+      await responder.query('set local role authenticated')
+      await database.query('begin')
+      await database.query('select id from public.jobs where id=$1 for update', [jobId])
+      response = responder.query("select public.respond_job_reschedule($1,'reject',$2)", [proposal.data.id, version])
+        .then(result => result.rows[0], error => ({ error: error.code }))
+      let blocked = false
+      for (let attempt = 0; attempt < 50; attempt += 1) {
+        blocked = (await database.query("select wait_event_type='Lock' blocked from pg_stat_activity where pid=$1", [pid])).rows[0]?.blocked === true
+        if (blocked) break
+        await new Promise(resolve => setTimeout(resolve, 50))
+      }
+      expect(blocked).toBe(true)
+      // The responder must not own this row while waiting for the job. A new
+      // proposal already holds the job and needs this request row in that order.
+      expect((await database.query('select id from public.job_reschedule_requests where id=$1 for update nowait', [proposal.data.id])).rowCount).toBe(1)
+      await database.query('rollback')
+      expect(await response).toMatchObject({ respond_job_reschedule: { status: 'rejected' } })
+    } finally {
+      await database.query('rollback')
+      await response
+      await responder.query('rollback')
+      await responder.end()
+    }
+  })
+
   it('returns the complete requested range and rejects oversized ranges', async () => {
     const ok = await fixture.accounts.professionalApproved.client.rpc('get_schedule_availability', {
       p_professional_id: fixture.accounts.professionalApproved.entityId,

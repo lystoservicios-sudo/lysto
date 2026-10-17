@@ -96,6 +96,14 @@ export function ConnectedCustomerAddresses({
       setMessage('Completá los datos obligatorios de la dirección.')
       return
     }
+    const savedAddress = page.items.find((address) => address.id === value.id)
+    const unchangedLocation = savedAddress && (['street', 'number', 'city', 'province'] as const)
+      .every((field) => savedAddress[field] === value[field])
+    if (!locationProof && !unchangedLocation) {
+      setFailed(true)
+      setMessage('Elegí una dirección de las opciones del número para confirmar la ubicación.')
+      return
+    }
     setBusy(true)
     setMessage('')
     try {

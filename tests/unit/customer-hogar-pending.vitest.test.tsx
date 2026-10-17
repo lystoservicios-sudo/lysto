@@ -131,6 +131,35 @@ afterEach(() => {
 })
 
 describe('Hogar pending operation identity', () => {
+  it('renews proof A to B without changing the uncertain command identity', async () => {
+    await beginHome()
+    const first = submitted()
+    const stored = sessionStorage.getItem(key())
+    const provider = withLocationProvider(request)
+    vi.stubGlobal('fetch', async (input: RequestInfo | URL, options?: RequestInit) => {
+      if (String(input) === '/api/location/renew') return response({ proof: 'renewed-proof-B' })
+      return provider(input, options)
+    })
+    click('Reintentar creación')
+    await waitFor(() => expect(request).toHaveBeenCalledTimes(2))
+    expect(submitted(1)).toEqual({ ...first, newAddress: { ...first.newAddress, locationProof: 'renewed-proof-B' } })
+    expect(sessionStorage.getItem(key())).toBe(stored)
+  })
+
+  it('retains the uncertain command without retrying its write when proof renewal fails', async () => {
+    await beginHome()
+    const stored = sessionStorage.getItem(key())
+    const provider = withLocationProvider(request)
+    vi.stubGlobal('fetch', async (input: RequestInfo | URL, options?: RequestInit) => {
+      if (String(input) === '/api/location/renew') return response({ code: 'unavailable' }, 503)
+      return provider(input, options)
+    })
+    click('Reintentar creación')
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Reintentar creación' })).toHaveProperty('disabled', false))
+    expect(request).toHaveBeenCalledTimes(1)
+    expect(sessionStorage.getItem(key())).toBe(stored)
+  })
+
   it('opens the home shortcut without issuing a request or creating a record', () => {
     render(<CustomerHogar initialData={empty()} customerId={customerId} entry="hogar" />)
     expect(screen.getByLabelText('Nombre del hogar')).toBeTruthy()

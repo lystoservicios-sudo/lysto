@@ -9,6 +9,35 @@ import { POST } from '@/app/api/mercadopago/create-preference/route'
 import { POST as webhook } from '@/app/api/mercadopago/webhook/route'
 import { POST as checkouts } from '@/app/api/mercadopago/checkouts/route'
 import { sameOrigin } from '@/lib/payments/marketplace-config'
+
+it('bounds webhook payloads by actual UTF-8 bytes even without Content-Length', async () => {
+  const response = await webhook(new Request('https://lysto.test/api/mercadopago/webhook', {
+    method: 'POST', body: JSON.stringify({ data: 'é'.repeat(33000) })
+  }))
+  expect(response.status).toBe(413)
+  expect(mocks.handle).not.toHaveBeenCalled()
+})
+it('stops and cancels an oversized chunked webhook body', async () => {
+  const cancel = vi.fn()
+  const body = new ReadableStream({ pull(controller) { controller.enqueue(new Uint8Array(32768)) }, cancel })
+  const input = new Request('https://lysto.test/api/mercadopago/webhook', { method: 'POST', body, duplex: 'half' } as RequestInit)
+  expect((await webhook(input)).status).toBe(413)
+  expect(cancel).toHaveBeenCalledTimes(1)
+  expect(mocks.handle).not.toHaveBeenCalled()
+})
+it('times out a stalled webhook stream without calling the payment processor', async () => {
+  vi.useFakeTimers()
+  try {
+    const cancel = vi.fn()
+    const body = new ReadableStream({ start() {}, cancel })
+    const input = new Request('https://lysto.test/api/mercadopago/webhook', { method: 'POST', body, duplex: 'half' } as RequestInit)
+    const result = webhook(input)
+    await vi.advanceTimersByTimeAsync(3001)
+    expect((await result).status).toBe(408)
+    expect(cancel).toHaveBeenCalledTimes(1)
+    expect(mocks.handle).not.toHaveBeenCalled()
+  } finally { vi.useRealTimers() }
+})
 const job='92000000-0000-0000-0000-000000000001'
 const request=(body:unknown,origin='https://lysto.test')=>new Request('https://lysto.test/api/mercadopago/create-preference',{method:'POST',headers:{Origin:origin,'Content-Type':'application/json'},body:JSON.stringify(body)})
 beforeEach(()=>{

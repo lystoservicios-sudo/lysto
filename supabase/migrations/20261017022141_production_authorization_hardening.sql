@@ -137,9 +137,14 @@ declare v_request public.job_reschedule_requests%rowtype;v_job public.jobs%rowty
   v_role public.user_role:=public.current_user_role();v_res public.job_schedule_reservations%rowtype;
 begin
   if p_decision is null or p_decision not in('approve','reject') then raise exception using errcode='22023',message='invalid_decision'; end if;
-  select * into v_request from public.job_reschedule_requests where id=p_request_id for update;
+  -- Resolve the parent without locking the child. Every schedule mutation takes
+  -- the job lock first, then the request lock; the reverse order can deadlock.
+  select * into v_request from public.job_reschedule_requests where id=p_request_id;
   if not found then raise exception using errcode='P0002',message='reschedule_not_found'; end if;
   select * into v_job from public.jobs where id=v_request.job_id for update;
+  if not found then raise exception using errcode='P0002',message='job_not_found'; end if;
+  select * into v_request from public.job_reschedule_requests where id=p_request_id and job_id=v_job.id for update;
+  if not found then raise exception using errcode='P0002',message='reschedule_not_found'; end if;
   if v_request.status<>'pending' or v_job.schedule_version is distinct from p_expected_version or v_request.expected_schedule_version is distinct from p_expected_version then
     raise exception using errcode='40001',message='schedule_version_conflict'; end if;
   if v_actor is null or ((v_role='customer' and v_job.customer_id=private.current_customer_id()) or
