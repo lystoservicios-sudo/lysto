@@ -158,6 +158,20 @@ describe('transactional scheduling capacity', () => {
       p_reason: 'Necesitamos coordinar una nueva fecha para recibir al profesional.', p_expected_version: version
     })
     expect(proposal.error).toBeNull()
+    for (const actor of [fixture.accounts.customerB, fixture.accounts.professionalSuspended]) {
+      const unauthorizedProposal = await actor.client.rpc('request_job_reschedule', {
+        p_job_id: jobId, p_starts_at: new Date(start.getTime() + 4 * 86_400_000).toISOString(),
+        p_duration_minutes: 60, p_travel_buffer_minutes: 0,
+        p_reason: 'Esta propuesta no pertenece al profesional ni al cliente asignado.', p_expected_version: version
+      })
+      expect(unauthorizedProposal.error?.code).toBe('42501')
+      const unauthorizedResponse = await actor.client.rpc('respond_job_reschedule', {
+        p_request_id: proposal.data.id, p_decision: 'approve', p_expected_version: version
+      })
+      expect(unauthorizedResponse.error?.code).toBe('42501')
+    }
+    expect((await database.query('select status,professional_approved_at from public.job_reschedule_requests where id=$1', [proposal.data.id])).rows[0])
+      .toMatchObject({ status: 'pending', professional_approved_at: null })
     const responder = new Client({ connectionString: process.env.LYSTO_TEST_DATABASE_URL })
     let response: Promise<unknown> | undefined
     await responder.connect()
