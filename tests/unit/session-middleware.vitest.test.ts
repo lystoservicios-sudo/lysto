@@ -68,6 +68,13 @@ it('does not use panel-like public prefixes as private routes', async () => {
   await middleware(new NextRequest('https://lysto.test/application'))
   expect(mocks.create).not.toHaveBeenCalled()
 })
+it('preserves the origin of password recovery form submissions without leaking referrers to other sites', async () => {
+  const response = await middleware(new NextRequest('https://lysto.test/restablecer?token_hash=' + 'a'.repeat(64)))
+  expect(response.headers.get('referrer-policy')).toBe('same-origin')
+  expect(response.headers.get('cache-control')).toContain('no-store')
+  expect(response.headers.get('x-robots-tag')).toBe('noindex, nofollow')
+  expect(mocks.create).not.toHaveBeenCalled()
+})
 it('does not cache the closed public receipt or require a user login for it', async () => {
   const response = await middleware(
     new NextRequest('https://lysto.test/comprobante/arbitrary-token')

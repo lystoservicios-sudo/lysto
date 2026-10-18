@@ -144,6 +144,17 @@ describe('account route boundaries', () => {
     ).toBe(400)
     expect(fixtures.verify).not.toHaveBeenCalled()
   })
+  it.each([null, 'null', 'https://evil.test'])(
+    'rejects password recovery from an untrusted origin before consuming its token: %s',
+    async (source) => {
+      const response = await resetPost(post('/auth/reset-password', {
+        token_hash: token, password: 'Clave123', repeatPassword: 'Clave123'
+      }, source))
+      expect(response.status).toBe(403)
+      expect(fixtures.verify).not.toHaveBeenCalled()
+      expect(fixtures.update).not.toHaveBeenCalled()
+    }
+  )
   it('requires a recovery token before changing password and closes sessions afterward', async () => {
     const password = 'Clave123'
     const response = await resetPost(

@@ -51,7 +51,8 @@ export async function middleware(request: NextRequest) {
   if (!privatePage && !api) return withCorrelation(nextResponse())
   let response = withCorrelation(onboardingHeaders(privateResponse(nextResponse())))
   if (authPage) {
-    response.headers.set('Referrer-Policy', 'no-referrer')
+    // Native recovery POSTs need Origin; same-origin still hides the token from other sites.
+    response.headers.set('Referrer-Policy', pathname === '/restablecer' ? 'same-origin' : 'no-referrer')
     response.headers.set('X-Robots-Tag', 'noindex, nofollow')
     // Auth handlers own cookie writes; pages must stay readable during provider outages.
     return response

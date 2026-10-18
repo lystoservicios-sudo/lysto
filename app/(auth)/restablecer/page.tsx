@@ -3,7 +3,7 @@ import { AuthFrame } from '@/components/auth/auth-frame'
 import { PasswordResetForm } from '@/components/auth/password-reset-form'
 import { validAccountToken } from '@/lib/auth/account-response'
 export const dynamic = 'force-dynamic'
-export const metadata = { title: 'Nueva contraseña | Lysto', robots: { index: false, follow: false }, referrer: 'no-referrer' as const }
+export const metadata = { title: 'Nueva contraseña | Lysto', robots: { index: false, follow: false }, referrer: 'same-origin' as const }
 export default async function ResetPage({ searchParams }: { searchParams: Promise<{ token_hash?: string; error?: string }> }) {
   const params = await searchParams
   const token = typeof params.token_hash === 'string' && validAccountToken(params.token_hash) ? params.token_hash : null
