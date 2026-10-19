@@ -28,7 +28,7 @@ export function Dialog({ open, onOpenChange, title, description, children, foote
   useEffect(() => setMounted(true), [])
 
   useEffect(() => {
-    if (!open) return
+    if (!open || !mounted) return
 
     returnFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null
     previousOverflowRef.current = document.body.style.overflow
@@ -39,7 +39,7 @@ export function Dialog({ open, onOpenChange, title, description, children, foote
       document.body.style.overflow = previousOverflowRef.current
       returnFocusRef.current?.focus()
     }
-  }, [open])
+  }, [open, mounted])
 
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key === 'Escape') {

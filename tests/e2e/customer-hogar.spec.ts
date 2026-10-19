@@ -5,7 +5,7 @@ import type { Locator, Page, Response } from '@playwright/test'
 import { test, expect, loginAs } from './fixtures/production'
 import type { FixtureAccount } from './fixtures/accounts'
 import type { CustomerAssetAddress, CustomerAssetEquipment } from '@/lib/customer-assets/contracts'
-import type { CustomerHome, CustomerHomesSnapshot, HomeKind } from '@/lib/customer-homes/contracts'
+import { ROOM_CATALOG, type CustomerHome, type CustomerHomesSnapshot, type HomeKind, type RoomKind } from '@/lib/customer-homes/contracts'
 import { assertTestEnvironment, readTestIdentity } from '../../scripts/lib/test-environment.mjs'
 import { fixtureLocation, selectFixtureLocation } from '../integration/location-fixture'
 
@@ -133,10 +133,17 @@ async function createHome(page: Page, created: CreatedAssets, options: { name: s
 }
 
 async function addRoom(page: Page, name: string, kind: string, variant: string): Promise<CustomerHome> {
-  await page.getByRole('region', { name: 'Ambientes de la planta' }).getByRole('button', { name: 'Añadir', exact: true }).click()
+  await page.getByRole('button', { name: 'Ambientes', exact: true }).click()
+  const modal = page.getByRole('dialog', { name: 'Nuevo ambiente', exact: true })
+  const location = page.getByRole('button', { name: /^Añadir ambiente (detrás|delante|a la)/ }).first()
+  await expect(modal.or(location)).toBeVisible()
+  if (!await modal.isVisible()) await location.click()
   await expect(navigation(page)).toHaveCount(0)
-  await page.getByLabel('Tipo de ambiente').selectOption(kind)
-  await page.getByLabel('Variante', { exact: true }).selectOption(variant)
+  const config = ROOM_CATALOG[kind as RoomKind]
+  await modal.getByRole('combobox', { name: 'Tipo de ambiente' }).selectOption(kind)
+  for (let step = 0; step < config.variants.findIndex(value => value.value === variant); step++) await modal.getByRole('button', { name: 'Variante siguiente' }).click()
+  await saveHome(page, 'Añadir ambiente')
+  await page.getByRole('button', { name: `Editar ${config.label}`, exact: true }).click()
   await page.getByLabel('Nombre del ambiente').fill(name)
   const home = await saveHome(page, 'Guardar ambiente')
   await expect(page.getByRole('button', { name: `Abrir ${name}`, exact: true })).toBeVisible()
@@ -282,7 +289,7 @@ test.describe('authenticated customer Hogar with a disposable backend', () => {
       await page.getByRole('button', { name: 'Cancelar', exact: true }).click()
       await expect(navigation(page)).toBeVisible()
       await page.getByRole('button', { name: 'Volver a la planta', exact: true }).click()
-      await page.getByRole('button', { name: 'Planta', exact: true }).click()
+      await page.getByRole('button', { name: 'Plantas', exact: true }).click()
       await page.getByLabel('Nombre de la planta').fill('Planta alta 3D QA')
       const withUpper = await saveHome(page, 'Guardar planta')
       const upper = withUpper.floors.find(floor => floor.id !== lowerId)!
@@ -329,7 +336,7 @@ test.describe('authenticated customer Hogar with a disposable backend', () => {
       await page.getByLabel('Nombre del ambiente').fill('Living editado sin GPU QA')
       await saveHome(page, 'Guardar ambiente')
       await expectListFallback(page)
-      await page.getByRole('button', { name: 'Planta', exact: true }).click()
+      await page.getByRole('button', { name: 'Plantas', exact: true }).click()
       await page.getByLabel('Nombre de la planta').fill('Planta alta sin GPU QA')
       const withUpper = await saveHome(page, 'Guardar planta')
       const upper = withUpper.floors.find(floor => floor.id !== original.floors[0].id)!
@@ -405,7 +412,7 @@ test.describe('authenticated customer Hogar with a disposable backend', () => {
       const original = await createHome(page, created, { name: 'Departamento QA', kind: 'apartment', addressId: initial.addresses.find(address => !address.archivedAt)!.id })
       const lowerId = original.floors[0].id
       await addRoom(page, 'Living QA', 'living', 'dining')
-      await page.getByRole('button', { name: 'Planta', exact: true }).click()
+      await page.getByRole('button', { name: 'Plantas', exact: true }).click()
       await page.getByLabel('Nombre de la planta').fill('Planta alta QA')
       const withUpper = await saveHome(page, 'Guardar planta')
       const upper = withUpper.floors.find(floor => floor.id !== lowerId)!

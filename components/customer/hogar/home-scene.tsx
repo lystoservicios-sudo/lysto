@@ -8,6 +8,8 @@ import type { CustomerHome, EquipmentPlacement } from '@/lib/customer-homes/cont
 import type { CustomerAssetEquipment } from '@/lib/customer-assets/contracts'
 import { equipmentScreenAnchor, type EquipmentScreenAnchor } from './equipment-anchor'
 import { isCustomerMotionReduced, subscribeCustomerMotionPreference } from '@/lib/customer/motion-preference'
+import type { RoomAdditionSlot } from '@/lib/customer-homes/room-additions'
+import styles from './customer-hogar.module.css'
 import { buildHomeFloor, disposeGroup, fitHomeView, getPlacementFromWall, getRoomCenter, pickSelectionFromObject, pickWallSurface, setHomeSelection, updateCutawayWalls } from './scene-builders'
 
 export type HomeSceneProps = {
@@ -23,6 +25,9 @@ export type HomeSceneProps = {
   onPlace?: (patch: Pick<EquipmentPlacement, 'wall' | 'offset' | 'height'>) => void
   onUnavailable?: () => void
   onEquipmentAnchor?: (anchor: EquipmentScreenAnchor | null) => void
+  roomAdditions?: RoomAdditionSlot[]
+  onAddRoom?: (slot: RoomAdditionSlot) => void
+  previewOnly?: boolean
 }
 type Command = 'reset' | 'rotate' | 'zoomIn' | 'zoomOut'
 type Runtime = { update: (props: HomeSceneProps) => void; command: (type: Command) => void }
@@ -58,7 +63,9 @@ export default function HomeScene(props: HomeSceneProps) {
     const canvas = renderer.domElement
     canvas.style.cssText = 'width:100%;height:100%;display:block;touch-action:none;outline:none'
     canvas.setAttribute('role', 'img')
-    canvas.setAttribute('aria-label', 'Maqueta 3D orientativa del hogar. Arrastrá para girar; usá dos dedos para acercar y mover. La lista de ambientes y los controles también permiten manejar la vista.')
+    canvas.setAttribute('aria-label', latest.current.previewOnly
+      ? 'Vista previa 3D del ambiente. Deslizá a izquierda o derecha para cambiar de variante.'
+      : 'Maqueta 3D orientativa del hogar. Arrastrá para girar; usá dos dedos para acercar y mover. La lista de ambientes y los controles también permiten manejar la vista.')
     canvas.setAttribute('data-testid', 'hogar-3d-canvas')
     host.prepend(canvas)
 
@@ -77,6 +84,8 @@ export default function HomeScene(props: HomeSceneProps) {
     controls.rotateSpeed = .58
     controls.zoomSpeed = .6
     controls.panSpeed = .55
+    controls.enabled = !latest.current.previewOnly
+    if (latest.current.previewOnly) canvas.style.touchAction = 'pan-y'
     controls.touches.ONE = THREE.TOUCH.ROTATE
     controls.touches.TWO = THREE.TOUCH.DOLLY_PAN
     scene.add(new THREE.HemisphereLight('#ffffff', '#cbc5b9', 2.15))
@@ -99,7 +108,15 @@ export default function HomeScene(props: HomeSceneProps) {
     const positionLabels = () => {
       if (latest.current.onEquipmentAnchor) latest.current.onEquipmentAnchor(model && latest.current.selectedEquipmentId ? equipmentScreenAnchor(model, camera, latest.current.selectedEquipmentId, width, height) : null)
       for (const [id, element] of labels.current) {
-        const position = labelPositions.get(id)
+        const slot = latest.current.roomAdditions?.find(value => value.id === id)
+        // Lift markers behind standing walls so they stay outside the room's silhouette.
+        const behindWall = slot && (
+          (slot.side === 'north' && camera.position.z > controls.target.z) ||
+          (slot.side === 'south' && camera.position.z < controls.target.z) ||
+          (slot.side === 'west' && camera.position.x > controls.target.x) ||
+          (slot.side === 'east' && camera.position.x < controls.target.x)
+        )
+        const position = slot ? new THREE.Vector3(slot.markerX, behindWall ? 2.9 : .2, slot.markerZ) : labelPositions.get(id)
         if (!position) { element.style.visibility = 'hidden'; continue }
         projected.copy(position).project(camera)
         const x = (projected.x * .5 + .5) * width, y = (-projected.y * .5 + .5) * height
@@ -131,15 +148,22 @@ export default function HomeScene(props: HomeSceneProps) {
       savedFloorViews.set(`${value.home.id}:${value.floorId}`, { position: camera.position.clone(), target: controls.target.clone(), zoom: camera.zoom })
     }
     const update = (next: HomeSceneProps) => {
-      if (model && current && current.home === next.home && current.floorId === next.floorId && current.focused === next.focused && (!next.focused || current.roomId === next.roomId) && current.equipment === next.equipment && current.placementDraft === next.placementDraft) {
+      if (model && current && current.home === next.home && current.floorId === next.floorId && current.focused === next.focused && (!next.focused || current.roomId === next.roomId) && current.equipment === next.equipment && current.placementDraft === next.placementDraft && current.roomAdditions === next.roomAdditions) {
         current = next; setHomeSelection(model, next.roomId, next.selectedEquipmentId); requestRender(); return
       }
       const previous = current
       if (previous && !previous.focused && next.focused && previous.home.id === next.home.id && previous.floorId === next.floorId) saveFloorView(previous)
       const restoring = previous?.focused && !next.focused && previous.home.id === next.home.id && previous.floorId === next.floorId
       current = next
+      if (next.roomAdditions && !previous?.roomAdditions) camera.zoom = 1
       if (model) { scene.remove(model); disposeGroup(model) }
       model = buildHomeFloor(next); scene.add(model)
+      // Invisible geometry extends the camera fit around the actionable edges.
+      if (next.roomAdditions?.length) {
+        const points = next.roomAdditions.flatMap(slot => [new THREE.Vector3(slot.markerX - .7, 0, slot.markerZ - .7), new THREE.Vector3(slot.markerX + .7, 3.6, slot.markerZ + .7)])
+        const extent = new THREE.Mesh(new THREE.BufferGeometry().setFromPoints(points), new THREE.MeshBasicMaterial({ visible: false }))
+        model.add(extent)
+      }
       const bounds = new THREE.Box3().setFromObject(model)
       center.copy(bounds.isEmpty() ? new THREE.Vector3() : bounds.getCenter(new THREE.Vector3()))
       const shadowRadius = Math.max(10, bounds.isEmpty() ? 10 : bounds.getSize(new THREE.Vector3()).length() / 2 + 3)
@@ -173,6 +197,7 @@ export default function HomeScene(props: HomeSceneProps) {
       if (!rect.width || !rect.height) return
       raycaster.setFromCamera(new THREE.Vector2((event.clientX - rect.left) / rect.width * 2 - 1, -(event.clientY - rect.top) / rect.height * 2 + 1), camera)
       const value = latest.current
+      if (value.previewOnly || value.roomAdditions) return
       if (value.placementDraft && value.onPlace) {
         const surfaces: THREE.Object3D[] = []; model.traverse(object => { if (pickWallSurface(object)) surfaces.push(object) })
         const intersection = raycaster.intersectObjects(surfaces, false)[0]
@@ -239,14 +264,15 @@ export default function HomeScene(props: HomeSceneProps) {
 
   return <div className={`hogar-scene${props.focused ? ' is-focused' : ''}${props.placementDraft ? ' is-placing' : ''}`} style={{ position: 'relative', width: '100%', minHeight: 360 }}>
     <div ref={container} className="hogar-scene-viewport" style={{ position: 'absolute', inset: 0, visibility: unavailable ? 'hidden' : 'visible' }}>
-      {!props.placementDraft && rooms.map(room => <button key={room.id} ref={element => { if (element) labels.current.set(room.id, element); else labels.current.delete(room.id) }} className={`hogar-scene-label${room.id === props.roomId ? ' is-selected' : ''}`} style={{ position: 'absolute', top: 0, left: 0, zIndex: 1, visibility: 'hidden' }} type="button" aria-label={`Seleccionar ${room.name} en la maqueta`} aria-pressed={room.id === props.roomId} onClick={() => props.onSelectRoom(room.id)}>{room.name}</button>)}
+      {!props.previewOnly && !props.placementDraft && !props.roomAdditions && rooms.map(room => <button key={room.id} ref={element => { if (element) labels.current.set(room.id, element); else labels.current.delete(room.id) }} className={`hogar-scene-label${room.id === props.roomId ? ' is-selected' : ''}`} style={{ position: 'absolute', top: 0, left: 0, zIndex: 1, visibility: 'hidden' }} type="button" aria-label={`Seleccionar ${room.name} en la maqueta`} aria-pressed={room.id === props.roomId} onClick={() => props.onSelectRoom(room.id)}>{room.name}</button>)}
+      {props.roomAdditions?.map(slot => <button key={slot.id} ref={element => { if (element) labels.current.set(slot.id, element); else labels.current.delete(slot.id) }} className={styles.additionMarker} style={{ position: 'absolute', top: 0, left: 0, zIndex: 2, visibility: 'hidden' }} type="button" aria-label={slot.label} title={slot.label} onClick={() => props.onAddRoom?.(slot)}><Plus size={24} aria-hidden /></button>)}
     </div>
-    {unavailable && <div className="hogar-scene-fallback" role="status" style={{ padding: '80px 24px', textAlign: 'center', color: '#5d6c84' }}><strong style={{ display: 'block', color: '#0d1830', marginBottom: 10 }}>El 3D no está disponible en este dispositivo</strong>Podés organizar tus ambientes y equipos desde la vista de lista.</div>}
-    <div className="hogar-scene-controls" role="group" aria-label="Controles de la maqueta" style={{ position: 'absolute', right: 12, bottom: 12, display: 'flex', gap: 6 }}>
+    {unavailable && <div className="hogar-scene-fallback" role="status" style={{ padding: '80px 24px', textAlign: 'center', color: '#5d6c84' }}><strong style={{ display: 'block', color: '#0d1830', marginBottom: 10 }}>El 3D no está disponible en este dispositivo</strong>{props.previewOnly ? 'Podés elegir el tipo y recorrer las variantes con las flechas.' : 'Podés organizar tus ambientes y equipos desde la vista de lista.'}</div>}
+    {!props.previewOnly && <div className="hogar-scene-controls" role="group" aria-label="Controles de la maqueta" style={{ position: 'absolute', right: 12, bottom: 12, display: 'flex', gap: 6 }}>
       <button type="button" disabled={unavailable} aria-label="Girar maqueta" title="Girar" onClick={() => runtime.current?.command('rotate')}><RotateCw size={18} aria-hidden="true" /></button>
       <button type="button" disabled={unavailable} aria-label="Acercar maqueta" title="Acercar" onClick={() => runtime.current?.command('zoomIn')}><Plus size={18} aria-hidden="true" /></button>
       <button type="button" disabled={unavailable} aria-label="Alejar maqueta" title="Alejar" onClick={() => runtime.current?.command('zoomOut')}><Minus size={18} aria-hidden="true" /></button>
       <button type="button" disabled={unavailable} aria-label="Restablecer vista" title="Restablecer" onClick={() => runtime.current?.command('reset')}><RotateCcw size={18} aria-hidden="true" /></button>
-    </div>
+    </div>}
   </div>
 }

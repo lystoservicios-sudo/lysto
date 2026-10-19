@@ -12,6 +12,7 @@ const sceneBoundary = vi.hoisted(() => ({ current: null as HomeSceneProps | null
 vi.mock('next/dynamic', () => ({ default: () => function SceneBoundary(props: HomeSceneProps) {
   sceneBoundary.current = props
   return <div>
+    {props.roomAdditions?.map(slot => <button key={slot.id} onClick={() => props.onAddRoom?.(slot)}>{slot.label}</button>)}
     <button type="button" onClick={() => props.onUnavailable?.()}>Simular dispositivo sin WebGL</button>
     <button type="button" onClick={() => props.onPlace?.({ wall: 'east', offset: .73, height: 1.8 })}>Simular selección de pared</button>
   </div>
@@ -223,7 +224,7 @@ describe('Hogar complete functional flows', () => {
 
   it('adds an empty floor then selects it without rendering rooms from the old floor', async () => {
     renderHogar()
-    click('Planta'); change('Nombre de la planta', 'Segundo nivel'); click('Guardar planta')
+    click('Plantas'); change('Nombre de la planta', 'Segundo nivel'); click('Guardar planta')
     await waitFor(() => expect(within(screen.getByLabelText('Planta actual')).getByRole('option', { name: 'Segundo nivel' })).toBeTruthy())
     const added = (submitted().floors as HomeFloor[])[1]
     expect(added).toMatchObject({ name: 'Segundo nivel', order: 1, rooms: [] })
@@ -235,7 +236,7 @@ describe('Hogar complete functional flows', () => {
   it('adds suggested office rooms rather than residential rooms to a new office floor', async () => {
     const data = snapshot(); data.homes[0].kind = 'office'; data.homes[0].floors[0].rooms = []
     renderHogar(data)
-    click('Planta'); fireEvent.click(screen.getByLabelText('Empezar con ambientes sugeridos')); click('Guardar planta')
+    click('Plantas'); fireEvent.click(screen.getByLabelText('Empezar con ambientes sugeridos')); click('Guardar planta')
     await waitFor(() => expect(screen.getByRole('button', { name: 'Abrir Sala de reuniones' })).toBeTruthy())
     const kinds = (submitted().floors as HomeFloor[])[1].rooms.map(r => r.kind)
     expect(kinds).toEqual(['office', 'meeting', 'reception', 'bathroom'])
@@ -281,19 +282,17 @@ describe('Hogar complete functional flows', () => {
     expect(request).not.toHaveBeenCalled()
   })
 
-  it('creates and previews a selected room variant with editable orientation and windows', async () => {
+  it('creates and previews a selected room variant in the selected side', async () => {
     renderHogar()
-    fireEvent.click(within(screen.getByRole('region', { name: 'Ambientes de la planta' })).getByRole('button', { name: 'Añadir' }))
-    change('Tipo de ambiente', 'bedroom'); change('Variante', 'double'); change('Nombre del ambiente', 'Dormitorio doble')
-    change('Ventanas del ambiente', 'none'); change('Orientación', '90')
+    click('Ambientes'); click('Añadir ambiente a la derecha de Living')
+    change('Tipo de ambiente', 'bedroom'); click('Variante siguiente')
     expect(sceneBoundary.current?.focused).toBe(true)
     const draftId = sceneBoundary.current?.roomId
-    expect(sceneBoundary.current?.home.floors[0].rooms.find(r => r.id === draftId)).toMatchObject({ name: 'Dormitorio doble', kind: 'bedroom', variant: 'double', windows: 'none', rotation: 90 })
-    expect(screen.getByLabelText('Nombre del ambiente').closest('form')!.checkValidity()).toBe(true)
-    click('Guardar ambiente')
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Abrir Dormitorio doble' })).toBeTruthy())
+    expect(sceneBoundary.current?.home.floors[0].rooms.find(r => r.id === draftId)).toMatchObject({ name: 'Dormitorio', kind: 'bedroom', variant: 'double', rotation: 0 })
+    click('Añadir ambiente')
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Abrir Dormitorio' })).toBeTruthy())
     const added = (submitted().floors as HomeFloor[])[0].rooms.find(r => r.id === draftId)
-    expect(added).toMatchObject({ name: 'Dormitorio doble', kind: 'bedroom', variant: 'double', rotation: 90 })
+    expect(added).toMatchObject({ name: 'Dormitorio', kind: 'bedroom', variant: 'double', rotation: 0, x: 4.15, z: 0 })
     expect((submitted().floors as HomeFloor[])[0].rooms[0]).toEqual(home.floors[0].rooms[0])
   })
 

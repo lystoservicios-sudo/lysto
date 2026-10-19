@@ -216,9 +216,117 @@
 }
 .toolbar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
   margin: 0.5rem 0;
+}
+.additionHint {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: .25rem .75rem;
+  padding: .5rem 1rem;
+  margin-bottom: .75rem;
+  border-radius: 12px;
+  background: var(--ice);
+  color: #194578;
+  font-size: .875rem;
+}
+.additionMarker {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid rgb(7 92 255 / 45%);
+  background: rgb(7 92 255 / 17%);
+  color: var(--blue);
+  backdrop-filter: blur(3px);
+  box-shadow: 0 2px 8px rgb(7 92 255 / 10%);
+}
+.additionMarker:hover,
+.additionMarker:focus-visible {
+  background: rgb(7 92 255 / 30%);
+}
+.additionList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  margin-top: .75rem;
+}
+.roomPicker {
+  max-width: 620px;
+  margin: 0;
+  padding-bottom: 1.25rem;
+}
+.roomTypeField {
+  display: grid;
+  gap: .5rem;
+  font-size: .875rem;
+  font-weight: 650;
+}
+.roomTypeField select {
+  width: 100%;
+  min-height: 48px;
+  padding: .625rem .875rem;
+  border-radius: 12px;
+  background: white;
+  border: 1px solid #bdcbe2;
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 400;
+}
+.roomTypeField select:disabled { cursor: default; opacity: .65; }
+.variantPreview {
+  position: relative;
+  margin-top: 1rem;
+  padding: .5rem 0 1rem;
+  background: #f8fafc;
+  border-radius: 16px;
+}
+.variantPreview:focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; }
+.variantSwipe {
+  touch-action: pan-y;
+  user-select: none;
+  cursor: grab;
+  padding: 0 2.75rem;
+}
+.variantSwipe:active { cursor: grabbing; }
+.roomPicker .variantPreview :global(.hogar-scene),
+.roomPicker .variantPreview :global(.hogar-scene-fallback),
+.roomPicker .sceneLoading {
+  min-height: 240px !important;
+  height: 240px;
+}
+.variantArrow {
+  position: absolute;
+  top: 112px;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: white;
+  border: 1px solid var(--line);
+  color: var(--blue);
+}
+.variantArrow:hover:not(:disabled) { background: var(--ice); }
+.variantPrevious { left: .5rem; }
+.variantNext { right: .5rem; }
+.variantCaption { display: grid; gap: .125rem; text-align: center; }
+.variantCaption strong { font-size: .9375rem; font-weight: 650; }
+.variantCaption span { font-size: .75rem; color: var(--muted); }
+.variantDots { display: flex; justify-content: center; gap: .375rem; margin-top: .625rem; }
+.variantDots span { width: 6px; height: 6px; border-radius: 50%; background: #c9d5e5; }
+.variantDots span[data-active='true'] { background: var(--blue); }
+@media (max-width: 480px) {
+  .floorPicker { flex-basis: 100%; }
+  .roomPicker .variantPreview :global(.hogar-scene),
+  .roomPicker .variantPreview :global(.hogar-scene-fallback),
+  .roomPicker .sceneLoading { min-height: 200px !important; height: 200px; }
+  .variantArrow { top: 92px; }
 }
 .floorPicker {
   display: flex;

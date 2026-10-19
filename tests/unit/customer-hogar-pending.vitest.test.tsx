@@ -172,6 +172,18 @@ describe('Hogar pending operation identity', () => {
     expect(request).not.toHaveBeenCalled()
   })
 
+  it('opens the visual room picker when the equipment shortcut has an empty home', () => {
+    const data = existing()
+    data.homes[0].floors[0].rooms = []
+    render(<CustomerHogar initialData={data} customerId={customerId} entry="equipo" />)
+    expect(screen.getByRole('dialog', { name: 'Nuevo ambiente' })).toBeTruthy()
+    expect(screen.getByRole('combobox', { name: 'Tipo de ambiente' })).toBeTruthy()
+    expect(screen.queryByLabelText('Orientación')).toBeNull()
+    click('Cancelar')
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(request).not.toHaveBeenCalled()
+  })
+
   it.each(['create-home', 'add-equipment', 'malformed'] as const)('never overrides %s recovery with an entry shortcut', (kind) => {
     recoverOperation(kind)
     render(<CustomerHogar initialData={existing()} customerId={customerId} entry="equipo" />)
@@ -205,8 +217,8 @@ describe('Hogar pending operation identity', () => {
         </ClientAppShell>
       )
       for (const name of [
-        'Añadir otro hogar', 'Configurar hogar', 'Planta', 'Editar planta actual',
-        'Añadir', 'Editar Living', 'Quitar Living', 'Añadir aire',
+        'Añadir otro hogar', 'Configurar hogar', 'Plantas', 'Editar planta actual',
+        'Ambientes', 'Editar Living', 'Quitar Living', 'Añadir aire',
         'Reubicar Aire existente', 'Quitar ubicación de Aire existente', 'Archivar hogar'
       ]) {
         const button = screen.getByRole('button', { name })

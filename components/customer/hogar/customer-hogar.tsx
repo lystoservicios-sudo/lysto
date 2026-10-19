@@ -30,7 +30,8 @@ import {
   createHomeMutationSchema,
   saveHomeSchema,
   type CustomerHome,
-  type CustomerHomesSnapshot
+  type CustomerHomesSnapshot,
+  type HomeRoom
 } from '@/lib/customer-homes/contracts'
 import {
   clearPendingHomeOperation,
@@ -47,6 +48,8 @@ import {
   roomKindsForHome
 } from '@/lib/customer-homes/model'
 import { createHomePreset } from '@/lib/customer-homes/presets'
+import { roomAdditionSlots, type RoomAdditionSlot } from '@/lib/customer-homes/room-additions'
+import { RoomPicker } from './room-picker'
 import {
   HomeForm,
   RoomForm,
@@ -107,6 +110,8 @@ function CustomerHogarScreen({
   const [floorId, setFloorId] = useState(initialData.homes[0]?.floors[0]?.id ?? '')
   const [roomId, setRoomId] = useState<string | null>(null)
   const [flow, setFlow] = useState<HomeFlow | null>(null)
+  const [addingRooms, setAddingRooms] = useState(false)
+  const [roomDraft, setRoomDraft] = useState<HomeRoom | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
@@ -115,6 +120,8 @@ function CustomerHogarScreen({
   const [confirm, setConfirm] = useState<Confirmation | null>(null)
   const headingRef = useRef<HTMLHeadingElement>(null)
   const entryHandled = useRef(false)
+  const addRoomButton = useRef<HTMLButtonElement>(null)
+  const roomPickerWasOpen = useRef(false)
   const pendingRef = useRef<PendingHomeOperation | null>(null)
   const pendingUncertain = useRef(false)
   const [pending, setPending] = useState<PendingHomeOperation | null>(null)
@@ -128,12 +135,27 @@ function CustomerHogarScreen({
   const floor = home?.floors.find((f) => f.id === floorId) ?? home?.floors[0]
   const room = floor?.rooms.find((r) => r.id === roomId)
   const address = data.addresses.find((a) => a.id === home?.addressId)
+  const additionSlots = useMemo(() => floor ? roomAdditionSlots(floor) : [], [floor])
   function assetRequest<T>(path: string, method = 'GET', body?: unknown): Promise<T> {
     return customerId
       ? originalAssetRequest<T>(path, method, body, { 'X-Lysto-Customer-Id': customerId })
       : originalAssetRequest<T>(path, method, body)
   }
-  useClientFocusedFlow(Boolean(flow || confirm))
+  useClientFocusedFlow(Boolean(flow || confirm || roomDraft))
+  useEffect(() => {
+    if (roomDraft) roomPickerWasOpen.current = true
+    else if (roomPickerWasOpen.current && !busy) {
+      roomPickerWasOpen.current = false
+      addRoomButton.current?.focus()
+    }
+  }, [roomDraft, busy])
+  useEffect(() => { setAddingRooms(false); setRoomDraft(null) }, [home?.id, floor?.id, flow?.type])
+  useEffect(() => {
+    if (!addingRooms || roomDraft) return
+    const escape = (event: KeyboardEvent) => { if (event.key === 'Escape') setAddingRooms(false) }
+    window.addEventListener('keydown', escape)
+    return () => window.removeEventListener('keydown', escape)
+  }, [addingRooms, roomDraft])
   useEffect(() => {
     if (!customerId) return
     const recovered = readPendingHomeOperation(customerId)
@@ -159,7 +181,7 @@ function CustomerHogarScreen({
     const target = selectedFloor.rooms[0]
     if (!target) {
       const next = addHomeRoom(selectedFloor, roomKindsForHome(selected.kind)[0])
-      setFlow({ type: 'room', value: next.rooms.at(-1)!, existing: false })
+      setRoomDraft({ ...next.rooms.at(-1)!, windows: selected.features.windows === 'small' ? 'small' : 'large' })
       setNotice('Primero añadí un ambiente para ubicar tu aire.')
       return
     }
@@ -170,14 +192,14 @@ function CustomerHogarScreen({
     headingRef.current?.focus()
   }, [flow?.type])
   useEffect(() => {
-    if (!flow && !pending) return
+    if (!flow && !pending && !roomDraft) return
     const preventLoss = (event: BeforeUnloadEvent) => {
       event.preventDefault()
       event.returnValue = ''
     }
     window.addEventListener('beforeunload', preventLoss)
     return () => window.removeEventListener('beforeunload', preventLoss)
-  }, [flow, pending])
+  }, [flow, pending, roomDraft])
   const unavailable = useCallback(() => {
     setGpuUnavailable(true)
     setListOnly(true)
@@ -316,6 +338,8 @@ function CustomerHogarScreen({
       parsed.data
     )
     acceptHome(result.home)
+    setRoomDraft(null)
+    setAddingRooms(false)
     setFlow(null)
     setConfirm(null)
     setNotice(success)
@@ -333,6 +357,8 @@ function CustomerHogarScreen({
           selected?.floors.find((f) => f.id === floor?.id)?.id ?? selected?.floors[0]?.id ?? ''
         )
         setRoomId(null)
+        setRoomDraft(null)
+        setAddingRooms(false)
         setNotice(
           pendingRef.current
             ? 'Información actualizada. El guardado sigue pendiente: reintentá el mismo registro para confirmar su resultado.'
@@ -352,16 +378,19 @@ function CustomerHogarScreen({
       existing: false
     })
   }
-  function newRoom() {
-    if (editingBlocked) return
-    if (!home || !floor) return
+  function chooseRoomLocation(slot?: RoomAdditionSlot) {
+    if (editingBlocked || !home || !floor || floor.rooms.length >= 60) return
+    if (slot && !additionSlots.some(value => value.id === slot.id)) return
     clearFeedback()
-    try {
-      const next = addHomeRoom(floor, roomKindsForHome(home.kind)[0])
-      setFlow({ type: 'room', value: next.rooms.at(-1)!, existing: false })
-    } catch (err) {
-      setError(assetError(err))
-    }
+    const kind = roomKindsForHome(home.kind)[0]
+    setRoomDraft({ id: uuid(), name: ROOM_CATALOG[kind].label, kind, variant: ROOM_CATALOG[kind].variants[0].value, x: slot?.x ?? 0, z: slot?.z ?? 0, width: 4, depth: 4, rotation: 0, windows: home.features.windows === 'small' ? 'small' : 'large' })
+  }
+  function newRoom() {
+    if (editingBlocked || !home || !floor) return
+    clearFeedback()
+    if (!floor.rooms.length) { chooseRoomLocation(); return }
+    setRoomId(null)
+    setAddingRooms(current => !current)
   }
   function placeEquipment(item?: CustomerAssetEquipment) {
     if (newOperationBlocked || busy) return
@@ -581,7 +610,7 @@ function CustomerHogarScreen({
           </button>
         </section>
       )}
-      {error && (
+      {error && !roomDraft && (
         <div role="alert" className={styles.error}>
           <p>{error}</p>
           {(error.includes('Los datos cambiaron') || (Boolean(pending) && Boolean(flow))) && (
@@ -737,6 +766,11 @@ function CustomerHogarScreen({
                   ))}
               </select>
             </div>
+            <button ref={addRoomButton} type="button" className={styles.textButton} aria-pressed={addingRooms}
+              disabled={editingBlocked || !floor || floor.rooms.length >= 60} onClick={newRoom}>
+              <Plus size={16} aria-hidden />
+              Ambientes
+            </button>
             <button
               type="button"
               className={styles.textButton}
@@ -757,7 +791,7 @@ function CustomerHogarScreen({
               }}
             >
               <Plus size={16} aria-hidden />
-              Planta
+              Plantas
             </button>
             {floor && (
               <button
@@ -783,6 +817,10 @@ function CustomerHogarScreen({
       )}
       {sceneHome && floor && flow?.type !== 'home' && flow?.type !== 'floor' && (
         <>
+          {addingRooms && !flow && <div className={styles.additionHint} role="status">
+            <span>{additionSlots.length ? 'Tocá un + para elegir dónde añadir el ambiente.' : 'No hay costados libres. Podés ajustar los ambientes o añadir otra planta.'}</span>
+            <button type="button" className={styles.textButton} onClick={() => setAddingRooms(false)}>Cancelar ubicación</button>
+          </div>}
           {room && !flow && (
             <button className={styles.back} type="button" onClick={() => setRoomId(null)}>
               <ArrowLeft size={18} aria-hidden />
@@ -819,14 +857,16 @@ function CustomerHogarScreen({
                 floorId={floor.id}
                 roomId={flow?.type === 'room' ? flow.value.id : (placementRoom?.id ?? roomId)}
                 focused={Boolean(room || flow?.type === 'placement' || flow?.type === 'room')}
+                roomAdditions={addingRooms && !flow ? additionSlots : undefined}
+                onAddRoom={chooseRoomLocation}
                 equipment={sceneEquipment}
                 selectedEquipmentId={flow?.type === 'placement' ? flow.value.equipmentId : null}
                 placementDraft={flow?.type === 'placement' ? flow.value : null}
                 onSelectRoom={(id) => {
-                  if (!flow) setRoomId(id)
+                  if (!flow && !addingRooms) setRoomId(id)
                 }}
                 onSelectEquipment={(id) => {
-                  if (!flow) {
+                  if (!flow && !addingRooms) {
                     const item = data.equipment.find((e) => e.id === id)
                     if (item) placeEquipment(item)
                   }
@@ -848,9 +888,12 @@ function CustomerHogarScreen({
               </button>
             )}
           </div>
+          {addingRooms && listOnly && !flow && <div className={styles.additionList} role="group" aria-label="Ubicación del nuevo ambiente">
+            {additionSlots.map(slot => <button type="button" key={slot.id} className={styles.secondary} disabled={editingBlocked} onClick={() => chooseRoomLocation(slot)}><Plus size={18} aria-hidden />{slot.label}</button>)}
+          </div>}
           {!flow && (
             <p className={styles.sceneHint}>
-              {room
+              {addingRooms ? 'Los costados ocupados se ocultan para que los ambientes no se superpongan.' : room
                 ? 'Explorá el ambiente o añadí un aire en sus paredes.'
                 : 'Tocá un ambiente para entrar. Arrastrá para girar.'}
               <span>Vista orientativa · No es un plano técnico</span>
@@ -1006,15 +1049,6 @@ function CustomerHogarScreen({
                 {room ? 'Este ambiente' : 'Ambientes'}
                 <span>{room ? '' : floor.rooms.length}</span>
               </h2>
-              <button
-                type="button"
-                className={styles.textButton}
-                disabled={editingBlocked || floor.rooms.length >= 60}
-                onClick={newRoom}
-              >
-                <Plus size={16} aria-hidden />
-                Añadir
-              </button>
             </div>
             {!floor.rooms.length && (
               <p className={styles.emptyRow}>Esta planta todavía no tiene ambientes.</p>
@@ -1024,7 +1058,7 @@ function CustomerHogarScreen({
                 <button
                   type="button"
                   aria-label={`Abrir ${r.name}`}
-                  onClick={() => setRoomId(r.id)}
+                  onClick={() => { setAddingRooms(false); setRoomId(r.id) }}
                   className={styles.roomButton}
                 >
                   <span className={styles.roomIcon}>
@@ -1252,6 +1286,17 @@ function CustomerHogarScreen({
           </button>
         </footer>
       )}
+      {home && floor && roomDraft && <RoomPicker home={home} value={roomDraft} busy={busy} error={error}
+        onChange={setRoomDraft}
+        onCancel={() => { if (!busy) { setRoomDraft(null); clearFeedback() } }}
+        onReload={() => void reload()}
+        onSave={() => void mutation(async () => {
+          await persist({ ...home,
+            features: { ...home.features, ...(roomDraft.kind === 'balcony' ? { balcony: true } : {}), ...(roomDraft.kind === 'terrace' ? { terrace: true } : {}) },
+            floors: home.floors.map(f => f.id === floor.id ? { ...f, rooms: [...f.rooms, roomDraft] } : f)
+          }, 'Ambiente añadido.')
+          setRoomId(null)
+        })} />}
       <Dialog
         open={Boolean(confirm)}
         onOpenChange={(open) => {
