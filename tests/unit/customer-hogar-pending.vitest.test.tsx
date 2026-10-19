@@ -103,7 +103,7 @@ async function beginHome() {
 }
 async function beginAir() {
   render(<CustomerHogar initialData={existing()} customerId={customerId} />)
-  click('Añadir aire')
+  click('Equipos')
   change('Nombre del aire', 'Aire nuevo')
   click('Registrar y ubicar aire')
   await waitFor(() => expect(screen.getByRole('alert')).toBeTruthy())
@@ -218,7 +218,7 @@ describe('Hogar pending operation identity', () => {
       )
       for (const name of [
         'Añadir otro hogar', 'Configurar hogar', 'Plantas', 'Editar planta actual',
-        'Ambientes', 'Editar Living', 'Quitar Living', 'Añadir aire',
+        'Ambientes', 'Editar Living', 'Quitar Living', 'Equipos',
         'Reubicar Aire existente', 'Quitar ubicación de Aire existente', 'Archivar hogar'
       ]) {
         const button = screen.getByRole('button', { name })
@@ -307,7 +307,7 @@ describe('Hogar pending operation identity', () => {
     cleanup()
     render(<CustomerHogar initialData={existing()} customerId={customerId} />)
     expect(request).toHaveBeenCalledTimes(1)
-    expect(screen.getByRole('button', { name: 'Añadir aire' })).toHaveProperty('disabled', true)
+    expect(screen.getByRole('button', { name: 'Equipos' })).toHaveProperty('disabled', true)
     request.mockResolvedValueOnce(
       response({
         home: { ...home, version: 2, placements: [{ equipmentId: airId, ...first.placement }] },
@@ -395,8 +395,8 @@ describe('Hogar pending operation identity', () => {
     updated.homes[0].version = 2
     request.mockResolvedValueOnce(response(updated))
     click('Recargar Hogar')
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Añadir aire' })).toBeTruthy())
-    click('Añadir aire')
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Equipos' })).toBeTruthy())
+    click('Equipos')
     change('Nombre del aire', 'Aire corregido')
     request.mockResolvedValueOnce(response({ home: { ...home, version: 3 }, equipment: {
       id: airId, nickname: 'Aire corregido', addressId, equipmentType: 'split',

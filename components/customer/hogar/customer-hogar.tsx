@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ArrowLeft,
   Building2,
+  ChevronLeft,
   ChevronRight,
   DoorOpen,
   Home,
@@ -31,6 +32,7 @@ import {
   saveHomeSchema,
   type CustomerHome,
   type CustomerHomesSnapshot,
+  type EquipmentPlacement,
   type HomeRoom
 } from '@/lib/customer-homes/contracts'
 import {
@@ -50,6 +52,7 @@ import {
 import { createHomePreset } from '@/lib/customer-homes/presets'
 import { roomAdditionSlots, type RoomAdditionSlot } from '@/lib/customer-homes/room-additions'
 import { RoomPicker } from './room-picker'
+import { EquipmentWallPicker } from './equipment-wall-picker'
 import {
   HomeForm,
   RoomForm,
@@ -134,6 +137,9 @@ function CustomerHogarScreen({
   const home = data.homes.find((h) => h.id === homeId) ?? data.homes[0]
   const floor = home?.floors.find((f) => f.id === floorId) ?? home?.floors[0]
   const room = floor?.rooms.find((r) => r.id === roomId)
+  const roomLocations = useMemo(() => home ? [...home.floors].sort((a, b) => a.order - b.order)
+    .flatMap(level => level.rooms.map(value => ({ room: value, floor: level }))) : [], [home])
+  const allRooms = roomLocations.map(value => value.room)
   const address = data.addresses.find((a) => a.id === home?.addressId)
   const additionSlots = useMemo(() => floor ? roomAdditionSlots(floor) : [], [floor])
   function assetRequest<T>(path: string, method = 'GET', body?: unknown): Promise<T> {
@@ -396,14 +402,14 @@ function CustomerHogarScreen({
     if (newOperationBlocked || busy) return
     if (!home || !floor) return
     if (item && !airTypes.some(([value]) => value === item.equipmentType)) return
-    const target = room ?? floor.rooms[0]
+    const existing = item ? home.placements.find((p) => p.equipmentId === item.id) : undefined
+    const target = (existing && allRooms.find(value => value.id === existing.roomId)) ?? room ?? floor.rooms[0] ?? allRooms[0]
     if (!target) {
-      setError('Añadí un ambiente en esta planta antes de ubicar un aire.')
+      setError('Añadí un ambiente en tu hogar antes de ubicar un aire.')
       return
     }
-    const existing = item ? home.placements.find((p) => p.equipmentId === item.id) : undefined
-    const targetId =
-      existing && floor.rooms.some((r) => r.id === existing.roomId) ? existing.roomId : target.id
+    const targetId = target.id
+    setFloorId(roomLocations.find(value => value.room.id === targetId)!.floor.id)
     clearFeedback()
     setFlow({
       type: 'placement',
@@ -428,6 +434,19 @@ function CustomerHogarScreen({
       }
     })
   }
+  function changePlacement(patch: Partial<Pick<EquipmentPlacement, 'wall' | 'offset' | 'height'>>) {
+    if (editingBlocked) return
+    setFlow(current => current?.type === 'placement'
+      ? { ...current, value: { ...current.value, ...patch } } : current)
+  }
+  function movePlacementRoom(direction: number) {
+    if (editingBlocked || flow?.type !== 'placement' || roomLocations.length < 2) return
+    const index = roomLocations.findIndex(value => value.room.id === flow.value.roomId)
+    const next = roomLocations[(index + direction + roomLocations.length) % roomLocations.length]
+    setFloorId(next.floor.id)
+    setFlow({ ...flow, value: { ...flow.value, roomId: next.room.id } })
+    clearFeedback()
+  }
   const visibleEquipment = useMemo(
     () =>
       home
@@ -445,7 +464,6 @@ function CustomerHogarScreen({
         home!.placements.some((p) => p.equipmentId === e.id && p.roomId === room.id)
       )
     : visibleEquipment
-  const allRooms = home?.floors.flatMap((f) => f.rooms) ?? []
   const placementRoom =
     flow?.type === 'placement' ? floor?.rooms.find((r) => r.id === flow.value.roomId) : undefined
   const sceneHome =
@@ -766,6 +784,11 @@ function CustomerHogarScreen({
                   ))}
               </select>
             </div>
+            <button type="button" className={styles.textButton}
+              disabled={editingBlocked || !allRooms.length || home.placements.length >= 500} onClick={() => placeEquipment()}>
+              <Plus size={16} aria-hidden />
+              Equipos
+            </button>
             <button ref={addRoomButton} type="button" className={styles.textButton} aria-pressed={addingRooms}
               disabled={editingBlocked || !floor || floor.rooms.length >= 60} onClick={newRoom}>
               <Plus size={16} aria-hidden />
@@ -827,8 +850,21 @@ function CustomerHogarScreen({
               Volver a la planta
             </button>
           )}
+          {flow?.type === 'placement' && placementRoom && <div className={styles.placementNavigation} role="group" aria-label="Recorrer ambientes">
+            <button type="button" className={styles.roomArrow} aria-label="Ambiente anterior" disabled={editingBlocked || roomLocations.length < 2} onClick={() => movePlacementRoom(-1)}><ChevronLeft size={24} aria-hidden /></button>
+            <div role="status" aria-label="Ambiente seleccionado" aria-atomic="true">
+              <strong>{placementRoom.name}</strong>
+              <span>{floor.name} · {roomLocations.findIndex(value => value.room.id === placementRoom.id) + 1} de {roomLocations.length}</span>
+            </div>
+            <button type="button" className={styles.roomArrow} aria-label="Ambiente siguiente" disabled={editingBlocked || roomLocations.length < 2} onClick={() => movePlacementRoom(1)}><ChevronRight size={24} aria-hidden /></button>
+          </div>}
           <div className={styles.sceneWrap}>
-            {listOnly ? (
+            {listOnly && flow?.type === 'placement' && placementRoom ? (
+              <div className={styles.placementFallback}>
+                <EquipmentWallPicker value={flow.value} disabled={editingBlocked} onChange={changePlacement} />
+                {gpuUnavailable && <p className={styles.small}>La vista 3D no está disponible en este dispositivo. Podés ubicar el aire tocando una pared en esta vista simple.</p>}
+              </div>
+            ) : listOnly ? (
               <div className={styles.listPreview}>
                 <DoorOpen size={30} aria-hidden />
                 <h2>
@@ -871,13 +907,7 @@ function CustomerHogarScreen({
                     if (item) placeEquipment(item)
                   }
                 }}
-                onPlace={(patch) =>
-                  setFlow((current) =>
-                    current?.type === 'placement' && !equipmentPending
-                      ? { ...current, value: { ...current.value, ...patch } }
-                      : current
-                  )
-                }
+                onPlace={changePlacement}
                 onUnavailable={unavailable}
               />
             )}
@@ -888,6 +918,10 @@ function CustomerHogarScreen({
               </button>
             )}
           </div>
+          {flow?.type === 'placement' && <div className={styles.placementHint}>
+            <p>{flow.equipment.equipmentType === 'central' ? 'Elegí el ambiente. El sistema central se muestra en el techo.' : 'Tocá la pared donde está el aire para ubicarlo.'}<span>Se guardará cuando confirmes.</span></p>
+            {!gpuUnavailable && <button type="button" className={styles.textButton} onClick={() => setListOnly(value => !value)}>{listOnly ? 'Ver en 3D' : 'Vista simple'}</button>}
+          </div>}
           {addingRooms && listOnly && !flow && <div className={styles.additionList} role="group" aria-label="Ubicación del nuevo ambiente">
             {additionSlots.map(slot => <button type="button" key={slot.id} className={styles.secondary} disabled={editingBlocked} onClick={() => chooseRoomLocation(slot)}><Plus size={18} aria-hidden />{slot.label}</button>)}
           </div>}
@@ -988,7 +1022,6 @@ function CustomerHogarScreen({
       {home && floor && flow?.type === 'placement' && (
         <PlacementForm
           flow={flow}
-          rooms={floor.rooms}
           busy={busy}
           locked={equipmentPending}
           onChange={setFlow}
@@ -1115,20 +1148,6 @@ function CustomerHogarScreen({
                 {room ? 'Aires en este ambiente' : 'Tus aires'}
                 <span>{shownEquipment.length}</span>
               </h2>
-              <button
-                type="button"
-                className={styles.textButton}
-                disabled={
-                  busy ||
-                  newOperationBlocked ||
-                  !floor.rooms.length ||
-                  home.placements.length >= 500
-                }
-                onClick={() => placeEquipment()}
-              >
-                <Plus size={16} aria-hidden />
-                Añadir aire
-              </button>
             </div>
             {home.placements.length >= 500 && (
               <p className={styles.small}>
@@ -1198,7 +1217,7 @@ function CustomerHogarScreen({
                         disabled={
                           busy ||
                           newOperationBlocked ||
-                          !floor.rooms.length ||
+                          !allRooms.length ||
                           (!placement && home.placements.length >= 500) ||
                           !airTypes.some(([value]) => value === item.equipmentType)
                         }

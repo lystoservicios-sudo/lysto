@@ -46,7 +46,7 @@ describe('Hogar client flows', () => {
     }))
     data.homes[0].placements[0].equipmentId = ids.air
     render(<CustomerHogar initialData={data} />)
-    expect(screen.getByRole('button', { name: 'Añadir aire' })).toHaveProperty('disabled', true)
+    expect(screen.getByRole('button', { name: 'Equipos' })).toHaveProperty('disabled', true)
     expect(screen.getByRole('button', { name: 'Reubicar Aire del living' })).toHaveProperty('disabled', false)
     expect(screen.getByText(/límite de 500/)).toBeTruthy()
     expect(request).not.toHaveBeenCalled()
@@ -101,8 +101,9 @@ describe('Hogar client flows', () => {
   it('focuses placement and cancellation keeps the equipment unplaced', () => {
     render(<CustomerHogar initialData={snapshot()} />)
     fireEvent.click(screen.getByRole('button', { name: 'Ubicar Aire del living' }))
-    expect(screen.getByLabelText('Pared')).toBeTruthy()
-    expect(screen.getByLabelText('Posición sobre la pared')).toBeTruthy()
+    expect(screen.getByRole('status', { name: 'Ambiente seleccionado' }).textContent).toContain('Living')
+    expect(screen.queryByLabelText('Pared')).toBeNull()
+    expect(screen.queryByLabelText('Posición sobre la pared')).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
     expect(screen.getByText('Sin ubicar')).toBeTruthy()
     expect(request).not.toHaveBeenCalled()

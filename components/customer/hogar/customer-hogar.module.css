@@ -322,7 +322,6 @@
 .variantDots span { width: 6px; height: 6px; border-radius: 50%; background: #c9d5e5; }
 .variantDots span[data-active='true'] { background: var(--blue); }
 @media (max-width: 480px) {
-  .floorPicker { flex-basis: 100%; }
   .roomPicker .variantPreview :global(.hogar-scene),
   .roomPicker .variantPreview :global(.hogar-scene-fallback),
   .roomPicker .sceneLoading { min-height: 200px !important; height: 200px; }
@@ -346,6 +345,9 @@
 }
 .floorPicker svg {
   flex-shrink: 0;
+}
+@media (max-width: 480px) {
+  .floorPicker { flex-basis: 100%; }
 }
 .sceneWrap {
   position: relative;
@@ -399,6 +401,49 @@
   font-size: 0.75rem;
   margin-top: 0.25rem;
 }
+.placementNavigation {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 44px;
+  align-items: center;
+  gap: .75rem;
+  margin: .25rem 0 .75rem;
+}
+.placementNavigation div { display: grid; gap: .125rem; text-align: center; }
+.placementNavigation strong { font-size: 1.0625rem; overflow-wrap: anywhere; }
+.placementNavigation span { color: var(--muted); font-size: .8125rem; }
+.roomArrow {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  color: var(--blue);
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: white;
+}
+.roomArrow:hover:not(:disabled) { background: var(--ice); }
+.placementHint { display: flex; align-items: center; justify-content: space-between; gap: .75rem; margin: .75rem 0 1.5rem; }
+.placementHint p { margin: 0; color: var(--ink); font-size: .875rem; }
+.placementHint span { display: block; margin-top: .125rem; color: var(--muted); font-size: .8125rem; }
+.placementHint button { flex-shrink: 0; }
+.placementFallback { padding: 1rem; }
+.placementFallback > p { margin: 1rem auto 0; text-align: center; }
+.wallPicker { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
+.wallSurface {
+  position: relative;
+  height: 152px;
+  border: 1px solid var(--line);
+  border-bottom: 8px solid #e1d8c6;
+  border-radius: 10px;
+  background: #f2f1ed;
+  color: var(--muted);
+  touch-action: manipulation;
+}
+.wallSurface:hover:not(:disabled) { background: var(--ice); }
+.wallSurface[aria-pressed='true'] { background: #e9f1ff; border-color: #9bbfff; color: var(--blue); }
+.wallName { position: absolute; top: 8px; left: 4px; right: 4px; font-size: .75rem; font-weight: 650; }
+.wallInterior { position: absolute; top: 32px; bottom: 8px; left: 16px; right: 16px; }
+.wallAir { position: absolute; transform: translate(-50%, -50%); display: grid; place-items: center; width: 32px; height: 22px; border: 1px solid var(--blue); border-radius: 4px; background: white; color: var(--blue); }
 .content {
   display: grid;
   gap: 1.75rem;

@@ -622,7 +622,8 @@ export function PlacementForm({
   onSave
 }: {
   flow: Extract<HomeFlow, { type: 'placement' }>
-  rooms: HomeRoom[]
+  /** Optional location controls for embedded flows that still use the form. */
+  rooms?: HomeRoom[]
   busy: boolean
   locked: boolean
   onChange: (flow: HomeFlow) => void
@@ -736,6 +737,7 @@ export function PlacementForm({
             {flow.equipment.nickname}
           </p>
         )}
+        {rooms && <>
         <h2 className={styles.formSection}>Ubicación en el ambiente</h2>
         <p className={styles.small}>
           Tocá una pared o usá estos controles. Solo se guardará cuando confirmes.
@@ -811,6 +813,7 @@ export function PlacementForm({
           La ubicación es una referencia visual, no certifica la instalación ni las condiciones de
           acceso.
         </p>
+        </>}
       </fieldset>
       <FormActions
         busy={busy}

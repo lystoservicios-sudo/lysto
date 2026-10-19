@@ -29,7 +29,7 @@ async function declaredSceneMode(page: Page): Promise<'webgl' | 'fallback'> {
 }
 
 async function expectListFallback(page: Page) {
-  await expect(page.getByText(gpuFallbackCopy, { exact: true })).toBeVisible()
+  await expect(page.getByText(/^La vista 3D no está disponible en este dispositivo\./)).toBeVisible()
   await expect(page.getByTestId('hogar-3d-canvas')).toHaveCount(0)
   // The parent removes unsupported controls entirely; no invalid 3D action
   // can remain enabled. This is not a skip or an accepted blank canvas.
@@ -151,21 +151,22 @@ async function addRoom(page: Page, name: string, kind: string, variant: string):
 }
 
 async function registerAir(page: Page, created: CreatedAssets, nickname: string): Promise<{ home: CustomerHome; equipment: CustomerAssetEquipment }> {
-  await page.getByRole('button', { name: 'Añadir aire', exact: true }).click()
+  await page.getByRole('button', { name: 'Equipos', exact: true }).click()
   await expect(navigation(page)).toHaveCount(0)
   await page.getByLabel('Nombre del aire').fill(nickname)
   await page.getByLabel('Tipo de aire').selectOption('inverter')
   await page.getByLabel('Marca (opcional)').fill('Equipo QA')
   await page.getByLabel('Modelo (opcional)').fill('Modelo QA 4500')
   await page.getByLabel('Frigorías (opcional)').fill('4500')
-  await page.getByLabel('Pared', { exact: true }).selectOption('west')
-  // Use real keyboard interactions; range controls are not fillable text inputs.
-  await page.getByLabel('Posición sobre la pared').press('ArrowRight')
-  const offset = Number(await page.getByLabel('Posición sobre la pared').inputValue())
-  expect(offset).toBeGreaterThan(.5)
-  await page.getByLabel('Altura orientativa').press('ArrowLeft')
-  const height = Number(await page.getByLabel('Altura orientativa').inputValue())
-  expect(height).toBeLessThan(2)
+  const simpleView = page.getByRole('button', { name: 'Vista simple', exact: true })
+  if (await simpleView.isVisible()) await simpleView.click()
+  const wall = page.getByRole('button', { name: 'Pared izquierda', exact: true })
+  await wall.press('Enter')
+  await wall.press('ArrowRight')
+  await wall.press('ArrowDown')
+  await expect(wall).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.getByRole('heading', { name: 'Ubicación en el ambiente', exact: true })).toHaveCount(0)
+  const offset = .55, height = 1.9
   const response = await homeResponse(page, 'POST', () => page.getByRole('button', { name: 'Registrar y ubicar aire', exact: true }).click(), equipmentPath)
   const result = await response.json() as { home: CustomerHome; equipment: CustomerAssetEquipment }
   expect(result.equipment.id).toMatch(uuidPattern)
@@ -226,8 +227,7 @@ test.describe('authenticated customer Hogar with a disposable backend', () => {
       await loginAs(page, customer, 'customerA'); await page.goto('/app/hogar')
       const original = await createHome(page, created, { name: 'Casa 3D QA', kind: 'house', newAddress: true })
       const lowerId = original.floors[0].id
-      const withLiving = await addRoom(page, 'Living 3D QA', 'living', 'family')
-      const livingId = withLiving.floors[0].rooms.find(room => room.name === 'Living 3D QA')!.id
+      await addRoom(page, 'Living 3D QA', 'living', 'family')
       await addRoom(page, 'Cocina 3D QA', 'kitchen', 'island')
       const mode = await declaredSceneMode(page)
       // Chromium must supply real rendering evidence. WebKit may have no GPU,
@@ -278,8 +278,12 @@ test.describe('authenticated customer Hogar with a disposable backend', () => {
       }
       await expect(page.getByRole('heading', { name: 'Living 3D QA', exact: true }).first()).toBeVisible()
       await expect(page.getByRole('button', { name: 'Abrir Cocina 3D QA', exact: true })).toHaveCount(0)
-      await page.getByRole('button', { name: 'Añadir aire', exact: true }).click()
-      await expect(page.getByLabel('Ambiente', { exact: true })).toHaveValue(livingId)
+      await page.getByRole('button', { name: 'Equipos', exact: true }).click()
+      await expect(page.getByRole('status', { name: 'Ambiente seleccionado' })).toContainText('Living 3D QA')
+      await page.getByRole('button', { name: 'Ambiente siguiente', exact: true }).click()
+      await expect(page.getByRole('status', { name: 'Ambiente seleccionado' })).toContainText('Cocina 3D QA')
+      await page.getByRole('button', { name: 'Ambiente anterior', exact: true }).click()
+      await expect(page.getByRole('status', { name: 'Ambiente seleccionado' })).toContainText('Living 3D QA')
       await expect(navigation(page)).toHaveCount(0)
       if (canvas) {
         await expect(page.locator('.hogar-scene')).toHaveClass(/is-focused.*is-placing/)
@@ -352,9 +356,13 @@ test.describe('authenticated customer Hogar with a disposable backend', () => {
       await expect(page.getByRole('heading', { name: 'Aire sin GPU QA', exact: true })).toBeVisible()
       await expect(page.getByRole('link', { name: 'Historial de Aire sin GPU QA', exact: true })).toHaveAttribute('href', `/app/equipos/${registered.equipment.id}`)
       await page.getByRole('button', { name: 'Reubicar Aire sin GPU QA', exact: true }).click()
-      await expect(page.getByLabel('Ambiente', { exact: true })).toHaveValue(bedroom.id)
+      await expect(page.getByRole('status', { name: 'Ambiente seleccionado' })).toContainText('Dormitorio sin GPU QA')
+      await page.getByRole('button', { name: 'Ambiente siguiente', exact: true }).click()
+      await expect(page.getByRole('status', { name: 'Ambiente seleccionado' })).toContainText('Living editado sin GPU QA')
+      await page.getByRole('button', { name: 'Ambiente anterior', exact: true }).click()
+      await expect(page.getByRole('status', { name: 'Ambiente seleccionado' })).toContainText('Dormitorio sin GPU QA')
       await expectListFallback(page)
-      await page.getByLabel('Pared', { exact: true }).selectOption('east')
+      await page.getByRole('button', { name: 'Pared derecha', exact: true }).press('Enter')
       await saveHome(page, 'Guardar ubicación')
       await expectListFallback(page)
       const persisted = await readHomes(page, customer)
