@@ -52,11 +52,24 @@ export async function providerJson(
   if (text.length > 1_000_000) throw new Error('invalid_provider_response')
   return JSON.parse(text) as Record<string, unknown>
 }
+async function assertCredentialMode(accessToken: string, liveMode: boolean) {
+  // Static TEST credentials are sandbox-only. APP_USR is issued to both real
+  // accounts and test users, so its prefix cannot identify the environment.
+  if (accessToken.startsWith('TEST-')) {
+    if (liveMode) throw new Error('payment_mode_mismatch')
+    return
+  }
+  const account = await providerJson('/users/me', accessToken)
+  if (!/^[1-9]\d*$/.test(String(account.id ?? '')) ||
+      !Array.isArray(account.tags) || !account.tags.every(tag => typeof tag === 'string'))
+    throw new Error('invalid_provider_response')
+  if (account.tags.includes('test_user') === liveMode)
+    throw new Error('payment_mode_mismatch')
+}
 const preferenceClientFactory: MercadoPagoPreferenceClientFactory = ({ accessToken }) => ({
   create: async ({ body, requestOptions }) => {
     const config = marketplaceConfig()
-    if (accessToken.startsWith('TEST-') === config.liveMode)
-      throw new Error('payment_mode_mismatch')
+    await assertCredentialMode(accessToken, config.liveMode)
     const createdAt = new Date(String(body.metadata?.lysto_created_at))
     if (!Number.isFinite(createdAt.getTime())) throw new Error('invalid_checkout_snapshot')
     const origin = new URL(body.back_urls!.success!).origin
@@ -166,7 +179,7 @@ export async function createCheckoutPreference(checkout: CheckoutRow) {
       throw new Error('checkout_identity_changed')
     if (checkoutProtocol(claim.checkout) === 'orders') {
       const accessToken = await marketplaceOAuth().getValidAccessToken(checkout.professional_id)
-      if (accessToken.startsWith('TEST-') === config.liveMode) throw new Error('payment_mode_mismatch')
+      await assertCredentialMode(accessToken, config.liveMode)
       const payload = buildOrderPayload(claim.checkout, config.origin)
       const raw = await providerJson('/v1/orders', accessToken, 'POST', payload,
         claim.checkout.order_idempotency_key)
