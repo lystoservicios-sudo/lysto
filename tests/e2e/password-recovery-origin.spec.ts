@@ -13,7 +13,8 @@ test('recovery form preserves its origin and reaches token validation', async ({
     response.request().method() === 'POST' && new URL(response.url()).pathname === '/auth/reset-password'
   )
   await page.getByRole('button', { name: 'Guardar contraseña', exact: true }).click()
-  expect((await submitted).headers().origin).toBe(new URL(page.url()).origin)
+  // Chromium's synchronous headers omit network-added headers on fetch requests.
+  expect((await (await submitted).allHeaders()).origin).toBe(new URL(page.url()).origin)
   expect((await result).status()).toBe(400)
   await expect(page.getByText('El enlace venció o ya fue utilizado.', { exact: false })).toBeVisible()
   await expect(page.getByText('Origen no permitido.', { exact: true })).toHaveCount(0)
