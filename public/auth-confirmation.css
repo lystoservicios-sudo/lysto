@@ -6,6 +6,11 @@
   --confirmation-ice: #f0f5fd;
 }
 
+.recovery-form { display: grid; gap: 12px; text-align: left; }
+.recovery-form input:not([type="hidden"]), .recovery-form select {
+  width: 100%; min-height: 48px; padding: 12px; border: 1px solid #aebbd0; border-radius: 10px; font: inherit;
+}
+
 * {
   box-sizing: border-box;
 }

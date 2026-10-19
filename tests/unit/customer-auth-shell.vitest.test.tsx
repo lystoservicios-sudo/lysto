@@ -1,9 +1,9 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { AuthFrame } from '../../components/auth/auth-frame'
 import ResetPage from '../../app/(auth)/restablecer/page'
 
-afterEach(cleanup)
+afterEach(() => { cleanup(); vi.unstubAllGlobals() })
 
 describe('customer access visual shell', () => {
   it('uses the approved room masthead without marketing or signed-in navigation', () => {
@@ -38,6 +38,7 @@ describe('customer access visual shell', () => {
     expect(container.querySelector('input[name="token_hash"]')?.getAttribute('value')).toBe('a'.repeat(43))
   })
   it('keeps the reset action and prevents duplicate submissions while sending', async () => {
+    vi.stubGlobal('fetch', vi.fn(() => new Promise(() => {})))
     const { container } = render(await ResetPage({ searchParams: Promise.resolve({ token_hash: 'b'.repeat(43) }) }))
     fireEvent.change(screen.getByLabelText('Nueva contraseña'), { target: { value: 'segura123' } })
     fireEvent.change(screen.getByLabelText('Repetir contraseña'), { target: { value: 'segura123' } })

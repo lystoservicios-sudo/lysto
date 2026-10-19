@@ -8,6 +8,7 @@ import type { Database } from '../../lib/supabase/database.types'
 import { assertTestEnvironment, readTestIdentity } from '../../scripts/lib/test-environment.mjs'
 import { startTestApp } from './http'
 import { fixtureLocation, fixtureLocationProof } from './location-fixture'
+import { fixtureTotp } from './mfa'
 
 function decodeHtml(value: string) { return value.replace(/&quot;/g,'"').replace(/&#x27;|&#39;/g,"'").replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&') }
 function attrs(tag: string) { return Object.fromEntries([...tag.matchAll(/([^\s=<>]+)="([^"]*)"/g)].map(match => [match[1],decodeHtml(match[2])])) }
@@ -233,5 +234,39 @@ describe('customer lifecycle with real Auth, email delivery and HTTP cookies', (
     await database.query("update auth.users set confirmation_sent_at=now()-interval '2 hours' where email=$1",[expiredEmail])
     expect((await request('/auth/confirm',{method:'POST',body:new URLSearchParams({token_hash:expiredToken})})).status).toBe(400)
     expect((await database.query('select email_confirmed_at from auth.users where email=$1',[expiredEmail])).rows[0].email_confirmed_at).toBeNull()
+  },180_000)
+  it('recovers an MFA account through HTTP, retries a bad code, and revokes the completed recovery session', async () => {
+    const enrolled = await userClient.auth.mfa.enroll({ factorType: 'totp', friendlyName: 'Disposable recovery test' })
+    if (enrolled.error || !enrolled.data || enrolled.data.type !== 'totp') throw new Error('Unable to enroll test MFA')
+    const { id: factorId, totp: { secret } } = enrolled.data
+    const verified = await userClient.auth.mfa.challengeAndVerify({ factorId, code: fixtureTotp(secret) })
+    expect(verified.error).toBeNull()
+    // Use a fresh code window after enrollment, as a real authenticator does.
+    await new Promise(resolve => setTimeout(resolve, 30_100 - Date.now() % 30_000))
+    const link = await admin.auth.admin.generateLink({ type: 'recovery', email })
+    expect(link.error).toBeNull()
+    const mfaPassword = 'Mfa-A1!2026'
+    const values = { token_hash: link.data.properties!.hashed_token, password: mfaPassword, repeatPassword: mfaPassword }
+    const initial = await request('/auth/reset-password', { method: 'POST', body: new URLSearchParams(values) })
+    expect(initial.status).toBe(200)
+    const html = await initial.text()
+    expect(html).toContain('Código del autenticador')
+    expect(html).not.toContain(mfaPassword)
+    const continuation = html.match(/name="continuation" value="([^"]+)"/)![1]
+    const resume = { continuation, password: mfaPassword, repeatPassword: mfaPassword, factorId, code: 'invalid' }
+    expect((await request('/auth/reset-password', { method: 'POST', body: new URLSearchParams(resume) })).status).toBe(400)
+    const currentCode = fixtureTotp(secret)
+    const wrongCode = String((Number(currentCode) + 1) % 1_000_000).padStart(6, '0')
+    expect((await request('/auth/reset-password', { method: 'POST', body: new URLSearchParams({ ...resume, code: wrongCode }) })).status).toBe(400)
+    const recoveryCookies = cookieHeader()
+    const complete = await request('/auth/reset-password', { method: 'POST', body: new URLSearchParams({ ...resume, code: fixtureTotp(secret) }) })
+    expect(complete.status).toBe(303)
+    expect(complete.headers.get('location')).toBe(app!.baseURL + '/login?reset=success')
+    expect((await request('/auth/reset-password', { method: 'POST', body: new URLSearchParams(resume) })).status).toBe(400)
+    const replay = await request('/auth/reset-password', { method: 'POST', headers: { Cookie: recoveryCookies }, body: new URLSearchParams({ ...resume, code: fixtureTotp(secret) }) })
+    expect(replay.status).toBe(400)
+    expect(await replay.text()).toContain('El enlace venció o ya fue utilizado.')
+    expect((await userClient.auth.signInWithPassword({ email, password: mfaPassword })).error).toBeNull()
+    expect((await userClient.auth.signInWithPassword({ email, password: newPassword })).error?.code).toBe('invalid_credentials')
   },180_000)
 })
