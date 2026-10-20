@@ -4,7 +4,7 @@ const activeJobStatuses = ['confirmed', 'technician_on_way', 'arrived', 'onsite_
 
 export type ProfessionalJobData = {
   role: string
-  job: { id: string; request_id?: string; professional_id?: string; status: string; contractSource?: string | null; requestStatus?: string; scheduled_date?: string | null; time_window?: string | null; created_at?: string; updated_at?: string; final_amount?: number | null }
+  job: { id: string; request_id?: string; professional_id?: string; status: string; contractSource?: string | null; requestStatus?: string; scheduled_date?: string | null; scheduled_time_window?: string | null; created_at?: string; updated_at?: string; final_amount?: number | null }
   equipmentId: string | null
   visitAddressLabel?: string | null
   visit: { startsAt: string; endsAt: string; addressLabel: string; confirmed: true } | null

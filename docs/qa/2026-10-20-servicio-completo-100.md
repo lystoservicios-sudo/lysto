@@ -62,6 +62,46 @@ Para recuperar el intento ya preparado, solamente se compactan los tres destinos
 - La reserva canónica es 21/10, 14–16 Argentina; `jobs.scheduled_time_window` conserva 18–20 del pedido original. Pendiente verificar y corregir las pantallas/comprobantes que lean esos campos antiguos.
 - Captura local: `C:\Users\quime\.codex\private\lysto-sessions\e2e-checkout-100.png`. Archivo ficticio preparado para probar carga de evidencia: `e2e-evidencia-simulada.png`, explícitamente marcado como simulación y sin reparación física.
 
-## Pendiente
+### Pago y split confirmados
 
-El usuario debe completar el pago de ARS 100. Después falta verificar la confirmación canónica y el split realmente aplicado, completar diagnóstico, aprobación del cliente, cierre técnico y conformidad final. El circuito completo todavía no está aprobado.
+El usuario completó el pago. Se verificó primero la observación canónica guardada por Lysto y luego se consultó directamente `GET /v1/payments/184166569165` con la credencial existente de la plataforma, sin copiar ni registrar secretos.
+
+- Pago real `184166569165`: `approved`, detalle `accredited`, liberación `released`, ARS 100, sin reembolsos.
+- Referencia externa: el checkout `82f2a5e5-90cb-45f3-ab17-06611b740e13`. Un solo pago registrado y observación sin incidencias.
+- Mercado Pago devuelve `application_fee=18`, `mercadopago_fee=7.61` y `net_received_amount=74.39`.
+- `charges_details` identifica un cargo efectivo de ARS 18 desde `collector` hacia `marketplace_owner`, y ARS 7,61 hacia Mercado Pago. No son solamente importes esperados del presupuesto.
+- `marketplace_owner=208363173` coincide con `/users/me` de la credencial de la plataforma. La cuenta del vendedor congelada en el checkout, `389157374`, coincide con la cuenta vinculada al técnico.
+- La respuesta de pago visible para la plataforma omite los campos de identidad de comprador/vendedor. No se infiere de esos campos ausentes que comprador y vendedor sean la misma persona. El usuario informó que utilizó una tarjeta propia asociada a la cuenta del técnico.
+- El usuario vio una venta de ARS 100; ese importe coincide con el bruto. El neto confirmado por el proveedor es ARS 74,39. El split de esta operación sí está aplicado.
+- Por indicación del usuario, el nombre comercial observado no se investigará.
+
+### Servicio simulado completado
+
+El técnico registró llegada, diagnóstico y alcance. El cliente aceptó el diagnóstico; el técnico envió el informe final y el cliente confirmó el servicio. Se usó evidencia gráfica explícitamente ficticia, sin afirmar una reparación física ni publicar una reseña.
+
+Consulta posterior: trabajo `completed`, diagnóstico `accepted`, un informe final, cero adicionales, un checkout, un pago aprobado de ARS 100 y cero reembolsos. El equipo real permanece separado del equipo de ensayo.
+
+Captura: `C:\Users\quime\.codex\private\lysto-sessions\e2e-servicio-completado.png`.
+
+### Administración de pagos y regresiones
+
+Diseño aprobado: ampliar Pagos con solicitudes ligadas a servicios activos, con comisión habitual o comisión Lysto cero; devoluciones totales/parciales y cancelaciones con revisión previa de servicio, destinatario, importe y motivo.
+
+- La solicitud no debita al cliente: requiere su aceptación y el checkout existente.
+- La comisión se fija en el servidor y se comprueba contra la tasa que revisó el administrador. Una modificación concurrente exige revisar nuevamente.
+- Los adicionales técnicos anteriores conservan su comisión cero; los importes históricos no cambian.
+- Las devoluciones reutilizan la reserva de saldo, la ejecución idempotente y la confirmación del proveedor. Una respuesta incierta conserva la misma clave de reintento.
+- Las cancelaciones con enlace o pago requieren conciliación; cancelar no devuelve dinero automáticamente.
+- Se corrige la pérdida de horario y domicilio al avanzar de `confirmed`: la reserva sigue disponible en los estados posteriores, con autorización de participante y profesional coincidente.
+- Se corrige la fecha sin hora que aparecía el día anterior y se usa `scheduled_time_window` cuando no hay reserva canónica.
+- La ficha de una propuesta pendiente dirige a Propuestas, sin indicar prematuramente que debe pagar el cliente.
+
+Verificación sin Docker:
+
+- 158 pruebas focalizadas aprobadas de pagos, estados canónicos, interacción simulada con Mercado Pago, reembolsos, interfaz y operaciones del profesional. Las regresiones posteriores se vuelven a ejecutar antes de publicar.
+- Prueba SQL real dentro de una transacción con `ROLLBACK`, con solicitudes, trabajos, checkouts y un pago sintético nuevos. Ningún dato de esa prueba se confirma y ningún trabajador externo puede ver sus reintegros sin confirmar.
+- La prueba SQL cubre comisión normal/cero, aceptación y rechazo del cliente, MFA, permisos de técnico/cliente, idempotencia, cambios de importe/tasa, propuestas inmutables, checkout único, devolución parcial y del saldo completo, rechazo de sobrerreembolso, cancelación con/sin conciliación y datos de visita en ocho estados.
+- Se compara el importe/comisión/neto de cada adicional histórico antes y después del cambio de esquema; permanecen iguales.
+- Archivo reproducible de aserciones: `tests/sql/admin-payments-rollback.sql`. El envoltorio con cuentas del propietario queda fuera del repositorio.
+
+Límites: no se emitieron nuevos cobros o devoluciones reales. Los estados alternativos del proveedor se verifican con respuestas simuladas; no equivalen a una certificación de todos los medios de pago. La concurrencia de dos conexiones PostgreSQL no se ejecutó en este ensayo. El asistente nuevo de solicitud conserva el límite de cobertura descrito arriba.

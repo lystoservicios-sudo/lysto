@@ -1,11 +1,5 @@
-import { PaymentPanel } from '@/components/payments/payment-panel'
-import { ButtonLink } from '@/components/ui/button'
+import { AdminPayments } from '@/components/payments/admin-payments'
 
 export default function Page() {
-  return (
-    <div className="space-y-5">
-      <ButtonLink href="/admin/pagos/split">Excepciones y conciliación</ButtonLink>
-      <PaymentPanel role="admin" />
-    </div>
-  )
+  return <AdminPayments />
 }

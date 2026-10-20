@@ -36,6 +36,31 @@ afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.restoreAllMocks() })
 async function mount() { render(<ProfessionalJobWorkspace jobId={id} />); await screen.findByRole('heading', { name: 'Aire no enfría' }) }
 
 describe('approved compact professional job workspace', () => {
+  it('directs an unaccepted proposal to the acceptance flow instead of waiting for payment', async () => {
+    data.job.status = 'pending_professional_acceptance'
+    context.initialPaymentStatus = null
+    await mount()
+    expect(screen.queryByText('Esperando el pago del cliente')).toBeNull()
+    expect(screen.getByRole('link', { name: 'Revisar propuesta' }).getAttribute('href')).toBe('/pro/solicitudes')
+  })
+  it('does not shift a date-only visit to the previous day and shows the stored time window', async () => {
+    data.job = { ...data.job, scheduled_date: '2026-10-21', scheduled_time_window: '14:00-16:00' } as ProfessionalJobData['job']
+    await mount()
+    const visit = screen.getByRole('region', { name: 'Datos de la visita' })
+    expect(visit.textContent).toContain('21 oct')
+    expect(visit.textContent).toContain('14:00-16:00')
+    expect(visit.textContent).not.toContain('21:00')
+  })
+  it('keeps the canonical visit time and full address after departure', async () => {
+    data.visit = { startsAt: '2026-10-21T17:00:00Z', endsAt: '2026-10-21T19:00:00Z', addressLabel: 'Av. Ejemplo 123, Piso 2 Depto. B, Caballito', confirmed: true }
+    mutation = () => { data = { ...data, job: { ...data.job, status: 'technician_on_way' } }; return Response.json({ ok: true }) }
+    await mount()
+    fireEvent.click(screen.getByRole('button', { name: 'Marcar en camino' }))
+    await screen.findByRole('button', { name: 'Confirmar llegada' })
+    const visit = screen.getByRole('region', { name: 'Datos de la visita' })
+    expect(visit.textContent).toContain('14:00')
+    expect(visit.textContent).toContain('Piso 2 Depto. B')
+  })
   it('clearly identifies a cancelled job and does not encourage travelling to it', async () => {
     data.job.status = 'cancelled_by_customer'
     await mount()

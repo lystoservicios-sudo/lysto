@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { paymentResponse } from './payment-response'
 import { Card } from '@/components/ui/card'
 import { Button, ButtonLink } from '@/components/ui/button'
+import { Dialog } from '@/components/ui/dialog'
 import { paymentStatusLabels } from '@/lib/payments/checkout-contract'
 
 type Checkout = {
@@ -49,6 +50,7 @@ export function PaymentPanel({
     [busy, setBusy] = useState(false),
     [revision, setRevision] = useState(0)
   const checkedReturn = useRef(false)
+  const [closing, setClosing] = useState<Checkout | null>(null)
   useEffect(() => { onBusyChange?.(busy) }, [busy, onBusyChange])
   useEffect(() => () => { onBusyChange?.(false) }, [onBusyChange])
   useEffect(() => {
@@ -138,6 +140,7 @@ export function PaymentPanel({
         })
       )
       setRevision((n) => n + 1)
+      setClosing(null)
       setMessage('El enlace quedó cerrado y verificado en Mercado Pago.')
     } catch (e) {
       setMessage(e instanceof Error ? e.message : 'No se pudo cerrar el enlace.')
@@ -164,7 +167,7 @@ export function PaymentPanel({
         <div>
           <h2 className="text-xl font-bold">Pagos con Mercado Pago</h2>
           <p className="mt-2 max-w-2xl text-sm text-slate-600">
-            El precio acordado ya incluye el 30% de protección. Al pagar no se vuelve a sumar. La
+            Se cobra el total acordado, sin agregar otro porcentaje al pagar. La
             confirmación se verifica con Mercado Pago; volver a esta página no significa que el pago
             esté aprobado.
           </p>
@@ -224,7 +227,7 @@ export function PaymentPanel({
         <article key={c.id} className="space-y-3 border-t border-slate-200 pt-4">
           <div className="flex flex-wrap justify-between gap-2">
             <h3 className="font-bold">
-              {c.extra_id ? 'Adicional sin comisión Lysto' : 'Servicio inicial'} · {ars(c.amount)}
+              {c.extra_id ? Number(c.marketplace_fee) === 0 ? 'Adicional sin comisión Lysto' : 'Cobro adicional' : 'Servicio inicial'} · {ars(c.amount)}
             </h3>
             <span className="text-sm font-bold">
               {paymentStatusLabels[c.status] ?? c.status}
@@ -278,7 +281,7 @@ export function PaymentPanel({
             ) : null}
             {actor === 'admin' &&
             ['ready', 'expired', 'rejected', 'cancelled', 'review'].includes(c.status) ? (
-              <Button variant="secondary" disabled={busy} onClick={() => void close(c.id)}>
+              <Button variant="secondary" disabled={busy} onClick={() => { setMessage(''); setClosing(c) }}>
                 Cerrar enlace para cancelación
               </Button>
             ) : null}
@@ -293,6 +296,14 @@ export function PaymentPanel({
           </div>
         </article>
       ))}
+      <Dialog open={Boolean(closing)} onOpenChange={open => { if (!open && !busy) setClosing(null) }} title="Cerrar enlace de pago">
+        {closing ? <div className="space-y-3">
+          <p>Servicio #{closing.job_id.slice(0, 8)} · Importe {ars(closing.amount)}</p>
+          <p>Se verificará el cierre del enlace en Mercado Pago para continuar con la cancelación. Esta acción no devuelve dinero.</p>
+          {message ? <p role="status">{message}</p> : null}
+          <Button disabled={busy} onClick={() => void close(closing.id)}>{busy ? 'Cerrando…' : 'Confirmar cierre del enlace'}</Button>
+        </div> : null}
+      </Dialog>
     </Card>
   )
 }
