@@ -101,5 +101,5 @@ it('shows the verified provider return without going through account login or cu
     expect.objectContaining({ headers: { Authorization: 'Bearer signed-return' } })
   ))
   expect(screen.queryByRole('link', { name: 'Ingresar' })).toBeNull()
-  expect(screen.getByRole('link', { name: 'Ir al inicio' }).getAttribute('href')).toBe('/')
+  expect(screen.getByRole('link', { name: 'Ir al inicio' }).getAttribute('href')).toBe('/app')
 })
