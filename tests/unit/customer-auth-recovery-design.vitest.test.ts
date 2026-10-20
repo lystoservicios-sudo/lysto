@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { URLSearchParams } from 'node:url'
 
-const fixtures = vi.hoisted(() => ({ verifyOtp: vi.fn(), rpc: vi.fn(), updateUser: vi.fn(), signOut: vi.fn() }))
+const fixtures = vi.hoisted(() => ({ verifyOtp: vi.fn(), rpc: vi.fn(), updateUser: vi.fn(), signOut: vi.fn(), mfa: { getAuthenticatorAssuranceLevel: vi.fn() } }))
 vi.mock('@/lib/supabase/server', () => ({
   createServerSupabaseClient: async () => ({ auth: fixtures, rpc: fixtures.rpc })
 }))
@@ -54,6 +54,7 @@ beforeEach(() => {
   fixtures.rpc.mockResolvedValue({ data: true, error: null })
   fixtures.updateUser.mockResolvedValue({ error: null })
   fixtures.signOut.mockResolvedValue({ error: null })
+  fixtures.mfa.getAuthenticatorAssuranceLevel.mockResolvedValue({ data: { currentLevel: 'aal1', nextLevel: 'aal1' }, error: null })
 })
 
 afterEach(() => vi.unstubAllEnvs())

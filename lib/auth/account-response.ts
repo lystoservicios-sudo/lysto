@@ -19,6 +19,7 @@ export function accountRedirect(
     | '/pro/onboarding'
     | '/completar-cuenta'
     | '/login?reset=success'
+    | '/equipo/login?reset=success'
     | '/login?logout=success'
 ) {
   return accountResponse(
@@ -105,6 +106,13 @@ export function passwordRecoveryPage(message: string, status: number, primary: '
       : '<a class="confirmation-button" href="/recuperar">Solicitar un nuevo enlace</a><a class="confirmation-link" href="/login">Volver al ingreso</a>',
     status
   )
+}
+
+/** Progressive fallback for recovery when JavaScript is unavailable. */
+export function passwordRecoveryFormPage(continuation: string, factors: Array<{ id: string; name: string }>, message: string, status: number) {
+  const authenticator = factors.length ? `<label for="factorId">Autenticador</label><select id="factorId" name="factorId">${factors.map(factor => `<option value="${escapedAccountText(factor.id)}">${escapedAccountText(factor.name)}</option>`).join('')}</select><label for="code">Código del autenticador</label><input id="code" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" minlength="6" maxlength="6" required>` : ''
+  return accountPage('Cambiar contraseña', message,
+    `<form class="recovery-form" action="/auth/reset-password" method="post"><input type="hidden" name="continuation" value="${escapedAccountText(continuation)}">${authenticator}<label for="password">Nueva contraseña</label><input id="password" name="password" type="password" autocomplete="new-password" minlength="6" maxlength="12" required><label for="repeatPassword">Repetir contraseña</label><input id="repeatPassword" name="repeatPassword" type="password" autocomplete="new-password" minlength="6" maxlength="12" required><button class="confirmation-button" type="submit">Guardar contraseña</button></form><p>Si perdiste acceso al autenticador, contactá al equipo de soporte.</p>`, status)
 }
 
 export function confirmationPage(
