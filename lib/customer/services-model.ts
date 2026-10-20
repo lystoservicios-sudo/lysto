@@ -54,7 +54,11 @@ const quoteSchema = z.object({
   id: uuid, created_at: createdAt, request_id: uuid.nullable(), status: z.string(),
   expires_at: createdAt,
   quote: z.object({ scope: quoteScopeSchema, total: z.number().finite().nullable() }),
-  address: z.object({ street: z.string(), number: z.string(), city: z.string() }).optional()
+  address: z.union([
+    z.object({ street: z.string(), number: z.string(), city: z.string() })
+      .transform(value => `${value.street} ${value.number}, ${value.city}`),
+    z.object({ label: z.string().trim().min(1) }).transform(value => value.label)
+  ]).optional()
 })
 const checkoutSchema = z.object({ job_id: uuid, extra_id: uuid.nullable(), status: z.string() })
 const visitSchema = z.object({
@@ -82,7 +86,7 @@ function toQuote(row: z.infer<typeof quoteSchema>): CustomerServiceQuoteSource {
     id: row.id, requestId: row.request_id, status: row.status,
     scope: row.quote.scope, total: row.quote.total,
     createdAt: row.created_at, expiresAt: row.expires_at,
-    address: row.address ? `${row.address.street} ${row.address.number}, ${row.address.city}` : undefined
+    address: row.address
   }
 }
 function point(row: { id: string; created_at: string }): PagePoint {

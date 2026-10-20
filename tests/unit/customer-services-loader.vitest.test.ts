@@ -103,6 +103,20 @@ beforeEach(() => {
 })
 
 describe('customer services loader', () => {
+  it('reads a legacy accepted quote with a saved address label and no structured address', async () => {
+    tables.service_requests = [request(1)]
+    tables.jobs = [{ ...job(1, 'confirmed'), final_amount: 100 }]
+    tables.service_quotes = [quote(1, {
+      request_id: id(1, 1), status: 'accepted', quote: { total: 100 },
+      address: { label: 'Domicilio guardado de prueba' }
+    })]
+    const page = await loadCustomerServices(session, {}, now)
+    expect(page.unavailableSections).toEqual([])
+    expect(page.items[0]).toMatchObject({
+      quoteId: id(3, 1), amount: 100, address: 'Domicilio guardado de prueba'
+    })
+  })
+
   it('keeps accepted legacy quotes visible when their display scope was not persisted', async () => {
     tables.service_requests = [request(1)]
     tables.jobs = [{ ...job(1, 'confirmed'), final_amount: 100 }]
