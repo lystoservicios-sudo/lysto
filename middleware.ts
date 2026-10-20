@@ -49,7 +49,8 @@ export async function middleware(request: NextRequest) {
     }
     return response
   }
-  if (pathname === '/comprobante' || pathname.startsWith('/comprobante/')) {
+  if (pathname === '/comprobante' || pathname.startsWith('/comprobante/') ||
+      /^\/app\/pagos\/resultado\/[^/]+\/?$/.test(pathname)) {
     const response = withCorrelation(privateResponse(nextResponse()))
     response.headers.set('X-Robots-Tag', 'noindex, nofollow')
     response.headers.set('Referrer-Policy', 'no-referrer')

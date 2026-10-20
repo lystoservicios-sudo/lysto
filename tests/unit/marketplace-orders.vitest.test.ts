@@ -12,15 +12,15 @@ const checkout = {
 
 describe('Checkout Pro Orders split contract', () => {
   it('freezes the split, reference, expiry and return URLs', () => {
-    expect(buildOrderPayload(checkout, 'https://lysto.test')).toMatchObject({
+    expect(buildOrderPayload(checkout, 'https://lysto.test', 'signed-return')).toMatchObject({
       type: 'online', processing_mode: 'manual', total_amount: '100.05',
       marketplace_fee: '18.01', external_reference: checkout.id,
       expiration_time: 'PT1800S',
       items: [{ quantity: 1, unit_price: '100.05', total_amount: '100.05' }],
       config: { online: {
-        success_url: 'https://lysto.test/app/trabajos/job-1?pago=retorno',
-        pending_url: 'https://lysto.test/app/trabajos/job-1?pago=pendiente',
-        failure_url: 'https://lysto.test/app/trabajos/job-1?pago=reintentar'
+        success_url: `https://lysto.test/app/pagos/resultado/${checkout.id}?pago=retorno&confirmacion=signed-return`,
+        pending_url: `https://lysto.test/app/pagos/resultado/${checkout.id}?pago=pendiente&confirmacion=signed-return`,
+        failure_url: `https://lysto.test/app/pagos/resultado/${checkout.id}?pago=reintentar&confirmacion=signed-return`
       } }
     })
   })

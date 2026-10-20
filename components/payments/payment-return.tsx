@@ -11,9 +11,11 @@ function verified(result: CustomerPaymentResult) {
 }
 const finalStates = new Set(['approved', 'refunded', 'partially_refunded', 'charged_back', 'review'])
 
-export function PaymentReturn({ checkoutId }: { checkoutId: string }) {
-  const [result, setResult] = useState<CustomerPaymentResult | null>(null)
-  const [busy, setBusy] = useState(true)
+export function PaymentReturn({ checkoutId, returnToken, initialResult }: {
+  checkoutId: string; returnToken?: string; initialResult?: CustomerPaymentResult | null
+}) {
+  const [result, setResult] = useState<CustomerPaymentResult | null>(initialResult ?? null)
+  const [busy, setBusy] = useState(!initialResult)
   const [accessRequired, setAccessRequired] = useState(false)
   const [error, setError] = useState('')
   const [revision, setRevision] = useState(0)
@@ -21,32 +23,41 @@ export function PaymentReturn({ checkoutId }: { checkoutId: string }) {
   useEffect(() => {
     const controller = new AbortController()
     let active = true
+    let retryTimer: ReturnType<typeof setTimeout> | undefined
+    let attempts = 0
+    const endpoint = returnToken ? '/api/payments/return' : '/api/customer/payment-result'
+    const receiptHeaders = returnToken ? { Authorization: `Bearer ${returnToken}` } : undefined
     setBusy(true)
     setError('')
     setAccessRequired(false)
     async function read() {
-      const response = await fetch(`/api/customer/payment-result?checkoutId=${encodeURIComponent(checkoutId)}`, {
-        cache: 'no-store', signal: controller.signal
+      const response = await fetch(`${endpoint}?checkoutId=${encodeURIComponent(checkoutId)}`, {
+        cache: 'no-store', signal: controller.signal, ...(receiptHeaders ? { headers: receiptHeaders } : {})
       })
-      if ([401, 403, 404].includes(response.status)) throw new Error('access_required')
+      if (!returnToken && [401, 403, 404].includes(response.status)) throw new Error('access_required')
       if (!response.ok) throw new Error('verification_unavailable')
       return await response.json() as CustomerPaymentResult
     }
     async function load() {
+      attempts += 1
       try {
         let current = await read()
         // The URL's status and payment_id are never used to establish payment.
         // First prove ownership, then reconcile through the authenticated API.
         if (!finalStates.has(current.status) || (current.status === 'approved' && !verified(current))) {
-          const response = await fetch('/api/mercadopago/checkouts', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ checkoutId, action: 'reconcile_return' }), signal: controller.signal
+          const response = await fetch(returnToken ? `${endpoint}?checkoutId=${encodeURIComponent(checkoutId)}` : '/api/mercadopago/checkouts', {
+            method: 'POST', headers: { 'Content-Type': 'application/json', ...receiptHeaders },
+            body: JSON.stringify(returnToken ? {} : { checkoutId, action: 'reconcile_return' }), signal: controller.signal
           })
-          if ([401, 403, 404].includes(response.status)) throw new Error('access_required')
+          if (!returnToken && [401, 403, 404].includes(response.status)) throw new Error('access_required')
           if (!response.ok) throw new Error('verification_unavailable')
           current = await read()
         }
-        if (active) setResult(current)
+        if (active) {
+          setResult(current)
+          if (returnToken && attempts < 5 && ['creating', 'ready', 'pending', 'in_process'].includes(current.status))
+            retryTimer = setTimeout(() => { void load() }, 8000)
+        }
       } catch (cause) {
         if (!active) return
         if (cause instanceof Error && cause.message === 'access_required') {
@@ -58,16 +69,16 @@ export function PaymentReturn({ checkoutId }: { checkoutId: string }) {
       }
     }
     void load()
-    return () => { active = false; controller.abort() }
-  }, [checkoutId, revision])
+    return () => { active = false; controller.abort(); clearTimeout(retryTimer) }
+  }, [checkoutId, revision, returnToken])
 
   if (accessRequired) return (
     <section className="mt-6 rounded-3xl border border-slate-200 bg-white p-6 sm:p-8">
       <ShieldCheck className="h-10 w-10 text-lysto-blue" aria-hidden="true" />
-      <h1 className="mt-5 text-2xl font-bold tracking-tight text-slate-950">Consultá la confirmación de tu pago</h1>
-      <p className="mt-3 leading-7 text-slate-600">Ingresá con la cuenta cliente que contrató el servicio para ver el resultado. Si acabás de pagar, no repitas el pago.</p>
+      <h1 className="mt-5 text-2xl font-bold tracking-tight text-slate-950">Ver el detalle de tu pago</h1>
+      <p className="mt-3 leading-7 text-slate-600">Ingresá en Lysto con el email que usaste al solicitar el servicio para consultar el resultado. Si ya pagaste, no necesitás volver a pagar.</p>
       <ButtonLink className="mt-6 h-auto min-h-12 w-full px-4 py-3 text-center" href={`/login?next=${encodeURIComponent(`/app/pagos/resultado/${checkoutId}`)}`}>
-        Ingresar con mi cuenta cliente
+        Ingresar
       </ButtonLink>
     </section>
   )
@@ -116,9 +127,9 @@ export function PaymentReturn({ checkoutId }: { checkoutId: string }) {
       )}
       <div className="space-y-3 p-6 sm:p-8">
         {!confirmed && <Button variant="secondary" className="w-full" disabled={busy} onClick={() => setRevision(value => value + 1)}>Actualizar estado</Button>}
-        {result && <ButtonLink className="min-h-12 w-full" href={`/app/trabajos/${result.jobId}`}>Ver mi trabajo</ButtonLink>}
-        <ButtonLink className="min-h-12 w-full" variant="secondary" href="/app">Ir al inicio</ButtonLink>
-        {confirmed && result && <a className="flex min-h-11 items-center justify-center text-sm font-semibold text-lysto-blue underline underline-offset-4" href={`/app/pagos/${result.jobId}`}>Ver registro del pago</a>}
+        {result && !returnToken && <ButtonLink className="min-h-12 w-full" href={`/app/trabajos/${result.jobId}`}>Ver mi trabajo</ButtonLink>}
+        <ButtonLink className="min-h-12 w-full" variant={returnToken ? 'primary' : 'secondary'} href={returnToken ? '/' : '/app'}>Ir al inicio</ButtonLink>
+        {confirmed && result && !returnToken && <a className="flex min-h-11 items-center justify-center text-sm font-semibold text-lysto-blue underline underline-offset-4" href={`/app/pagos/${result.jobId}`}>Ver registro del pago</a>}
       </div>
     </section>
   )

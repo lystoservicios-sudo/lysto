@@ -19,6 +19,13 @@ it('binds provider return URLs to the checkout being paid', () => {
     failure: `https://lysto.test/app/pagos/resultado/${checkoutId}?pago=reintentar`
   })
 })
+it('carries the scoped receipt capability through every provider return state', () => {
+  const urls = checkoutBackUrls('https://lysto.test', jobId, checkoutId, 'scoped-receipt')
+  for (const url of Object.values(urls)) {
+    expect(new URL(url).searchParams.get('confirmacion')).toBe('scoped-receipt')
+    expect(new URL(url).pathname).toBe(`/app/pagos/resultado/${checkoutId}`)
+  }
+})
 
 it('checks the canonical provider state automatically on return', async () => {
   const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {

@@ -4,6 +4,7 @@ import type { CreatePreferenceInput } from '@waltergaltieri/mercadopago-split'
 import { checkoutAmounts, checkoutBackUrls, checkoutProtocol, inspectPayment } from './checkout-contract'
 import { paymentDatabase, paymentTransaction, type CheckoutRow } from './marketplace-db'
 import { inspectCanonicalOrder } from './orders'
+import { issuePaymentReturnToken } from './payment-return-token'
 
 type LockedJob = { professional_id: string; status: string; request_id: string }
 
@@ -160,7 +161,7 @@ export async function prepareCheckout(customerId: string, jobId: string, extraId
   })
 }
 
-export async function claimCheckout(id: string, origin: string) {
+export async function claimCheckout(id: string, origin: string, returnKey = process.env.MERCADOPAGO_ENCRYPTION_KEY ?? '') {
   return paymentTransaction(async db => {
     const result = await db.query<CheckoutRow & { preference_spec: CreatePreferenceInput | null; active_financial_exception: boolean }>(
       `select c.*,exists(select 1 from private.financial_exception_cases f
@@ -186,7 +187,8 @@ export async function claimCheckout(id: string, origin: string) {
     const spec: CreatePreferenceInput = checkout.preference_spec ?? {
       sellerId: checkout.professional_id, externalReference: checkout.id, idempotencyKey: checkout.id,
       marketplaceFee: amounts.fee, items: [{ id: checkout.extra_id ?? checkout.job_id, title: checkout.extra_id ? 'Adicional aceptado Lysto' : 'Servicio técnico Lysto', currencyId: 'ARS', quantity: 1, unitPrice: amounts.total }],
-      backUrls: checkoutBackUrls(origin, checkout.job_id, checkout.id),
+      backUrls: checkoutBackUrls(origin, checkout.job_id, checkout.id,
+        issuePaymentReturnToken(checkout.id, returnKey, checkout.expires_at)),
       autoReturn: 'approved', metadata: { lysto_checkout_id: checkout.id, lysto_created_at: checkout.created_at.toISOString() },
       expiresAt: checkout.expires_at,
     }

@@ -100,6 +100,16 @@ it('does not cache the closed public receipt or require a user login for it', as
   expect(response.headers.get('cache-control')).toContain('no-store')
   expect(mocks.create).not.toHaveBeenCalled()
 })
+it('keeps payment returns independent of login refresh and prevents leaking receipt links', async () => {
+  const response = await middleware(new NextRequest(
+    'https://lysto.test/app/pagos/resultado/8688db78-1b3d-4762-a239-0feb06b2878f?confirmacion=signed-return'
+  ))
+  expect(response.status).toBe(200)
+  expect(response.headers.get('cache-control')).toContain('no-store')
+  expect(response.headers.get('referrer-policy')).toBe('no-referrer')
+  expect(response.headers.get('x-robots-tag')).toBe('noindex, nofollow')
+  expect(mocks.create).not.toHaveBeenCalled()
+})
 it('lets the customer server session guard render a recoverable HTML error when refresh fails', async () => {
   mocks.getClaims.mockRejectedValue(new Error('private infrastructure detail'))
   const response = await middleware(new NextRequest('https://lysto.test/app'))

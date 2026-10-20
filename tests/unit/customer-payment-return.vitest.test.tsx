@@ -44,7 +44,7 @@ it.each([401, 403, 404])('offers safe customer login on %s without reconciling o
   const fetcher = vi.fn(async () => json({ code: 'unauthorized' }, status))
   vi.stubGlobal('fetch', fetcher)
   render(<PaymentReturn checkoutId={id} />)
-  const login = await screen.findByRole('link', { name: 'Ingresar con mi cuenta cliente' })
+  const login = await screen.findByRole('link', { name: 'Ingresar' })
   expect(login.getAttribute('href')).toBe(`/login?next=${encodeURIComponent(`/app/pagos/resultado/${id}`)}`)
   expect(screen.queryByText(paid.service)).toBeNull()
   expect(fetcher).toHaveBeenCalledTimes(1)
@@ -90,4 +90,16 @@ it('reconciles a returned retry even if an earlier payment attempt was rejected'
   vi.stubGlobal('fetch', fetcher)
   render(<PaymentReturn checkoutId={id} />)
   expect(await screen.findByText('Gracias, tu pago está confirmado')).toBeTruthy()
+})
+it('shows the verified provider return without going through account login or customer APIs', async () => {
+  const fetcher = vi.fn(async () => json(paid))
+  vi.stubGlobal('fetch', fetcher)
+  render(<PaymentReturn checkoutId={id} returnToken="signed-return" initialResult={paid} />)
+  expect(screen.getByRole('heading', { name: 'Gracias, tu pago está confirmado' })).toBeTruthy()
+  await waitFor(() => expect(fetcher).toHaveBeenCalledWith(
+    `/api/payments/return?checkoutId=${id}`,
+    expect.objectContaining({ headers: { Authorization: 'Bearer signed-return' } })
+  ))
+  expect(screen.queryByRole('link', { name: 'Ingresar' })).toBeNull()
+  expect(screen.getByRole('link', { name: 'Ir al inicio' }).getAttribute('href')).toBe('/')
 })

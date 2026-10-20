@@ -1,5 +1,5 @@
 import { createHash, createHmac, timingSafeEqual } from 'node:crypto'
-import { cents, checkoutAmounts, decimal } from './checkout-contract'
+import { cents, checkoutAmounts, checkoutBackUrls, decimal } from './checkout-contract'
 
 export class InvalidOrderWebhookSignatureError extends Error {}
 
@@ -46,9 +46,9 @@ type OrderCheckout = {
   expires_at: Date
 }
 
-export function buildOrderPayload(checkout: OrderCheckout, origin: string) {
+export function buildOrderPayload(checkout: OrderCheckout, origin: string, returnToken?: string) {
   const amounts = checkoutAmounts(checkout.amount, checkout.marketplace_fee)
-  const returnUrl = `${origin}/app/trabajos/${encodeURIComponent(checkout.job_id)}`
+  const backUrls = checkoutBackUrls(origin, checkout.job_id, checkout.id, returnToken)
   return {
     type: 'online', processing_mode: 'manual',
     total_amount: amounts.total, marketplace_fee: amounts.fee,
@@ -56,8 +56,8 @@ export function buildOrderPayload(checkout: OrderCheckout, origin: string) {
     description: checkout.extra_id ? 'Adicional aceptado Lysto' : 'Servicio técnico Lysto',
     items: [{ title: checkout.extra_id ? 'Adicional aceptado Lysto' : 'Servicio técnico Lysto',
       quantity: 1, unit_price: amounts.total, unit_measure: 'unit', total_amount: amounts.total }],
-    config: { online: { success_url: `${returnUrl}?pago=retorno`,
-      pending_url: `${returnUrl}?pago=pendiente`, failure_url: `${returnUrl}?pago=reintentar`,
+    config: { online: { success_url: backUrls.success,
+      pending_url: backUrls.pending, failure_url: backUrls.failure,
       auto_return: 'approved' } }
   }
 }

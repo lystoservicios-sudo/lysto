@@ -11,7 +11,8 @@ import {
 } from '@waltergaltieri/mercadopago-split'
 import { PrismaStorage } from '@waltergaltieri/mercadopago-split/prisma'
 import { checkIpnToken, ipnToken, marketplaceConfig } from './marketplace-config'
-import { buildPreferencePayload, checkoutProtocol } from './checkout-contract'
+import { buildPreferencePayload, checkoutBackUrls, checkoutProtocol } from './checkout-contract'
+import { issuePaymentReturnToken } from './payment-return-token'
 import { buildOrderPayload, inspectCanonicalOrder, inspectCreatedOrder, orderIdempotencyKey, verifyOrderWebhookSignature } from './orders'
 import { applyCanonicalOrder, applyCanonicalPayment, claimCheckout } from './marketplace-ledger'
 import { paymentDatabase, paymentTransaction, type CheckoutRow } from './marketplace-db'
@@ -171,7 +172,7 @@ export async function createCheckoutPreference(checkout: CheckoutRow) {
   if (checkoutProtocol(checkout) === 'orders' && process.env.MERCADOPAGO_ORDERS_ENABLED !== 'true')
     throw new Error('orders_not_enabled')
   const config = marketplaceConfig()
-  const claim = await claimCheckout(checkout.id, config.origin)
+  const claim = await claimCheckout(checkout.id, config.origin, config.encryptionKey)
   if (!claim.token) return claim.checkout
   try {
     const account = await marketplaceStorage().getConnectedAccount(checkout.professional_id)
@@ -180,7 +181,8 @@ export async function createCheckoutPreference(checkout: CheckoutRow) {
     if (checkoutProtocol(claim.checkout) === 'orders') {
       const accessToken = await marketplaceOAuth().getValidAccessToken(checkout.professional_id)
       await assertCredentialMode(accessToken, config.liveMode)
-      const payload = buildOrderPayload(claim.checkout, config.origin)
+      const payload = buildOrderPayload(claim.checkout, config.origin,
+        issuePaymentReturnToken(claim.checkout.id, config.encryptionKey, claim.checkout.expires_at))
       const raw = await providerJson('/v1/orders', accessToken, 'POST', payload,
         claim.checkout.order_idempotency_key)
       let order: ReturnType<typeof inspectCreatedOrder>
@@ -471,7 +473,10 @@ export async function renewCheckout(checkout: CheckoutRow) {
       {
         expires: true,
         expiration_date_from: claim.createdAt.toISOString(),
-        expiration_date_to: claim.expiresAt.toISOString()
+        expiration_date_to: claim.expiresAt.toISOString(),
+        back_urls: checkoutBackUrls(marketplaceConfig().origin, checkout.job_id, claim.id,
+          issuePaymentReturnToken(claim.id, marketplaceConfig().encryptionKey, claim.expiresAt)),
+        auto_return: 'approved'
       }
     )
     await paymentTransaction(async (db) => {
