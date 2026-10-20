@@ -23,10 +23,11 @@
 - Restoring the notification screen exposed a related counter bug: SQL excluded deliveries with a null lease. A second migration fixes that predicate; the authenticated administrator screen changed from 0 queued to 25, matching the listed events.
 - Both migrations were applied to the linked project and registered in migration history. Existing authorization and function privileges were preserved. Advisors found 71 warnings and no error-level findings; those broader warnings are outside this hotfix.
 - Relevant unit/component checks: 119 passing tests across 10 files. TypeScript and changed-file ESLint checks passed.
-- Remaining: build, publish the isolated changes and complete the three-role production retest.
+- The final build, publication and three-role production retest are recorded in `docs/qa/2026-10-20-correcciones-tres-roles.md`.
 
 ## Follow-up from the browser retest
 
 - Production accepted quotes also use `{label: string}` address snapshots. Added a failing loader regression, then support for that format without fabricating structured address fields. The regression passed with the complete saved shape.
 - A concurrent release replaced the first deployment during the browser retest. Rebased these changes onto the new production commit `c15f95b40be34e79628c1389a1285c02a4f670f9`, preserving the payment-return changes and durable payment read-grant migration.
-- Both the local and Vercel builds of the first candidate passed. The combined candidate must pass its fresh build and browser retest before completion.
+- Both the local and Vercel builds of the first candidate passed. The combined candidate passed 162 tests in 16 files and its Vercel production build, including lint and TypeScript.
+- Final deployment `dpl_GRqo4y3vS5pC5bxHigZmfVKqSGCU` was promoted and verified on `lystohogar.com`. Customer quote, Services, payments, payment record, More and logout passed; professional dashboard/job/payment reads and role boundaries passed; administrator request/job quotes, notifications and dashboard passed.
