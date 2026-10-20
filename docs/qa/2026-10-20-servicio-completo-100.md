@@ -98,10 +98,26 @@ Diseño aprobado: ampliar Pagos con solicitudes ligadas a servicios activos, con
 
 Verificación sin Docker:
 
-- 158 pruebas focalizadas aprobadas de pagos, estados canónicos, interacción simulada con Mercado Pago, reembolsos, interfaz y operaciones del profesional. Las regresiones posteriores se vuelven a ejecutar antes de publicar.
+- 158 pruebas focalizadas iniciales aprobadas de pagos, estados canónicos, interacción simulada con Mercado Pago, reembolsos, interfaz y operaciones del profesional. Después de la revisión pasaron las 24 pruebas administrativas, las regresiones de visita/propuesta y las 58 de recuperación de cuentas incorporadas desde `origin/main`.
 - Prueba SQL real dentro de una transacción con `ROLLBACK`, con solicitudes, trabajos, checkouts y un pago sintético nuevos. Ningún dato de esa prueba se confirma y ningún trabajador externo puede ver sus reintegros sin confirmar.
 - La prueba SQL cubre comisión normal/cero, aceptación y rechazo del cliente, MFA, permisos de técnico/cliente, idempotencia, cambios de importe/tasa, propuestas inmutables, checkout único, devolución parcial y del saldo completo, rechazo de sobrerreembolso, cancelación con/sin conciliación y datos de visita en ocho estados.
 - Se compara el importe/comisión/neto de cada adicional histórico antes y después del cambio de esquema; permanecen iguales.
 - Archivo reproducible de aserciones: `tests/sql/admin-payments-rollback.sql`. El envoltorio con cuentas del propietario queda fuera del repositorio.
+- El archivo SQL usa además un `SAVEPOINT` obligatorio y descarta sus fixtures antes de devolver el control; no puede ejecutarse por sí solo fuera de una transacción.
+- Revisión independiente: corregidos motivo interno expuesto (ahora en tabla privada), búsqueda de servicios antiguos y confirmación de casos con identificación del cliente/servicio. Sin hallazgos importantes pendientes.
+- Ambas migraciones se aplicaron y registraron en el proyecto enlazado. Se repitieron las aserciones sobre el esquema aplicado; después seguían existiendo cero solicitudes administrativas nuevas y cero solicitudes de reintegro.
+- Asesores de seguridad/rendimiento: 71 observaciones antes y después, cero errores y cero observaciones nuevas.
+- ESLint completo, TypeScript y compilación de producción aprobados. Código integrado con la recuperación MFA reciente, conservando las redirecciones de inicio de sesión.
 
 Límites: no se emitieron nuevos cobros o devoluciones reales. Los estados alternativos del proveedor se verifican con respuestas simuladas; no equivalen a una certificación de todos los medios de pago. La concurrencia de dos conexiones PostgreSQL no se ejecutó en este ensayo. El asistente nuevo de solicitud conserva el límite de cobertura descrito arriba.
+
+### Publicación y comprobación final
+
+- Código `c20ed56`, despliegue `dpl_GvBVDcU5hCixsLc6HQLdCxHtwFfi`, estado `READY`, publicado en `https://lystohogar.com`.
+- Cliente: “Servicio confirmado”, pago aprobado y el informe de simulación visibles.
+- Técnico: “Servicio completado”, importe ARS 100, reserva del 21/10 a las 14:00 y domicilio completo conservados.
+- Admin: Pagos muestra el pago real 100/18/7,61/74,39. Se abrieron y cerraron las revisiones de cobro habitual, cobro sin comisión, devolución parcial de 25 y cancelación, sin confirmar las operaciones.
+- La búsqueda por referencia en cancelaciones devuelve el servicio esperado. Los formularios se limpiaron después de comprobarlos.
+- Consulta final: el servicio está `completed`, un checkout, un pago aprobado de 100, cero adicionales, cero reintegros; cero solicitudes administrativas nuevas y cero casos de cancelación.
+- Se conservaron las tres sesiones cifradas y se dejó abierto `/admin/pagos`.
+- Capturas privadas: `e2e-servicio-completado.png`, `admin-cobro-sin-comision-revision.png`, `admin-devolucion-revision.png`.

@@ -1,6 +1,8 @@
 -- Run only inside an explicit transaction ending in ROLLBACK.
 -- The caller supplies an owned, paid simulation job and an authenticated admin.
 -- No provider calls, committed fixtures, or changes to the source job/payment.
+-- SAVEPOINT also prevents accidental standalone execution outside a transaction.
+savepoint admin_payments_test;
 do $test$
 #variable_conflict use_variable
 declare
@@ -156,3 +158,5 @@ begin
   then raise exception 'RLS or grants regression'; end if;
 end;
 $test$;
+rollback to savepoint admin_payments_test;
+release savepoint admin_payments_test;
