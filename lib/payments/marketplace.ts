@@ -43,12 +43,26 @@ export async function providerJson(
     },
     ...(body === undefined ? {} : { body: JSON.stringify(body) })
   })
-  if (!response.ok)
+  if (!response.ok) {
+    // The SDK replaces provider exceptions. Keep only allowlisted diagnostics;
+    // provider bodies, credentials, URLs and customer details must not enter logs.
+    const failure = await response.json().catch(() => null) as { error?: unknown } | null
+    const codes = ['invalid_auto_return', 'invalid_back_urls', 'invalid_items',
+      'invalid_marketplace_fee', 'invalid_expiration_date', 'invalid_notification_url',
+      'invalid_payment_methods', 'invalid_collector', 'invalid_preference',
+      'invalid_access_token', 'bad_request', 'not_found', 'internal_error']
+    const operation = path === '/checkout/preferences' && method === 'POST' ? 'create_preference'
+      : path === '/users/me' ? 'verify_account'
+      : path === '/v1/orders' && method === 'POST' ? 'create_order' : 'other'
+    console.error(JSON.stringify({ event: 'marketplace_provider_failed', operation,
+      status: response.status, code: typeof failure?.error === 'string' && codes.includes(failure.error)
+        ? failure.error : 'unclassified' }))
     throw new Error(
       response.status === 401 || response.status === 403
         ? 'seller_not_linked'
         : 'provider_unavailable'
     )
+  }
   const text = await response.text()
   if (text.length > 1_000_000) throw new Error('invalid_provider_response')
   return JSON.parse(text) as Record<string, unknown>
@@ -174,11 +188,13 @@ export async function createCheckoutPreference(checkout: CheckoutRow) {
   const config = marketplaceConfig()
   const claim = await claimCheckout(checkout.id, config.origin, config.encryptionKey)
   if (!claim.token) return claim.checkout
+  let stage = 'account_lookup'
   try {
     const account = await marketplaceStorage().getConnectedAccount(checkout.professional_id)
     if (!account?.enabled || account.mercadoPagoUserId !== checkout.seller_account_id)
       throw new Error('checkout_identity_changed')
     if (checkoutProtocol(claim.checkout) === 'orders') {
+      stage = 'order_create'
       const accessToken = await marketplaceOAuth().getValidAccessToken(checkout.professional_id)
       await assertCredentialMode(accessToken, config.liveMode)
       const payload = buildOrderPayload(claim.checkout, config.origin,
@@ -212,7 +228,9 @@ export async function createCheckoutPreference(checkout: CheckoutRow) {
       })
     }
     if (!claim.spec) throw new Error('invalid_checkout_snapshot')
+    stage = 'preference_create'
     const preference = await marketplacePreferenceClient().createPreference(claim.spec)
+    stage = 'preference_persist'
     const result = await paymentDatabase().query<CheckoutRow>(
       `update public.marketplace_checkouts set preference_id=$3,init_point=$4,sandbox_init_point=$5,
       status=case when status='creating' then 'ready' else status end,lease_until=null,lease_token=null,updated_at=now() where id=$1 and lease_token=$2 returning *`,
@@ -227,6 +245,9 @@ export async function createCheckoutPreference(checkout: CheckoutRow) {
     if (!result.rows[0]) throw new Error('checkout_busy')
     return result.rows[0]
   } catch (error) {
+    const names = ['Error', 'MercadoPagoApiError', 'SellerNotLinkedError', 'ValidationError', 'ZodError']
+    console.error(JSON.stringify({ event: 'marketplace_checkout_failed', stage,
+      errorType: error instanceof Error && names.includes(error.name) ? error.name : 'unclassified' }))
     await paymentDatabase().query(
       "update public.marketplace_checkouts set lease_until=null,lease_token=null,last_error='provider_request_failed' where id=$1 and lease_token=$2",
       [checkout.id, claim.token]

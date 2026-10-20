@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { OAuthManager } from '@waltergaltieri/mercadopago-split'
-import { marketplacePreferenceClient } from '@/lib/payments/marketplace'
+import { marketplacePreferenceClient, providerJson } from '@/lib/payments/marketplace'
 
 const fetcher = vi.fn()
 const spec = () => ({
@@ -76,4 +76,29 @@ it('rejects static TEST credentials in live mode without a provider mutation', a
   vi.mocked(OAuthManager.prototype.getValidAccessToken).mockResolvedValue('TEST-legacy')
   await expect(marketplacePreferenceClient().createPreference(spec())).rejects.toThrow()
   expect(fetcher).not.toHaveBeenCalled()
+})
+
+it('records provider failure status without recording credentials or response data', async () => {
+  const log = vi.spyOn(console, 'error').mockImplementation(() => {})
+  fetcher.mockResolvedValue(json({
+    error: 'invalid_auto_return', message: 'private buyer@example.test',
+    access_token: 'secret-token', cause: [{ description: 'private details' }]
+  }, 400))
+  await expect(providerJson('/checkout/preferences', 'secret-token', 'POST', { private: true }))
+    .rejects.toThrow('provider_unavailable')
+  expect(log).toHaveBeenCalledWith(JSON.stringify({
+    event: 'marketplace_provider_failed', operation: 'create_preference',
+    status: 400, code: 'invalid_auto_return'
+  }))
+})
+
+it('redacts unrecognized provider codes and resource identifiers', async () => {
+  const log = vi.spyOn(console, 'error').mockImplementation(() => {})
+  fetcher.mockResolvedValue(json({ error: 'private-buyer@example.test' }, 503))
+  await expect(providerJson('/v1/payments/private-payment-id', 'secret-token'))
+    .rejects.toThrow('provider_unavailable')
+  expect(log).toHaveBeenCalledWith(JSON.stringify({
+    event: 'marketplace_provider_failed', operation: 'other',
+    status: 503, code: 'unclassified'
+  }))
 })
