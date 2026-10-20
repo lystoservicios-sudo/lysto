@@ -3,6 +3,33 @@ import { afterEach, expect, it } from 'vitest'
 import { QuoteBreakdown } from '@/components/pricing/quote-breakdown'
 import { calculateServiceQuote } from '@/lib/pricing/service-quote'
 afterEach(cleanup)
+it('renders accepted legacy snapshots without inventing missing terms or recalculating money', () => {
+  const legacy = {
+    currency: 'ARS', labor: 100, total: 100, travel: 0, subtotal: 100,
+    safetyRate: 0.3, safetyAmount: 0, adjustments: [], platformFee: 18,
+    readyToOffer: true, reviewReasons: [], laborReference: 100,
+    specialPricing: { kind: 'owner_maintenance_test', amount: 100 },
+    materialsAmount: 0, platformFeeRate: 0.18, paymentCostBudget: 0,
+    calculatorSubtotal: 100, professionalAmount: 82, platformContribution: 18
+  } as unknown as ReturnType<typeof calculateServiceQuote>
+  const original = JSON.stringify(legacy)
+  render(<QuoteBreakdown quote={legacy} internal status="accepted" />)
+  expect(screen.getByText('Presupuesto aceptado')).toBeTruthy()
+  expect(screen.getByText('Alcance no registrado en el presupuesto')).toBeTruthy()
+  expect(screen.getByText('No se registraron exclusiones en este presupuesto.')).toBeTruthy()
+  expect(within(screen.getByText('Parte bruta del profesional').parentElement!).getByText(/82/)).toBeTruthy()
+  expect(screen.queryByText(/Fuente:.*undefined/)).toBeNull()
+  expect(JSON.stringify(legacy)).toBe(original)
+})
+
+it('handles missing legacy display lists for a standard quote', () => {
+  const quote = calculateServiceQuote({ issue: 'mantenimiento', urgency: 'flexible', propertyType: 'house', access: {} })
+  const legacy = { ...quote, adjustments: undefined, reviewReasons: undefined, exclusions: undefined } as unknown as typeof quote
+  render(<QuoteBreakdown quote={legacy} status="accepted" />)
+  expect(screen.getByText('Presupuesto aceptado')).toBeTruthy()
+  expect(screen.getByText('No se registraron exclusiones en este presupuesto.')).toBeTruthy()
+})
+
 it('shows missing costs as pending and separates initial markup from extra policy', () => {
   render(<QuoteBreakdown internal quote={calculateServiceQuote({ issue: 'mantenimiento', urgency: 'flexible', propertyType: 'house', access: {} })} />)
   expect(screen.getByText('Recargo de protección (30%)')).toBeTruthy()

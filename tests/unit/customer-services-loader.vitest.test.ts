@@ -103,6 +103,17 @@ beforeEach(() => {
 })
 
 describe('customer services loader', () => {
+  it('keeps accepted legacy quotes visible when their display scope was not persisted', async () => {
+    tables.service_requests = [request(1)]
+    tables.jobs = [{ ...job(1, 'confirmed'), final_amount: 100 }]
+    tables.service_quotes = [quote(1, {
+      request_id: id(1, 1), status: 'accepted', quote: { total: 100 }
+    })]
+    const page = await loadCustomerServices(session, {}, now)
+    expect(page.unavailableSections).toEqual([])
+    expect(page.items[0]).toMatchObject({ quoteId: id(3, 1), amount: 100 })
+  })
+
   it('omits unsubmitted server drafts while keeping a real job linked to an old request state', async () => {
     tables.service_requests = [{ ...request(3), status: 'draft' }, { ...request(2), status: 'price_selected' }, request(1)]
     tables.jobs = [job(2, 'confirmed'), job(1)]

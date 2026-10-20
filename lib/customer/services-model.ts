@@ -20,6 +20,7 @@ import { encodeCursor, parsePageInput, type PagePoint } from '@/lib/data-access/
 import { ApiError } from '@/lib/http/api-error'
 import { Constants } from '@/lib/supabase/database.types'
 import { isExpiredAutomaticRequest, requestVisitAddress } from '@/lib/jobs/visit-address'
+import { quoteScopeSchema } from '@/lib/pricing/quote-presentation'
 
 export type CustomerServicesInput = {
   filter?: CustomerServicesFilter
@@ -52,7 +53,7 @@ const jobSchema = z.object({
 const quoteSchema = z.object({
   id: uuid, created_at: createdAt, request_id: uuid.nullable(), status: z.string(),
   expires_at: createdAt,
-  quote: z.object({ scope: z.string(), total: z.number().finite().nullable() }),
+  quote: z.object({ scope: quoteScopeSchema, total: z.number().finite().nullable() }),
   address: z.object({ street: z.string(), number: z.string(), city: z.string() }).optional()
 })
 const checkoutSchema = z.object({ job_id: uuid, extra_id: uuid.nullable(), status: z.string() })
@@ -70,7 +71,7 @@ type SourcePage = { items: CustomerServiceSummary[]; cursor: string | null }
 function scope(session: Session, source: 'services' | 'quotes', filter: CustomerServicesFilter) {
   return JSON.stringify([session.profileId, session.customerId, 'customer-services', source, filter])
 }
-function rows<T>(result: QueryResult, schema: z.ZodType<T>): T[] {
+function rows<T>(result: QueryResult, schema: z.ZodType<T, z.ZodTypeDef, unknown>): T[] {
   if (result.error) throw new ApiError('service_unavailable')
   const parsed = z.array(schema).safeParse(result.data)
   if (!parsed.success) throw new ApiError('service_unavailable')
@@ -112,7 +113,7 @@ async function hydrateRequests(session: Session, requests: RequestRow[], unavail
       .eq('customer_id', owner).in('id', addressIds) : Promise.resolve(empty),
     session.client.from('service_issue_types').select('id,name').in('id', issueIds)
   ])
-  function optional<T>(index: number, schema: z.ZodType<T>, label: string): T[] {
+  function optional<T>(index: number, schema: z.ZodType<T, z.ZodTypeDef, unknown>, label: string): T[] {
     try {
       const result = related[index]
       if (result.status !== 'fulfilled') throw new ApiError('service_unavailable')
