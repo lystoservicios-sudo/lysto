@@ -72,6 +72,33 @@ it('freezes signed receipt destinations when preparing a new provider preference
   expect(JSON.parse(state.query.mock.calls[1][1][1]).backUrls).toEqual(claim.spec!.backUrls)
 })
 
+it('repairs only SDK-rejected legacy receipt URLs on the same unissued checkout', async () => {
+  const key = Buffer.alloc(32, 1).toString('base64')
+  const id = '92000000-0000-4000-8000-000000000001'
+  const expires = new Date(Date.now() + 1800000)
+  const expiration = Math.floor((expires.getTime() + 7 * 86400000) / 1000)
+  const digest = createHmac('sha256', Buffer.from(key, 'base64'))
+    .update(`lysto-payment-return-v1:${id}:${expiration}`).digest('hex')
+  const token = `v1.${expiration}.${digest}`
+  const backUrls = Object.fromEntries(Object.entries({ success: 'retorno', pending: 'pendiente', failure: 'reintentar' })
+    .map(([type, result]) => [type, `https://lystohogar.com/app/pagos/resultado/${id}?pago=${result}&confirmacion=${token}`]))
+  const spec = { sellerId: 'seller', externalReference: id, idempotencyKey: id, marketplaceFee: '18.00',
+    items: [{ id: 'job', quantity: 1, unitPrice: '100.00', currencyId: 'ARS', title: 'Servicio técnico Lysto' }],
+    backUrls, expiresAt: expires.toISOString(), metadata: { unchanged: true } }
+  const original = structuredClone(spec)
+  state.query.mockResolvedValueOnce({ rows: [{
+    ...prepared, id, job_id: 'job', amount: '100.00', marketplace_fee: '18.00',
+    expires_at: expires, created_at: new Date(), preference_spec: spec
+  }] }).mockResolvedValueOnce({ rows: [] })
+  const claim = await claimCheckout(id, 'https://lystohogar.com', key)
+  const stored = JSON.parse(state.query.mock.calls[1][1][1])
+  expect(stored).toEqual({ ...original, backUrls: claim.spec!.backUrls })
+  for (const value of Object.values(claim.spec!.backUrls!)) {
+    expect((value as string).length).toBeLessThanOrEqual(150)
+    expect(checkPaymentReturnToken(id, new URL(value as string).searchParams.get('confirmacion')!, key)).toBe(true)
+  }
+})
+
 it('does not renew a financially closed Order', async () => {
   vi.stubEnv('MERCADOPAGO_ORDERS_ENABLED', 'true')
   await expect(renewCheckout({ ...prepared, checkout_protocol: 'orders',

@@ -4,7 +4,7 @@ import type { CreatePreferenceInput } from '@waltergaltieri/mercadopago-split'
 import { checkoutAmounts, checkoutBackUrls, checkoutProtocol, inspectPayment } from './checkout-contract'
 import { paymentDatabase, paymentTransaction, type CheckoutRow } from './marketplace-db'
 import { inspectCanonicalOrder } from './orders'
-import { issuePaymentReturnToken } from './payment-return-token'
+import { compactPaymentReturnToken, issuePaymentReturnToken } from './payment-return-token'
 
 type LockedJob = { professional_id: string; status: string; request_id: string }
 
@@ -191,6 +191,23 @@ export async function claimCheckout(id: string, origin: string, returnKey = proc
         issuePaymentReturnToken(checkout.id, returnKey, checkout.expires_at)),
       autoReturn: 'approved', metadata: { lysto_checkout_id: checkout.id, lysto_created_at: checkout.created_at.toISOString() },
       expiresAt: checkout.expires_at,
+    }
+    // These old signed URLs exceed the SDK limit and were rejected before any
+    // provider request. Repair only our exact legacy destinations on an unissued
+    // checkout; keep its key, money, seller and receipt expiration unchanged.
+    if (checkout.preference_spec && checkout.status === 'creating' &&
+        Object.values(spec.backUrls).every(url => url.length > 150)) {
+      const receipt = new URL(spec.backUrls.success).searchParams.get('confirmacion')
+      if (receipt?.startsWith('v1.')) {
+        const legacy = checkoutBackUrls(origin, checkout.job_id, checkout.id)
+        const matches = Object.entries(legacy).every(([kind, value]) => {
+          const url = new URL(value)
+          url.searchParams.set('confirmacion', receipt)
+          return url.toString() === spec.backUrls[kind as keyof typeof spec.backUrls]
+        })
+        if (matches) spec.backUrls = checkoutBackUrls(origin, checkout.job_id, checkout.id,
+          compactPaymentReturnToken(checkout.id, receipt, returnKey))
+      }
     }
     // Dates in persisted JSON are revived only at the SDK boundary.
     spec.expiresAt = new Date(spec.expiresAt!)

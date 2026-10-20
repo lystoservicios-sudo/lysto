@@ -19,7 +19,9 @@ export function checkoutAmounts(total: string | number, fee: string | number) {
 export function checkoutBackUrls(origin: string, _jobId: string, checkoutId: string, returnToken?: string) {
   const destination = new URL(`/app/pagos/resultado/${checkoutId}`, origin)
   const withResult = (result: string) => {
-    destination.searchParams.set('pago', result)
+    // Signed receipts read the canonical status; a URL outcome adds no authority.
+    // Omitting it keeps the full signed capability within the SDK's 150-char limit.
+    if (!returnToken) destination.searchParams.set('pago', result)
     if (returnToken) destination.searchParams.set('confirmacion', returnToken)
     return destination.toString()
   }

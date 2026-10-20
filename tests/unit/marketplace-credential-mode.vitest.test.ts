@@ -2,6 +2,8 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { OAuthManager } from '@waltergaltieri/mercadopago-split'
 import { marketplacePreferenceClient, providerJson } from '@/lib/payments/marketplace'
+import { checkoutBackUrls } from '@/lib/payments/checkout-contract'
+import { checkPaymentReturnToken, issuePaymentReturnToken } from '@/lib/payments/payment-return-token'
 
 const fetcher = vi.fn()
 const spec = () => ({
@@ -101,4 +103,19 @@ it('redacts unrecognized provider codes and resource identifiers', async () => {
     event: 'marketplace_provider_failed', operation: 'other',
     status: 503, code: 'unclassified'
   }))
+})
+
+it('passes production signed receipt URLs through the actual split SDK', async () => {
+  const id = '92000000-0000-4000-8000-000000000001'
+  const key = Buffer.alloc(32, 1).toString('base64')
+  const expires = new Date(Date.now() + 600_000)
+  const token = issuePaymentReturnToken(id, key, expires)
+  const backUrls = checkoutBackUrls('https://lystohogar.com', id, id, token)
+  await expect(marketplacePreferenceClient().createPreference({ ...spec(), backUrls }))
+    .resolves.toMatchObject({ preferenceId: 'qa-preference' })
+  for (const value of Object.values(backUrls)) {
+    expect(value.length).toBeLessThanOrEqual(150)
+    expect(checkPaymentReturnToken(id, new URL(value).searchParams.get('confirmacion')!, key)).toBe(true)
+  }
+  expect(fetcher).toHaveBeenCalledTimes(2)
 })

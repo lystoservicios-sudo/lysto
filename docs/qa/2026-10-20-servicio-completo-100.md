@@ -43,6 +43,14 @@ Los scripts de preparación, que contienen el domicilio, quedan fuera del reposi
 - **Fecha en ficha técnica antes de aceptación:** el trabajo propuesto para 21/10 a las 14 muestra “20 oct 2026, 9:00 p. m.” en Datos de la visita. Pendiente contrastar después de la confirmación y corregir el tratamiento de fecha/franja.
 - **Apertura del checkout bloqueada:** respuesta genérica de pago, sin diagnóstico suficiente en los logs actuales. Se agregan registros limitados a códigos permitidos, estado HTTP y etapa; nunca cuerpos del proveedor, credenciales, URLs ni datos personales. Dos pruebas de privacidad fallan antes y pasan después; 39 pruebas de credenciales, contratos, preparación e interacción con el proveedor pasan.
 
+### Causa y corrección del checkout
+
+La instrumentación confirma `ValidationError` en `preference_create`. La prueba con la librería real reproduce el rechazo: los tres `backUrls` superan su máximo de 150 caracteres. El fallo sucede antes de cualquier solicitud al proveedor.
+
+El comprobante usa ahora la misma firma HMAC-SHA256 completa en base64url, con el mismo propósito, alcance y vencimiento. Se conserva la verificación de tokens anteriores. Los retornos firmados omiten el indicador de resultado, que nunca es autoridad para aprobar un pago; siempre consultan el estado canónico. En el dominio de producción los enlaces quedan en 149 caracteres y pasan por el SDK real.
+
+Para recuperar el intento ya preparado, solamente se compactan los tres destinos antiguos exactos de Lysto, firmados y válidos, de un checkout aún no emitido y en estado `creating`, que exceden el límite y por tanto nunca pudieron atravesar la validación del SDK. Se conserva la expiración del comprobante, identidad del checkout, clave de idempotencia, importes, vendedor y demás datos congelados. No se alteran preferencias ya emitidas.
+
 ## Pendiente
 
 Resolver la apertura del checkout, dejar el pago de ARS 100 al usuario, verificar la confirmación canónica y el split realmente aplicado, completar diagnóstico, aprobación del cliente, cierre técnico y conformidad final. El circuito completo todavía no está aprobado.

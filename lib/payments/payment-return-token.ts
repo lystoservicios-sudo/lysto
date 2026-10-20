@@ -16,15 +16,25 @@ export function issuePaymentReturnToken(checkoutId: string, key: string, checkou
   uuid.parse(checkoutId)
   const expiration = Math.floor((checkoutExpiresAt.getTime() + returnWindowMs) / 1000)
   if (!Number.isSafeInteger(expiration)) throw new Error('invalid_payment_expiry')
-  return `v1.${expiration}.${signature(checkoutId, expiration, key)}`
+  return `v2.${expiration}.${Buffer.from(signature(checkoutId, expiration, key), 'hex').toString('base64url')}`
 }
 
 export function checkPaymentReturnToken(checkoutId: string, token: string, key: string, now = Date.now()) {
   if (!uuid.safeParse(checkoutId).success || token.length > 100) return false
-  const match = /^v1\.(\d{10})\.([a-f0-9]{64})$/.exec(token)
-  if (!match || Number(match[1]) * 1000 <= now) return false
+  const match = /^(v1|v2)\.(\d{10})\.([a-f0-9]{64}|[A-Za-z0-9_-]{43})$/.exec(token)
+  if (!match || Number(match[2]) * 1000 <= now) return false
+  const bytes = Buffer.from(match[3], match[1] === 'v1' ? 'hex' : 'base64url')
+  if (bytes.length !== 32 || bytes.toString(match[1] === 'v1' ? 'hex' : 'base64url') !== match[3]) return false
   return timingSafeEqual(
-    Buffer.from(match[2], 'hex'),
-    Buffer.from(signature(checkoutId, Number(match[1]), key), 'hex')
+    bytes,
+    Buffer.from(signature(checkoutId, Number(match[2]), key), 'hex')
   )
+}
+
+/** Re-encode an existing valid capability without changing its expiration or authority. */
+export function compactPaymentReturnToken(checkoutId: string, token: string, key: string) {
+  if (!checkPaymentReturnToken(checkoutId, token, key)) throw new Error('invalid_return_token')
+  if (token.startsWith('v2.')) return token
+  const [, expiration, digest] = token.split('.')
+  return `v2.${expiration}.${Buffer.from(digest, 'hex').toString('base64url')}`
 }

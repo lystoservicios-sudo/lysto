@@ -18,9 +18,9 @@ describe('Checkout Pro Orders split contract', () => {
       expiration_time: 'PT1800S',
       items: [{ quantity: 1, unit_price: '100.05', total_amount: '100.05' }],
       config: { online: {
-        success_url: `https://lysto.test/app/pagos/resultado/${checkout.id}?pago=retorno&confirmacion=signed-return`,
-        pending_url: `https://lysto.test/app/pagos/resultado/${checkout.id}?pago=pendiente&confirmacion=signed-return`,
-        failure_url: `https://lysto.test/app/pagos/resultado/${checkout.id}?pago=reintentar&confirmacion=signed-return`
+        success_url: `https://lysto.test/app/pagos/resultado/${checkout.id}?confirmacion=signed-return`,
+        pending_url: `https://lysto.test/app/pagos/resultado/${checkout.id}?confirmacion=signed-return`,
+        failure_url: `https://lysto.test/app/pagos/resultado/${checkout.id}?confirmacion=signed-return`
       } }
     })
   })
