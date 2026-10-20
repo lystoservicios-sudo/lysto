@@ -10,13 +10,16 @@ const responseSchema = z.object({ features: z.array(z.object({
 const normalize = (text: string) => text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
 
 /** Geocodes an address, never a city/street centroid, for server-side routing. */
-export async function geocodeOpenRouteAddress(address: string, apiKey: string, fetcher: typeof fetch = fetch) {
+export async function geocodeOpenRouteAddress(address: string, apiKey: string, fetcher: typeof fetch = fetch,
+  structured?: { street: string; number: string; city?: string; province?: string }) {
   if (!apiKey) throw new Error('geocoding_not_configured')
   // The house number is the final numeric token in the street portion (e.g. Calle 23 5871).
   const number = address.split(',')[0].match(/\d+\s*$/)?.[0].trim()
   const query = address.replace(/\bCABA\b/gi, 'Ciudad Autónoma de Buenos Aires')
-  const params = new URLSearchParams({ text: query, 'boundary.country': 'ARG', layers: 'address', size: '5' })
-  const response = await fetcher(`https://api.openrouteservice.org/geocode/search?${params}`, {
+  const params = structured ? new URLSearchParams({ address: `${structured.number} ${structured.street}`, country: 'ARG',
+    ...(structured.city ? { locality: structured.city } : {}), ...(structured.province ? { region: structured.province } : {}) })
+    : new URLSearchParams({ text: query, 'boundary.country': 'ARG', layers: 'address', size: '5' })
+  const response = await fetcher(`https://api.openrouteservice.org/geocode/search${structured ? '/structured' : ''}?${params}`, {
     headers: { Authorization: apiKey }, cache: 'no-store', signal: AbortSignal.timeout(8_000)
   })
   if (!response.ok) throw new Error(`ors_geocoding_http_${response.status}`)
@@ -25,7 +28,12 @@ export async function geocodeOpenRouteAddress(address: string, apiKey: string, f
     (p.confidence ?? 0) >= 0.8 && p.match_type !== 'fallback' && ['point', 'interpolated'].includes(p.accuracy ?? ''))
   // Duplicate records at the same coordinate can come from different source datasets.
   const unique = [...new Map(candidates.map(p => [p.geometry.coordinates.join(','), p])).values()]
-  if (unique.length !== 1) throw new Error('address_ambiguous')
+  if (unique.length !== 1) {
+    console.warn('ors_geocode_unresolved', { hasHouseNumber: Boolean(number), matches: unique.length,
+      candidates: data.features.map(({ properties: p }) => ({ layer: p.layer, accuracy: p.accuracy,
+        confidence: p.confidence, match: p.match_type, numberMatches: p.housenumber === number, region: p.region })) })
+    throw new Error('address_ambiguous')
+  }
   const selected = unique[0], p = selected.properties
   const region = normalize(p.region ?? '')
   const province: 'CABA' | 'Buenos Aires' | 'other' = ['ciudad autonoma de buenos aires', 'capital federal', 'autonomous city of buenos aires'].includes(region) || p.region_a === 'C' ? 'CABA'

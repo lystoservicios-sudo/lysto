@@ -58,7 +58,7 @@ export const resolvedAddressSchema = addressSelectionSchema.extend({
   latitude: z.number().finite(),
   longitude: z.number().finite(),
   precision: z.enum(['rooftop', 'range_interpolated', 'geometric_center']),
-  source: z.enum(['georef_google', 'georef_openrouteservice'])
+  source: z.enum(['georef_google', 'georef_openrouteservice', 'georef'])
 }).strict()
 export type ResolvedAddress = z.infer<typeof resolvedAddressSchema>
 

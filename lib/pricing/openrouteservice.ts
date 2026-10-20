@@ -1,6 +1,6 @@
 import 'server-only'
 import { z } from 'zod'
-import { geocodeOpenRouteAddress } from '../location/openrouteservice'
+import { geocodeRoutingAddress } from '../location/routing-geocoding'
 import type { TravelEstimate } from './service-quote'
 
 const responseSchema = z.object({ routes: z.array(z.object({
@@ -29,7 +29,7 @@ export async function estimateOpenRouteTravel({ address, origin, apiKey, departu
   const start = departureTime ? new Date(departureTime) : now
   if (!Number.isFinite(start.getTime()) || start.getTime() < now.getTime() - 60_000) throw new Error('invalid_departure_time')
   const [destination, departure] = await Promise.all([
-    geocodeOpenRouteAddress(address, apiKey, fetcher), geocodeOpenRouteAddress(origin, apiKey, fetcher)
+    geocodeRoutingAddress(address, apiKey, fetcher), geocodeRoutingAddress(origin, apiKey, fetcher)
   ])
   if (departure.province !== 'CABA') throw new Error('origin_must_be_caba')
   async function drive(from: typeof departure, to: typeof destination) {
@@ -42,7 +42,13 @@ export async function estimateOpenRouteTravel({ address, origin, apiKey, departu
     if (!response.ok) throw new Error(`ors_routing_http_${response.status}`)
     const route = responseSchema.parse(await response.json()).routes[0]
     if (!route) throw new Error('route_unavailable')
-    return { km: route.summary.distance / 1000, minutes: route.summary.duration / 60, tollsVerified: verifiedTollFree(route) }
+    const samePoint = from.longitude === to.longitude && from.latitude === to.latitude
+    const confirmedNoTravel = samePoint && route.summary.distance === 0 && route.summary.duration === 0 &&
+      !(route.extras?.tollways?.values ?? []).some(([, , toll]) => toll !== 0)
+    const tollsVerified = confirmedNoTravel || verifiedTollFree(route)
+    if (!tollsVerified) console.warn('ors_tolls_unverified', { distance: route.summary.distance,
+      wayPoints: route.way_points, tollSegments: route.extras?.tollways?.values })
+    return { km: route.summary.distance / 1000, minutes: route.summary.duration / 60, tollsVerified }
   }
   // ORS road durations are estimates, not traffic forecasts for the visit time.
   const [outbound, back] = await Promise.all([drive(departure, destination), drive(destination, departure)])

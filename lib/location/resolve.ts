@@ -3,7 +3,7 @@ import 'server-only'
 import { addressSelectionSchema, resolvedAddressSchema, type AddressSelection, type ResolvedAddress } from './contracts'
 import { georefAddresses } from './georef'
 import { geocodeVerifiedAddress } from './google-geocoding'
-import { geocodeOpenRouteAddress } from './openrouteservice'
+import { geocodeRoutingAddress } from './routing-geocoding'
 
 export async function resolveArgentineAddress(raw: AddressSelection, options?: {
   apiKey?: string
@@ -29,7 +29,7 @@ export async function resolveArgentineAddress(raw: AddressSelection, options?: {
   if (!['02', '06'].includes(selected.provincia.id)) throw new Error('outside_coverage')
   const orsKey = options?.orsApiKey ?? process.env.OPENROUTESERVICE_API_KEY
   const point = orsKey
-    ? await geocodeOpenRouteAddress(selected.nomenclatura, orsKey, options?.orsFetcher)
+    ? await geocodeRoutingAddress(selected.nomenclatura, orsKey, options?.orsFetcher)
     : await geocodeVerifiedAddress(selected.nomenclatura, options?.apiKey ?? process.env.GOOGLE_MAPS_SERVER_API_KEY ?? '', options?.googleFetcher)
   const province = selected.provincia.id === '02' ? 'CABA' : 'Buenos Aires'
   if ('province' in point && point.province !== province) throw new Error('address_ambiguous')
@@ -38,7 +38,7 @@ export async function resolveArgentineAddress(raw: AddressSelection, options?: {
     province, provinceId: selected.provincia.id,
     cityId: selected.localidad.id, streetId: selected.calle.id,
     formattedAddress: point.formattedAddress, latitude: point.latitude, longitude: point.longitude, precision: point.precision,
-    source: orsKey ? 'georef_openrouteservice' : 'georef_google'
+    source: 'coordinateSource' in point && point.coordinateSource === 'georef' ? 'georef' : orsKey ? 'georef_openrouteservice' : 'georef_google'
   })
 }
 

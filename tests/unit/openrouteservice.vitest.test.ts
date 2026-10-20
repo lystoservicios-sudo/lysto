@@ -22,6 +22,13 @@ function fetchRoutes() {
     .mockResolvedValueOnce(response(route())).mockResolvedValueOnce(response(route(12000, 2400)))
 }
 afterEach(() => vi.unstubAllEnvs())
+it('accepts provider-confirmed zero travel only when both verified points coincide', async () => {
+  const zeroRoute = { routes: [{ summary: { distance: 0, duration: 0 }, way_points: [0, 0] }] }
+  const fetcher = vi.fn().mockResolvedValueOnce(response({ features: [point()] }))
+    .mockResolvedValueOnce(response({ features: [point()] })).mockImplementation(async () => response(zeroRoute))
+  const result = await estimateOpenRouteTravel({ ...input, origin: input.address, fetcher })
+  expect(result).toMatchObject({ outboundKm: 0, returnKm: 0, tolls: 0, tollsVerified: true })
+})
 it('prices separate outward and return journeys and verifies toll-free coverage', async () => {
   const fetcher = fetchRoutes()
   const result = await estimateOpenRouteTravel({ ...input, fetcher })
