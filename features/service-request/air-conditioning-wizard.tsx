@@ -78,11 +78,12 @@ function RequestWizard({ customerId = '', initialData = emptyInventory, initialI
   const address = data.addresses.find(a => a.id === answers.location?.addressId)
   const postal = address ? `${address.street} ${address.number}${address.floor ? ` · Piso ${address.floor}` : ''}${address.apartment ? ` · ${address.apartment}` : ''}, ${address.city}` : 'Dirección por completar'
   const locked = paymentBusy || paymentCheckBusy || !!pending || !!pendingError
-  const uploaded = !uploadBusy && media.files.length === media.saved.length
+  const pendingPhotos = media.files.filter(file => !media.saved.some(photo => photo.file === file)).length
+  const uploaded = !uploadBusy && pendingPhotos === 0
   const errors = getRequestStepErrors(draft, draft.step)
   const invalidCharacteristics = answers.characteristics?.capacity !== null && answers.characteristics?.capacity !== undefined && (!Number.isInteger(answers.characteristics.capacity) || answers.characteristics.capacity < 1000 || answers.characteristics.capacity > 30000)
   const invalidDate = draft.step === 'schedule' && !!answers.schedule?.preferredDate && answers.schedule.preferredDate <= argentinaDay()
-  const canContinue = ready && !locked && !previewBusy && !locationLocked && !uploadBusy && errors.length === 0 && !invalidDate && !invalidCharacteristics
+  const canContinue = ready && !locked && !previewBusy && !locationLocked && !uploadBusy && (draft.step !== 'details' || uploaded) && errors.length === 0 && !invalidDate && !invalidCharacteristics
   const update = useCallback((action: RequestDraftAction) => { setDraft(current => requestDraftReducer(current, action)) }, [])
   const selectLocation = useCallback((location: RequestLocationSelection | null) => update({ type: 'location', location }), [update])
   const lockLocation = useCallback((value: boolean) => setLocationLocked(value), [])
@@ -157,7 +158,8 @@ function RequestWizard({ customerId = '', initialData = emptyInventory, initialI
     return { equipmentId: equipment.id, expectedEquipmentVersion: equipment.version, addressId: answers.location.addressId, homeId: answers.location.homeId, expectedHomeVersion: answers.location.homeVersion, floorId: answers.location.floorId, roomId: answers.location.roomId, issue, timeSince: answers.details.kind === 'repair' ? answers.details.timeSince ?? 'days' : 'today', description: answers.details.description, answers: answers.details.kind === 'repair' ? { ...(answers.details.frequency ? { frequency: answers.details.frequency } : {}), ...(answers.details.symptomContext ? { symptom_context: answers.details.symptomContext } : {}) } : answers.details.kind === 'maintenance' ? { last_maintenance: answers.details.lastMaintenance ?? 'unknown' } : { installation_type: answers.details.installationType ?? 'unknown' }, preferredDate: answers.schedule.preferredDate, timeWindow: answers.schedule.preferredTimeWindow as RequestPreviewInput['timeWindow'], urgency: answers.schedule.urgency, uploadIntentIds: [...media.retained.map(photo => photo.intentId), ...media.saved.map(photo => photo.upload.intentId)], ...(answers.characteristics ? { equipmentDeclaration: answers.characteristics } : {}) }
   }
   async function calculatePreview() {
-    if (locked || uploadBusy || !uploaded || !customerId) return
+    if (locked || uploadBusy || !customerId) return
+    if (!uploaded) { go('details'); setError('Hay fotos pendientes de guardar. Reintentá guardarlas o quitalas para continuar.'); return }
     const revision = draft.inputRevision, mediaVersion = mediaRevision, epoch = ++previewEpoch.current
     setPreviewBusy(true); setError('')
     const current = () => alive.current && latest.current.draft.actorId === customerId && latest.current.draft.inputRevision === revision && latest.current.mediaRevision === mediaVersion && previewEpoch.current === epoch
@@ -279,7 +281,7 @@ function RequestWizard({ customerId = '', initialData = emptyInventory, initialI
       {invalidCharacteristics && <p role="status" className={styles.error}>Revisá la capacidad declarada: ingresá un número entre 1.000 y 30.000 frigorías o dejalo vacío si no lo sabés.</p>}
       {draft.step === 'review' ? <button className={styles.primary} data-mp-checkout-cta="checkout-pro" disabled={pending ? paymentBusy || !!pendingError : !canPay} onClick={() => void pay()}>{paymentBusy && <LoaderCircle className={styles.spinner} size={18} aria-hidden />}{paymentBusy ? 'Preparando el pago…' : pending ? 'Reintentar el mismo pedido' : 'Pagar con Mercado Pago'}</button> : <button className={styles.primary} disabled={draft.step === 'orientation' ? !ready || locked || uploadBusy : !canContinue} onClick={draft.step === 'orientation' ? () => { update({ type: 'orientation', accepted: true }); go('schedule') } : advance}>{actionLabel}</button>}
       <p className={styles.small}>{draft.step === 'review' ? pending ? 'Reintentar conserva el mismo pedido.' : preview?.status === 'ready' ? 'Te llevaremos a Mercado Pago para completar el pago.' : 'Todavía no se realiza ningún cobro.' : draft.step === 'orientation' ? 'Todavía no hay una visita confirmada.' : 'Tus datos se mantienen al volver atrás.'}</p>
-      {!uploaded && draft.step !== 'details' && <p role="status" className={styles.small}>Guardá las fotos seleccionadas antes de continuar con el pago.</p>}
+      {!uploaded && <div role="status" className={styles.small}><p>{uploadBusy ? 'Guardando tus fotos…' : 'Reintentá guardar las fotos pendientes o quitalas para continuar.'}</p>{draft.step !== 'details' && !uploadBusy && <button className={styles.textButton} onClick={() => go('details')}>Revisar fotos</button>}</div>}
     </div>}
   </div>
 }

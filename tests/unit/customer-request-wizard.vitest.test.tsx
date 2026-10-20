@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { MediaUploader } from '@/components/customer/media-uploader'
 import { PaymentDeferredPanel } from '@/components/customer/payment-deferred-panel'
@@ -6,6 +6,9 @@ import { AirConditioningWizard } from '@/features/service-request/air-conditioni
 import type { CustomerHomesSnapshot } from '@/lib/customer-homes/contracts'
 import { AIR_CONDITIONING_ISSUES } from '@/lib/domain/constants'
 import { generateDiagnosis } from '@/lib/diagnosis/rules'
+
+const { upload } = vi.hoisted(() => ({ upload: vi.fn() }))
+vi.mock('@/lib/uploads/client', () => ({ uploadPrivateFile: upload }))
 
 const actor = '10000000-0000-4000-8000-000000000001'
 const addressId = '10000000-0000-4000-8000-000000000002'
@@ -19,10 +22,56 @@ function inventory(): CustomerHomesSnapshot {
 function mount(initialIssue?: typeof AIR_CONDITIONING_ISSUES[number]['slug']) { render(<AirConditioningWizard customerId={actor} initialData={inventory()} initialIssue={initialIssue} />) }
 function next() { fireEvent.click(screen.getByRole('button', { name: /^Continuar/ })) }
 function details() { next(); next() }
-beforeEach(() => window.sessionStorage.clear())
+beforeEach(() => { window.sessionStorage.clear(); upload.mockReset() })
 afterEach(() => { cleanup(); vi.unstubAllGlobals() })
 
 describe('customer request wizard', () => {
+  it('saves selected photos automatically and waits for verification before reaching the price', async () => {
+    let finish!: (value: unknown) => void
+    upload.mockImplementation(() => new Promise(resolve => { finish = resolve }))
+    const fetcher = vi.fn(async () => Response.json({ status: 'ready', previewId: 'photo-preview', quote: { total: 100 }, expiresAt: '2028-01-12T12:00:00Z' }))
+    vi.stubGlobal('fetch', fetcher)
+    mount('no_enfria'); details()
+    fireEvent.click(screen.getByRole('radio', { name: 'Hace días' }))
+    const photo = new File(['photo'], 'aire.jpg', { type: 'image/jpeg' })
+    fireEvent.change(screen.getByLabelText('Agregar fotos'), { target: { files: [photo] } })
+    expect(upload).toHaveBeenCalledTimes(1)
+    expect((screen.getByRole('button', { name: 'Continuar' }) as HTMLButtonElement).disabled).toBe(true)
+    expect(fetcher).not.toHaveBeenCalled()
+    await act(async () => finish({ intentId: 'saved-photo', attachmentId: 'attachment', draftId: 'draft', entityId: null }))
+    expect((screen.getByRole('button', { name: 'Continuar' }) as HTMLButtonElement).disabled).toBe(false)
+    next(); fireEvent.click(screen.getByRole('button', { name: 'Elegir horario preferido' }))
+    fireEvent.click(screen.getByRole('radio', { name: 'Otra fecha' }))
+    fireEvent.change(screen.getByLabelText('Fecha de visita'), { target: { value: '2028-01-12' } })
+    fireEvent.click(screen.getByRole('radio', { name: '10:00 – 12:00' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Revisar pedido y presupuesto' }))
+    await waitFor(() => expect((screen.getByRole('button', { name: 'Pagar con Mercado Pago' }) as HTMLButtonElement).disabled).toBe(false))
+    const [, options] = (fetcher.mock.calls as unknown as [string, RequestInit][])[0]
+    expect(JSON.parse(String(options.body)).uploadIntentIds).toEqual(['saved-photo'])
+    expect(screen.queryByText('El precio todavía no está confirmado.')).toBeNull()
+  })
+  it('keeps a failed photo at Details with an explicit retry instead of a dead-end price', async () => {
+    upload.mockRejectedValueOnce(new Error('No se pudo verificar la foto.')).mockResolvedValue({ intentId: 'saved-photo', attachmentId: 'attachment', draftId: 'draft', entityId: null })
+    mount('no_enfria'); details(); fireEvent.click(screen.getByRole('radio', { name: 'Hace días' }))
+    fireEvent.change(screen.getByLabelText('Agregar fotos'), { target: { files: [new File(['photo'], 'aire.jpg', { type: 'image/jpeg' })] } })
+    expect((await screen.findByRole('alert')).textContent).toContain('No se pudo verificar la foto.')
+    expect((screen.getByRole('button', { name: 'Continuar' }) as HTMLButtonElement).disabled).toBe(true)
+    expect(upload).toHaveBeenCalledTimes(1)
+    fireEvent.click(screen.getByRole('button', { name: 'Reintentar guardar fotos' }))
+    await waitFor(() => expect((screen.getByRole('button', { name: 'Continuar' }) as HTMLButtonElement).disabled).toBe(false))
+    expect(upload).toHaveBeenCalledTimes(2)
+  })
+  it('lets the customer remove a failed optional photo and continue without losing answers', async () => {
+    upload.mockRejectedValue(new Error('No se pudo verificar la foto.'))
+    mount('no_enfria'); details(); fireEvent.click(screen.getByRole('radio', { name: 'Hace días' }))
+    fireEvent.change(screen.getByLabelText('Agregar fotos'), { target: { files: [new File(['photo'], 'aire.jpg', { type: 'image/jpeg' })] } })
+    await screen.findByRole('alert')
+    fireEvent.click(screen.getByRole('button', { name: 'Quitar aire.jpg' }))
+    expect((screen.getByRole('button', { name: 'Continuar' }) as HTMLButtonElement).disabled).toBe(false)
+    expect(screen.getByRole('radio', { name: 'Hace días' }).getAttribute('aria-checked')).toBe('true')
+    next()
+    expect(screen.getByRole('heading', { name: 'Qué puede estar pasando' })).toBeTruthy()
+  })
   it.each(AIR_CONDITIONING_ISSUES)('starts with $title selected from Inicio without skipping the first step', ({ slug, title }) => {
     mount(slug)
     expect(screen.getByText(/Paso 1 de 7/)).toBeTruthy()

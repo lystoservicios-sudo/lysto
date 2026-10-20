@@ -39,7 +39,7 @@ function MediaFilePreview({ file }: { file: File }) {
   return <div className="grid h-14 w-14 shrink-0 place-items-center rounded-xl bg-blue-50 text-blue-700"><Icon aria-hidden="true" className="h-5 w-5" /></div>
 }
 
-export function MediaUploader({ files, onFilesChange, maxFiles = 5, maxSizeMb = 10, target = { kind: 'request-photo' }, savedPhotos, onSavedPhotosChange, onBusyChange, customerId, labels }: {
+export function MediaUploader({ files, onFilesChange, maxFiles = 5, maxSizeMb = 10, target = { kind: 'request-photo' }, savedPhotos, onSavedPhotosChange, onBusyChange, customerId, labels, autoUpload = false }: {
   files: readonly File[]
   onFilesChange: (files: File[]) => void
   maxFiles?: number
@@ -49,6 +49,7 @@ export function MediaUploader({ files, onFilesChange, maxFiles = 5, maxSizeMb = 
   onSavedPhotosChange?: (photos: SavedPhoto[]) => void
   onBusyChange?: (busy: boolean) => void
   customerId?: string
+  autoUpload?: boolean
   labels?: { title: string; description: string; add: string; save: string }
 }) {
   const inputId = useId()
@@ -67,12 +68,12 @@ export function MediaUploader({ files, onFilesChange, maxFiles = 5, maxSizeMb = 
     handles.current = new WeakMap()
     draft.current = target?.draftId
     setLocalSaved([]); setBusy(false); setError(null)
-    return () => { generation.current++; controller.current?.abort(); callbacks.current.onBusyChange?.(false) }
+    return () => { generation.current++; controller.current?.abort(); controller.current = null; callbacks.current.onBusyChange?.(false) }
   }, [customerId, target?.kind, target?.entityId, target?.draftId, target?.scope])
   const effectiveMaxMb = Math.min(maxSizeMb, target?.kind === 'job-document' ? 20 : 10)
   const pendingFiles = files.filter(file => !saved.some(item => item.file === file))
-  const persist = async () => {
-    if (busy || !target) return
+  const persist = async (selectedFiles: readonly File[] = files) => {
+    if (controller.current || busy || !target) return
     const generation = epoch.current
     const active = new AbortController()
     controller.current = active
@@ -81,7 +82,7 @@ export function MediaUploader({ files, onFilesChange, maxFiles = 5, maxSizeMb = 
     let completed = [...saved]
     try {
       draft.current ??= saved.find(item => item.upload.draftId)?.upload.draftId ?? undefined
-      for (const file of pendingFiles) {
+      for (const file of selectedFiles.filter(file => !saved.some(item => item.file === file))) {
         const upload = await uploadPrivateFile(file, { ...target, ...(target.kind === 'request-photo' && !target.entityId ? { draftId: draft.current } : {}) }, handle => {
           if (!current()) return
           if (!handle) { handles.current.delete(file); return }
@@ -93,7 +94,7 @@ export function MediaUploader({ files, onFilesChange, maxFiles = 5, maxSizeMb = 
         setLocalSaved(completed); onSavedPhotosChange?.(completed)
       }
     } catch (failure) { if (current()) setError(failure instanceof Error ? failure.message : 'No pudimos guardar la foto. Intentá nuevamente.') }
-    finally { if (current()) { setBusy(false); onBusyChange?.(false) } }
+    finally { if (current()) { controller.current = null; setBusy(false); onBusyChange?.(false) } }
   }
 
   const handleFiles = (event: ChangeEvent<HTMLInputElement>) => {
@@ -121,8 +122,10 @@ export function MediaUploader({ files, onFilesChange, maxFiles = 5, maxSizeMb = 
     }
 
     setError(null)
-    onFilesChange([...files, ...selected])
+    const nextFiles = [...files, ...selected]
+    onFilesChange(nextFiles)
     event.target.value = ''
+    if (autoUpload && selected.length) void persist(nextFiles)
   }
 
   return (
@@ -130,7 +133,7 @@ export function MediaUploader({ files, onFilesChange, maxFiles = 5, maxSizeMb = 
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div>
           <h3 id={`${inputId}-title`} className="font-black text-slate-950">{labels?.title ?? 'Fotos'}</h3>
-          <p className="mt-1 text-sm leading-6 text-slate-600">{labels?.description ?? 'Seleccioná las fotos y guardalas para adjuntarlas de forma privada.'}</p>
+          <p className="mt-1 text-sm leading-6 text-slate-600">{labels?.description ?? (autoUpload ? 'Las fotos se guardan automáticamente al seleccionarlas.' : 'Seleccioná las fotos y guardalas para adjuntarlas de forma privada.')}</p>
         </div>
         <span className="text-xs font-semibold tabular-nums text-slate-500">{files.length} de {maxFiles}</span>
       </div>
@@ -182,6 +185,7 @@ export function MediaUploader({ files, onFilesChange, maxFiles = 5, maxSizeMb = 
                   aria-label={`Quitar ${file.name}`}
                   disabled={busy}
                   onClick={() => {
+                    setError(null)
                     if (savedPhoto) {
                       const remaining = saved.filter(item => item.file !== file)
                       setLocalSaved(remaining); onSavedPhotosChange?.(remaining)
@@ -197,7 +201,7 @@ export function MediaUploader({ files, onFilesChange, maxFiles = 5, maxSizeMb = 
           })}
         </ul>
       ) : null}
-      {pendingFiles.length ? <button type="button" disabled={busy || !target} onClick={() => void persist()} className="min-h-11 rounded-xl bg-blue-700 px-4 py-2 font-semibold text-white disabled:opacity-50">{busy ? 'Guardando y verificando…' : labels?.save ?? 'Guardar fotos'}</button> : null}
+      {pendingFiles.length ? <button type="button" disabled={busy || !target} onClick={() => void persist()} className="min-h-11 rounded-xl bg-blue-700 px-4 py-2 font-semibold text-white disabled:opacity-50">{busy ? 'Guardando y verificando…' : autoUpload && error ? 'Reintentar guardar fotos' : labels?.save ?? 'Guardar fotos'}</button> : null}
       {!target ? <p className="text-sm text-slate-600">El trabajo debe estar guardado para adjuntar fotos.</p> : null}
     </section>
   )
