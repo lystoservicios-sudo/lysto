@@ -56,6 +56,15 @@ async function post(path: string, body: unknown, execution: UploadExecution) {
     throw new Error('No pudimos guardar la foto. Revisá el archivo e intentá nuevamente.')
   return response.json()
 }
+/** Finalization is idempotent; recover only an owned, verified, unconsumed photo draft. */
+export async function resumeRequestPhotoDraft(intentId: string, execution: UploadExecution = {}): Promise<string> {
+  z.string().uuid().parse(intentId)
+  const verified = verifiedSchema.parse(await post('/api/uploads/finalize', { intentId }, execution))
+  if (verified.id !== intentId || !verified.draftId || verified.entityId !== null)
+    throw new Error('No pudimos recuperar las fotos del pedido. Quitá las fotos guardadas y volvé a seleccionarlas.')
+  return verified.draftId
+}
+
 export async function uploadPrivateFile(
   file: File,
   target: UploadTarget,

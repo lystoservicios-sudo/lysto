@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { uploadPrivateFile } from '@/lib/uploads/client'
+import { resumeRequestPhotoDraft, uploadPrivateFile } from '@/lib/uploads/client'
 const { upload } = vi.hoisted(() => ({ upload: vi.fn() }))
 vi.mock('@/lib/supabase/client', () => ({
   createClient: () => ({ storage: { from: () => ({ uploadToSignedUrl: upload }) } })
@@ -22,6 +22,23 @@ afterEach(() => {
   vi.clearAllMocks()
 })
 describe('private upload acknowledgement and retries', () => {
+  it('recovers the server-owned draft from an already verified photo without uploading again', async () => {
+    const requests = vi.fn().mockResolvedValue(json({ id: intentId, status: 'verified', attachmentId: intentId, draftId, entityId: null }))
+    vi.stubGlobal('fetch', requests)
+    expect(await resumeRequestPhotoDraft(intentId, { customerId: draftId })).toBe(draftId)
+    expect(requests.mock.calls[0][0]).toBe('/api/uploads/finalize')
+    expect(JSON.parse(requests.mock.calls[0][1].body)).toEqual({ intentId })
+    expect(requests.mock.calls[0][1].headers['X-Lysto-Customer-Id']).toBe(draftId)
+    expect(upload).not.toHaveBeenCalled()
+  })
+  it.each([
+    { id: draftId, draftId, entityId: null },
+    { id: intentId, draftId, entityId: draftId },
+    { id: intentId, draftId: null, entityId: null }
+  ])('does not reuse an unrelated or consumed photo draft: %j', async receipt => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(json({ status: 'verified', attachmentId: intentId, ...receipt })))
+    await expect(resumeRequestPhotoDraft(intentId)).rejects.toThrow()
+  })
   it('uses the bounded onboarding routes without sending a client-only scope to the server', async () => {
     const requests = vi
       .fn()

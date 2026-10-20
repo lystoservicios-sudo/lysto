@@ -6,9 +6,10 @@ import { AirConditioningWizard } from '@/features/service-request/air-conditioni
 import type { CustomerHomesSnapshot } from '@/lib/customer-homes/contracts'
 import { AIR_CONDITIONING_ISSUES } from '@/lib/domain/constants'
 import { generateDiagnosis } from '@/lib/diagnosis/rules'
+import { storeRequestPhotos } from '@/features/service-request/request-flow-client'
 
-const { upload } = vi.hoisted(() => ({ upload: vi.fn() }))
-vi.mock('@/lib/uploads/client', () => ({ uploadPrivateFile: upload }))
+const { upload, resumeDraft } = vi.hoisted(() => ({ upload: vi.fn(), resumeDraft: vi.fn() }))
+vi.mock('@/lib/uploads/client', () => ({ uploadPrivateFile: upload, resumeRequestPhotoDraft: resumeDraft }))
 
 const actor = '10000000-0000-4000-8000-000000000001'
 const addressId = '10000000-0000-4000-8000-000000000002'
@@ -22,10 +23,23 @@ function inventory(): CustomerHomesSnapshot {
 function mount(initialIssue?: typeof AIR_CONDITIONING_ISSUES[number]['slug']) { render(<AirConditioningWizard customerId={actor} initialData={inventory()} initialIssue={initialIssue} />) }
 function next() { fireEvent.click(screen.getByRole('button', { name: /^Continuar/ })) }
 function details() { next(); next() }
-beforeEach(() => { window.sessionStorage.clear(); upload.mockReset() })
+beforeEach(() => { window.sessionStorage.clear(); upload.mockReset(); resumeDraft.mockReset() })
 afterEach(() => { cleanup(); vi.unstubAllGlobals() })
 
 describe('customer request wizard', () => {
+  it('adds a photo to the same server draft after reloading a request with saved photos', async () => {
+    const retainedId = '10000000-0000-4000-8000-000000000007'
+    storeRequestPhotos(actor, { [equipmentId]: [{ intentId: retainedId, name: 'anterior.jpg', bytes: 1024 }] })
+    resumeDraft.mockResolvedValue('existing-server-draft')
+    upload.mockResolvedValue({ intentId: 'new-photo', attachmentId: 'attachment', draftId: 'existing-server-draft', entityId: null })
+    mount('no_enfria'); details(); fireEvent.click(screen.getByRole('radio', { name: 'Hace días' }))
+    fireEvent.change(screen.getByLabelText('Agregar fotos'), { target: { files: [new File(['photo'], 'segunda.jpg', { type: 'image/jpeg' })] } })
+    await waitFor(() => expect(upload).toHaveBeenCalledTimes(1))
+    expect(resumeDraft).toHaveBeenCalledWith(retainedId, expect.objectContaining({ customerId: actor, signal: expect.any(AbortSignal) }))
+    expect(upload.mock.calls[0][1]).toMatchObject({ kind: 'request-photo', draftId: 'existing-server-draft' })
+    expect((screen.getByRole('button', { name: 'Continuar' }) as HTMLButtonElement).disabled).toBe(false)
+    expect(screen.getByText('anterior.jpg')).toBeTruthy()
+  })
   it('saves selected photos automatically and waits for verification before reaching the price', async () => {
     let finish!: (value: unknown) => void
     upload.mockImplementation(() => new Promise(resolve => { finish = resolve }))

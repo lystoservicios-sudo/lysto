@@ -3,7 +3,7 @@
 import { FileImage, FileVideo, ImagePlus, Trash2, TriangleAlert } from 'lucide-react'
 import Image from 'next/image'
 import { useEffect, useId, useRef, useState, type ChangeEvent } from 'react'
-import { uploadPrivateFile, type UploadHandle, type UploadTarget, type VerifiedUpload } from '@/lib/uploads/client'
+import { resumeRequestPhotoDraft, uploadPrivateFile, type UploadHandle, type UploadTarget, type VerifiedUpload } from '@/lib/uploads/client'
 
 import { cn } from '@/lib/utils/cn'
 
@@ -39,7 +39,7 @@ function MediaFilePreview({ file }: { file: File }) {
   return <div className="grid h-14 w-14 shrink-0 place-items-center rounded-xl bg-blue-50 text-blue-700"><Icon aria-hidden="true" className="h-5 w-5" /></div>
 }
 
-export function MediaUploader({ files, onFilesChange, maxFiles = 5, maxSizeMb = 10, target = { kind: 'request-photo' }, savedPhotos, onSavedPhotosChange, onBusyChange, customerId, labels, autoUpload = false }: {
+export function MediaUploader({ files, onFilesChange, maxFiles = 5, maxSizeMb = 10, target = { kind: 'request-photo' }, savedPhotos, onSavedPhotosChange, onBusyChange, customerId, labels, autoUpload = false, existingPhotoIntentId }: {
   files: readonly File[]
   onFilesChange: (files: File[]) => void
   maxFiles?: number
@@ -50,6 +50,7 @@ export function MediaUploader({ files, onFilesChange, maxFiles = 5, maxSizeMb = 
   onBusyChange?: (busy: boolean) => void
   customerId?: string
   autoUpload?: boolean
+  existingPhotoIntentId?: string
   labels?: { title: string; description: string; add: string; save: string }
 }) {
   const inputId = useId()
@@ -82,6 +83,9 @@ export function MediaUploader({ files, onFilesChange, maxFiles = 5, maxSizeMb = 
     let completed = [...saved]
     try {
       draft.current ??= saved.find(item => item.upload.draftId)?.upload.draftId ?? undefined
+      if (!draft.current && existingPhotoIntentId && target.kind === 'request-photo' && !target.entityId)
+        draft.current = await resumeRequestPhotoDraft(existingPhotoIntentId, { customerId, signal: active.signal })
+      if (!current()) return
       for (const file of selectedFiles.filter(file => !saved.some(item => item.file === file))) {
         const upload = await uploadPrivateFile(file, { ...target, ...(target.kind === 'request-photo' && !target.entityId ? { draftId: draft.current } : {}) }, handle => {
           if (!current()) return
