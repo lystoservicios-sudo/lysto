@@ -128,7 +128,7 @@ export function PaymentReturn({ checkoutId, returnToken, initialResult }: {
       <div className="space-y-3 p-6 sm:p-8">
         {!confirmed && <Button variant="secondary" className="w-full" disabled={busy} onClick={() => setRevision(value => value + 1)}>Actualizar estado</Button>}
         {result && !returnToken && <ButtonLink className="min-h-12 w-full" href={`/app/trabajos/${result.jobId}`}>Ver mi trabajo</ButtonLink>}
-        <ButtonLink className="min-h-12 w-full" variant={returnToken ? 'primary' : 'secondary'} href={returnToken ? '/' : '/app'}>Ir al inicio</ButtonLink>
+        <ButtonLink className="min-h-12 w-full" variant={returnToken ? 'primary' : 'secondary'} href="/app">Ir al inicio</ButtonLink>
         {confirmed && result && !returnToken && <a className="flex min-h-11 items-center justify-center text-sm font-semibold text-lysto-blue underline underline-offset-4" href={`/app/pagos/${result.jobId}`}>Ver registro del pago</a>}
       </div>
     </section>

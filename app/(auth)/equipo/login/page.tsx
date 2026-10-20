@@ -1,4 +1,6 @@
 import { AuthFrame } from '@/components/auth/auth-frame'
+import { redirect } from 'next/navigation'
+import { existingLoginDestination } from '@/lib/auth/login-destination'
 import { LoginForm } from '../../login/login-form'
 import { requiredRoleForPath, safeLocalRedirectPath } from '@/lib/auth/session-routing'
 import { InvitationEntry } from '@/components/pro/invitation-entry'
@@ -10,5 +12,7 @@ export default async function StaffLoginPage({ searchParams }: { searchParams: P
   const next = role === 'admin' || role === 'professional' ? safeLocalRedirectPath(requested, role) : undefined
   if (next && /^\/pro\/onboarding(?:\/[A-Za-z0-9_-]{43})?$/.test(next))
     return <main className={styles.canvas}><InvitationEntry token={next === '/pro/onboarding' ? undefined : next.split('/')[3]} /></main>
+  const destination = await existingLoginDestination(requested)
+  if (destination) redirect(destination)
   return <AuthFrame variant="staff" eyebrow="EQUIPO LYSTO" title="Todo listo para empezar." description="Ingresá con tu cuenta habilitada para acceder a tu espacio de trabajo."><LoginForm staff next={next} /></AuthFrame>
 }

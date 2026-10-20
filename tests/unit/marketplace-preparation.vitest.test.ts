@@ -11,6 +11,7 @@ vi.mock('@/lib/payments/marketplace-db', () => ({
 
 import { claimCheckout, prepareCheckout } from '@/lib/payments/marketplace-ledger'
 import { handleMarketplaceWebhook, renewCheckout } from '@/lib/payments/marketplace'
+import { checkPaymentReturnToken } from '@/lib/payments/payment-return-token'
 
 const prepared = { id: 'checkout-1', checkout_protocol: 'preferences',
   preference_id: null, status: 'creating' }
@@ -51,6 +52,24 @@ it('does not claim a checkout already closed by finance', async () => {
     closed_for_new_payments_at: new Date(), expires_at: new Date(Date.now() + 60_000) }] })
   await expect(claimCheckout('checkout-1', 'https://lysto.test')).rejects.toThrow('checkout_review')
   expect(state.query).toHaveBeenCalledTimes(1)
+})
+it('freezes signed receipt destinations when preparing a new provider preference', async () => {
+  const key = Buffer.alloc(32, 1).toString('base64')
+  const row = {
+    ...prepared, id: '92000000-0000-4000-8000-000000000001',
+    job_id: '92000000-0000-4000-8000-000000000002', extra_id: null,
+    professional_id: '92000000-0000-4000-8000-000000000003',
+    amount: '100.00', marketplace_fee: '0.00', order_id: null,
+    created_at: new Date(), expires_at: new Date(Date.now() + 1800000)
+  }
+  state.query.mockResolvedValueOnce({ rows: [row] }).mockResolvedValueOnce({ rows: [] })
+  const claim = await claimCheckout(row.id, 'https://lysto.test', key)
+  for (const value of Object.values(claim.spec!.backUrls!)) {
+    const url = new URL(value as string)
+    expect(url.pathname).toBe(`/app/pagos/resultado/${row.id}`)
+    expect(checkPaymentReturnToken(row.id, url.searchParams.get('confirmacion')!, key)).toBe(true)
+  }
+  expect(JSON.parse(state.query.mock.calls[1][1][1]).backUrls).toEqual(claim.spec!.backUrls)
 })
 
 it('does not renew a financially closed Order', async () => {

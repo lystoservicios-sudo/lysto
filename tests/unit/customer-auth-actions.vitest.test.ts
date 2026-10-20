@@ -1,11 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { redirect } from 'next/navigation'
 const mocks = vi.hoisted(() => ({ signUp: vi.fn(), signInWithPassword: vi.fn(), signOut: vi.fn(), read: vi.fn(), resetPasswordForEmail: vi.fn(), signInWithOAuth: vi.fn(), origin: vi.fn(), bootstrap: vi.fn(), rpc: vi.fn(), policy: vi.fn(), limit: vi.fn() }))
 vi.mock('@/lib/supabase/server', () => ({ createServerSupabaseClient: async () => ({ auth: mocks, rpc: mocks.rpc }) }))
 vi.mock('@/lib/auth/customer-session', () => ({ resolvedCustomerDestination: mocks.read }))
 vi.mock('@/lib/auth/account-server', () => ({ assertAccountMutationOrigin: mocks.origin, bootstrapVerifiedCustomer: mocks.bootstrap, accountFormText: (form: FormData, key: string) => String(form.get(key) ?? '') }))
 vi.mock('@/lib/auth/account-policy', () => ({ getRegistrationPolicy: mocks.policy }))
 vi.mock('@/lib/security/rate-limit', () => ({ enforceRateLimit: mocks.limit, serverActionSubject: async (email: string) => email }))
-vi.mock('next/navigation', () => ({ redirect: (path: string) => { throw new Error(`REDIRECT:${path}`) } }))
+vi.mock('next/navigation', () => ({
+  RedirectType: { replace: 'replace', push: 'push' },
+  redirect: vi.fn((path: string) => { throw new Error(`REDIRECT:${path}`) })
+}))
 import { loginAction } from '../../app/(auth)/login/actions'
 import { loginAction as staffLogin } from '../../app/(auth)/equipo/login/actions'
 import { registerAction, recoverPasswordAction, googleAuthAction } from '../../app/(auth)/actions'
@@ -14,6 +18,7 @@ function form(values: Record<string, string>) { const data = new FormData(); Obj
 const signup = { email: 'ANA@example.com', password: 'clave-123', confirmPassword: 'clave-123', firstName: 'Ana', lastName: 'Pérez', phone: '+541112345678', accepted: 'on', termsVersion: 't1', privacyVersion: 'p1' }
 beforeEach(() => {
   vi.resetAllMocks(); process.env.NEXT_PUBLIC_APP_URL = 'https://lysto.test'
+  vi.mocked(redirect).mockImplementation((path: string) => { throw new Error(`REDIRECT:${path}`) })
   mocks.policy.mockResolvedValue({ termsVersion: 't1', privacyVersion: 'p1' })
   mocks.bootstrap.mockResolvedValue('ready')
   mocks.rpc.mockResolvedValue({ data: { role: 'customer', professional_status: null, professional_eligible: false, aal: 'aal1' }, error: null })
@@ -60,6 +65,7 @@ describe('customer authentication server actions', () => {
     mocks.read.mockResolvedValue('/completar-perfil?next=%2Fapp')
     await expect(loginAction(initial, form({ email: signup.email, password: signup.password, next: 'https://evil.test' }))).rejects.toThrow('REDIRECT:/completar-perfil?next=%2Fapp')
     expect(mocks.read.mock.calls[0][0]).toBe('/app')
+    expect(redirect).toHaveBeenCalledWith('/completar-perfil?next=%2Fapp', 'replace')
   })
   it('rejects staff accounts in public customer login', async () => {
     mocks.signInWithPassword.mockResolvedValue({ data: { user: { id: 'user', app_metadata: { app_role: 'admin' } } }, error: null })
@@ -70,6 +76,7 @@ describe('customer authentication server actions', () => {
     mocks.signInWithPassword.mockResolvedValue({ data: { user: { id: 'user', app_metadata: { app_role: 'admin' } } }, error: null })
     mocks.rpc.mockResolvedValue({ data: { role: 'admin', professional_status: null, professional_eligible: false, aal: 'aal1' }, error: null })
     await expect(staffLogin(initial, form(signup))).rejects.toThrow('REDIRECT:/seguridad?next=%2Fadmin')
+    expect(redirect).toHaveBeenCalledWith('/seguridad?next=%2Fadmin%2Fdashboard', 'replace')
   })
   it('does not reveal recovery account existence even on provider errors', async () => {
     mocks.resetPasswordForEmail.mockRejectedValue(new Error('unknown account'))
