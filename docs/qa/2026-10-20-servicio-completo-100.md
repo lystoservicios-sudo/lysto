@@ -47,10 +47,21 @@ Los scripts de preparación, que contienen el domicilio, quedan fuera del reposi
 
 La instrumentación confirma `ValidationError` en `preference_create`. La prueba con la librería real reproduce el rechazo: los tres `backUrls` superan su máximo de 150 caracteres. El fallo sucede antes de cualquier solicitud al proveedor.
 
-El comprobante usa ahora la misma firma HMAC-SHA256 completa en base64url, con el mismo propósito, alcance y vencimiento. Se conserva la verificación de tokens anteriores. Los retornos firmados omiten el indicador de resultado, que nunca es autoridad para aprobar un pago; siempre consultan el estado canónico. En el dominio de producción los enlaces quedan en 149 caracteres y pasan por el SDK real.
+El comprobante usa ahora la misma firma HMAC-SHA256 completa en base64url, con el mismo propósito, alcance y vencimiento. Se conserva la verificación de tokens anteriores. Los retornos firmados omiten el indicador de resultado, que nunca es autoridad para aprobar un pago; siempre consultan el estado canónico. En el dominio de producción los enlaces quedan en 150 caracteres y pasan por el SDK real.
 
 Para recuperar el intento ya preparado, solamente se compactan los tres destinos antiguos exactos de Lysto, firmados y válidos, de un checkout aún no emitido y en estado `creating`, que exceden el límite y por tanto nunca pudieron atravesar la validación del SDK. Se conserva la expiración del comprobante, identidad del checkout, clave de idempotencia, importes, vendedor y demás datos congelados. No se alteran preferencias ya emitidas.
 
+### Checkout listo y entrega al usuario
+
+- Corrección publicada: commit `7df0e64`, deployment `dpl_9daui7rw4ud3T34NZ9smegqT9E8h`, `READY`, asignado a `lystohogar.com`.
+- 68 pruebas focalizadas aprobadas en los nueve archivos de retorno, credenciales, contrato y preparación; TypeScript, ESLint y compilación de producción aprobados.
+- El mismo checkout pasó a `ready`, sin duplicación ni cambio de 100/18/82. Preferencia real: `389157374-dd98c8de-07b8-422c-b265-9917a1c0eca6`.
+- Navegador abierto en Mercado Pago, pantalla “¿Cómo querés pagar?”, con “Servicio técnico Lysto” y **$100** visibles.
+- Verificación posterior: un solo checkout, cero pagos registrados, vendedor del checkout coincide con la cuenta de Mercado Pago vinculada al técnico.
+- Mercado Pago muestra como nombre comercial `consultamedicaonline.com.ar`; queda registrada esta observación de la configuración del vendedor. No se modificó la identidad comercial.
+- La reserva canónica es 21/10, 14–16 Argentina; `jobs.scheduled_time_window` conserva 18–20 del pedido original. Pendiente verificar y corregir las pantallas/comprobantes que lean esos campos antiguos.
+- Captura local: `C:\Users\quime\.codex\private\lysto-sessions\e2e-checkout-100.png`. Archivo ficticio preparado para probar carga de evidencia: `e2e-evidencia-simulada.png`, explícitamente marcado como simulación y sin reparación física.
+
 ## Pendiente
 
-Resolver la apertura del checkout, dejar el pago de ARS 100 al usuario, verificar la confirmación canónica y el split realmente aplicado, completar diagnóstico, aprobación del cliente, cierre técnico y conformidad final. El circuito completo todavía no está aprobado.
+El usuario debe completar el pago de ARS 100. Después falta verificar la confirmación canónica y el split realmente aplicado, completar diagnóstico, aprobación del cliente, cierre técnico y conformidad final. El circuito completo todavía no está aprobado.
