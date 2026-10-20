@@ -14,9 +14,9 @@ beforeEach(() => {
 
 it('binds provider return URLs to the checkout being paid', () => {
   expect(checkoutBackUrls('https://lysto.test', jobId, checkoutId)).toEqual({
-    success: `https://lysto.test/app/trabajos/${jobId}?checkout=${checkoutId}&pago=retorno`,
-    pending: `https://lysto.test/app/trabajos/${jobId}?checkout=${checkoutId}&pago=pendiente`,
-    failure: `https://lysto.test/app/trabajos/${jobId}?checkout=${checkoutId}&pago=reintentar`
+    success: `https://lysto.test/app/pagos/resultado/${checkoutId}?pago=retorno`,
+    pending: `https://lysto.test/app/pagos/resultado/${checkoutId}?pago=pendiente`,
+    failure: `https://lysto.test/app/pagos/resultado/${checkoutId}?pago=reintentar`
   })
 })
 

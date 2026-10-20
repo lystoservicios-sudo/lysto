@@ -31,6 +31,16 @@ export async function middleware(request: NextRequest) {
     response.headers.set('X-Correlation-Id', correlationId)
     return response
   }
+  // Preferences already issued retain their original back URLs. Recover before
+  // the customer layout rejects an absent/different account; never trust status.
+  const returnCheckout = request.nextUrl.searchParams.get('checkout')
+  if (/^\/app\/trabajos\/[0-9a-f-]{36}\/?$/i.test(pathname) &&
+      returnCheckout && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(returnCheckout) &&
+      ['retorno', 'pendiente', 'reintentar'].includes(request.nextUrl.searchParams.get('pago') ?? '')) {
+    return withCorrelation(privateResponse(NextResponse.redirect(
+      new URL(`/app/pagos/resultado/${returnCheckout}`, request.url)
+    )))
+  }
   const onboarding = pathname === '/pro/onboarding' || pathname.startsWith('/pro/onboarding/')
   function onboardingHeaders<T extends Response>(response: T): T {
     if (onboarding) {

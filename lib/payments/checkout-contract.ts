@@ -16,9 +16,8 @@ export function checkoutAmounts(total: string | number, fee: string | number) {
   return { total: decimal(amount), fee: decimal(commission), professional: decimal(amount - commission) }
 }
 
-export function checkoutBackUrls(origin: string, jobId: string, checkoutId: string) {
-  const destination = new URL(`/app/trabajos/${jobId}`, origin)
-  destination.searchParams.set('checkout', checkoutId)
+export function checkoutBackUrls(origin: string, _jobId: string, checkoutId: string) {
+  const destination = new URL(`/app/pagos/resultado/${checkoutId}`, origin)
   const withResult = (result: string) => {
     destination.searchParams.set('pago', result)
     return destination.toString()

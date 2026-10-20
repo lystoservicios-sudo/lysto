@@ -3,7 +3,7 @@ import type { Session } from '@/lib/auth/session'
 
 const { query } = vi.hoisted(() => ({ query: vi.fn() }))
 vi.mock('@/lib/payments/marketplace-db', () => ({ paymentDatabase: () => ({ query }) }))
-import { countPendingCustomerPayments, listCustomerPayments, readCustomerPaymentDetail, readCustomerPaymentRecord, readCustomerRefund } from '@/lib/customer-more/payments'
+import { countPendingCustomerPayments, listCustomerPayments, readCustomerPaymentDetail, readCustomerPaymentRecord, readCustomerRefund, readCustomerPaymentResult } from '@/lib/customer-more/payments'
 
 const customerId = 'fa55ddc2-4ed5-4c39-adf6-c73d95708b95'
 const jobId = 'd046d214-fb6d-48ab-81c0-7a7f0e630d48'
@@ -20,6 +20,30 @@ const detail = {
 }
 beforeEach(() => query.mockReset())
 
+it('reads the exact owned payment result and its canonical references', async () => {
+  query.mockResolvedValueOnce({ rows: [{ job_id: jobId, marketplace_fee: '180.00' }] })
+    .mockResolvedValueOnce({ rows: [{ data: detail }] })
+  expect(await readCustomerPaymentResult(session, checkoutId)).toMatchObject({
+    id: checkoutId, jobId, amount: 1000, lystoFee: 180, status: 'approved',
+    service: 'Mantenimiento preventivo', professional: 'Walter G.', providerReferences: ['123456']
+  })
+  expect(query.mock.calls[0][1]).toEqual([customerId, checkoutId])
+  expect(query.mock.calls[0][0]).toContain('customer_id=$1::uuid')
+})
+it('does not look up a payment result without customer authority or a valid ID', async () => {
+  await expect(readCustomerPaymentResult({ role: 'professional' } as Session, checkoutId))
+    .rejects.toMatchObject({ code: 'forbidden' })
+  expect(await readCustomerPaymentResult(session, 'invalid')).toBeNull()
+  expect(query).not.toHaveBeenCalled()
+})
+it('does not reveal another customer checkout or fall back to another payment in the job', async () => {
+  query.mockResolvedValueOnce({ rows: [] })
+  expect(await readCustomerPaymentResult(session, checkoutId)).toBeNull()
+  expect(query).toHaveBeenCalledTimes(1)
+  query.mockResolvedValueOnce({ rows: [{ job_id: jobId, marketplace_fee: '0' }] })
+    .mockResolvedValueOnce({ rows: [{ data: { ...detail, checkouts: [] } }] })
+  expect(await readCustomerPaymentResult(session, checkoutId)).toBeNull()
+})
 describe('customer payment read boundaries', () => {
   it('rejects noncustomers and missing customer authority before opening the database', async () => {
     for (const value of [{ role: 'admin', customerId }, { role: 'customer' }]) {

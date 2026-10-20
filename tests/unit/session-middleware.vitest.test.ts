@@ -14,6 +14,24 @@ beforeEach(() => {
   mocks.getClaims.mockResolvedValue({ data: { claims: null }, error: null })
   mocks.create.mockReturnValue({ auth: { getClaims: mocks.getClaims } })
 })
+it('recovers old provider return links before a private customer layout can reject the session', async () => {
+  const id = '8688db78-1b3d-4762-a239-0feb06b2878f'
+  const response = await middleware(new NextRequest(
+    `https://lysto.test/app/trabajos/7cc28175-00a1-4ba9-ae4f-c87ccc6ef2b5?checkout=${id}&pago=retorno&status=approved&payment_id=untrusted`
+  ))
+  expect(response.status).toBe(307)
+  expect(response.headers.get('location')).toBe(`https://lysto.test/app/pagos/resultado/${id}`)
+  expect(response.headers.get('cache-control')).toContain('no-store')
+  expect(mocks.create).not.toHaveBeenCalled()
+})
+it('does not redirect ordinary job visits or malformed return IDs', async () => {
+  for (const suffix of ['', '?checkout=bad&pago=retorno']) {
+    const response = await middleware(new NextRequest(
+      `https://lysto.test/app/trabajos/7cc28175-00a1-4ba9-ae4f-c87ccc6ef2b5${suffix}`
+    ))
+    expect(response.headers.get('location')).toBeNull()
+  }
+})
 it.each(['/app', '/pro/onboarding', '/pro/onboarding/' + 'a'.repeat(43)])(
   'refreshes downstream and browser cookies without losing private headers on %s',
   async (path) => {

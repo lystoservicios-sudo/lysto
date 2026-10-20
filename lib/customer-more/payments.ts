@@ -160,6 +160,28 @@ export async function readCustomerPaymentDetail(session: Session, id: string): P
   const result = await paymentDatabase().query(detailSql, [customerId, id])
   return result.rows[0]?.data ? detailSchema.parse(result.rows[0].data) : null
 }
+/** Resolves a provider return by checkout, with authority on both checkout and job. */
+export async function readCustomerPaymentResult(session: Session, checkoutId: string) {
+  const customerId = customerAuthority(session)
+  if (!uuid.safeParse(checkoutId).success) return null
+  const owned = await paymentDatabase().query<{ job_id: string; marketplace_fee: string }>(
+    'select job_id,marketplace_fee from public.marketplace_checkouts where customer_id=$1::uuid and id=$2::uuid',
+    [customerId, checkoutId]
+  )
+  const target = owned.rows[0]
+  if (!target) return null
+  const detail = await readCustomerPaymentDetail(session, target.job_id)
+  const checkout = detail?.checkouts.find(item => item.id === checkoutId)
+  if (!detail || !checkout) return null
+  return {
+    id: checkout.id, jobId: detail.id, status: checkout.status, amount: checkout.amount,
+    lystoFee: money.parse(target.marketplace_fee), liveMode: checkout.liveMode,
+    extraId: checkout.extraId, extraLabel: checkout.extraLabel, service: detail.service,
+    professional: detail.professional, scheduledDate: detail.scheduledDate, timeWindow: detail.timeWindow,
+    providerReferences: checkout.providerReferences, expiresAt: checkout.expiresAt
+  }
+}
+export type CustomerPaymentResult = NonNullable<Awaited<ReturnType<typeof readCustomerPaymentResult>>>
 export async function readCustomerPaymentRecord(session: Session, id: string, checkoutId: string): Promise<PaymentRecord | null> {
   customerAuthority(session)
   if (!uuid.safeParse(checkoutId).success) return null
