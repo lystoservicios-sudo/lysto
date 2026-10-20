@@ -1,10 +1,11 @@
 import 'server-only'
 import { z } from 'zod'
 
+const optionalProviderText = z.unknown().transform(value => typeof value === 'string' ? value : undefined)
 const responseSchema = z.object({ features: z.array(z.object({
   geometry: z.object({ type: z.literal('Point'), coordinates: z.tuple([z.number().finite().min(-180).max(180), z.number().finite().min(-90).max(90)]) }),
   properties: z.object({ label: z.string(), layer: z.string(), housenumber: z.string().optional(),
-    street: z.string().optional(), locality: z.string().optional(), localadmin: z.string().optional(), county: z.string().optional(),
+    street: optionalProviderText, locality: optionalProviderText, localadmin: optionalProviderText, county: optionalProviderText,
     country_a: z.string(), region: z.string().optional(), region_a: z.string().optional(),
     confidence: z.number().optional(), accuracy: z.string().optional(), match_type: z.string().optional() })
 })) })

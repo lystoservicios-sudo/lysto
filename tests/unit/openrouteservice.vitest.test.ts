@@ -44,6 +44,12 @@ it('accepts the exact numbered street and house within its verified municipality
   await expect(geocodeOpenRouteAddress('CALLE 23 5871, Berazategui Oeste, Buenos Aires, Argentina', 'key',
     vi.fn().mockResolvedValue(response({features:[candidate]})))).resolves.toMatchObject({province:'Buenos Aires'})
 })
+it('tolerates null administrative metadata while retaining precise address checks', async () => {
+  const candidate = point()
+  const properties = {...candidate.properties,locality:null,localadmin:null,county:null}
+  await expect(geocodeOpenRouteAddress(input.address,input.apiKey,
+    vi.fn().mockResolvedValue(response({features:[{...candidate,properties}]})))).resolves.toMatchObject({province:'CABA'})
+})
 it('accepts provider-confirmed zero travel only when both verified points coincide', async () => {
   const zeroRoute = { routes: [{ summary: { distance: 0, duration: 0 }, way_points: [0, 0] }] }
   const fetcher = vi.fn().mockResolvedValueOnce(response({ features: [point()] }))
