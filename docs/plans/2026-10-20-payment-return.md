@@ -15,6 +15,7 @@
 - Unsettled/error: clearly indicate verification/pending/rejected/refund state, retry status, never initiate a second payment from this page.
 - Anonymous/different account: show a customer-login link preserving the checkout path; reveal no payment details.
 - Keep navigation explicit so the customer has time to read the confirmation.
+- Production verification found that the existing server database role lacked SELECT privileges on columns required by customer payment detail queries. A separate migration grants only those summary columns; customer ownership predicates remain unchanged.
 
 ## Tasks
 
