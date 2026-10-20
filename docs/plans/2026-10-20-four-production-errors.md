@@ -24,3 +24,9 @@
 - Both migrations were applied to the linked project and registered in migration history. Existing authorization and function privileges were preserved. Advisors found 71 warnings and no error-level findings; those broader warnings are outside this hotfix.
 - Relevant unit/component checks: 119 passing tests across 10 files. TypeScript and changed-file ESLint checks passed.
 - Remaining: build, publish the isolated changes and complete the three-role production retest.
+
+## Follow-up from the browser retest
+
+- Production accepted quotes also use `{label: string}` address snapshots. Added a failing loader regression, then support for that format without fabricating structured address fields. The regression passed with the complete saved shape.
+- A concurrent release replaced the first deployment during the browser retest. Rebased these changes onto the new production commit `c15f95b40be34e79628c1389a1285c02a4f670f9`, preserving the payment-return changes and durable payment read-grant migration.
+- Both the local and Vercel builds of the first candidate passed. The combined candidate must pass its fresh build and browser retest before completion.
