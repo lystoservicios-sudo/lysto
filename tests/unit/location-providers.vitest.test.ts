@@ -49,12 +49,15 @@ describe('GeoRef location suggestions', () => {
 })
 
 describe('canonical address resolution', () => {
-  it('uses Google to verify a selected GeoRef address and canonicalizes CABA', async () => {
+  it.each(['google', 'openrouteservice'])('uses %s to verify a selected GeoRef address and canonicalizes CABA', async provider => {
     const georefFetcher = vi.fn(() => response({ cantidad: 1, total: 1, inicio: 0, parametros: {}, direcciones: [{ altura: { unidad: null, valor: 1234 }, calle: { categoria: 'AVENIDA', id: '0200701000085', nombre: 'AV RIVADAVIA' }, calle_cruce_1: { categoria: null, id: null, nombre: null }, calle_cruce_2: { categoria: null, id: null, nombre: null }, departamento: { id: '02007', nombre: 'Comuna 1' }, localidad: { id: '02007010', nombre: 'San Nicolás' }, localidad_censal: { id: '02007010', nombre: 'Ciudad de Buenos Aires' }, nomenclatura: 'AV RIVADAVIA 1234, San Nicolás, Ciudad Autónoma de Buenos Aires', piso: null, provincia: { id: '02', nombre: 'Ciudad Autónoma de Buenos Aires' }, ubicacion: { lat: -34.61, lon: -58.38 } }] })) as unknown as typeof fetch
     const googleFetcher = vi.fn(() => response({ status: 'OK', results: [{ partial_match: false, formatted_address: 'Av. Rivadavia 1234, CABA, Argentina', geometry: { location: { lat: -34.609, lng: -58.389 }, location_type: 'ROOFTOP' }, address_components: [{ long_name: 'Argentina', short_name: 'AR', types: ['country'] }, { long_name: 'Ciudad Autónoma de Buenos Aires', short_name: 'CABA', types: ['administrative_area_level_1'] }] }] })) as unknown as typeof fetch
 
-    await expect(resolveArgentineAddress({ street: 'AV RIVADAVIA', number: '1234', city: 'San Nicolás', province: 'Ciudad Autónoma de Buenos Aires', streetId: '0200701000085', cityId: '02007010', provinceId: '02' }, { apiKey: 'server-key', georefFetcher, googleFetcher })).resolves.toMatchObject({
-      street: 'AV RIVADAVIA', number: '1234', city: 'San Nicolás', province: 'CABA', latitude: -34.609, longitude: -58.389, precision: 'rooftop'
+    const orsFetcher = vi.fn(() => response({ features: [{ geometry: { type: 'Point', coordinates: [-58.389, -34.609] }, properties: {
+      label: 'Av. Rivadavia 1234, CABA, Argentina', layer: 'address', housenumber: '1234', confidence: 1, accuracy: 'point', country_a: 'ARG', region: 'Ciudad Autónoma de Buenos Aires'
+    } }] }))
+    await expect(resolveArgentineAddress({ street: 'AV RIVADAVIA', number: '1234', city: 'San Nicolás', province: 'Ciudad Autónoma de Buenos Aires', streetId: '0200701000085', cityId: '02007010', provinceId: '02' }, { apiKey: 'server-key', georefFetcher, googleFetcher, orsApiKey: provider === 'openrouteservice' ? 'ors-key' : '', orsFetcher })).resolves.toMatchObject({
+      street: 'AV RIVADAVIA', number: '1234', city: 'San Nicolás', province: 'CABA', latitude: -34.609, longitude: -58.389, precision: 'rooftop', source: `georef_${provider}`
     })
   })
 

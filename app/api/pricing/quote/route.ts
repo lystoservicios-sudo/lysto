@@ -4,7 +4,7 @@ import { z } from 'zod'
 import type { Json } from '@/lib/supabase/database.types'
 import { TIME_WINDOWS } from '@/lib/domain/constants'
 import { calculateServiceQuote, quoteInputSchema, routeSchema } from '@/lib/pricing/service-quote'
-import { estimateTravel } from '@/lib/pricing/google-routes'
+import { estimateTravel } from '@/lib/pricing/travel'
 import {
   getPricingSession,
   getQuotePolicyRecord,
@@ -107,7 +107,6 @@ export async function POST(request: Request) {
           origin:
             process.env.LYSTO_ROUTING_ORIGIN ??
             'Obelisco, Ciudad Autónoma de Buenos Aires, Argentina',
-          apiKey: process.env.GOOGLE_MAPS_SERVER_API_KEY ?? '',
           departureTime,
           now
         })

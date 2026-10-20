@@ -4,7 +4,7 @@ vi.mock('@/lib/pricing/server', async () => ({
   ...(await vi.importActual<typeof import('@/lib/pricing/server')>('@/lib/pricing/server')),
   getPricingSession: mocks.session
 }))
-vi.mock('@/lib/pricing/google-routes', () => ({ estimateTravel: mocks.travel }))
+vi.mock('@/lib/pricing/travel', () => ({ estimateTravel: mocks.travel }))
 import { POST } from '@/app/api/pricing/quote/route'
 beforeEach(() => {
   vi.clearAllMocks()

@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({ client: vi.fn(), travel: vi.fn() }))
 vi.mock('@/lib/supabase/server', () => ({ createServerSupabaseClient: mocks.client }))
-vi.mock('@/lib/pricing/google-routes', () => ({ estimateTravel: mocks.travel }))
+vi.mock('@/lib/pricing/travel', () => ({ estimateTravel: mocks.travel }))
 import { POST as quote } from '@/app/api/pricing/quote/route'
 import { POST as approve } from '@/app/api/admin/professionals/approve/route'
 import { POST as equipment } from '@/app/api/equipment/register/route'

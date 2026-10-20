@@ -27,7 +27,7 @@ export const accessSchema = z.object({
   difficultAccess: z.boolean().optional()
 })
 export const routeSchema = z.object({
-  source: z.enum(['google', 'manual', 'simulation']),
+  source: z.enum(['google', 'openrouteservice', 'manual', 'simulation']),
   origin: z.string().min(1),
   destination: z.string().min(1),
   province: z.enum(['CABA', 'Buenos Aires', 'other']),
@@ -301,7 +301,7 @@ export function calculateServiceQuote(
       ? 'outside'
       : 'covered'
   if (coverage === 'outside') reviewReasons.push('outside_coverage')
-  if (!route || route.source !== 'google') reviewReasons.push('travel_unverified')
+  if (!route || !['google', 'openrouteservice'].includes(route.source)) reviewReasons.push('travel_unverified')
   if (
     route &&
     (now.getTime() - Date.parse(route.measuredAt) > 30 * 60_000 ||

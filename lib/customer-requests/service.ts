@@ -4,7 +4,7 @@ import type { Session } from '@/lib/auth/session'
 import { ApiError } from '@/lib/http/api-error'
 import type { Json } from '@/lib/supabase/database.types'
 import { quoteInputSchema, type TravelEstimate } from '@/lib/pricing/service-quote'
-import { estimateTravel } from '@/lib/pricing/google-routes'
+import { estimateTravel } from '@/lib/pricing/travel'
 import { quoteWriter } from '@/lib/pricing/server'
 import { marketplaceConfig } from '@/lib/payments/marketplace-config'
 import { calculateInitialLaborQuote } from './quote'
@@ -165,6 +165,6 @@ export function createCustomerRequestService(deps: CustomerRequestDependencies) 
 
 export const customerRequestService = createCustomerRequestService({
   write: async (name, args) => quoteWriter().rpc(name, args as never),
-  travel: input => estimateTravel({ ...input, apiKey: process.env.GOOGLE_MAPS_SERVER_API_KEY ?? '' }),
+  travel: estimateTravel,
   seller: validateSeller, mode: () => marketplaceConfig().liveMode, now: () => new Date()
 })

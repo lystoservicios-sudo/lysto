@@ -37,6 +37,14 @@ const input: QuoteInput = {
 const policy = { ...defaultQuotePolicy, approvedUntil: '2026-10-01', paymentCostRate: 0.06 }
 
 describe('service proposals', () => {
+  it('accepts verified OpenRouteService travel while rejecting unverified and simulated routes', () => {
+    for (const source of ['openrouteservice', 'simulation'] as const) {
+      const q = calculateServiceQuote({ ...input, route: { ...route, source } }, policy, now)
+      expect(q.reviewReasons.includes('travel_unverified')).toBe(source === 'simulation')
+    }
+    const q = calculateServiceQuote({ ...input, route: { ...route, source: 'openrouteservice', tollsVerified: false } }, policy, now)
+    expect(q.readyToOffer).toBe(false)
+  })
   it('does not assume a provider processing charge in the default policy', () => {
     expect(defaultQuotePolicy.paymentCostRate).toBe(0)
   })
