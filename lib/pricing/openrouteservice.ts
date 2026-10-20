@@ -2,6 +2,7 @@ import 'server-only'
 import { z } from 'zod'
 import { geocodeRoutingAddress } from '../location/routing-geocoding'
 import type { TravelEstimate } from './service-quote'
+import type { VerifiedRoutingPoint } from '../location/verified-points'
 
 const responseSchema = z.object({ routes: z.array(z.object({
   summary: z.object({ distance: z.number().finite().nonnegative(), duration: z.number().finite().nonnegative() }),
@@ -21,15 +22,16 @@ function verifiedTollFree(route: z.infer<typeof responseSchema>['routes'][number
   return covered === lastPoint
 }
 
-export async function estimateOpenRouteTravel({ address, origin, apiKey, departureTime, visitDurationMinutes = 120, now = new Date(), fetcher = fetch }: {
+export async function estimateOpenRouteTravel({ address, origin, apiKey, departureTime, visitDurationMinutes = 120, now = new Date(), fetcher = fetch, geocode = geocodeRoutingAddress }: {
   address: string; origin: string; apiKey: string; departureTime?: string; visitDurationMinutes?: number; now?: Date; fetcher?: typeof fetch
+  geocode?: (address: string, apiKey: string, fetcher: typeof fetch) => Promise<VerifiedRoutingPoint>
 }): Promise<TravelEstimate> {
   if (!Number.isInteger(visitDurationMinutes) || visitDurationMinutes < 30 || visitDurationMinutes > 480) throw new Error('invalid_visit_duration')
   if (!apiKey || !origin) throw new Error('routing_not_configured')
   const start = departureTime ? new Date(departureTime) : now
   if (!Number.isFinite(start.getTime()) || start.getTime() < now.getTime() - 60_000) throw new Error('invalid_departure_time')
   const [destination, departure] = await Promise.all([
-    geocodeRoutingAddress(address, apiKey, fetcher), geocodeRoutingAddress(origin, apiKey, fetcher)
+    geocode(address, apiKey, fetcher), geocode(origin, apiKey, fetcher)
   ])
   if (departure.province !== 'CABA') throw new Error('origin_must_be_caba')
   async function drive(from: typeof departure, to: typeof destination) {

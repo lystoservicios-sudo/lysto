@@ -2,13 +2,14 @@ import { afterEach, expect, it, vi } from 'vitest'
 import { estimateOpenRouteTravel } from '@/lib/pricing/openrouteservice'
 import { estimateTravel } from '@/lib/pricing/travel'
 import { geocodeOpenRouteAddress } from '@/lib/location/openrouteservice'
+vi.mock('@/lib/pricing/server', () => ({quoteWriter: () => ({rpc: async () => ({data:null,error:null})})}))
 
 const now = new Date('2026-10-20T15:00:00Z')
 const input = { address: 'Pavon 2012, CABA, Argentina', origin: 'Corrientes 1240, CABA, Argentina', apiKey: 'server-test-key', now }
 const response = (body: unknown) => new Response(JSON.stringify(body))
 function point(number = '2012', longitude = -58.4, region = 'Ciudad Autónoma de Buenos Aires') {
   return { geometry: { type: 'Point', coordinates: [longitude, -34.6] }, properties: {
-    label: `Pavon ${number}, CABA, Argentina`, layer: 'address', housenumber: number,
+    label: `Pavon ${number}, CABA, Argentina`, layer: 'address', housenumber: number, street: number === '1240' ? 'Corrientes' : 'Pavon', locality: 'Buenos Aires',
     country_a: 'ARG', region, confidence: 1, accuracy: 'point', match_type: 'exact'
   } }
 }
@@ -22,6 +23,27 @@ function fetchRoutes() {
     .mockResolvedValueOnce(response(route())).mockResolvedValueOnce(response(route(12000, 2400)))
 }
 afterEach(() => vi.unstubAllEnvs())
+it('rejects a different street even when the house number and confidence match', async () => {
+  const candidate = point('5871', -58.323826, 'Buenos Aires')
+  candidate.properties.street = 'Coronel Brandsen'
+  candidate.properties.locality = 'Wilde'
+  await expect(geocodeOpenRouteAddress('Calle 23 5871, Berazategui, Buenos Aires, Argentina', 'key',
+    vi.fn().mockResolvedValue(response({features:[candidate]})))).rejects.toThrow('address_ambiguous')
+})
+it('rejects the same street and house number in a different locality', async () => {
+  const candidate = point('5871', -58.323826, 'Buenos Aires')
+  candidate.properties.street = '23'
+  candidate.properties.locality = 'La Plata'
+  await expect(geocodeOpenRouteAddress('Calle 23 5871, Berazategui, Buenos Aires, Argentina', 'key',
+    vi.fn().mockResolvedValue(response({features:[candidate]})))).rejects.toThrow('address_ambiguous')
+})
+it('accepts the exact numbered street and house within its verified municipality', async () => {
+  const candidate = point('5871', -58.2, 'Buenos Aires')
+  candidate.properties.street = '23'
+  candidate.properties.locality = 'Berazategui'
+  await expect(geocodeOpenRouteAddress('CALLE 23 5871, Berazategui Oeste, Buenos Aires, Argentina', 'key',
+    vi.fn().mockResolvedValue(response({features:[candidate]})))).resolves.toMatchObject({province:'Buenos Aires'})
+})
 it('accepts provider-confirmed zero travel only when both verified points coincide', async () => {
   const zeroRoute = { routes: [{ summary: { distance: 0, duration: 0 }, way_points: [0, 0] }] }
   const fetcher = vi.fn().mockResolvedValueOnce(response({ features: [point()] }))

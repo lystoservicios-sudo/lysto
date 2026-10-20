@@ -6,7 +6,7 @@ import { POST as RENEW } from '@/app/api/location/renew/route'
 import { ApiError } from '@/lib/http/api-error'
 
 const state = vi.hoisted(() => ({
-  role: 'customer', denied: false, suggest: vi.fn(), resolve: vi.fn(), issue: vi.fn(), readProof: vi.fn(), limit: vi.fn()
+  role: 'customer', denied: false, suggest: vi.fn(), resolve: vi.fn(), issue: vi.fn(), readProof: vi.fn(), limit: vi.fn(), remember: vi.fn()
 }))
 vi.mock('@/lib/auth/session', () => ({
   requireSecuritySession: async () => {
@@ -16,6 +16,7 @@ vi.mock('@/lib/auth/session', () => ({
 }))
 vi.mock('@/lib/location/georef', () => ({ suggestLocations: state.suggest }))
 vi.mock('@/lib/location/resolve', () => ({ resolveArgentineAddress: state.resolve }))
+vi.mock('@/lib/location/verified-points', () => ({ rememberResolvedAddress: state.remember }))
 vi.mock('@/lib/location/proof', () => ({ issueLocationProof: state.issue, readAuthenticLocationProof: state.readProof }))
 vi.mock('@/lib/security/rate-limit', async (importActual) => {
   const actual = await importActual<typeof import('@/lib/security/rate-limit')>()
@@ -30,6 +31,7 @@ beforeEach(() => {
   state.issue.mockReset().mockReturnValue('signed-location-proof')
   state.readProof.mockReset().mockReturnValue({ provinceId: '06', cityId: '0665801007', streetId: '066580100704335' })
   state.limit.mockReset().mockResolvedValue({ allowed: true })
+  state.remember.mockReset().mockResolvedValue(undefined)
 })
 afterEach(() => vi.unstubAllEnvs())
 
@@ -47,6 +49,7 @@ describe('private location HTTP routes', () => {
     const response = await POST(new Request('http://localhost/api/location/resolve', { method: 'POST', headers: { 'content-type': 'application/json', origin: 'http://localhost' }, body: JSON.stringify({ street: 'GRL BELGRANO', number: '123', city: 'Quilmes Oeste', province: 'Buenos Aires', provinceId: '06', cityId: '0665801007', streetId: '066580100704335' }) }))
     expect(response.status).toBe(200)
     expect(await response.json()).toMatchObject({ proof: 'signed-location-proof', address: { street: 'GRL BELGRANO' } })
+    expect(state.remember).toHaveBeenCalledWith(expect.objectContaining({latitude:-34.7,longitude:-58.3}))
   })
 
   it('renews an authentic proof inside the same private session', async () => {

@@ -4129,6 +4129,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      read_verified_routing_point: { Args: { p_key: string }; Returns: Json }
+      store_verified_routing_point: { Args: { p_key: string; p_point: Json }; Returns: undefined }
       accept_professional_invitation: {
         Args: { p_token: string }
         Returns: Json

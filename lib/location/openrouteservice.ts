@@ -4,10 +4,14 @@ import { z } from 'zod'
 const responseSchema = z.object({ features: z.array(z.object({
   geometry: z.object({ type: z.literal('Point'), coordinates: z.tuple([z.number().finite().min(-180).max(180), z.number().finite().min(-90).max(90)]) }),
   properties: z.object({ label: z.string(), layer: z.string(), housenumber: z.string().optional(),
+    street: z.string().optional(), locality: z.string().optional(), localadmin: z.string().optional(), county: z.string().optional(),
     country_a: z.string(), region: z.string().optional(), region_a: z.string().optional(),
     confidence: z.number().optional(), accuracy: z.string().optional(), match_type: z.string().optional() })
 })) })
-const normalize = (text: string) => text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+const normalize = (text: string) => text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim()
+const streetName = (text: string) => normalize(text).replace(/^(avenida|av|calle) /, '')
+const cabaNames = ['caba', 'ciudad autonoma de buenos aires', 'capital federal', 'autonomous city of buenos aires', 'ciudad de buenos aires']
+const municipality = (text: string) => normalize(text) === 'berazategui oeste' ? 'berazategui' : normalize(text)
 
 /** Geocodes an address, never a city/street centroid, for server-side routing. */
 export async function geocodeOpenRouteAddress(address: string, apiKey: string, fetcher: typeof fetch = fetch,
@@ -15,6 +19,10 @@ export async function geocodeOpenRouteAddress(address: string, apiKey: string, f
   if (!apiKey) throw new Error('geocoding_not_configured')
   // The house number is the final numeric token in the street portion (e.g. Calle 23 5871).
   const number = address.split(',')[0].match(/\d+\s*$/)?.[0].trim()
+  const parts = address.split(',').map(normalize)
+  const expectedStreet = streetName(address.split(',')[0].replace(/\s+\d+\s*$/, ''))
+  const expectedProvince = parts.some(p => cabaNames.includes(p)) ? 'CABA' : parts.some(p => ['buenos aires', 'provincia de buenos aires'].includes(p)) ? 'Buenos Aires' : null
+  const expectedCity = parts[1] && ![...cabaNames, 'buenos aires', 'provincia de buenos aires', 'argentina'].includes(parts[1]) ? municipality(parts[1]) : null
   const query = address.replace(/\bCABA\b/gi, 'Ciudad Autónoma de Buenos Aires')
   const params = structured ? new URLSearchParams({ address: `${structured.number} ${structured.street}`, country: 'ARG',
     ...(structured.city ? { locality: structured.city } : {}), ...(structured.province ? { region: structured.province } : {}) })
@@ -25,13 +33,16 @@ export async function geocodeOpenRouteAddress(address: string, apiKey: string, f
   if (!response.ok) throw new Error(`ors_geocoding_http_${response.status}`)
   const data = responseSchema.parse(await response.json())
   const candidates = data.features.filter(({ properties: p }) => p.layer === 'address' && number && p.housenumber === number &&
+    p.street && streetName(p.street) === expectedStreet &&
+    (expectedProvince === 'CABA' || !expectedCity || [p.locality, p.localadmin, p.county].some(value => value && municipality(value) === expectedCity)) &&
     (p.confidence ?? 0) >= 0.8 && p.match_type !== 'fallback' && ['point', 'interpolated'].includes(p.accuracy ?? ''))
   // Duplicate records at the same coordinate can come from different source datasets.
   const unique = [...new Map(candidates.map(p => [p.geometry.coordinates.join(','), p])).values()]
   if (unique.length !== 1) {
     console.warn('ors_geocode_unresolved', { hasHouseNumber: Boolean(number), matches: unique.length,
       candidates: data.features.map(({ properties: p }) => ({ layer: p.layer, accuracy: p.accuracy,
-        confidence: p.confidence, match: p.match_type, numberMatches: p.housenumber === number, region: p.region })) })
+        confidence: p.confidence, match: p.match_type, numberMatches: p.housenumber === number,
+        streetMatches: Boolean(p.street && streetName(p.street) === expectedStreet), region: p.region })) })
     throw new Error('address_ambiguous')
   }
   const selected = unique[0], p = selected.properties
@@ -39,6 +50,7 @@ export async function geocodeOpenRouteAddress(address: string, apiKey: string, f
   const province: 'CABA' | 'Buenos Aires' | 'other' = ['ciudad autonoma de buenos aires', 'capital federal', 'autonomous city of buenos aires'].includes(region) || p.region_a === 'C' ? 'CABA'
     : ['buenos aires', 'provincia de buenos aires'].includes(region) || p.region_a === 'B' ? 'Buenos Aires' : 'other'
   if (p.country_a !== 'ARG' || province === 'other') throw new Error('outside_coverage')
+  if (expectedProvince && province !== expectedProvince) throw new Error('address_ambiguous')
   return { formattedAddress: p.label, longitude: selected.geometry.coordinates[0], latitude: selected.geometry.coordinates[1],
     province, precision: p.accuracy === 'interpolated' ? 'range_interpolated' as const : 'rooftop' as const }
 }

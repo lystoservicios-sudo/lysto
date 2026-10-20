@@ -27,7 +27,7 @@ it.each(['missing-point','wrong-street','wrong-house','ambiguous'])('never subst
 })
 it('retries ORS with separate street, locality and province when GeoRef has no point', async () => {
   const fetcher = vi.fn().mockResolvedValueOnce(reply({features:[]})).mockResolvedValueOnce(reply(geoReply([official(null)])))
-    .mockResolvedValueOnce(reply({features:[{geometry:{type:'Point',coordinates:[-58.4,-34.6]},properties:{label:'Pavon 2012, San Cristóbal, CABA',layer:'address',housenumber:'2012',country_a:'ARG',region:'Autonomous City of Buenos Aires',accuracy:'point',confidence:1}}]}))
+    .mockResolvedValueOnce(reply({features:[{geometry:{type:'Point',coordinates:[-58.4,-34.6]},properties:{label:'Pavon 2012, San Cristóbal, CABA',layer:'address',housenumber:'2012',street:'Pavon',country_a:'ARG',region:'Autonomous City of Buenos Aires',accuracy:'point',confidence:1}}]}))
   expect((await geocodeRoutingAddress('Pavon 2012, San Cristóbal, CABA, Argentina','test',fetcher)).coordinateSource).toBe('openrouteservice')
   const url = new URL(fetcher.mock.calls[2][0])
   expect(url.pathname).toBe('/geocode/search/structured')
@@ -38,4 +38,13 @@ it('does not hide an invalid ORS credential with a different geocoder', async ()
   const fetcher = vi.fn().mockResolvedValue(new Response('{}', {status:403}))
   await expect(geocodeRoutingAddress('Pavon 2012, CABA, Argentina', 'test', fetcher)).rejects.toThrow('ors_geocoding_http_403')
   expect(fetcher).toHaveBeenCalledTimes(1)
+})
+it('uses GeoRef census locality for structured lookup of a verified sublocality', async () => {
+  const address = {...official(null),altura:{unidad:null,valor:5871},calle:{categoria:'CALLE',id:'06091',nombre:'CALLE 23'},
+    localidad:{id:'0609101002',nombre:'Berazategui Oeste'},localidad_censal:{id:'06091010',nombre:'Berazategui'},
+    provincia:{id:'06',nombre:'Buenos Aires'},nomenclatura:'CALLE 23 5871, Berazategui Oeste, Berazategui, Buenos Aires'}
+  const fetcher=vi.fn().mockResolvedValueOnce(reply({features:[]})).mockResolvedValueOnce(reply(geoReply([address])))
+    .mockResolvedValueOnce(reply({features:[{geometry:{type:'Point',coordinates:[-58.2,-34.8]},properties:{label:'23 5871, Berazategui',layer:'address',housenumber:'5871',street:'23',locality:'Berazategui',country_a:'ARG',region:'Buenos Aires',accuracy:'point',confidence:1}}]}))
+  await geocodeRoutingAddress('Calle 23 5871, Berazategui Oeste, Buenos Aires, Argentina','test',fetcher)
+  expect(new URL(fetcher.mock.calls[2][0]).searchParams.get('locality')).toBe('Berazategui')
 })

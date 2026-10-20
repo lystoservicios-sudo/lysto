@@ -17,13 +17,14 @@ export async function geocodeRoutingAddress(address: string, apiKey: string, fet
   const provinceId = parts.some(caba) ? '02' : parts.some(p => ['buenos aires', 'provincia de buenos aires'].includes(normalize(p))) ? '06' : undefined
   const city = parts[1] && !caba(parts[1]) && normalize(parts[1]) !== 'buenos aires' ? parts[1] : undefined
   const addresses = await georefAddresses({ kind: 'address', query: parts[0], ...(provinceId ? { provinceId } : {}), ...(city ? { city } : {}) }, fetcher)
-  const candidates = addresses.filter(a => String(a.altura.valor) === house[2] && streetName(a.calle.nombre ?? '') === streetName(house[1]) &&
+  const matches = addresses.filter(a => String(a.altura.valor) === house[2] && streetName(a.calle.nombre ?? '') === streetName(house[1]) &&
     ['02', '06'].includes(a.provincia.id) && (!provinceId || a.provincia.id === provinceId) &&
-    (!city || normalize(a.localidad.nombre) === normalize(city)) && a.ubicacion.lat !== null && a.ubicacion.lon !== null)
+    (!city || normalize(a.localidad.nombre) === normalize(city)))
+  const candidates = matches.filter(a => a.ubicacion.lat !== null && a.ubicacion.lon !== null)
   const unique = [...new Map(candidates.map(a => [`${a.ubicacion.lat},${a.ubicacion.lon}`, a])).values()]
   if (unique.length > 1) throw new Error('address_ambiguous')
   if (!unique.length) return { ...await geocodeOpenRouteAddress(address, apiKey, fetcher, {
-    street: house[1], number: house[2], city,
+    street: house[1], number: house[2], city: matches.length === 1 && provinceId === '06' ? matches[0].localidad_censal.nombre : city,
     province: provinceId === '02' ? 'Ciudad Autónoma de Buenos Aires' : provinceId === '06' ? 'Buenos Aires' : undefined
   }), coordinateSource: 'openrouteservice' as const }
   const selected = unique[0]

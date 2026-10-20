@@ -1,11 +1,12 @@
 import 'server-only'
 import { estimateTravel as estimateGoogleTravel } from './google-routes'
 import { estimateOpenRouteTravel } from './openrouteservice'
+import { geocodeSavedRoutingAddress } from '../location/verified-points'
 
 export async function estimateTravel(input: Omit<Parameters<typeof estimateGoogleTravel>[0], 'apiKey'>) {
   const orsKey = process.env.OPENROUTESERVICE_API_KEY
   try {
-    return orsKey ? await estimateOpenRouteTravel({ ...input, apiKey: orsKey })
+    return orsKey ? await estimateOpenRouteTravel({ ...input, apiKey: orsKey, geocode: geocodeSavedRoutingAddress })
       : await estimateGoogleTravel({ ...input, apiKey: process.env.GOOGLE_MAPS_SERVER_API_KEY ?? '' })
   } catch (error) {
     // Fixed diagnostic codes only: never log addresses, provider bodies or credentials.
