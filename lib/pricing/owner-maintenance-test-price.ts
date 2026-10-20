@@ -1,7 +1,7 @@
 import { money } from './decimal-money'
 
 export const OWNER_TEST_CUSTOMER_EMAIL = 'quimey_boca@hotmail.com'
-export const OWNER_MAINTENANCE_TEST_PRICE = 1000
+export const OWNER_MAINTENANCE_TEST_PRICE = 100
 export const MARKETPLACE_COMMISSION_RATE = 0.18
 
 export function isOwnerMaintenanceTestCustomer(email: string | null | undefined, issue: string) {

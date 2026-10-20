@@ -11,8 +11,6 @@ import { enforceRateLimit, RateLimitExceeded, rateLimitResponse, requestSubject 
 
 export const runtime = 'nodejs'
 const CUSTOMER_EMAIL = 'quimey_boca@hotmail.com'
-const TOTAL = 1000
-const PLATFORM_FEE = 180
 
 export async function POST(request: Request) {
   let stage = 'session'
@@ -39,10 +37,10 @@ export async function POST(request: Request) {
 
     stage = 'create_test_job'
     const quote = applyOwnerMaintenanceTestPrice({
-      currency: 'ARS', total: TOTAL, platformFee: PLATFORM_FEE, professionalAmount: 820, platformFeeRate: 0.18,
-      platformContribution: PLATFORM_FEE, paymentCostBudget: 0, calculatorSubtotal: 769.23,
-      labor: 769.23, laborReference: 769.23, adjustments: [], materialsAmount: 0,
-      travel: 0, safetyAmount: 230.77, safetyRate: 0.3, reviewReasons: [], readyToOffer: true
+      currency: 'ARS', total: 0, platformFee: 0, professionalAmount: 0, platformFeeRate: 0.18,
+      platformContribution: 0, paymentCostBudget: 0, calculatorSubtotal: 0,
+      labor: 0, laborReference: 0, adjustments: [], materialsAmount: 0,
+      travel: 0, safetyAmount: 0, safetyRate: 0.3, reviewReasons: [], readyToOffer: true
     }, true)
     const jobId = await createOwnerSplitTestJob({
       actorUserId: session.userId, actorSessionId: session.sessionId,

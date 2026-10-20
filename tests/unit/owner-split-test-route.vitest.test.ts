@@ -29,17 +29,17 @@ beforeEach(() => {
   // Mirror the existing SQL acceptance boundary: an absent currency is not ARS.
   state.rpc.mockImplementation(async (_name, args) => args.p_quote.currency === 'ARS'
     ? { data:'8d48f672-dd86-46f0-926b-faa64a37a8d2', error:null }
-    : { data:null, error:{code:'22023',message:'Owner split test quote must remain ARS 1000 with the 18/82 split'} })
+    : { data:null, error:{code:'22023',message:'Owner split test quote must remain ARS 100 with the 18/82 split'} })
   state.prepare.mockResolvedValue({id:'checkout',status:'creating'})
   state.create.mockResolvedValue({status:'ready',checkout_protocol:'preferences',init_point:'https://www.mercadopago.com.ar/checkout/v1/redirect?pref_id=owner'})
 })
 
-it('passes the ARS 1000 snapshot required by the owner-only SQL operation before creating a checkout', async () => {
+it('passes the ARS 100 snapshot required by the owner-only SQL operation before creating a checkout', async () => {
   const response=await POST(new Request('https://lysto.test/api/mercadopago/owner-split-test',{method:'POST'}))
   expect(response.status).toBe(200)
   expect(state.rpc).toHaveBeenCalledWith('create_owner_marketplace_split_test_job',expect.objectContaining({
-    p_quote:expect.objectContaining({currency:'ARS',total:1000,platformFee:180,professionalAmount:820,
-      specialPricing:{kind:'owner_maintenance_test',amount:1000}})
+    p_quote:expect.objectContaining({currency:'ARS',total:100,platformFee:18,professionalAmount:82,
+      specialPricing:{kind:'owner_maintenance_test',amount:100}})
   }))
   expect(state.prepare).toHaveBeenCalledWith('f6ff2c3d-bb63-4fa8-bffe-4296dc294a5d','8d48f672-dd86-46f0-926b-faa64a37a8d2',undefined,true)
   expect(state.create).toHaveBeenCalledTimes(1)

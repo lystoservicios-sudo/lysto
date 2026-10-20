@@ -34,15 +34,15 @@ describe('owner maintenance test price', () => {
     expect(isOwnerMaintenanceTestCustomer('other@hotmail.com', 'mantenimiento')).toBe(false)
   })
 
-  it('sets only the owner maintenance test quote to ARS 1,000 and retains the 18/82 split', () => {
+  it('sets only the owner maintenance test quote to ARS 100 and retains the 18/82 split', () => {
     const result = applyOwnerMaintenanceTestPrice(quote, true)
-    expect(result.total).toBe(1000)
-    expect(result.platformFee).toBe(180)
-    expect(result.professionalAmount).toBe(820)
+    expect(result.total).toBe(100)
+    expect(result.platformFee).toBe(18)
+    expect(result.professionalAmount).toBe(82)
     expect(result.platformFeeRate).toBe(0.18)
-    expect(result.platformContribution).toBe(180)
+    expect(result.platformContribution).toBe(18)
     expect(result.paymentCostBudget).toBe(0)
-    expect(result.specialPricing).toEqual({ kind: 'owner_maintenance_test', amount: 1000 })
+    expect(result.specialPricing).toEqual({ kind: 'owner_maintenance_test', amount: 100 })
     expect(result.reviewReasons).not.toContain('tariffs_unapproved')
     expect(result.reviewReasons).toContain('owner_maintenance_test_review')
     expect(result.readyToOffer).toBe(false)
@@ -56,9 +56,9 @@ describe('owner maintenance test price', () => {
 
   it('shows the special amount in the owner preview only for maintenance', () => {
     expect(previewOwnerMaintenanceTestPrice(quote, true, 'mantenimiento')).toMatchObject({
-      total: 1000,
-      platformFee: 180,
-      professionalAmount: 820
+      total: 100,
+      platformFee: 18,
+      professionalAmount: 82
     })
     expect(previewOwnerMaintenanceTestPrice(quote, true, 'no_enfria')).toEqual(quote)
     expect(previewOwnerMaintenanceTestPrice(quote, false, 'mantenimiento')).toEqual(quote)
