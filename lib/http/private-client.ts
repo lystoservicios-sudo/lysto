@@ -31,6 +31,8 @@ export async function privateRequest<T>(path: string, method = 'GET', body?: unk
     if (response.status === 409)
       throw new PrivateRequestError('Los datos cambiaron. Recargá la información antes de volver a guardar.', 409, code)
     if (response.status === 401) throw new PrivateRequestError('Tu sesión terminó. Volvé a iniciar sesión.', 401, code)
+    if (response.status === 400 && code === 'location_selection_required')
+      throw new PrivateRequestError('Seleccioná una dirección de la lista antes de continuar. Escribí calle y número, seguidos de una coma y tu localidad.', 400, code)
     if (response.status === 400) throw new PrivateRequestError('Revisá los datos ingresados.', 400, code)
     throw new PrivateRequestError('No pudimos completar la operación. Intentá nuevamente.', response.status, code)
   }

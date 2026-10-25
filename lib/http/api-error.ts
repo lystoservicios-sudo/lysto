@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server'
 import { ZodError } from 'zod'
 
 const errors = {
+  location_selection_required: {
+    status: 400,
+    message: 'Seleccioná una dirección de la lista antes de continuar. Escribí calle y número, seguidos de una coma y tu localidad.'
+  },
   professional_invitation_exists: {
     status: 409,
     message: 'Ya existe una invitación para este correo. Revisá su expediente; para repetir el envío, usá Reenviar invitación.'

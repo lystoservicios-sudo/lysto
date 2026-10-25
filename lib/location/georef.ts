@@ -10,6 +10,13 @@ import {
 
 const territory = z.object({ id: z.string(), nombre: z.string() })
 const nullableTerritory = z.object({ id: z.string().nullable(), nombre: z.string().nullable() })
+// GeoRef legitimately omits the finer locality for some streets. Its census
+// locality is still an official, queryable identity; never invent a city/point.
+function withLocality<T extends { localidad: z.infer<typeof nullableTerritory>; localidad_censal: z.infer<typeof territory> }>(value: T) {
+  return { ...value, localidad: value.localidad.id && value.localidad.nombre
+    ? { id: value.localidad.id, nombre: value.localidad.nombre }
+    : value.localidad_censal }
+}
 const page = { cantidad: z.number().int().nonnegative(), total: z.number().int().nonnegative(), inicio: z.number().int().nonnegative(), parametros: z.record(z.unknown()) }
 const provinceResponse = z.object({ ...page, provincias: z.array(territory.extend({ centroide: z.object({ lat: z.number(), lon: z.number() }) })) })
 const locality = territory.extend({
@@ -19,30 +26,32 @@ const locality = territory.extend({
 const localityResponse = z.object({ ...page, localidades: z.array(locality) })
 const street = territory.extend({
   categoria: z.string(), nomenclatura: z.string(), provincia: territory, departamento: territory,
-  localidad: territory, localidad_censal: territory,
+  localidad: nullableTerritory, localidad_censal: territory,
   altura: z.object({ inicio: z.object({ derecha: z.number().nullable(), izquierda: z.number().nullable() }), fin: z.object({ derecha: z.number().nullable(), izquierda: z.number().nullable() }) })
-})
+}).transform(withLocality)
 const streetResponse = z.object({ ...page, calles: z.array(street) })
 export const georefAddressSchema = z.object({
   altura: z.object({ unidad: z.string().nullable(), valor: z.union([z.number(), z.string()]) }),
   calle: nullableTerritory.extend({ categoria: z.string().nullable() }),
   calle_cruce_1: nullableTerritory.extend({ categoria: z.string().nullable() }),
   calle_cruce_2: nullableTerritory.extend({ categoria: z.string().nullable() }),
-  departamento: territory, localidad: territory, localidad_censal: territory,
+  departamento: territory, localidad: nullableTerritory, localidad_censal: territory,
   nomenclatura: z.string(), piso: z.string().nullable(), provincia: territory,
   ubicacion: z.object({ lat: z.number().nullable(), lon: z.number().nullable() })
-})
+}).transform(withLocality)
 const addressResponse = z.object({ ...page, direcciones: z.array(georefAddressSchema) })
 export type GeorefAddress = z.infer<typeof georefAddressSchema>
 
 const endpoint = 'https://apis.datos.gob.ar/georef/api/v2.0'
 
-async function get<T>(path: string, params: URLSearchParams, schema: z.ZodType<T>, fetcher: typeof fetch): Promise<T> {
+async function get<T>(path: string, params: URLSearchParams, schema: z.ZodType<T, z.ZodTypeDef, unknown>, fetcher: typeof fetch): Promise<T> {
   const response = await fetcher(`${endpoint}/${path}?${params.toString()}`, {
     cache: 'no-store', signal: AbortSignal.timeout(8_000), headers: { Accept: 'application/json' }
   })
   if (!response.ok) throw new Error('georef_unavailable')
-  return schema.parse(await response.json())
+  const parsed = schema.safeParse(await response.json())
+  if (!parsed.success) throw new Error('georef_invalid_response')
+  return parsed.data
 }
 
 function context(input: LocationSuggestionInput) {
@@ -57,7 +66,10 @@ export async function georefAddresses(input: LocationSuggestionInput, fetcher: t
   if (value.kind !== 'address') throw new Error('address_query_required')
   const params = context(value)
   if (!value.provinceId && !value.province) params.set('provincia', '02,06')
-  params.set('direccion', value.street ? `${value.street} ${value.query}` : value.query)
+  const parts = value.query.split(',').map(part => part.trim())
+  const fullAddressWithCity = !value.street && !value.cityId && !value.city && parts.length === 2 && parts.every(Boolean)
+  if (fullAddressWithCity) params.set('localidad', parts[1])
+  params.set('direccion', value.street ? `${value.street} ${value.query}` : fullAddressWithCity ? parts[0] : value.query)
   const data = await get('direcciones', params, addressResponse, fetcher)
   return data.direcciones
 }

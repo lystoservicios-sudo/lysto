@@ -1,10 +1,46 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { suggestLocations } from '@/lib/location/georef'
+import { georefAddresses, suggestLocations } from '@/lib/location/georef'
 import { resolveArgentineAddress } from '@/lib/location/resolve'
 
 const response = (body: unknown, status = 200) =>
   Promise.resolve(new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } }))
+
+const censusAddress = {
+  altura: { unidad: null, valor: 2012 }, calle: { categoria: 'CALLE', id: '066650100000040', nombre: 'ERNESTO PAVONI' },
+  calle_cruce_1: { categoria: null, id: null, nombre: null }, calle_cruce_2: { categoria: null, id: null, nombre: null },
+  departamento: { id: '06665', nombre: 'Ramallo' }, localidad: { id: null, nombre: null },
+  localidad_censal: { id: '06665010', nombre: 'El Paraíso' },
+  nomenclatura: 'ERNESTO PAVONI 2012, El Paraíso, Ramallo, Buenos Aires', piso: null,
+  provincia: { id: '06', nombre: 'Buenos Aires' }, ubicacion: { lat: null, lon: null }
+}
+
+it('accepts the observed GeoRef census locality when the finer locality is null without losing the other suggestions', async () => {
+  const fetcher = vi.fn(() => response({ cantidad: 2, total: 2, inicio: 0, parametros: {}, direcciones: [
+    censusAddress,
+    { ...censusAddress, localidad: { id: '0680501005', nombre: 'El Talar' }, calle: { ...censusAddress.calle, id: '068050100504995', nombre: 'PAVON' } }
+  ] })) as unknown as typeof fetch
+  const suggestions = await suggestLocations({ kind: 'address', query: 'Pavon 2012' }, fetcher)
+  expect(suggestions).toHaveLength(2)
+  expect(suggestions[0]).toMatchObject({ cityId: '06665010', city: 'El Paraíso', latitude: null, longitude: null })
+  expect(suggestions[1]).toMatchObject({ cityId: '0680501005', city: 'El Talar' })
+  expect((await georefAddresses({ kind: 'address', query: '2012', street: 'ERNESTO PAVONI', city: 'El Paraíso', cityId: '06665010', province: 'Buenos Aires', provinceId: '06' }, fetcher))[0].localidad)
+    .toEqual({ id: '06665010', nombre: 'El Paraíso' })
+})
+
+it('uses a comma-separated locality to narrow an unscoped full address search', async () => {
+  const fetcher = vi.fn(() => response({ cantidad: 0, total: 0, inicio: 0, parametros: {}, direcciones: [] })) as unknown as typeof fetch
+  await suggestLocations({ kind: 'address', query: 'Calle 23 5871, Berazategui' }, fetcher)
+  const url = new URL(String(vi.mocked(fetcher).mock.calls[0][0]))
+  expect(url.searchParams.get('direccion')).toBe('Calle 23 5871')
+  expect(url.searchParams.get('localidad')).toBe('Berazategui')
+  expect(url.searchParams.get('provincia')).toBe('02,06')
+})
+
+it('does not turn invalid upstream data into a user validation error', async () => {
+  const fetcher = vi.fn(() => response({ unexpected: true })) as unknown as typeof fetch
+  await expect(suggestLocations({ kind: 'address', query: 'Pavon 2012' }, fetcher)).rejects.toThrow('georef_invalid_response')
+})
 
 describe('GeoRef location suggestions', () => {
   it('maps official provinces without leaking provider response fields', async () => {

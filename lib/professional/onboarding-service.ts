@@ -287,6 +287,7 @@ export async function saveProfessionalAddress(input: unknown) {
     locationProof: z.string().max(4096),
     expectedVersion: z.number().int().positive() }).strict().parse(input)
   const client = await onboardingIdentity()
+  if (!data.locationProof.trim()) throw new ApiError('location_selection_required')
   let address
   try { address = verifyFormattedLocationProof(data.locationProof, data.address).formattedAddress }
   catch { throw new ApiError('invalid_input') }
