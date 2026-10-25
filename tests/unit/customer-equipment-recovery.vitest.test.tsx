@@ -25,10 +25,10 @@ it('explains the missing price requirements while the customer can edit them', (
   expect(screen.getByLabelText('Capacidad del aire (frigorías/h)').closest('details')?.open).toBe(true)
 })
 
-it('lets the customer change an unavailable time instead of retrying it unchanged', () => {
+it.each(['no_available_professional', 'booking_notice_required'])('lets the customer change an unavailable time (%s)', reason => {
   const onEdit = vi.fn(), onRetry = vi.fn()
   render(<ReviewScreen equipment={null} answers={answers} homeRoom="Living" address="Dirección guardada"
-    preview={{ status: 'unavailable', reason: 'no_available_professional' }}
+    preview={{ status: 'unavailable', reason }}
     busy={false} onEdit={onEdit} onRetry={onRetry} />)
   fireEvent.click(screen.getByRole('button', { name: 'Elegir otro horario' }))
   expect(onEdit).toHaveBeenCalledWith('schedule')

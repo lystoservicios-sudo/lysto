@@ -146,7 +146,7 @@ describe('Pedir seven-step component journey with the real quote/preparation ser
     fireEvent.click(screen.getByRole('button', { name: 'Elegir horario preferido' }))
     expect(screen.getByRole('heading', { name: '¿Cuándo podrías recibirnos?' })).toBeTruthy()
     fireEvent.click(screen.getByRole('radio', { name: 'Otra fecha' }))
-    fireEvent.change(screen.getByLabelText('Fecha de visita'), { target: { value: '2028-01-12' } })
+    fireEvent.change(screen.getByLabelText('Fecha de visita'), { target: { value: '2028-01-13' } })
     fireEvent.click(screen.getByRole('radio', { name: '10:00 – 12:00' }))
     fireEvent.click(screen.getByRole('button', { name: 'Revisar pedido y presupuesto' }))
     expect(await screen.findByRole('heading', { name: 'Revisá tu pedido' })).toBeTruthy()
@@ -186,7 +186,7 @@ describe('Pedir seven-step component journey with the real quote/preparation ser
     expect(calls.find(call => call.path.endsWith('/preview'))?.body).toMatchObject({ equipmentId: ids.equipment, addressId: ids.address,
       homeId: ids.home, expectedHomeVersion: inventory.homes[0].version, expectedEquipmentVersion: inventory.equipment[0].version,
       floorId: inventory.homes[0].floors[0].id, roomId: inventory.homes[0].placements[0].roomId,
-      issue: branch.issue, timeSince: branch.timeSince, description, answers: branch.answers, preferredDate: '2028-01-12', timeWindow: '10:00 – 12:00' })
+      issue: branch.issue, timeSince: branch.timeSince, description, answers: branch.answers, preferredDate: '2028-01-13', timeWindow: '10:00 – 12:00' })
     if (branch.inline) {
       expect(calls.filter(call => call.path === '/api/customer/homes' && call.method === 'POST')).toHaveLength(1)
       expect(calls.filter(call => call.path === '/api/customer/homes' && call.method === 'PUT')).toHaveLength(1)

@@ -9,6 +9,7 @@ import {
 import { ApiError, apiErrorResponse, privateJson } from '../http/api-error'
 import type { Database } from '../supabase/database.types'
 import { defaultQuotePolicy, quotePolicySchema } from './service-quote'
+import { customerBookingNoticeMessage } from '@/lib/scheduling/customer-booking-notice'
 
 export async function getPricingSession() {
   return requireSession()
@@ -43,6 +44,7 @@ export function pricingError(error: unknown) {
     )
   if (code === 'unauthorized' || code === 'forbidden') return apiErrorResponse(new ApiError(code))
   const messages: Record<string, string> = {
+    booking_notice_required: customerBookingNoticeMessage(),
     new_requests_paused: 'Por el momento coordinamos las nuevas solicitudes desde Contacto.',
     routing_not_configured: 'El cálculo de traslado todavía no está configurado.',
     quote_storage_not_configured: 'El guardado de presupuestos todavía no está configurado.',
@@ -88,6 +90,7 @@ export async function getQuotePolicyRecord(client: PricingSession['client']) {
   return { ...record, policy: record.policy ?? defaultQuotePolicy }
 }
 export function throwPricingDatabaseError(error: { code?: string; message?: string }): never {
+  if (error.message?.includes('booking_notice_required')) throw new Error('booking_notice_required')
   if (error.code === '42501') throw new ApiError('forbidden')
   if (error.code === 'PT409' || error.code === '40001' || error.code === '23505') throw new ApiError('conflict')
   if (error.code === 'P0002') throw new ApiError('not_found')

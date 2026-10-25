@@ -20,6 +20,7 @@ import {
   requestSubject
 } from '@/lib/security/rate-limit'
 import { requireNewRequests } from '@/lib/release/runtime-switches'
+import { earliestCustomerVisitDay } from '@/lib/scheduling/customer-booking-notice'
 import {
   applyOwnerMaintenanceTestPrice,
   confirmNoMaterialsForOwnerTest,
@@ -93,6 +94,7 @@ export async function POST(request: Request) {
     )
       throw new Error('forbidden')
     const now = new Date()
+    if (session.role === 'customer' && body.preferredDate < earliestCustomerVisitDay(now)) throw new Error('booking_notice_required')
     const hour = body.timeWindow.match(/\d{2}/)?.[0] ?? '09'
     const departureTime = `${body.preferredDate}T${hour}:00:00-03:00`
     if (Date.parse(departureTime) < now.getTime()) throw new Error('invalid_departure_time')

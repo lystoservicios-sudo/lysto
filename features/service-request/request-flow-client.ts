@@ -3,6 +3,8 @@
 import { z } from 'zod'
 import type { CustomerRequestResult } from '@/lib/customer-requests/contracts'
 import type { RequestDraft } from './request-draft'
+import { earliestCustomerVisitDay } from '@/lib/scheduling/customer-booking-notice'
+export { argentinaDay } from '@/lib/scheduling/customer-booking-notice'
 
 export type RequestPreview = Omit<CustomerRequestResult, 'status'> & { status: 'ready' | 'needs_review' | 'unavailable' }
 export type PreparedRequest = CustomerRequestResult
@@ -59,15 +61,10 @@ export function storePendingPayment(actor: string, payment: PendingRequestPaymen
 export function clearPendingPayment(actor: string) {
   try { window.sessionStorage.removeItem(key(actor, 'payment')) } catch { /* Exact replay remains safe. */ }
 }
-export function argentinaDay(now = new Date()) {
-  const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Argentina/Buenos_Aires', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(now)
-  const part = (type: string) => parts.find(p => p.type === type)?.value
-  return `${part('year')}-${part('month')}-${part('day')}`
-}
 export function futureVisitDays(now = new Date(), count = 4) {
-  const today = new Date(`${argentinaDay(now)}T12:00:00Z`)
+  const firstDay = new Date(`${earliestCustomerVisitDay(now)}T12:00:00Z`)
   return Array.from({ length: count }, (_, index) => {
-    const date = new Date(today.getTime() + (index + 1) * 86400000)
+    const date = new Date(firstDay.getTime() + index * 86400000)
     return { value: date.toISOString().slice(0, 10), label: new Intl.DateTimeFormat('es-AR', { timeZone: 'America/Argentina/Buenos_Aires', weekday: 'short', day: 'numeric', month: 'short' }).format(date) }
   })
 }

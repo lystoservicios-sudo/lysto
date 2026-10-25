@@ -21,9 +21,19 @@ describe('actor-bound request recovery', () => {
     window.sessionStorage.setItem(`lysto:pedir:payment:${actor}`, '{}')
     expect(readPendingPayment(actor).error).toBeTruthy()
   })
-  it('derives future dates from Argentina day rather than UTC or frozen mock dates', () => {
-    expect(futureVisitDays(new Date('2026-10-14T01:00:00Z'))[0].value).toBe('2026-10-14')
-    expect(futureVisitDays(new Date('2026-12-31T20:00:00Z'))[0].value).toBe('2027-01-01')
+  it.each([
+    ['2026-10-25T15:00:00Z', '2026-10-28'],
+    ['2026-10-26T15:00:00Z', '2026-10-29'],
+    ['2026-10-30T15:00:00Z', '2026-11-04'],
+    ['2026-10-31T15:00:00Z', '2026-11-04'],
+    ['2026-10-14T01:00:00Z', '2026-10-16'],
+    ['2026-12-31T20:00:00Z', '2027-01-05']
+  ])('starts after three weekdays from Argentina day: %s -> %s', (now, earliest) => {
+    expect(futureVisitDays(new Date(now))[0].value).toBe(earliest)
+  })
+  it('still offers weekends after the minimum notice has elapsed', () => {
+    expect(futureVisitDays(new Date('2026-10-26T15:00:00Z')).map(day => day.value))
+      .toEqual(['2026-10-29', '2026-10-30', '2026-10-31', '2026-11-01'])
   })
   it('renders only canonical approval and keeps ready/payment-return unresolved', () => {
     expect(paymentPresentation('approved').title).toBe('Pago confirmado')

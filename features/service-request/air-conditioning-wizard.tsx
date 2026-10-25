@@ -12,11 +12,12 @@ import { privateRequest, PrivateRequestError, requestError } from '@/lib/http/pr
 import type { RequestPreviewInput } from '@/lib/customer-requests/contracts'
 import { createRequestDraft, getSelectedRequestAnswers, getRequestServiceIssue, getRequestStepErrors, requestDraftReducer, type RequestDraftAction, type RequestLocationSelection, type RequestStep } from './request-draft'
 import { listRequestEquipment, resolveRequestContext } from './request-context'
-import { argentinaDay, clearPendingPayment, clearRequestDraft, clearRequestPhotos, paymentPresentation, readPendingPayment, readRequestDraft, readRequestPhotos, safeCheckoutUrl, storePendingPayment, storeRequestDraft, storeRequestPhotos, type PendingRequestPayment, type PreparedRequest, type RequestPreview, type RetainedRequestPhoto } from './request-flow-client'
+import { clearPendingPayment, clearRequestDraft, clearRequestPhotos, paymentPresentation, readPendingPayment, readRequestDraft, readRequestPhotos, safeCheckoutUrl, storePendingPayment, storeRequestDraft, storeRequestPhotos, type PendingRequestPayment, type PreparedRequest, type RequestPreview, type RetainedRequestPhoto } from './request-flow-client'
 import { airAsset, DetailsScreen, EquipmentRow, IssueScreen, OrientationScreen, ReviewScreen, ScheduleScreen } from './request-screen-parts'
 import type { AirTransitionOrigin } from './request-air-transition'
 import { RequestLocationStep } from './request-location-step'
 import styles from './request-screens.module.css'
+import { earliestCustomerVisitDay } from '@/lib/scheduling/customer-booking-notice'
 
 const emptyInventory: CustomerHomesSnapshot = { homes: [], addresses: [], equipment: [] }
 const steps: RequestStep[] = ['issue', 'location', 'details', 'orientation', 'schedule', 'review', 'payment']
@@ -82,7 +83,7 @@ function RequestWizard({ customerId = '', initialData = emptyInventory, initialI
   const uploaded = !uploadBusy && pendingPhotos === 0
   const errors = getRequestStepErrors(draft, draft.step)
   const invalidCharacteristics = answers.characteristics?.capacity !== null && answers.characteristics?.capacity !== undefined && (!Number.isInteger(answers.characteristics.capacity) || answers.characteristics.capacity < 1000 || answers.characteristics.capacity > 30000)
-  const invalidDate = draft.step === 'schedule' && !!answers.schedule?.preferredDate && answers.schedule.preferredDate <= argentinaDay()
+  const invalidDate = draft.step === 'schedule' && !!answers.schedule?.preferredDate && answers.schedule.preferredDate < earliestCustomerVisitDay()
   const canContinue = ready && !locked && !previewBusy && !locationLocked && !uploadBusy && (draft.step !== 'details' || uploaded) && errors.length === 0 && !invalidDate && !invalidCharacteristics
   const update = useCallback((action: RequestDraftAction) => { setDraft(current => requestDraftReducer(current, action)) }, [])
   const selectLocation = useCallback((location: RequestLocationSelection | null) => update({ type: 'location', location }), [update])

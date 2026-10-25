@@ -8,6 +8,7 @@ import { estimateTravel } from '@/lib/pricing/travel'
 import { quoteWriter } from '@/lib/pricing/server'
 import { marketplaceConfig } from '@/lib/payments/marketplace-config'
 import { calculateInitialLaborQuote } from './quote'
+import { customerBookingNoticeMessage, earliestCustomerVisitDay } from '@/lib/scheduling/customer-booking-notice'
 import { requestContextSchema, requestPreviewInputSchema, requestPrepareInputSchema, requestResultSchema,
   previewPayloadSchema, type CustomerRequestResult } from './contracts'
 
@@ -42,6 +43,9 @@ const reasons: Record<string, string> = {
 }
 function failure(reason: string, status: 'needs_review' | 'unavailable' = 'needs_review'): CustomerRequestResult {
   return { status, reason, message: reasons[reason] ?? 'Necesitamos revisar este servicio antes de habilitar el pago.' }
+}
+function bookingNoticeFailure(now: Date): CustomerRequestResult {
+  return { status: 'unavailable', reason: 'booking_notice_required', message: customerBookingNoticeMessage(now) }
 }
 function assertActor(session: Session) {
   if (session.role !== 'customer' || !session.customerId || !session.userId || !session.sessionId) throw new ApiError('forbidden')
@@ -85,12 +89,15 @@ export function createCustomerRequestService(deps: CustomerRequestDependencies) 
   async function preview(session: Session, rawInput: unknown): Promise<CustomerRequestResult> {
     const actor = assertActor(session)
     const input = requestPreviewInputSchema.parse(rawInput)
+    const now = deps.now()
+    if (input.preferredDate < earliestCustomerVisitDay(now)) return bookingNoticeFailure(now)
     const currentRaw = readResult(await deps.write('read_customer_request_context', { ...actor, p_input: input as Json }))
     const parsed = requestContextSchema.safeParse(currentRaw)
     if (!parsed.success) throw new ApiError('service_unavailable')
     const current = parsed.data
+    if (current.reason === 'booking_notice_required') return bookingNoticeFailure(deps.now())
     if (current.reason) return failure(current.reason, current.reason === 'no_available_professional' ? 'unavailable' : 'needs_review')
-    const now = deps.now(), { equipment, address } = current.context
+    const { equipment, address } = current.context
     if (input.issue === 'unknown') return failure('diagnosis_required')
     if (equipment.capacity === null || equipment.technology === 'unknown') return failure('equipment_unknown')
     if (equipment.capacity > 18000) return failure('capacity_outside_catalog')
@@ -154,6 +161,7 @@ export function createCustomerRequestService(deps: CustomerRequestDependencies) 
     if (!checked.success) throw new ApiError('service_unavailable')
     const payload = checked.data
     if (Date.parse(payload.expiresAt) <= deps.now().getTime()) return { status: 'price_changed', reason: 'quote_expired', message: 'El cálculo venció. Actualizalo antes de pagar.' }
+    if (payload.input.preferredDate < earliestCustomerVisitDay(deps.now())) return bookingNoticeFailure(deps.now())
     try {
       if (deps.mode() !== payload.liveMode) throw new Error('payment_mode_mismatch')
       await deps.seller(payload.professionalId, payload.sellerAccountId, payload.liveMode)

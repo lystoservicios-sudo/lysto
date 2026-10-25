@@ -21,7 +21,7 @@ export const journeyActor = { role: 'customer', customerId: journeyIds.customer,
   profileId: journeyIds.profile, sessionId: journeyIds.session, assuranceLevel: 'aal1', permissions: [] } as unknown as Session
 export const journeyInput = { equipmentId: journeyIds.equipment, expectedEquipmentVersion: 2, addressId: journeyIds.address,
   homeId: journeyIds.home, expectedHomeVersion: 3, floorId: journeyIds.floor, roomId: journeyIds.room,
-  issue: 'pierde_agua', timeSince: 'days', preferredDate: '2028-01-12', timeWindow: '10:00 – 12:00', urgency: 'flexible' }
+  issue: 'pierde_agua', timeSince: 'days', preferredDate: '2028-01-13', timeWindow: '10:00 – 12:00', urgency: 'flexible' }
 
 export function journeySnapshot(): CustomerHomesSnapshot {
   return {

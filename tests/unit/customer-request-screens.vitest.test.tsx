@@ -24,7 +24,7 @@ export function requestSnapshot(): CustomerHomesSnapshot {
 }
 
 beforeEach(() => { window.sessionStorage.clear() })
-afterEach(() => { cleanup(); vi.unstubAllGlobals() })
+afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.useRealTimers() })
 function mount(data = requestSnapshot()) { return render(<AirConditioningWizard customerId={actor} initialData={data} />) }
 function next() { fireEvent.click(screen.getByRole('button', { name: /^Continuar/ })) }
 function reachSchedule() {
@@ -38,6 +38,22 @@ function reachSchedule() {
 const quote = calculateServiceQuote({ issue: 'pierde_agua', timeSince: 'days', urgency: 'flexible', propertyType: 'house', access: {}, equipment: { capacity: 3000, technology: 'inverter' }, materialsConfirmed: false }, defaultQuotePolicy)
 
 describe('Pedir approved contextual screens', () => {
+  it('starts the calendar at the third weekday and blocks an earlier custom date', () => {
+    vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date('2026-10-25T15:00:00Z'))
+    mount(); reachSchedule()
+    expect(screen.getByText(/3 días hábiles de anticipación/)).toBeTruthy()
+    expect(screen.queryByRole('radio', { name: /26 oct/ })).toBeNull()
+    expect(screen.getByRole('radio', { name: /28 oct/ })).toBeTruthy()
+    fireEvent.click(screen.getByRole('radio', { name: 'Otra fecha' }))
+    const date = screen.getByLabelText('Fecha de visita')
+    expect(date.getAttribute('min')).toBe('2026-10-28')
+    fireEvent.change(date, { target: { value: '2026-10-27' } })
+    fireEvent.click(screen.getByRole('radio', { name: '10:00 – 12:00' }))
+    expect((screen.getByRole('button', { name: 'Revisar pedido y presupuesto' }) as HTMLButtonElement).disabled).toBe(true)
+    expect(screen.getByRole('status').textContent).toContain('28/10/2026')
+    fireEvent.change(date, { target: { value: '2026-10-28' } })
+    expect((screen.getByRole('button', { name: 'Revisar pedido y presupuesto' }) as HTMLButtonElement).disabled).toBe(false)
+  })
   it('uses the selected real equipment and compact symptom illustration without inventing a room', () => {
     mount()
     expect(screen.getByRole('heading', { name: 'Aire del living' })).toBeTruthy()

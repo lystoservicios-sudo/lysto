@@ -15,7 +15,7 @@ const now = new Date('2026-10-13T12:00:00Z')
 const scope = { scenario: 'leak', label: 'Mano de obra inicial estimada para la falla informada', durationMinutes: 120,
   travelBufferMinutes: 30, initialLaborOnly: true, excludesUnpricedParts: true, allowsPredictedRepair: true, allowCustomerEquipmentDeclaration: false }
 const input = { equipmentId, expectedEquipmentVersion: 1, addressId: equipmentId,
-  issue: 'no_enfria', preferredDate: '2026-10-15', timeWindow: '10:00 – 12:00', urgency: 'flexible' }
+  issue: 'no_enfria', preferredDate: '2026-10-16', timeWindow: '10:00 – 12:00', urgency: 'flexible' }
 const context = () => ({ context: {
   address: { id: equipmentId, street: 'Visita', number: '20', city: 'CABA', province: 'CABA', propertyType: 'house', access: {} },
   equipment: { id: equipmentId, version: 1, nickname: 'Aire living', capacity: 4500, technology: 'conventional', declarationUsed: false },
@@ -43,6 +43,30 @@ function dependencies(value = context()) {
 }
 
 describe('Pedir server preparation boundary', () => {
+  it.each(['2026-10-14', '2026-10-15'])('rejects %s before routing or payment when three weekdays have not elapsed', async preferredDate => {
+    const deps = dependencies()
+    const result = await createCustomerRequestService(deps).preview(actor, { ...input, preferredDate })
+    expect(result).toMatchObject({ status: 'unavailable', reason: 'booking_notice_required' })
+    expect(result.message).toContain('3 días hábiles')
+    expect(deps.seller).not.toHaveBeenCalled()
+    expect(deps.travel).not.toHaveBeenCalled()
+    expect(deps.saved).toHaveLength(0)
+  })
+  it('rechecks notice before committing a preview that crossed Argentina midnight', async () => {
+    const beforeMidnight = new Date('2026-10-14T02:55:00Z')
+    const afterMidnight = new Date('2026-10-14T03:05:00Z')
+    const deps = dependencies()
+    deps.travel.mockResolvedValue({ ...await deps.travel(), measuredAt: beforeMidnight.toISOString() })
+    expect((await createCustomerRequestService({ ...deps, now: () => beforeMidnight }).preview(actor, input)).status).toBe('ready')
+    const payload = deps.saved[0]
+    deps.write.mockResolvedValueOnce({ data: { result: null, payload } as never, error: null })
+    deps.seller.mockClear()
+    deps.write.mockResolvedValueOnce({ data: { status: 'ready', jobId: equipmentId, requestId: equipmentId, quoteId: equipmentId, quote: payload.quote } as never, error: null })
+    const result = await createCustomerRequestService({ ...deps, now: () => afterMidnight }).prepare(actor, { previewId, commandId: userId })
+    expect(result).toMatchObject({ status: 'unavailable', reason: 'booking_notice_required' })
+    expect(deps.seller).not.toHaveBeenCalled()
+    expect(deps.write).not.toHaveBeenCalledWith('prepare_customer_request', expect.anything())
+  })
   it('quotes complete customer-declared equipment when the active scope permits it', async () => {
     const value = context()
     value.context.equipment.declarationUsed = true
