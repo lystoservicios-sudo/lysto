@@ -17,7 +17,7 @@ function withLocality<T extends { localidad: z.infer<typeof nullableTerritory>; 
     ? { id: value.localidad.id, nombre: value.localidad.nombre }
     : value.localidad_censal }
 }
-const page = { cantidad: z.number().int().nonnegative(), total: z.number().int().nonnegative(), inicio: z.number().int().nonnegative(), parametros: z.record(z.unknown()) }
+const page = { cantidad: z.number().int().nonnegative(), total: z.number().int().nonnegative(), inicio: z.number().int().nonnegative(), parametros: z.record(z.string(), z.unknown()) }
 const provinceResponse = z.object({ ...page, provincias: z.array(territory.extend({ centroide: z.object({ lat: z.number(), lon: z.number() }) })) })
 const locality = territory.extend({
   categoria: z.string(), centroide: z.object({ lat: z.number(), lon: z.number() }), provincia: territory,

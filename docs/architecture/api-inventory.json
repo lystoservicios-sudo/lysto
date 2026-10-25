@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "generatedFrom": "app/api/**/route.ts",
-  "count": 120,
+  "count": 129,
   "entries": [
     {
       "route": "/api/admin/approve-professional",
@@ -324,6 +324,14 @@
       "test": "tests/integration/api-inventory.test.ts"
     },
     {
+      "route": "/api/customer/payment-result",
+      "method": "GET",
+      "status": "active",
+      "authority": "Sesión: customer",
+      "canonicalDestination": "/api/customer/payment-result",
+      "test": "tests/integration/api-inventory.test.ts"
+    },
+    {
       "route": "/api/customer/payments/[id]/record",
       "method": "GET",
       "status": "active",
@@ -532,6 +540,30 @@
       "test": "tests/unit/api-route-contracts.vitest.test.ts"
     },
     {
+      "route": "/api/location/renew",
+      "method": "POST",
+      "status": "active",
+      "authority": "Sesión y autorización verificadas por el servicio de la ruta",
+      "canonicalDestination": "/api/location/renew",
+      "test": "tests/integration/api-inventory.test.ts"
+    },
+    {
+      "route": "/api/location/resolve",
+      "method": "POST",
+      "status": "active",
+      "authority": "Sesión y autorización verificadas por el servicio de la ruta",
+      "canonicalDestination": "/api/location/resolve",
+      "test": "tests/integration/api-inventory.test.ts"
+    },
+    {
+      "route": "/api/location/suggestions",
+      "method": "GET",
+      "status": "active",
+      "authority": "Sesión y autorización verificadas por el servicio de la ruta",
+      "canonicalDestination": "/api/location/suggestions",
+      "test": "tests/integration/api-inventory.test.ts"
+    },
+    {
       "route": "/api/maintenance/schedule",
       "method": "GET",
       "status": "active",
@@ -628,6 +660,22 @@
       "test": "tests/integration/api-inventory.test.ts"
     },
     {
+      "route": "/api/payments/admin-charges",
+      "method": "GET",
+      "status": "active",
+      "authority": "Sesión: admin",
+      "canonicalDestination": "/api/payments/admin-charges",
+      "test": "tests/integration/api-inventory.test.ts"
+    },
+    {
+      "route": "/api/payments/admin-charges",
+      "method": "POST",
+      "status": "active",
+      "authority": "Sesión: admin; permiso finance",
+      "canonicalDestination": "/api/payments/admin-charges",
+      "test": "tests/integration/api-inventory.test.ts"
+    },
+    {
       "route": "/api/payments/refund-requests",
       "method": "GET",
       "status": "active",
@@ -641,6 +689,22 @@
       "status": "active",
       "authority": "Sesión: admin; permiso finance",
       "canonicalDestination": "/api/payments/refund-requests",
+      "test": "tests/integration/api-inventory.test.ts"
+    },
+    {
+      "route": "/api/payments/return",
+      "method": "GET",
+      "status": "active",
+      "authority": "Sesión y autorización verificadas por el servicio de la ruta",
+      "canonicalDestination": "/api/payments/return",
+      "test": "tests/integration/api-inventory.test.ts"
+    },
+    {
+      "route": "/api/payments/return",
+      "method": "POST",
+      "status": "active",
+      "authority": "Sesión y autorización verificadas por el servicio de la ruta",
+      "canonicalDestination": "/api/payments/return",
       "test": "tests/integration/api-inventory.test.ts"
     },
     {
@@ -730,6 +794,14 @@
       "authority": "Pública; contrato retirado, sin mutación",
       "canonicalDestination": "/api/pricing/job/status",
       "test": "tests/unit/api-route-contracts.vitest.test.ts"
+    },
+    {
+      "route": "/api/pro/jobs/context",
+      "method": "GET",
+      "status": "active",
+      "authority": "Sesión: professional",
+      "canonicalDestination": "/api/pro/jobs/context",
+      "test": "tests/integration/api-inventory.test.ts"
     },
     {
       "route": "/api/pro/onboarding/evaluate",

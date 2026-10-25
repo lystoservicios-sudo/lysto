@@ -31,7 +31,7 @@ export const locationSuggestionInputSchema = z.object({
   street: z.string().trim().max(200).optional()
 }).strict().superRefine((value, context) => {
   if (value.kind !== 'address' && value.query.length < 2)
-    context.addIssue({ code: 'too_small', minimum: 2, type: 'string', inclusive: true, path: ['query'], message: 'query_too_short' })
+    context.addIssue({ code: 'too_small', minimum: 2, origin: 'string', inclusive: true, path: ['query'], message: 'query_too_short' })
   if (value.kind === 'city' && !value.provinceId && !value.province)
     context.addIssue({ code: 'custom', path: ['province'], message: 'province_required' })
   if (value.kind === 'address' && value.street && (!value.city || !value.province))

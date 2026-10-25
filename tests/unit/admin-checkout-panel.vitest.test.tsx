@@ -29,3 +29,18 @@ it('reviews the checkout amount before closing its payment link', async () => {
   expect(JSON.parse(fetcher.mock.calls.find(([, options]) => options?.method === 'POST')![1].body))
     .toEqual({ action: 'closeCheckout', checkoutId: row.id })
 })
+
+it.each(['admin', 'professional'])('shows an expired ready link as expired to %s without changing the payment', async role => {
+  fetcher.mockResolvedValue(Response.json({ role, checkouts: [{ ...row, expires_at: '2020-01-01T00:00:00Z' }] }))
+  render(<PaymentPanel role={role} />)
+  expect(await screen.findByText('Enlace vencido')).toBeTruthy()
+  expect(screen.queryByText('Listo para pagar')).toBeNull()
+  expect(fetcher.mock.calls.filter(([, options]) => options?.method === 'POST')).toHaveLength(0)
+})
+
+it.each(['admin', 'professional'])('keeps an approved payment approved after its link expires for %s', async role => {
+  fetcher.mockResolvedValue(Response.json({ role, checkouts: [{ ...row, status: 'approved', expires_at: '2020-01-01T00:00:00Z' }] }))
+  render(<PaymentPanel role={role} />)
+  expect(await screen.findByText('Pago aprobado')).toBeTruthy()
+  expect(screen.queryByText('Enlace vencido')).toBeNull()
+})

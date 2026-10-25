@@ -11,7 +11,7 @@ export type PreparedRequest = CustomerRequestResult
 const uuid = z.string().uuid()
 const paymentSchema = z.object({ previewId: uuid, commandId: uuid, jobId: uuid.nullable(), checkoutId: uuid.nullable() }).strict()
 export type PendingRequestPayment = z.infer<typeof paymentSchema>
-const photosSchema = z.record(z.array(z.object({ intentId: uuid, name: z.string().min(1).max(255), bytes: z.number().int().positive().max(10 * 1024 * 1024) }).strict()).max(5))
+const photosSchema = z.record(z.string(), z.array(z.object({ intentId: uuid, name: z.string().min(1).max(255), bytes: z.number().int().positive().max(10 * 1024 * 1024) }).strict()).max(5))
 export type RetainedRequestPhoto = z.infer<typeof photosSchema>[string][number]
 export function readRequestPhotos(actor: string): Record<string, RetainedRequestPhoto[]> {
   try { const raw = window.sessionStorage.getItem(key(actor, 'photos')); return raw ? photosSchema.parse(JSON.parse(raw)) : {} }
@@ -29,7 +29,7 @@ const answers = z.discriminatedUnion('purpose', [
   z.object({ ...common, purpose: z.literal('maintenance'), issue: z.null(), details: z.object({ kind: z.literal('maintenance'), description: z.string().max(500), lastMaintenance: z.enum(['never', 'under_6_months', '6_to_12_months', 'over_1_year', 'unknown']).optional() }).strict() }).strict(),
   z.object({ ...common, purpose: z.literal('installation'), issue: z.null(), details: z.object({ kind: z.literal('installation'), description: z.string().max(500), installationType: z.enum(['new', 'relocation', 'unknown']).optional() }).strict() }).strict()
 ])
-const draftSchema = z.object({ actorId: uuid, selectedEquipmentId: uuid.nullable(), step: z.enum(['issue', 'location', 'details', 'orientation', 'schedule', 'review', 'payment']), answersByEquipment: z.record(answers), inputRevision: z.number().int().nonnegative(), quote: z.object({ id: uuid, actorId: uuid, inputRevision: z.number().int().nonnegative() }).strict().nullable() }).strict()
+const draftSchema = z.object({ actorId: uuid, selectedEquipmentId: uuid.nullable(), step: z.enum(['issue', 'location', 'details', 'orientation', 'schedule', 'review', 'payment']), answersByEquipment: z.record(z.string(), answers), inputRevision: z.number().int().nonnegative(), quote: z.object({ id: uuid, actorId: uuid, inputRevision: z.number().int().nonnegative() }).strict().nullable() }).strict()
 const key = (actor: string, scope: string) => `lysto:pedir:${scope}:${actor}`
 export function readRequestDraft(actorId: string): RequestDraft | null {
   try {

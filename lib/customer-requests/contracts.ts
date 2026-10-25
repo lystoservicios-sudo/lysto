@@ -55,7 +55,7 @@ export type CustomerRequestResult = z.infer<typeof requestResultSchema>
 export const requestContextSchema = z.object({
   context: z.object({
     address: z.object({ id: z.string().uuid(), street: z.string(), number: z.string(), city: z.string(), province: z.string(),
-      propertyType: z.enum(['house', 'apartment', 'commercial', 'office']), access: z.record(z.boolean().nullable()) }).passthrough(),
+      propertyType: z.enum(['house', 'apartment', 'commercial', 'office']), access: z.record(z.string(), z.boolean().nullable()) }).passthrough(),
     equipment: z.object({ id: z.string().uuid(), version: z.number().int().positive(), nickname: z.string(),
       capacity: z.number().int().nullable(), technology: z.enum(['conventional', 'inverter', 'unknown']), declarationUsed: z.boolean() }).passthrough(),
     home: z.unknown(), floor: z.unknown(), room: z.unknown(), placement: z.unknown()
@@ -71,6 +71,6 @@ export const previewPayloadSchema = z.object({
   input: requestPreviewInputSchema, context: requestContextSchema.shape.context,
   policyId: z.string().uuid(), quotePolicyId: z.string().uuid(), quotePolicySnapshot: quotePolicySchema,
   scope: initialLaborScopeSchema, professionalId: z.string().uuid(), sellerAccountId: z.string(),
-  origin: z.string(), route: routeSchema, calculatedInput: z.record(z.unknown()), quote: quoteSchema,
+  origin: z.string(), route: routeSchema, calculatedInput: z.record(z.string(), z.unknown()), quote: quoteSchema,
   liveMode: z.boolean(), expiresAt: z.string().datetime()
 }).strict()

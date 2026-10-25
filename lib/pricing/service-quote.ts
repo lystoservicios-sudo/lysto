@@ -149,7 +149,7 @@ export const quotePolicySchema = z.object({
   inverterRate: z.number().finite().min(0).max(1),
   quoteValidityMinutes: z.number().int().min(5).max(1440),
   laborOverrides: z
-    .record(
+    .partialRecord(
       z.enum([
         'maintenance',
         'deep_maintenance',

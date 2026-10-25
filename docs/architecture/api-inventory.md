@@ -1,6 +1,6 @@
 # Inventario de API
 
-Generado desde los métodos exportados en `app/api/**/route.ts`. Total: **120 métodos**. El control automático falla si aparece o desaparece un método sin regenerar este archivo.
+Generado desde los métodos exportados en `app/api/**/route.ts`. Total: **129 métodos**. El control automático falla si aparece o desaparece un método sin regenerar este archivo.
 
 | Método | Ruta | Estado | Autoridad | Destino canónico | Prueba contractual |
 |---|---|---|---|---|---|
@@ -44,6 +44,7 @@ Generado desde los métodos exportados en `app/api/**/route.ts`. Total: **120 m�
 | `POST` | `/api/customer/homes` | Activa | Sesión: customer | `/api/customer/homes` | `tests/integration/api-inventory.test.ts` |
 | `PUT` | `/api/customer/homes` | Activa | Sesión: customer | `/api/customer/homes` | `tests/integration/api-inventory.test.ts` |
 | `DELETE` | `/api/customer/homes` | Activa | Sesión: customer | `/api/customer/homes` | `tests/integration/api-inventory.test.ts` |
+| `GET` | `/api/customer/payment-result` | Activa | Sesión: customer | `/api/customer/payment-result` | `tests/integration/api-inventory.test.ts` |
 | `GET` | `/api/customer/payments/[id]/record` | Activa | Sesión: customer | `/api/customer/payments/[id]/record` | `tests/integration/api-inventory.test.ts` |
 | `GET` | `/api/customer/preferences` | Activa | Sesión: customer | `/api/customer/preferences` | `tests/integration/api-inventory.test.ts` |
 | `PUT` | `/api/customer/preferences` | Activa | Sesión: customer | `/api/customer/preferences` | `tests/integration/api-inventory.test.ts` |
@@ -70,6 +71,9 @@ Generado desde los métodos exportados en `app/api/**/route.ts`. Total: **120 m�
 | `POST` | `/api/jobs/final-report` | Activa | Sesión: professional | `/api/jobs/final-report` | `tests/integration/api-inventory.test.ts` |
 | `POST` | `/api/jobs/reschedule` | Activa | Sesión: customer,professional,admin | `/api/jobs/reschedule` | `tests/integration/api-inventory.test.ts` |
 | `POST` | `/api/jobs/update-status` | Retirada 410 | Pública; contrato retirado, sin mutación | `/api/pricing/job/status` | `tests/unit/api-route-contracts.vitest.test.ts` |
+| `POST` | `/api/location/renew` | Activa | Sesión y autorización verificadas por el servicio de la ruta | `/api/location/renew` | `tests/integration/api-inventory.test.ts` |
+| `POST` | `/api/location/resolve` | Activa | Sesión y autorización verificadas por el servicio de la ruta | `/api/location/resolve` | `tests/integration/api-inventory.test.ts` |
+| `GET` | `/api/location/suggestions` | Activa | Sesión y autorización verificadas por el servicio de la ruta | `/api/location/suggestions` | `tests/integration/api-inventory.test.ts` |
 | `GET` | `/api/maintenance/schedule` | Activa | Sesión: customer | `/api/maintenance/schedule` | `tests/integration/api-inventory.test.ts` |
 | `POST` | `/api/maintenance/schedule` | Activa | Sesión: customer | `/api/maintenance/schedule` | `tests/integration/api-inventory.test.ts` |
 | `GET` | `/api/mercadopago/account` | Activa | Sesión y autorización verificadas por el servicio de la ruta | `/api/mercadopago/account` | `tests/integration/api-inventory.test.ts` |
@@ -82,8 +86,12 @@ Generado desde los métodos exportados en `app/api/**/route.ts`. Total: **120 m�
 | `POST` | `/api/mercadopago/owner-split-test` | Activa | Sesión y autorización verificadas por el servicio de la ruta | `/api/mercadopago/owner-split-test` | `tests/integration/api-inventory.test.ts` |
 | `POST` | `/api/mercadopago/webhook` | Activa | Proveedor; firma y consulta canónica | `/api/mercadopago/webhook` | `tests/integration/api-inventory.test.ts` |
 | `POST` | `/api/notifications/emit` | Activa | Sesión y autorización verificadas por el servicio de la ruta | `/api/notifications/emit` | `tests/integration/api-inventory.test.ts` |
+| `GET` | `/api/payments/admin-charges` | Activa | Sesión: admin | `/api/payments/admin-charges` | `tests/integration/api-inventory.test.ts` |
+| `POST` | `/api/payments/admin-charges` | Activa | Sesión: admin; permiso finance | `/api/payments/admin-charges` | `tests/integration/api-inventory.test.ts` |
 | `GET` | `/api/payments/refund-requests` | Activa | Sesión: admin | `/api/payments/refund-requests` | `tests/integration/api-inventory.test.ts` |
 | `POST` | `/api/payments/refund-requests` | Activa | Sesión: admin; permiso finance | `/api/payments/refund-requests` | `tests/integration/api-inventory.test.ts` |
+| `GET` | `/api/payments/return` | Activa | Sesión y autorización verificadas por el servicio de la ruta | `/api/payments/return` | `tests/integration/api-inventory.test.ts` |
+| `POST` | `/api/payments/return` | Activa | Sesión y autorización verificadas por el servicio de la ruta | `/api/payments/return` | `tests/integration/api-inventory.test.ts` |
 | `POST` | `/api/payments/webhook/apply` | Retirada 410 | Pública; contrato retirado, sin mutación | `/api/mercadopago/webhook` | `tests/unit/api-route-contracts.vitest.test.ts` |
 | `GET` | `/api/pricing/job` | Activa | Sesión y autorización verificadas por el servicio de la ruta | `/api/pricing/job` | `tests/integration/api-inventory.test.ts` |
 | `POST` | `/api/pricing/job/status` | Activa | Sesión: professional,customer | `/api/pricing/job/status` | `tests/integration/api-inventory.test.ts` |
@@ -95,6 +103,7 @@ Generado desde los métodos exportados en `app/api/**/route.ts`. Total: **120 m�
 | `GET` | `/api/pricing/quotes` | Activa | Sesión y autorización verificadas por el servicio de la ruta | `/api/pricing/quotes` | `tests/integration/api-inventory.test.ts` |
 | `PATCH` | `/api/pricing/quotes` | Activa | Sesión y autorización verificadas por el servicio de la ruta | `/api/pricing/quotes` | `tests/integration/api-inventory.test.ts` |
 | `POST` | `/api/pro/jobs/action` | Retirada 410 | Pública; contrato retirado, sin mutación | `/api/pricing/job/status` | `tests/unit/api-route-contracts.vitest.test.ts` |
+| `GET` | `/api/pro/jobs/context` | Activa | Sesión: professional | `/api/pro/jobs/context` | `tests/integration/api-inventory.test.ts` |
 | `POST` | `/api/pro/onboarding/evaluate` | Retirada 410 | Pública; contrato retirado, sin mutación | `/api/admin/professionals/review` | `tests/unit/api-route-contracts.vitest.test.ts` |
 | `POST` | `/api/professional/account/password` | Activa | Sesión y autorización verificadas por el servicio de la ruta | `/api/professional/account/password` | `tests/integration/api-inventory.test.ts` |
 | `POST` | `/api/professional/onboarding/accept` | Activa | Sesión confirmada e invitación/onboarding vigente | `/api/professional/onboarding/accept` | `tests/integration/api-inventory.test.ts` |

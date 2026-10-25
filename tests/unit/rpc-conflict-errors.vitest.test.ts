@@ -9,7 +9,8 @@ import { ApiError, apiErrorResponse } from '@/lib/http/api-error'
 const id = '20000000-0000-4000-8000-000000000001'
 const input = {
   equipmentId: id, expectedEquipmentVersion: 1, addressId: id,
-  issue: 'no_enfria', preferredDate: '2026-10-15', timeWindow: '10:00 – 12:00', urgency: 'flexible'
+  // Keep this fixture past the three-weekday notice so it reaches the RPC boundary.
+  issue: 'no_enfria', preferredDate: '2026-10-16', timeWindow: '10:00 – 12:00', urgency: 'flexible'
 }
 
 function boundaries(code: string) {

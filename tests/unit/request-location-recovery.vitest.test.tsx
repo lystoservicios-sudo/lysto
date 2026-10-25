@@ -215,7 +215,12 @@ describe('explicit recovery of a superseded location PUT', () => {
   it('matches a freshly submitted uncertain PUT by canonical field order without dropping its real values', async () => {
     const actual = inventory()
     actual.addresses[0] = { ...actual.addresses[0], floor: '8', version: 3 }
-    const fetcher = vi.fn().mockRejectedValueOnce(new Error('Lost response')).mockImplementation(async () => new Response(JSON.stringify(actual), { status: 200 }))
+    const fetcher = vi.fn(async (url: string, init?: RequestInit) => {
+      if (String(url).startsWith('/api/location/suggestions')) return Response.json({ suggestions: [] })
+      if (url === '/api/customer/addresses' && init?.method === 'PUT') throw new Error('Lost response')
+      if (url === '/api/customer/homes' && (init?.method ?? 'GET') === 'GET') return Response.json(actual)
+      throw new Error(`Unexpected recovery request: ${init?.method ?? 'GET'} ${url}`)
+    })
     vi.stubGlobal('fetch', fetcher)
     mount()
     fireEvent.click(screen.getByRole('button', { name: 'Editar' }))
@@ -226,7 +231,8 @@ describe('explicit recovery of a superseded location PUT', () => {
     await waitFor(() => expect(readRequestHomeCommand(actor).command).toBeNull())
     expect(screen.getByText('San Martín 456 · Piso 8, CABA')).toBeTruthy()
     await waitFor(() => expect(continueButton().disabled).toBe(false))
-    expect(fetcher).toHaveBeenCalledTimes(2)
+    expect(fetcher.mock.calls.filter(([url, init]) => url === '/api/customer/addresses' && init?.method === 'PUT')).toHaveLength(1)
+    expect(fetcher.mock.calls.filter(([url]) => url === '/api/customer/homes')).toHaveLength(1)
   })
   it('retains the PUT if another uncertain Hogar operation appears during the canonical read', async () => {
     const read = deferredRead(), command = homeCommand(), { changed } = mount(command)

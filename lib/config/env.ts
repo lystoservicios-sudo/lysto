@@ -9,7 +9,7 @@ const optionalValue = z.string().trim().optional()
 const explicitBoolean = (name: string) =>
   z
     .enum(['true', 'false'], {
-      errorMap: () => ({ message: `${name} must be "true" or "false"` })
+      error: () => `${name} must be "true" or "false"`
     })
     .default('false')
     .transform((value) => value === 'true')

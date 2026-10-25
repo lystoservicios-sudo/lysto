@@ -2,7 +2,7 @@
 import { expect, it, vi } from 'vitest'
 import { saveProfessionalPolicyDraft, activateProfessionalPolicy } from '@/lib/professional/professional-policies'
 
-const categoryId = '10000000-0000-0000-0000-000000000001'
+const categoryId = '10000000-0000-4000-8000-000000000001'
 const policy = { version: '2026-01', requiredDocuments: ['identity_front', 'identity_back', 'license'],
   expiryDocuments: ['license'], requiredTools: [], minExperience: 0, requiresLicense: true }
 function session(role = 'admin', aal = 'aal2') {

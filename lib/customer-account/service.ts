@@ -24,14 +24,14 @@ const privacySchema = z.object({
 // Each dataset is allowlisted again by its private SQL implementation. Never export
 // arbitrary auth rows, raw provider observations or generic table dumps.
 const exportSchema = z.object({
-  schemaVersion: z.literal(1), exportedAt: z.string(), profile: z.record(z.unknown()),
-  addresses: z.array(z.record(z.unknown())), homes: z.array(z.record(z.unknown())),
-  equipment: z.array(z.record(z.unknown())), serviceRequests: z.array(z.record(z.unknown())),
-  requestAnswers: z.array(z.record(z.unknown())), jobs: z.array(z.record(z.unknown())),
-  payments: z.array(z.record(z.unknown())), serviceReports: z.array(z.record(z.unknown())),
-  warrantyClaims: z.array(z.record(z.unknown())), maintenancePlans: z.array(z.record(z.unknown())),
-  supportCases: z.array(z.record(z.unknown())), reviews: z.array(z.record(z.unknown())),
-  preferences: customerPreferencesSchema, privacyRequests: z.array(z.record(z.unknown()))
+  schemaVersion: z.literal(1), exportedAt: z.string(), profile: z.record(z.string(), z.unknown()),
+  addresses: z.array(z.record(z.string(), z.unknown())), homes: z.array(z.record(z.string(), z.unknown())),
+  equipment: z.array(z.record(z.string(), z.unknown())), serviceRequests: z.array(z.record(z.string(), z.unknown())),
+  requestAnswers: z.array(z.record(z.string(), z.unknown())), jobs: z.array(z.record(z.string(), z.unknown())),
+  payments: z.array(z.record(z.string(), z.unknown())), serviceReports: z.array(z.record(z.string(), z.unknown())),
+  warrantyClaims: z.array(z.record(z.string(), z.unknown())), maintenancePlans: z.array(z.record(z.string(), z.unknown())),
+  supportCases: z.array(z.record(z.string(), z.unknown())), reviews: z.array(z.record(z.string(), z.unknown())),
+  preferences: customerPreferencesSchema, privacyRequests: z.array(z.record(z.string(), z.unknown()))
 })
 
 function requireCustomer(session: Session) {

@@ -38,7 +38,7 @@ it('times out a stalled webhook stream without calling the payment processor', a
     expect(mocks.handle).not.toHaveBeenCalled()
   } finally { vi.useRealTimers() }
 })
-const job='92000000-0000-0000-0000-000000000001'
+const job='92000000-0000-4000-8000-000000000001'
 const request=(body:unknown,origin='https://lysto.test')=>new Request('https://lysto.test/api/mercadopago/create-preference',{method:'POST',headers:{Origin:origin,'Content-Type':'application/json'},body:JSON.stringify(body)})
 beforeEach(()=>{
  vi.clearAllMocks();vi.stubEnv('PAYMENTS_PROVIDER','mercadopago_split');vi.stubEnv('MERCADOPAGO_MARKETPLACE_CLIENT_ID','123');vi.stubEnv('MERCADOPAGO_MARKETPLACE_CLIENT_SECRET','test-secret');vi.stubEnv('MERCADOPAGO_WEBHOOK_SECRET','test-hook');vi.stubEnv('MERCADOPAGO_ENCRYPTION_KEY',Buffer.alloc(32,1).toString('base64'));vi.stubEnv('MERCADOPAGO_DATABASE_URL','postgres://unused');vi.stubEnv('NEXT_PUBLIC_APP_URL','https://lysto.test');vi.stubEnv('MERCADOPAGO_MODE','test')

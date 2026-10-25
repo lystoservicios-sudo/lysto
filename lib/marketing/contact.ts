@@ -6,7 +6,7 @@ export const contactSchema = z.object({
   phone: z.string().trim().max(40).refine(value => !value || /^[+()\d\s-]{8,40}$/.test(value), 'Revisá el teléfono.').default(''),
   subject: z.enum(['servicio', 'consulta', 'cuenta', 'otro']),
   message: z.string().trim().min(20, 'Contanos un poco más (al menos 20 caracteres).').max(2000, 'El mensaje puede tener hasta 2000 caracteres.'),
-  consent: z.literal(true, { errorMap: () => ({ message: 'Necesitamos tu autorización para responderte.' }) }),
+  consent: z.literal(true, { error: () => 'Necesitamos tu autorización para responderte.' }),
   website: z.string().max(200).default('')
 })
 export type ContactInquiry = Omit<z.infer<typeof contactSchema>, 'website'>

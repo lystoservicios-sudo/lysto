@@ -15,7 +15,7 @@ const caseSchema = z.object({
   status: z.string(),
   reason: z.string(),
   version: z.number().int().positive(),
-  evidence: z.record(z.unknown()),
+  evidence: z.record(z.string(), z.unknown()),
   createdAt: z.string(),
   updatedAt: z.string(),
   replacementJobId: uuid.nullable(),

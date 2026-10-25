@@ -34,7 +34,7 @@ const auditSchema = z
     action: z.string(),
     entityType: z.string(),
     entityId: z.string().uuid().nullable(),
-    metadata: z.record(z.unknown())
+    metadata: z.record(z.string(), z.unknown())
   })
   .strict()
 export type AdminAccount = z.infer<typeof accountSchema>

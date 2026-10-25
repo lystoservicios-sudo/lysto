@@ -1,7 +1,7 @@
 import 'server-only'
 import { z } from 'zod'
 
-const optionalProviderText = z.unknown().transform(value => typeof value === 'string' ? value : undefined)
+const optionalProviderText = z.unknown().transform(value => typeof value === 'string' ? value : undefined).optional()
 const responseSchema = z.object({ features: z.array(z.object({
   geometry: z.object({ type: z.literal('Point'), coordinates: z.tuple([z.number().finite().min(-180).max(180), z.number().finite().min(-90).max(90)]) }),
   properties: z.object({ label: z.string(), layer: z.string(), housenumber: z.string().optional(),

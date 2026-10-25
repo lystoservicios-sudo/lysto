@@ -230,7 +230,7 @@ export function PaymentPanel({
               {c.extra_id ? Number(c.marketplace_fee) === 0 ? 'Adicional sin comisión Lysto' : 'Cobro adicional' : 'Servicio inicial'} · {ars(c.amount)}
             </h3>
             <span className="text-sm font-bold">
-              {paymentStatusLabels[c.status] ?? c.status}
+              {paymentStatusLabels[c.status === 'ready' && Date.parse(c.expires_at) <= Date.now() ? 'expired' : c.status] ?? c.status}
               {!c.live_mode ? ' · Prueba' : ''}
             </span>
           </div>

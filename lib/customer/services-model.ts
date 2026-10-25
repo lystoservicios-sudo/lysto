@@ -75,7 +75,7 @@ type SourcePage = { items: CustomerServiceSummary[]; cursor: string | null }
 function scope(session: Session, source: 'services' | 'quotes', filter: CustomerServicesFilter) {
   return JSON.stringify([session.profileId, session.customerId, 'customer-services', source, filter])
 }
-function rows<T>(result: QueryResult, schema: z.ZodType<T, z.ZodTypeDef, unknown>): T[] {
+function rows<T>(result: QueryResult, schema: z.ZodType<T, unknown>): T[] {
   if (result.error) throw new ApiError('service_unavailable')
   const parsed = z.array(schema).safeParse(result.data)
   if (!parsed.success) throw new ApiError('service_unavailable')
@@ -117,7 +117,7 @@ async function hydrateRequests(session: Session, requests: RequestRow[], unavail
       .eq('customer_id', owner).in('id', addressIds) : Promise.resolve(empty),
     session.client.from('service_issue_types').select('id,name').in('id', issueIds)
   ])
-  function optional<T>(index: number, schema: z.ZodType<T, z.ZodTypeDef, unknown>, label: string): T[] {
+  function optional<T>(index: number, schema: z.ZodType<T, unknown>, label: string): T[] {
     try {
       const result = related[index]
       if (result.status !== 'fulfilled') throw new ApiError('service_unavailable')
