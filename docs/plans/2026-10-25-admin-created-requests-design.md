@@ -4,7 +4,7 @@ Diseño aprobado por el usuario el 25 de octubre de 2026.
 
 ## Experiencia
 
-Desde Solicitudes o la ficha de un cliente, Crear solicitud permite elegir cliente, domicilio, equipo opcional, categoría y tipo de servicio, alcance personalizado, técnico, fecha, hora y duración. Permite copiar el precio de un presupuesto existente o definir un total en ARS y una comisión por porcentaje o importe. El resumen muestra total, comisión y participación del técnico, distinguiendo los cargos estimados de Mercado Pago.
+Desde Solicitudes o la ficha de un cliente, Crear solicitud permite elegir cliente, domicilio, equipo, categoría y tipo de servicio, alcance personalizado, técnico, fecha, hora y duración. El equipo puede quedar pendiente en el borrador, pero es obligatorio al enviar para que el profesional pueda diagnosticar y cerrar el trabajo. Permite copiar el precio de un presupuesto existente o definir un total en ARS y una comisión por porcentaje o importe. El resumen muestra total, comisión y participación del técnico, distinguiendo los cargos estimados de Mercado Pago.
 
 Se puede guardar un borrador durable y revisarlo antes de enviar. Enviar congela alcance, precio y reparto, crea la solicitud y el trabajo canónicos y realiza una oferta al técnico mediante el contrato existente. El cliente recibe la confirmación y el acceso al pago cuando el técnico acepta. Su confirmación es explícita y solo puede realizarla el cliente autenticado; la aprobación del proveedor de pagos sigue siendo la única autoridad para considerar pagado el trabajo.
 

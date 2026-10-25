@@ -35,6 +35,7 @@ export async function GET(request: Request) {
       )
       .order('created_at', { ascending: false })
       .order('id', { ascending: false })
+      .eq('quote_origin', 'calculator')
     if (parameters.quoteId) query = query.eq('id', parameters.quoteId)
     if (page.cursor)
       query = query.or(
@@ -46,7 +47,7 @@ export async function GET(request: Request) {
       last = quotes.at(-1)
     const count = parameters.quoteId
       ? { count: quotes.length, error: null }
-      : await s.client.from('service_quotes').select('id', { count: 'exact', head: true })
+      : await s.client.from('service_quotes').select('id', { count: 'exact', head: true }).eq('quote_origin', 'calculator')
     if (count.error) throw new Error('pricing_database_not_ready')
     return privateJson({
       quotes,

@@ -331,12 +331,21 @@ export function createSessionReadRepository<R extends ReadRole>(
   client: SupabaseClient<Database>,
   role: R
 ): ReadRepository<R> {
+  const customerPayments = async (args: Database['public']['Functions']['read_customer_payment_summaries']['Args']) => {
+    const response = await client.rpc('read_customer_payment_summaries', args)
+    if (response.error) throw new ReadModelError(response.error.code === '42501' ? 'forbidden' : 'unavailable')
+    const result = z.object({ items: z.array(z.unknown()), total: z.number().int().nonnegative() }).safeParse(response.data)
+    if (!result.success) throw new ReadModelError('unavailable')
+    return result.data
+  }
   const count = async (
     context: Context,
     resource: ReadResource,
     status?: string,
     activeJobs = false
   ) => {
+    if (context.role === 'customer' && resource === 'payments')
+      return (await customerPayments({ p_limit: 1, p_status: status })).total
     let query = client
       .from(definitions[resource].table)
       .select('id', { count: 'exact', head: true })
@@ -380,6 +389,14 @@ export function createSessionReadRepository<R extends ReadRole>(
           throw new ReadModelError('invalid_input')
         }
         const scope = scopeBase + ':' + (input.status ?? '')
+        if (role === 'customer' && resource === 'payments') {
+          const result = await customerPayments({ p_limit: page.pageSize + 1, p_status: input.status,
+            p_cursor_at: page.cursor?.createdAt, p_cursor_id: page.cursor?.id })
+          const items = result.items.slice(0, page.pageSize).map(row => project(resource, role, row))
+          const last = items.at(-1)
+          return { items, total: result.total, nextCursor: result.items.length > page.pageSize && last
+            ? encodeCursor({ id: last.id, createdAt: last.createdAt }, scope) : null }
+        }
         let query = client
           .from(definitions[resource].table)
           .select(selection(resource, role))
@@ -412,6 +429,10 @@ export function createSessionReadRepository<R extends ReadRole>(
           throw new ReadModelError('invalid_input')
         const context = await resolveReader(client, role)
         if (!allowed(context, resource)) throw new ReadModelError('forbidden')
+        if (role === 'customer' && resource === 'payments') {
+          const result = await customerPayments({ p_id: id, p_limit: 1 })
+          return result.items[0] ? project(resource, role, result.items[0]) : null
+        }
         const result = await client
           .from(definitions[resource].table)
           .select(selection(resource, role))

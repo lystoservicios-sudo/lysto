@@ -3,7 +3,8 @@
 | Ruta | Permiso | Fuente o servicio canónico | Acción operativa |
 | --- | --- | --- | --- |
 | `/admin/dashboard` | operations | `list_operator_queue` | abrir y priorizar cola |
-| `/admin/solicitudes` | operations | read repository + presupuesto | revisar solicitud y presupuesto |
+| `/admin/solicitudes` | operations | read repository + presupuesto + solicitudes administrativas | revisar y gestionar solicitudes; crear por cliente con operations + finance u owner |
+| `/admin/solicitudes/nueva` | operations + finance u owner | `save_admin_service_request` + asignación canónica | guardar borrador, definir precio/comisión, revisar y enviar al técnico |
 | `/admin/trabajos` | operations | read repository + workflow de trabajo | seguir visita y cierre |
 | `/admin/matching` | operations | ofertas de servicio | asignar oferta aceptada |
 | `/admin/zonas` | operations | catálogo de zonas | consultar cobertura vigente |

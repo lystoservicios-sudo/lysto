@@ -14,6 +14,10 @@ const errors = {
     status: 409,
     message: 'Este correo ya tiene una cuenta. Si es de cliente, usá otro correo para la cuenta de técnico. Si ya es técnico, revisá su expediente.'
   },
+  equipment_required: { status: 400, message: 'Seleccioná un equipo vigente del cliente antes de enviar o confirmar el servicio. El técnico lo necesita para registrar el diagnóstico y el cierre.' },
+  professional_unavailable: { status: 409, message: 'El técnico no está disponible para ese servicio y horario. Elegí otro profesional u otra fecha; conservamos los datos de la solicitud.' },
+  payment_account_required: { status: 400, message: 'El técnico debe conectar su cuenta de cobro antes de enviar esta solicitud.' },
+  administrative_replacement_required: { status: 409, message: 'Este servicio tiene precio y comisión personalizados. Resolvé el cobro anterior y creá una nueva solicitud desde administración para cambiar el profesional.' },
   address_has_home: {
     status: 409,
     message: 'Esta dirección está vinculada a un hogar. Archivá ese hogar antes de quitarla.'
