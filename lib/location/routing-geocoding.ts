@@ -1,12 +1,12 @@
 import 'server-only'
-import { georefAddresses } from './georef'
+import { georefAddresses, type GeorefAddress } from './georef'
 import { geocodeOpenRouteAddress } from './openrouteservice'
 
 const normalize = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim()
 const streetName = (value: string) => normalize(value).replace(/^(avenida|av|calle) /, '')
 const caba = (value: string) => ['caba', 'ciudad autonoma de buenos aires', 'capital federal', 'ciudad de buenos aires'].includes(normalize(value))
 
-export async function geocodeRoutingAddress(address: string, apiKey: string, fetcher: typeof fetch = fetch) {
+export async function geocodeRoutingAddress(address: string, apiKey: string, fetcher: typeof fetch = fetch, selectedAddress?: GeorefAddress) {
   try { return { ...await geocodeOpenRouteAddress(address, apiKey, fetcher), coordinateSource: 'openrouteservice' as const } }
   catch (error) { if (!(error instanceof Error) || error.message !== 'address_ambiguous') throw error }
   // Pelias may return only a city centroid in Argentina. GeoRef supplies official
@@ -16,7 +16,10 @@ export async function geocodeRoutingAddress(address: string, apiKey: string, fet
   if (!house) throw new Error('address_ambiguous')
   const provinceId = parts.some(caba) ? '02' : parts.some(p => ['buenos aires', 'provincia de buenos aires'].includes(normalize(p))) ? '06' : undefined
   const city = parts[1] && !caba(parts[1]) && normalize(parts[1]) !== 'buenos aires' ? parts[1] : undefined
-  const addresses = await georefAddresses({ kind: 'address', query: parts[0], ...(provinceId ? { provinceId } : {}), ...(city ? { city } : {}) }, fetcher)
+  // The resolver has already revalidated this selection with official IDs.
+  // A second name-only lookup can drop its census locality or select a namesake.
+  const addresses = selectedAddress ? [selectedAddress]
+    : await georefAddresses({ kind: 'address', query: parts[0], ...(provinceId ? { provinceId } : {}), ...(city ? { city } : {}) }, fetcher)
   const matches = addresses.filter(a => String(a.altura.valor) === house[2] && streetName(a.calle.nombre ?? '') === streetName(house[1]) &&
     ['02', '06'].includes(a.provincia.id) && (!provinceId || a.provincia.id === provinceId) &&
     (!city || normalize(a.localidad.nombre) === normalize(city)))

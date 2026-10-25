@@ -25,3 +25,7 @@
 5. Verify the actual UI with a local isolated preview using the same component and live suggestion results, without writing any account/address records. Publish the verified application change and confirm the production domain's deployment identity and health.
 
 Known separate limit: GeoRef recognition does not guarantee a precise routing coordinate. This change must not manufacture coordinates or claim registration completion where resolution remains unavailable.
+
+## Confirmation findings during verification
+
+The broader live search also revealed a distinct official census-locality option for Calle 23 5871 with a point. Revalidating its street/locality IDs returns that exact record, while a name-only lookup can return only Berazategui Oeste with no point. Pass the server-revalidated selection into the existing routing fallback so it cannot lose the chosen identity. Also remember the verified point under the provider display address used by professional profiles, as well as the structured address used by customer requests. Cover both failures with regressions before implementing; preserve all point precision, country, province, street and house-number checks.

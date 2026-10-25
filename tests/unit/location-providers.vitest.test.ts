@@ -111,6 +111,22 @@ describe('GeoRef location suggestions', () => {
 })
 
 describe('canonical address resolution', () => {
+  it('keeps the exact selected GeoRef identity and point when the routing provider cannot resolve its name', async () => {
+    const selected = { ...censusAddress, altura: { unidad: null, valor: 5871 },
+      calle: { categoria: 'CALLE', id: '060910100000920', nombre: 'CALLE 23' },
+      localidad_censal: { id: '06091010', nombre: 'Berazategui' },
+      nomenclatura: 'CALLE 23 5871, Berazategui, Berazategui, Buenos Aires', ubicacion: { lat: -34.75, lon: -58.25 } }
+    const georefFetcher = vi.fn(() => response({ cantidad: 1, total: 1, inicio: 0, parametros: {}, direcciones: [selected] })) as unknown as typeof fetch
+    const orsFetcher = vi.fn(() => response({ features: [] })) as unknown as typeof fetch
+    await expect(resolveArgentineAddress({ street: 'CALLE 23', number: '5871', streetId: selected.calle.id,
+      city: 'Berazategui', cityId: selected.localidad_censal.id, province: 'Buenos Aires', provinceId: '06' },
+    { georefFetcher, orsApiKey: 'test-provider', orsFetcher })).resolves.toMatchObject({
+      source: 'georef', cityId: '06091010', streetId: '060910100000920', latitude: -34.75, longitude: -58.25
+    })
+    expect(georefFetcher).toHaveBeenCalledTimes(1)
+    expect(orsFetcher).toHaveBeenCalledTimes(1)
+  })
+
   it.each(['google', 'openrouteservice'])('uses %s to verify a selected GeoRef address and canonicalizes CABA', async provider => {
     const georefFetcher = vi.fn(() => response({ cantidad: 1, total: 1, inicio: 0, parametros: {}, direcciones: [{ altura: { unidad: null, valor: 1234 }, calle: { categoria: 'AVENIDA', id: '0200701000085', nombre: 'AV RIVADAVIA' }, calle_cruce_1: { categoria: null, id: null, nombre: null }, calle_cruce_2: { categoria: null, id: null, nombre: null }, departamento: { id: '02007', nombre: 'Comuna 1' }, localidad: { id: '02007010', nombre: 'San Nicolás' }, localidad_censal: { id: '02007010', nombre: 'Ciudad de Buenos Aires' }, nomenclatura: 'AV RIVADAVIA 1234, San Nicolás, Ciudad Autónoma de Buenos Aires', piso: null, provincia: { id: '02', nombre: 'Ciudad Autónoma de Buenos Aires' }, ubicacion: { lat: -34.61, lon: -58.38 } }] })) as unknown as typeof fetch
     const googleFetcher = vi.fn(() => response({ status: 'OK', results: [{ partial_match: false, formatted_address: 'Av. Rivadavia 1234, CABA, Argentina', geometry: { location: { lat: -34.609, lng: -58.389 }, location_type: 'ROOFTOP' }, address_components: [{ long_name: 'Argentina', short_name: 'AR', types: ['country'] }, { long_name: 'Ciudad Autónoma de Buenos Aires', short_name: 'CABA', types: ['administrative_area_level_1'] }] }] })) as unknown as typeof fetch

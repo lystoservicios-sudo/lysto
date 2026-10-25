@@ -19,6 +19,19 @@ it('stores coordinates verified during address selection under the same routing 
   expect(state.rpc).toHaveBeenCalledWith('store_verified_routing_point', expect.objectContaining({
     p_key:routingAddressKey('Pavón 2012, San Cristóbal, CABA, Argentina'),p_point:point
   }))
+  expect(state.rpc).toHaveBeenCalledTimes(1)
+})
+it('also remembers the provider display address that professional registration persists', async () => {
+  const saved = new Map()
+  state.rpc.mockImplementation(async (name, args) => {
+    if (name === 'store_verified_routing_point') saved.set(args.p_key, args.p_point)
+    return { data: name === 'read_verified_routing_point' ? saved.get(args.p_key) : null, error: null }
+  })
+  const formattedAddress = 'PAVON 2012, San Cristóbal, Comuna 3, Ciudad Autónoma de Buenos Aires'
+  await rememberResolvedAddress({ street:'PAVON',number:'2012',city:'San Cristóbal',province:'CABA',provinceId:'02',cityId:'0202101002',streetId:'02021',
+    formattedAddress,latitude:point.latitude,longitude:point.longitude,precision:'range_interpolated',source:'georef' })
+  await expect(geocodeSavedRoutingAddress(formattedAddress, 'test-provider')).resolves.toMatchObject({ formattedAddress, latitude: point.latitude, longitude: point.longitude })
+  expect(state.geocode).not.toHaveBeenCalled()
 })
 it('keeps different house numbers and localities in different records', () => {
   expect(routingAddressKey('Calle 23 5871, Berazategui, Buenos Aires')).not.toBe(routingAddressKey('Calle 23 5871, La Plata, Buenos Aires'))

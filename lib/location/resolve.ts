@@ -29,7 +29,7 @@ export async function resolveArgentineAddress(raw: AddressSelection, options?: {
   if (!['02', '06'].includes(selected.provincia.id)) throw new Error('outside_coverage')
   const orsKey = options?.orsApiKey ?? process.env.OPENROUTESERVICE_API_KEY
   const point = orsKey
-    ? await geocodeRoutingAddress(selected.nomenclatura, orsKey, options?.orsFetcher)
+    ? await geocodeRoutingAddress(selected.nomenclatura, orsKey, options?.orsFetcher, selected)
     : await geocodeVerifiedAddress(selected.nomenclatura, options?.apiKey ?? process.env.GOOGLE_MAPS_SERVER_API_KEY ?? '', options?.googleFetcher)
   const province = selected.provincia.id === '02' ? 'CABA' : 'Buenos Aires'
   if ('province' in point && point.province !== province) throw new Error('address_ambiguous')

@@ -27,7 +27,12 @@ export async function rememberResolvedAddress(address: ResolvedAddress) {
   const point = pointSchema.parse({formattedAddress:address.formattedAddress, latitude:address.latitude, longitude:address.longitude,
     province:address.province, precision:address.precision,
     coordinateSource:address.source === 'georef' ? 'georef' : address.source === 'georef_openrouteservice' ? 'openrouteservice' : 'google'})
-  await storePoint(`${address.street} ${address.number}, ${address.city}, ${address.province}, Argentina`,point)
+  const routingAddress = `${address.street} ${address.number}, ${address.city}, ${address.province}, Argentina`
+  await storePoint(routingAddress,point)
+  // Professional profiles save the provider's formatted address, which may
+  // include a department or a different street/province spelling.
+  if (routingAddressKey(address.formattedAddress) !== routingAddressKey(routingAddress))
+    await storePoint(address.formattedAddress,point)
 }
 export async function geocodeSavedRoutingAddress(address: string, apiKey: string, fetcher: typeof fetch = fetch): Promise<VerifiedRoutingPoint> {
   try {
