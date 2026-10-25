@@ -43,6 +43,28 @@ function dependencies(value = context()) {
 }
 
 describe('Pedir server preparation boundary', () => {
+  it('quotes complete customer-declared equipment when the active scope permits it', async () => {
+    const value = context()
+    value.context.equipment.declarationUsed = true
+    value.policy.scope = { ...scope, allowCustomerEquipmentDeclaration: true }
+    const deps = dependencies(value)
+    const result = await createCustomerRequestService(deps).preview(actor, {
+      ...input, equipmentDeclaration: { capacity: 4500, technology: 'conventional' }
+    })
+    expect(result.status).toBe('ready')
+    expect(result.quote?.total).toBeGreaterThan(0)
+    expect(result.quote?.readyToOffer).toBe(true)
+    expect(deps.saved).toHaveLength(1)
+  })
+  it('preserves the policy boundary when declarations have not been approved', async () => {
+    const value = context()
+    value.context.equipment.declarationUsed = true
+    const deps = dependencies(value)
+    const result = await createCustomerRequestService(deps).preview(actor, input)
+    expect(result).toMatchObject({ status: 'needs_review', reason: 'equipment_declaration_requires_review' })
+    expect(deps.saved).toHaveLength(0)
+    expect(deps.travel).not.toHaveBeenCalled()
+  })
   it('uses the chosen eligible technician origin and persists only trusted calculator money', async () => {
     const deps = dependencies()
     const result = await createCustomerRequestService(deps).preview(actor, input)

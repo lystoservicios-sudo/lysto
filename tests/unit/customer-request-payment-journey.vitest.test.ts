@@ -21,6 +21,7 @@ import { POST as prepare } from '@/app/api/customer/requests/prepare/route'
 import { POST as preference } from '@/app/api/mercadopago/create-preference/route'
 import { GET as readCheckouts, POST as reconcile } from '@/app/api/mercadopago/checkouts/route'
 import { paymentPresentation } from '@/features/service-request/request-flow-client'
+import { checkPaymentReturnToken } from '@/lib/payments/payment-return-token'
 
 type Observation = { provider_payment_id: string; checkout_id: string; provider_status: string; provider_updated_at: string;
   refunded_amount: string; provider_fee: string; net_received_amount: string | null; issues: string[] }
@@ -157,7 +158,12 @@ describe('Pedir complete HTTP/calculator/ledger boundary journey, without extern
       items: [expect.objectContaining({ unit_price: quote.quote.total, quantity: 1, currency_id: 'ARS' })] })
     expect(outboundPreferences[0]).not.toHaveProperty('paymentCostBudget')
     expect(outboundPreferences[0]).not.toHaveProperty('paymentCostRate')
-    expect(outboundPreferences[0].back_urls).toMatchObject({ success: `https://lysto.test/app/trabajos/${ids.job}?checkout=${ids.checkout}&pago=retorno` })
+    for (const destination of Object.values(outboundPreferences[0].back_urls as Record<string, string>)) {
+      const returnUrl = new URL(destination)
+      expect(returnUrl.origin).toBe('https://lysto.test')
+      expect(returnUrl.pathname).toBe(`/app/pagos/resultado/${ids.checkout}`)
+      expect(checkPaymentReturnToken(ids.checkout, returnUrl.searchParams.get('confirmacion')!, Buffer.alloc(32, 1).toString('base64'))).toBe(true)
+    }
     const frozenSplit = { amount: db.checkout.amount, marketplace_fee: db.checkout.marketplace_fee, professional_amount: db.checkout.professional_amount }
 
     const refresh = () => reconcile(request('/api/mercadopago/checkouts', { checkoutId: ids.checkout, action: 'reconcile_return' }))
