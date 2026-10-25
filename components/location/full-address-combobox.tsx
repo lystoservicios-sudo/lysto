@@ -24,6 +24,10 @@ export function FullAddressCombobox({ id, label, name, value, onChange, onResolv
     const ticket = ++revision.current
     setResolutionError('')
     active.current?.abort()
+    if (item.provinceId && !['02', '06'].includes(item.provinceId)) {
+      setResolutionError('Por ahora el servicio está disponible en CABA y la provincia de Buenos Aires.')
+      return
+    }
     const controller = new AbortController()
     active.current = controller
     try {
@@ -38,7 +42,7 @@ export function FullAddressCombobox({ id, label, name, value, onChange, onResolv
         setResolutionError('No pudimos confirmar la dirección. Volvé a elegir una opción para reintentar.')
     }
   }
-  return <><LocationCombobox id={id} name={name} label={label} value={value} kind="address" minChars={5} disabled={disabled} required={required}
+  return <><LocationCombobox id={id} name={name} label={label} value={value} kind="address" minChars={5} disabled={disabled} required={required} placeholder="Escribí calle y número"
     className={className} inputClassName={inputClassName} ariaInvalid={Boolean(resolutionError) || ariaInvalid} ariaDescribedBy={[ariaDescribedBy, resolutionError ? `${id}-resolution-error` : undefined].filter(Boolean).join(' ') || undefined}
     onChange={change} onSelect={(item) => void resolve(item)} />{resolutionError && <p id={`${id}-resolution-error`} role="alert">{resolutionError}</p>}</>
 }

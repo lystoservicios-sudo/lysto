@@ -4,7 +4,7 @@ import { ZodError } from 'zod'
 const errors = {
   location_selection_required: {
     status: 400,
-    message: 'Seleccioná una dirección de la lista antes de continuar. Escribí calle y número, seguidos de una coma y tu localidad.'
+    message: 'Seleccioná una dirección de la lista antes de continuar. Escribí calle y número y elegí la localidad y provincia correctas.'
   },
   professional_invitation_exists: {
     status: 409,

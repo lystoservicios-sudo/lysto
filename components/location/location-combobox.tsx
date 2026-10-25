@@ -24,7 +24,7 @@ export function LocationCombobox({ id, label, name, value, kind, context, onChan
   useEffect(() => {
     if (disabled || query.length < minChars) { setItems([]); setBusy(false); setAttempted(false); setFailed(false); return }
     const controller = new AbortController()
-    setAttempted(false); setFailed(false)
+    setItems([]); setBusy(false); setAttempted(false); setFailed(false)
     const timer = window.setTimeout(async () => {
       setBusy(true)
       try {
@@ -33,9 +33,10 @@ export function LocationCombobox({ id, label, name, value, kind, context, onChan
         const response = await fetch(`/api/location/suggestions?${params}`, { credentials: 'same-origin', signal: controller.signal })
         if (!response.ok) throw new Error('suggestions_unavailable')
         const payload = await response.json() as { suggestions?: unknown }
+        if (controller.signal.aborted) return
         setItems(locationSuggestionSchema.array().parse(payload.suggestions)); setAttempted(true); setFailed(false)
       } catch (error) {
-        if (!(error instanceof DOMException && error.name === 'AbortError')) { setItems([]); setAttempted(true); setFailed(true) }
+        if (!controller.signal.aborted && !(error instanceof DOMException && error.name === 'AbortError')) { setItems([]); setAttempted(true); setFailed(true) }
       } finally { if (!controller.signal.aborted) setBusy(false) }
     }, 180)
     return () => { window.clearTimeout(timer); controller.abort() }

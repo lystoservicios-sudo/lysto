@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { useState } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
@@ -88,6 +88,63 @@ describe('Argentina address fields', () => {
 })
 
 describe('technician full address field', () => {
+  it('does not replace a newer search with delayed options from the previous query', async () => {
+    let finishOld!: (response: Response) => void
+    const option = (city: string) => ({ kind: 'address', id: city, label: `PAVON 2012, ${city}`, street: 'PAVON', number: '2012', city, province: 'Buenos Aires' })
+    vi.stubGlobal('fetch', vi.fn((input: RequestInfo | URL) => String(input).includes('Merlo')
+      ? json({ suggestions: [option('Merlo')] })
+      : new Promise<Response>(resolve => { finishOld = resolve })))
+    function Harness() {
+      const [value, setValue] = useState('')
+      return <FullAddressCombobox id="latest-options" label="Dirección" value={value} onChange={setValue} onResolved={vi.fn()} />
+    }
+    render(<Harness />)
+    fireEvent.change(screen.getByLabelText('Dirección'), { target: { value: 'Pavon 2012' } })
+    await waitFor(() => expect(finishOld).toBeTypeOf('function'))
+    fireEvent.change(screen.getByLabelText('Dirección'), { target: { value: 'Pavon 2012, Merlo' } })
+    expect(await screen.findByRole('option', { name: 'PAVON 2012, Merlo' })).toBeTruthy()
+    finishOld(new Response(JSON.stringify({ suggestions: [option('El Talar')] })))
+    await waitFor(() => expect(screen.queryByRole('option', { name: 'PAVON 2012, El Talar' })).toBeNull())
+    expect(screen.getByRole('option', { name: 'PAVON 2012, Merlo' })).toBeTruthy()
+  })
+
+  it('shows street and geographic context separately and resolves the city the user chooses', async () => {
+    const resolved = vi.fn()
+    const options = [
+      { kind: 'address', id: 'pavon-caba', label: 'AV PAVON 2012', secondary: 'San Cristóbal · CABA · Argentina', street: 'AV PAVON', number: '2012', city: 'San Cristóbal', cityId: '02021010', province: 'CABA', provinceId: '02' },
+      { kind: 'address', id: 'pavon-merlo', label: 'PAVON 2012', secondary: 'Merlo · Buenos Aires · Argentina', street: 'PAVON', number: '2012', city: 'Merlo', cityId: '06539010', province: 'Buenos Aires', provinceId: '06' }
+    ]
+    const fetcher = vi.fn((input: RequestInfo | URL, init?: RequestInit) => String(input).includes('/suggestions')
+      ? json({ suggestions: options })
+      : json({ address: { ...JSON.parse(String(init?.body)), formattedAddress: 'PAVON 2012, Merlo, Buenos Aires' }, proof: 'merlo-proof' }))
+    vi.stubGlobal('fetch', fetcher)
+    function Harness() {
+      const [value, setValue] = useState('')
+      return <FullAddressCombobox id="choices" label="Dirección" value={value} onChange={setValue} onResolved={resolved} />
+    }
+    render(<Harness />)
+    fireEvent.change(screen.getByLabelText('Dirección'), { target: { value: 'Pavon 2012' } })
+    const merlo = await screen.findByRole('option', { name: 'PAVON 2012 Merlo · Buenos Aires · Argentina' })
+    expect(within(merlo).getByText('PAVON 2012').tagName).toBe('STRONG')
+    expect(screen.getByRole('option', { name: 'AV PAVON 2012 San Cristóbal · CABA · Argentina' })).toBeTruthy()
+    fireEvent.click(merlo)
+    await waitFor(() => expect(resolved).toHaveBeenCalledWith(expect.objectContaining({ proof: 'merlo-proof' })))
+    const saved = fetcher.mock.calls.find(([, init]) => init?.method === 'POST')
+    expect(JSON.parse(String(saved?.[1]?.body))).toMatchObject({ street: 'PAVON', cityId: '06539010', provinceId: '06' })
+  })
+
+  it('explains the current coverage when a national result is outside the service area', async () => {
+    const resolved = vi.fn()
+    const fetcher = vi.fn(() => json({ suggestions: [{ kind: 'address', id: 'cordoba', label: 'PAVON 2012, Toledo, Córdoba', street: 'PAVON', number: '2012', city: 'Toledo', province: 'Córdoba', provinceId: '14' }] }))
+    vi.stubGlobal('fetch', fetcher)
+    render(<FullAddressCombobox id="coverage" label="Dirección" value="Pavon 2012" onChange={vi.fn()} onResolved={resolved} />)
+    fireEvent.click(screen.getByLabelText('Dirección'))
+    fireEvent.click(await screen.findByRole('option', { name: 'PAVON 2012, Toledo, Córdoba' }))
+    expect((await screen.findByRole('alert')).textContent).toContain('CABA y la provincia de Buenos Aires')
+    expect(fetcher.mock.calls).toHaveLength(1)
+    expect(resolved).not.toHaveBeenCalled()
+  })
+
   it('keeps the Dirección label and returns the canonical address and proof', async () => {
     const resolved = vi.fn()
     vi.stubGlobal('fetch', vi.fn((input: RequestInfo | URL, init?: RequestInit) => {

@@ -22,8 +22,8 @@ it('accepts the observed GeoRef census locality when the finer locality is null 
   ] })) as unknown as typeof fetch
   const suggestions = await suggestLocations({ kind: 'address', query: 'Pavon 2012' }, fetcher)
   expect(suggestions).toHaveLength(2)
-  expect(suggestions[0]).toMatchObject({ cityId: '06665010', city: 'El Paraíso', latitude: null, longitude: null })
-  expect(suggestions[1]).toMatchObject({ cityId: '0680501005', city: 'El Talar' })
+  expect(suggestions.find(item => item.cityId === '06665010')).toMatchObject({ city: 'El Paraíso', latitude: null, longitude: null })
+  expect(suggestions.find(item => item.cityId === '0680501005')).toMatchObject({ city: 'El Talar' })
   expect((await georefAddresses({ kind: 'address', query: '2012', street: 'ERNESTO PAVONI', city: 'El Paraíso', cityId: '06665010', province: 'Buenos Aires', provinceId: '06' }, fetcher))[0].localidad)
     .toEqual({ id: '06665010', nombre: 'El Paraíso' })
 })
@@ -34,7 +34,33 @@ it('uses a comma-separated locality to narrow an unscoped full address search', 
   const url = new URL(String(vi.mocked(fetcher).mock.calls[0][0]))
   expect(url.searchParams.get('direccion')).toBe('Calle 23 5871')
   expect(url.searchParams.get('localidad')).toBe('Berazategui')
-  expect(url.searchParams.get('provincia')).toBe('02,06')
+  expect(url.searchParams.has('provincia')).toBe(false)
+})
+
+it('offers national address alternatives beyond the first eight with a distinct locality and province', async () => {
+  const entries = Array.from({ length: 10 }, (_, index) => ({ ...censusAddress,
+    calle: { ...censusAddress.calle, id: `fuzzy-${index}` },
+    nomenclatura: `ERNESTO PAVONI 2012, Localidad ${index}, Buenos Aires`
+  }))
+  const caba = { ...censusAddress, calle: { ...censusAddress.calle, id: '0202101000630', nombre: 'AV PAVON' },
+    localidad: { id: '02021010', nombre: 'San Cristóbal' }, departamento: { id: '02021', nombre: 'Comuna 3' },
+    provincia: { id: '02', nombre: 'Ciudad Autónoma de Buenos Aires' }, nomenclatura: 'AV PAVON 2012, San Cristóbal, Comuna 3, Ciudad Autónoma de Buenos Aires' }
+  const cordoba = { ...censusAddress, calle: { ...censusAddress.calle, id: '14001', nombre: 'PAVON' },
+    provincia: { id: '14', nombre: 'Córdoba' }, localidad: { id: '14001', nombre: 'Toledo' },
+    departamento: { id: '14001', nombre: 'Santa María' }, nomenclatura: 'PAVON 2012, Toledo, Santa María, Córdoba' }
+  const fetcher = vi.fn(() => response({ cantidad: 13, total: 13, inicio: 0, parametros: {}, direcciones: [
+    ...entries, caba, cordoba, { ...cordoba, calle: { ...cordoba.calle, id: 'foreign' }, provincia: { id: 'ES', nombre: 'España' } }
+  ] })) as unknown as typeof fetch
+  const suggestions = await suggestLocations({ kind: 'address', query: 'Pavón 2012' }, fetcher)
+  expect(suggestions).toHaveLength(12)
+  expect(suggestions[0]).toMatchObject({ streetId: caba.calle.id, cityId: caba.localidad.id,
+    label: 'AV PAVON 2012', secondary: 'San Cristóbal · Comuna 3 · CABA · Argentina' })
+  expect(suggestions[1]).toMatchObject({ label: 'PAVON 2012', secondary: 'Toledo · Santa María · Córdoba · Argentina' })
+  expect(suggestions.every(item => item.provinceId !== 'ES')).toBe(true)
+  const url = new URL(String(vi.mocked(fetcher).mock.calls[0][0]))
+  expect(url.origin).toBe('https://apis.datos.gob.ar')
+  expect(url.searchParams.get('max')).toBe('100')
+  expect(url.searchParams.has('provincia')).toBe(false)
 })
 
 it('does not turn invalid upstream data into a user validation error', async () => {

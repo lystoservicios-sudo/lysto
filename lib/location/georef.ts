@@ -43,6 +43,23 @@ const addressResponse = z.object({ ...page, direcciones: z.array(georefAddressSc
 export type GeorefAddress = z.infer<typeof georefAddressSchema>
 
 const endpoint = 'https://apis.datos.gob.ar/georef/api/v2.0'
+const argentinaProvinceIds = new Set(['02', '06', '10', '14', '18', '22', '26', '30', '34', '38', '42', '46', '50', '54', '58', '62', '66', '70', '74', '78', '82', '86', '90', '94'])
+const normalizeStreet = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+  .replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim().replace(/^(av|avenida|calle|pje|pasaje) /, '')
+const provinceOrder = (id: string) => id === '02' ? 0 : id === '06' ? 1 : 2
+
+function orderAddresses(addresses: GeorefAddress[], query: string) {
+  const streetQuery = normalizeStreet(query.split(',')[0].replace(/\s+\d+\s*$/, ''))
+  const matchOrder = (address: GeorefAddress) => normalizeStreet(address.calle.nombre ?? '') === streetQuery ? 0 : 1
+  const pointOrder = (address: GeorefAddress) => address.ubicacion.lat !== null && address.ubicacion.lon !== null ? 0 : 1
+  return [...addresses].sort((a, b) => matchOrder(a) - matchOrder(b) || provinceOrder(a.provincia.id) - provinceOrder(b.provincia.id) ||
+    pointOrder(a) - pointOrder(b) || a.localidad.nombre.localeCompare(b.localidad.nombre, 'es-AR'))
+}
+
+function addressContext(address: GeorefAddress) {
+  const province = address.provincia.id === '02' ? 'CABA' : address.provincia.nombre
+  return [...new Set([address.localidad.nombre, address.departamento.nombre, province, 'Argentina'])].join(' · ')
+}
 
 async function get<T>(path: string, params: URLSearchParams, schema: z.ZodType<T, z.ZodTypeDef, unknown>, fetcher: typeof fetch): Promise<T> {
   const response = await fetcher(`${endpoint}/${path}?${params.toString()}`, {
@@ -61,11 +78,12 @@ function context(input: LocationSuggestionInput) {
   return params
 }
 
-export async function georefAddresses(input: LocationSuggestionInput, fetcher: typeof fetch = fetch): Promise<GeorefAddress[]> {
+export async function georefAddresses(input: LocationSuggestionInput, fetcher: typeof fetch = fetch, options?: { discovery: boolean }): Promise<GeorefAddress[]> {
   const value = locationSuggestionInputSchema.parse(input)
   if (value.kind !== 'address') throw new Error('address_query_required')
   const params = context(value)
-  if (!value.provinceId && !value.province) params.set('provincia', '02,06')
+  if (options?.discovery) params.set('max', '100')
+  if (!options?.discovery && !value.provinceId && !value.province) params.set('provincia', '02,06')
   const parts = value.query.split(',').map(part => part.trim())
   const fullAddressWithCity = !value.street && !value.cityId && !value.city && parts.length === 2 && parts.every(Boolean)
   if (fullAddressWithCity) params.set('localidad', parts[1])
@@ -94,14 +112,19 @@ export async function suggestLocations(raw: LocationSuggestionInput, fetcher: ty
     const data = await get('calles', params, streetResponse, fetcher)
     suggestions = data.calles.map((item) => ({ kind: 'street', id: item.id, label: item.nombre, secondary: `${item.localidad.nombre}, ${item.provincia.nombre}`, provinceId: item.provincia.id, province: item.provincia.nombre, cityId: item.localidad.id, city: item.localidad.nombre, streetId: item.id, street: item.nombre }))
   } else {
-    const data = await georefAddresses(input, fetcher)
-    suggestions = data.filter((item) => item.calle.id && item.calle.nombre).map((item) => ({
-      kind: 'address', id: `${item.calle.id}:${item.altura.valor}:${item.localidad.id}`, label: item.nomenclatura,
+    const discovery = !input.street && !input.streetId
+    const data = await georefAddresses(input, fetcher, { discovery })
+    const addresses = discovery ? orderAddresses(data, input.query) : data
+    suggestions = addresses.filter((item) => item.calle.id && item.calle.nombre && argentinaProvinceIds.has(item.provincia.id)).map((item) => ({
+      kind: 'address', id: `${item.calle.id}:${item.altura.valor}:${item.localidad.id}`,
+      label: discovery ? `${item.calle.nombre} ${item.altura.valor}` : item.nomenclatura,
+      ...(discovery ? { secondary: addressContext(item) } : {}),
       provinceId: item.provincia.id, province: item.provincia.nombre, cityId: item.localidad.id, city: item.localidad.nombre,
       streetId: item.calle.id!, street: item.calle.nombre!, number: String(item.altura.valor), latitude: item.ubicacion.lat, longitude: item.ubicacion.lon
     }))
   }
   const seen = new Set<string>()
-  return z.array(locationSuggestionSchema).parse(suggestions).filter((item) => !seen.has(item.id) && !!seen.add(item.id)).slice(0, 8)
+  const limit = input.kind === 'address' && !input.street && !input.streetId ? 100 : 8
+  return z.array(locationSuggestionSchema).parse(suggestions).filter((item) => !seen.has(item.id) && !!seen.add(item.id)).slice(0, limit)
 }
 
