@@ -49,6 +49,35 @@ beforeEach(() => {
 })
 afterEach(() => vi.unstubAllEnvs())
 
+it.each([
+  ['professional_invitation_email_exists', 'professional_invitation_exists'],
+  ['professional_invitation_email_unique', 'professional_invitation_exists'],
+  ['professional_invitation_account_exists', 'professional_account_exists']
+])('rejects %s before provisioning or sending an invitation', async (message, code) => {
+  const rpc = vi.fn().mockResolvedValue({ data: null, error: { code: '23505', message } })
+  await expect(createProfessionalInvitation(session(rpc), {
+    firstName: 'Ana', lastName: 'Pérez', email: ' TECNICO@example.com ',
+    specialtySlug: baseInvitation.specialtySlug
+  })).rejects.toMatchObject({ code, status: 409 })
+  expect(rpc).toHaveBeenCalledOnce()
+  expect(rpc).toHaveBeenCalledWith('create_professional_invitation_v2', expect.objectContaining({ p_email: 'tecnico@example.com' }))
+  expect(mocks.createUser).not.toHaveBeenCalled()
+  expect(mocks.send).not.toHaveBeenCalled()
+})
+
+it('explains an account collision discovered during identity provisioning without sending email', async () => {
+  mocks.createUser.mockResolvedValue({ data: { user: null }, error: { code: 'email_exists' } })
+  const rpc = vi.fn(async (name: string) => name === 'create_professional_invitation_v2'
+    ? { data: { ...baseInvitation, token }, error: null }
+    : { data: null, error: null })
+  await expect(createProfessionalInvitation(session(rpc), {
+    firstName: 'Ana', lastName: 'Pérez', email: baseInvitation.email,
+    specialtySlug: baseInvitation.specialtySlug
+  })).rejects.toMatchObject({ code: 'professional_account_exists', status: 409 })
+  expect(rpc).toHaveBeenCalledWith('cancel_professional_invitation', expect.objectContaining({ p_id: invitationId }))
+  expect(mocks.send).not.toHaveBeenCalled()
+})
+
 it('provisions a professional identity and sends a temporary password without returning it to admin UI', async () => {
   const rpc = vi.fn(async (name: string) => name === 'create_professional_invitation_v2'
     ? { data: { ...baseInvitation, token }, error: null }

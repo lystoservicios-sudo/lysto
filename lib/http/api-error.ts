@@ -2,6 +2,14 @@ import { NextResponse } from 'next/server'
 import { ZodError } from 'zod'
 
 const errors = {
+  professional_invitation_exists: {
+    status: 409,
+    message: 'Ya existe una invitación para este correo. Revisá su expediente; para repetir el envío, usá Reenviar invitación.'
+  },
+  professional_account_exists: {
+    status: 409,
+    message: 'Este correo ya tiene una cuenta. Si es de cliente, usá otro correo para la cuenta de técnico. Si ya es técnico, revisá su expediente.'
+  },
   address_has_home: {
     status: 409,
     message: 'Esta dirección está vinculada a un hogar. Archivá ese hogar antes de quitarla.'

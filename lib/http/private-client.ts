@@ -18,6 +18,10 @@ export async function privateRequest<T>(path: string, method = 'GET', body?: unk
     const payload: unknown = await response.json().catch(() => null)
     const code = payload && typeof payload === 'object' && 'code' in payload && typeof payload.code === 'string' ? payload.code : undefined
     if (response.status === 409) {
+      if (code === 'professional_invitation_exists')
+        throw new PrivateRequestError('Ya existe una invitación para este correo. Revisá su expediente; para repetir el envío, usá Reenviar invitación.', 409, code)
+      if (code === 'professional_account_exists')
+        throw new PrivateRequestError('Este correo ya tiene una cuenta. Si es de cliente, usá otro correo para la cuenta de técnico. Si ya es técnico, revisá su expediente.', 409, code)
       if (code === 'address_has_home') throw new PrivateRequestError('Esta dirección está vinculada a un hogar. Archivá ese hogar antes de quitarla.', 409, code)
       if (code === 'last_owner')
         throw new PrivateRequestError(

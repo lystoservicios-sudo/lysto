@@ -130,7 +130,16 @@ export async function createProfessionalInvitation(session: Session, input: unkn
     p_email: data.email,
     p_specialty_slug: data.specialtySlug
   })
-  if (result.error) fail(result.error.code)
+  if (result.error) {
+    if (result.error.code === '23505' && result.error.message === 'professional_invitation_account_exists')
+      throw new ApiError('professional_account_exists')
+    if ((result.error.code === '23505' && (
+      result.error.message === 'professional_invitation_email_exists' ||
+      result.error.message.includes('professional_invitation_email_unique')
+    )) || (result.error.code === '40001' && result.error.message === 'A current invitation already exists'))
+      throw new ApiError('professional_invitation_exists')
+    fail(result.error.code)
+  }
   const parsed = createdInvitationSchema.safeParse(result.data)
   if (!parsed.success || !parsed.data.token) throw new ApiError('service_unavailable')
   const { token } = parsed.data
@@ -148,7 +157,7 @@ export async function createProfessionalInvitation(session: Session, input: unkn
     await cancelUnprovisionedInvitation(session, invitation.id, invitation.version, 'auth_identity_create_failed')
     if (created.error?.code === 'weak_password') throw new ApiError('invalid_input')
     if (['email_exists', 'user_already_exists'].includes(created.error?.code ?? ''))
-      throw new ApiError('conflict')
+      throw new ApiError('professional_account_exists')
     throw new ApiError('service_unavailable')
   }
   const bound = await session.client.rpc('bind_professional_invitation_auth_user', {
