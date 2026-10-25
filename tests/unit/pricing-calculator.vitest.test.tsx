@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { PricingCalculator } from '@/components/pricing/pricing-calculator'
 import { defaultQuotePolicy, type QuotePolicy } from '@/lib/pricing/service-quote'
+import { selectUnitAddress, withLocationProvider } from './location-provider-fixture'
 
 afterEach(() => { cleanup(); vi.unstubAllGlobals() })
 
@@ -26,6 +27,32 @@ function mountCalculator(canFinance = true) {
 }
 
 describe('pricing calculator gross split configuration', () => {
+  it('only sends the selected canonical address when calculating or saving a new quote', async () => {
+    const writes: Array<Record<string, unknown>> = []
+    const domain = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const path = String(input)
+      if (path === '/api/pricing/policy') return Response.json({ policy: defaultQuotePolicy, revision: 1 })
+      if (path === '/api/pricing/quotes') return Response.json({ quotes: [], nextCursor: null })
+      if (path === '/api/pricing/offers') return Response.json({ jobs: [], offers: [], role: 'admin' })
+      if (path === '/api/pricing/quote') {
+        writes.push(JSON.parse(String(init?.body)))
+        return Response.json({ error: 'Respuesta de prueba' }, { status: 422 })
+      }
+      throw new Error(`Unexpected request: ${path}`)
+    })
+    vi.stubGlobal('fetch', withLocationProvider(domain))
+    const { container } = render(<PricingCalculator />)
+    await waitFor(() => expect((container.querySelector('fieldset') as HTMLFieldSetElement).disabled).toBe(false))
+    fireEvent.change(screen.getByRole('combobox', { name: 'Dirección' }), { target: { value: 'Corrientes 456' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Calcular con datos del servidor' }))
+    expect(writes).toHaveLength(0)
+    expect(screen.getByText('Elegí una dirección de las opciones para confirmar la ubicación.')).toBeTruthy()
+    await selectUnitAddress()
+    fireEvent.change(screen.getByLabelText('Identificador del cliente (para guardar)'), { target: { value: '10000000-0000-4000-8000-000000000001' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar presupuesto' }))
+    await waitFor(() => expect(writes).toHaveLength(1))
+    expect(writes[0]).toMatchObject({ save: true, address: { street: 'Corrientes', number: '456', city: 'Buenos Aires', province: 'Buenos Aires' } })
+  })
   it('loads a legacy policy without exposing a six-percent provider estimate or saving/approving anything', async () => {
     const { container, legacyPolicy, writes } = mountCalculator()
     await waitFor(() => expect((container.querySelector('fieldset') as HTMLFieldSetElement).disabled).toBe(false))

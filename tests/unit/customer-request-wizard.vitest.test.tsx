@@ -107,7 +107,7 @@ describe('customer request wizard', () => {
     mount('no_enfria'); next()
     expect(screen.getByText('San Martín 456 · Piso 2, CABA')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Editar' }))
-    expect((screen.getByLabelText('Calle') as HTMLInputElement).value).toBe('San Martín')
+    expect((screen.getByRole('combobox', { name: 'Dirección' }) as HTMLInputElement).value).toBe('San Martín 456, CABA, Buenos Aires')
     expect((screen.getByLabelText('Piso de la dirección') as HTMLInputElement).value).toBe('2')
     expect((screen.getByRole('button', { name: 'Continuar con los detalles' }) as HTMLButtonElement).disabled).toBe(true)
     fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }))

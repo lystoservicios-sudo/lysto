@@ -262,6 +262,7 @@ function Registration({ initial }: { initial: OnboardingContext }) {
       className={styles.field}
       ariaInvalid={!!errors.address} ariaDescribedBy={`${id}-hint${errors.address ? ` ${id}-error` : ''}`}
       onChange={(value) => { setLocationProof(''); update('address', value) }}
+        onSelectionStart={() => setLocationProof('')}
       onResolved={({ value, proof }) => { setLocationProof(proof); update('address', value) }} />
       <p id={`${id}-hint`} className={styles.hint}>Escribí calle y número y elegí la opción que corresponda a tu localidad y provincia. Si hay muchas coincidencias, podés agregar la localidad para afinar la búsqueda.</p>
       {errors.address && <small id={`${id}-error`} className={styles.fieldError}>{errors.address}</small>}</>

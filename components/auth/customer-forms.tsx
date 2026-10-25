@@ -33,18 +33,25 @@ export function CompleteProfileForm({ missing, next, address = null }: { missing
   const [state, action, pending] = useActionState(completeProfileAction, initialAuthState)
   const [location, setLocation] = useState<AddressFieldValue>(address ?? { street: '', number: '', city: '', province: '' })
   const [locationProof, setLocationProof] = useState('')
+  const [locationError, setLocationError] = useState('')
   const geographic = new Set<CustomerField>(['street', 'number', 'city', 'province'])
   const needsLocation = missing.some((key) => geographic.has(key))
-  return <form action={action} className="auth-form"><input type="hidden" name="next" value={next} />
+  return <form action={action} className="auth-form" onSubmit={event => {
+    if (needsLocation && !locationProof) {
+      event.preventDefault()
+      setLocationError('Elegí una dirección de las opciones para confirmar la ubicación.')
+    }
+  }}><input type="hidden" name="next" value={next} />
     {missing.filter((key) => key !== 'property_type' && !geographic.has(key)).map((key) => <AuthInput key={key} name={key} {...fieldDetails[key as Exclude<CustomerField, 'property_type'>]} disabled={pending} />)}
     {needsLocation && <>
-      <ArgentineAddressFields value={location} onChange={setLocation} onProofChange={setLocationProof}
+      <ArgentineAddressFields value={location} onChange={setLocation} onProofChange={proof => { setLocationProof(proof); setLocationError('') }}
         labels={{ street: 'Calle', number: 'Altura', city: 'Localidad', province: 'Provincia' }}
         order={['street', 'number', 'city', 'province']}
         placeholders={{ street: fieldDetails.street.placeholder, number: fieldDetails.number.placeholder, city: fieldDetails.city.placeholder, province: fieldDetails.province.placeholder }}
         names={{ street: 'street', number: 'number', city: 'city', province: 'province' }}
         idPrefix="auth-location" disabled={pending} />
       <input type="hidden" name="location_proof" value={locationProof} />
+      {locationError && <p role="alert">{locationError}</p>}
     </>}
     {missing.includes('property_type') && <div><label htmlFor="auth-property_type">Tipo de propiedad</label><select id="auth-property_type" name="property_type" defaultValue="" required disabled={pending}><option value="" disabled>Elegí una opción</option><option value="house">Casa</option><option value="apartment">Departamento</option><option value="commercial">Local comercial</option><option value="office">Oficina</option></select></div>}
     <AuthNotice state={state} /><button className="auth-button" type="submit" disabled={pending}>{pending ? 'Guardando tus datos…' : 'Guardar y continuar'}<ArrowRight size={16} aria-hidden="true" /></button>

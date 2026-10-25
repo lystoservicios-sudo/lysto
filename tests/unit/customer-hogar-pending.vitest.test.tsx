@@ -413,9 +413,9 @@ describe('Hogar pending operation identity', () => {
     request.mockResolvedValueOnce(response({ code: 'conflict' }, 409))
     await beginHome()
     expect(sessionStorage.getItem(key())).toBeNull()
-    expect(screen.getByLabelText('Número').matches(':disabled')).toBe(false)
+    expect(screen.getByRole('combobox', { name: 'Dirección' }).matches(':disabled')).toBe(false)
     expect(screen.getByRole('button', { name: 'Cancelar' })).toHaveProperty('disabled', false)
-    change('Número', '456')
+    await selectUnitAddress()
     request.mockImplementationOnce(async (_path: string, options: { body: string }) =>
       response({ home: createdHome(JSON.parse(options.body)) })
     )

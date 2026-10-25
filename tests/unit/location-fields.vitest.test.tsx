@@ -22,7 +22,7 @@ it.each(['fields', 'full'] as const)('shows a retryable resolution failure in %s
       : <AddressHarness confirmed={confirmed} />
   }
   render(<Harness />)
-  fireEvent.change(screen.getByLabelText(mode === 'full' ? 'Dirección' : 'Altura'), { target: { value: mode === 'full' ? 'Corrientes 123' : '123' } })
+  fireEvent.change(screen.getByLabelText('Dirección'), { target: { value: 'Corrientes 123' } })
   fireEvent.click(await screen.findByRole('option', { name: suggestion.label }))
   expect((await screen.findByRole('alert')).textContent).toContain('No pudimos confirmar la dirección')
   expect(confirmed.mock.calls.every(([proof]) => proof === '')).toBe(true)
@@ -35,55 +35,16 @@ function AddressHarness({ confirmed = vi.fn() }: { confirmed?: (proof: string) =
 }
 
 describe('Argentina address fields', () => {
-  it('keeps the supplied form labels and confirms a tapped complete address', async () => {
-    const confirmed = vi.fn()
-    const fetcher = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
-      const url = String(input)
-      if (url.includes('kind=province')) return json({ suggestions: [{ kind: 'province', id: '06', label: 'Buenos Aires', provinceId: '06', province: 'Buenos Aires' }] })
-      if (url.includes('kind=city')) return json({ suggestions: [{ kind: 'city', id: '0665801007', label: 'Quilmes Oeste', provinceId: '06', province: 'Buenos Aires', cityId: '0665801007', city: 'Quilmes Oeste' }] })
-      if (url.includes('kind=street')) return json({ suggestions: [{ kind: 'street', id: '066580100704335', label: 'GRL BELGRANO', provinceId: '06', province: 'Buenos Aires', cityId: '0665801007', city: 'Quilmes Oeste', streetId: '066580100704335', street: 'GRL BELGRANO' }] })
-      if (url.includes('kind=address')) return json({ suggestions: [{ kind: 'address', id: 'address-1', label: 'GRL BELGRANO 123, Quilmes Oeste, Buenos Aires', provinceId: '06', province: 'Buenos Aires', cityId: '0665801007', city: 'Quilmes Oeste', streetId: '066580100704335', street: 'GRL BELGRANO', number: '123' }] })
-      if (url.endsWith('/api/location/resolve') && init?.method === 'POST') return json({ address: { street: 'GRL BELGRANO', number: '123', city: 'Quilmes Oeste', province: 'Buenos Aires', provinceId: '06', cityId: '0665801007', streetId: '066580100704335', formattedAddress: 'GRL BELGRANO 123, Quilmes Oeste, Buenos Aires', latitude: -34.7, longitude: -58.3, precision: 'rooftop', source: 'georef_google' }, proof: 'proof-123' })
-      throw new Error(`Unexpected request ${url}`)
-    })
-    vi.stubGlobal('fetch', fetcher)
-    render(<AddressHarness confirmed={confirmed} />)
-
-    expect(screen.getByLabelText('Calle')).toBeTruthy()
-    expect(screen.getByLabelText('Altura')).toBeTruthy()
-    expect(screen.getByLabelText('Localidad')).toBeTruthy()
-    expect(screen.getByLabelText('Provincia')).toBeTruthy()
-    expect(screen.queryByText(/buscá tu dirección/i)).toBeNull()
-
-    fireEvent.change(screen.getByLabelText('Provincia'), { target: { value: 'Buenos' } })
-    fireEvent.click(await screen.findByRole('option', { name: 'Buenos Aires' }))
-    fireEvent.change(screen.getByLabelText('Localidad'), { target: { value: 'Quil' } })
-    fireEvent.click(await screen.findByRole('option', { name: /Quilmes Oeste/ }))
-    fireEvent.change(screen.getByLabelText('Calle'), { target: { value: 'Belgrano' } })
-    fireEvent.click(await screen.findByRole('option', { name: /GRL BELGRANO/ }))
-    fireEvent.change(screen.getByLabelText('Altura'), { target: { value: '123' } })
-    fireEvent.click(await screen.findByRole('option', { name: /GRL BELGRANO 123/ }))
-
-    await waitFor(() => expect(confirmed).toHaveBeenLastCalledWith('proof-123'))
-    expect(screen.getByLabelText('Calle')).toHaveProperty('value', 'GRL BELGRANO')
-    expect(screen.getByLabelText('Localidad')).toHaveProperty('value', 'Quilmes Oeste')
-  })
-
-  it('invalidates confirmation after a confirmed geographic value changes', async () => {
+  it('invalidates confirmation after the address query changes', () => {
     const confirmed = vi.fn()
     render(<AddressHarness confirmed={confirmed} />)
-    fireEvent.change(screen.getByLabelText('Provincia'), { target: { value: 'Otra' } })
+    fireEvent.change(screen.getByLabelText('Dirección'), { target: { value: 'Otra dirección' } })
     expect(confirmed).toHaveBeenLastCalledWith('')
   })
-
-  it('preserves the requested field order and placeholders', () => {
-    render(<ArgentineAddressFields value={{ street: '', number: '', city: '', province: '' }} onChange={vi.fn()}
-      labels={{ street: 'Calle', number: 'Altura', city: 'Localidad', province: 'Provincia' }} idPrefix="ordered"
-      order={['street', 'number', 'city', 'province']} placeholders={{ street: 'Nombre de la calle', number: 'Número', city: 'Tu localidad', province: 'Tu provincia' }} />)
-    const fields = screen.getAllByRole('combobox')
-    expect(fields.map(field => field.getAttribute('aria-label') ?? field.getAttribute('id'))).toEqual(['ordered-street', 'ordered-number', 'ordered-city', 'ordered-province'])
-    expect(screen.getByLabelText('Calle').getAttribute('placeholder')).toBe('Nombre de la calle')
-    expect(screen.getByLabelText('Provincia').getAttribute('placeholder')).toBe('Tu provincia')
+  it('renders one full-address search in the existing field group', () => {
+    render(<AddressHarness />)
+    expect(screen.getAllByRole('combobox')).toHaveLength(1)
+    expect(screen.getByLabelText('Dirección').getAttribute('placeholder')).toBe('Escribí calle y número')
   })
 })
 

@@ -1,14 +1,15 @@
 import 'server-only'
 
 import { ZodError } from 'zod'
-import { requireSecuritySession } from '@/lib/auth/session'
+import { requireAdminPermission, requireSecuritySession } from '@/lib/auth/session'
 import { ApiError, apiErrorResponse } from '@/lib/http/api-error'
 import { enforceRateLimit, RateLimitExceeded, rateLimitResponse, requestSubject } from '@/lib/security/rate-limit'
 
 export async function locationRoute(request: Request, handler: () => Promise<Response>) {
   try {
     const session = await requireSecuritySession()
-    if (!['customer', 'professional'].includes(session.role)) throw new ApiError('forbidden')
+    if (session.role === 'admin') await requireAdminPermission('operations', session)
+    else if (!['customer', 'professional'].includes(session.role)) throw new ApiError('forbidden')
     await enforceRateLimit('location', `${session.profileId}:${requestSubject(request)}`)
     return await handler()
   } catch (error) {

@@ -6,11 +6,12 @@ import { FormFeedback } from './states'
 import { InfoNotice } from './info-notice'
 import { Button } from '@/components/ui/button'
 import { Input, Label } from '@/components/ui/input'
+import { ArgentineAddressFields } from '@/components/location/argentine-address-fields'
 import type { CustomerAddressViewModel } from '@/features/customer/view-models'
 
 type SubmissionResult = { ok: boolean; message: string }
 type SubmissionState = 'idle' | 'pending' | 'success' | 'error'
-type AddressField = 'label' | 'street' | 'number' | 'floor' | 'apartment' | 'city' | 'province'
+type AddressField = 'label' | 'floor' | 'apartment'
 type AddressErrors = Partial<Record<'label' | 'street' | 'number' | 'city' | 'province', string>>
 
 function validateAddress(value: CustomerAddressViewModel): AddressErrors {
@@ -34,14 +35,18 @@ const accessOptions = [
 
 export function CustomerAddressForm({ initialValue, onSubmit }: {
   initialValue: CustomerAddressViewModel
-  onSubmit?: (value: CustomerAddressViewModel) => Promise<SubmissionResult>
+  onSubmit?: (value: CustomerAddressViewModel, locationProof: string) => Promise<SubmissionResult>
 }) {
   const [value, setValue] = useState(initialValue)
+  const [locationProof, setLocationProof] = useState('')
+  const [locationTouched, setLocationTouched] = useState(false)
   const [touched, setTouched] = useState<Partial<Record<AddressField, boolean>>>({})
   const [submission, setSubmission] = useState<{ state: SubmissionState; message?: string }>({ state: 'idle' })
   const errors = useMemo(() => validateAddress(value), [value])
   const isDirty = JSON.stringify(value) !== JSON.stringify(initialValue)
-  const isValid = Object.keys(errors).length === 0
+  const unchangedLocation = (['street', 'number', 'city', 'province'] as const).every(key => value[key] === initialValue[key])
+  const locationInvalid = !locationProof && !unchangedLocation
+  const isValid = Object.keys(errors).length === 0 && !locationInvalid
   const isPending = submission.state === 'pending'
 
   const changeField = (field: AddressField, nextValue: string) => {
@@ -55,7 +60,7 @@ export function CustomerAddressForm({ initialValue, onSubmit }: {
     if (!onSubmit || !isDirty || !isValid || isPending) return
     setSubmission({ state: 'pending', message: 'Guardando dirección' })
     try {
-      const result = await onSubmit(value)
+      const result = await onSubmit(value, locationProof)
       setSubmission({ state: result.ok ? 'success' : 'error', message: result.message })
     } catch {
       setSubmission({ state: 'error', message: 'No pudimos guardar la dirección. Intentá nuevamente.' })
@@ -84,12 +89,15 @@ export function CustomerAddressForm({ initialValue, onSubmit }: {
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         {field('label', 'Nombre de la dirección')}
-        {field('street', 'Calle', 'address-line1')}
-        {field('number', 'Número')}
-        {field('floor', 'Piso', 'address-line2')}
-        {field('apartment', 'Departamento')}
-        {field('city', 'Ciudad', 'address-level2')}
-        {field('province', 'Provincia', 'address-level1')}
+        <ArgentineAddressFields value={value} idPrefix="address" disabled={isPending}
+          labels={{ street: 'Calle', number: 'Número', city: 'Ciudad', province: 'Provincia' }}
+          groupClassName="col-span-full grid gap-4 sm:grid-cols-2" fieldClassName="space-y-2"
+          inputClassName="w-full rounded-xl border border-slate-200 px-3 py-2"
+          ariaInvalid={locationTouched && locationInvalid} ariaDescribedBy={locationTouched && locationInvalid ? 'address-location-error' : undefined}
+          onChange={location => { setValue(current => ({ ...current, ...location })); setLocationTouched(true); setSubmission({ state: 'idle' }) }}
+          onProofChange={setLocationProof}
+          after={{ number: <>{field('floor', 'Piso', 'address-line2')}{field('apartment', 'Departamento')}</> }} />
+        {locationTouched && locationInvalid && <p id="address-location-error" className="col-span-full text-sm font-semibold text-red-700">Elegí una dirección de las opciones para confirmar la ubicación.</p>}
       </div>
       <fieldset>
         <legend className="text-sm font-semibold text-slate-800">Condiciones de acceso</legend>

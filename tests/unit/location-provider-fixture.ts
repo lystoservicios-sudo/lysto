@@ -15,12 +15,10 @@ export function withLocationProvider(domainFetch: typeof fetch): typeof fetch {
 }
 
 export async function selectUnitAddress() {
-  for (const [name, value] of [['Calle', 'Corrientes'], ['Ciudad', 'Buenos Aires'], ['Provincia', 'Buenos Aires'], ['Número', '45']])
-    fireEvent.change(screen.getByRole('combobox', { name }), { target: { value } })
-  // Changing the input opens the number's actual suggestion list.
-  const menu = await screen.findByRole('listbox', { name: 'Número opciones' })
+  fireEvent.change(screen.getByRole('combobox', { name: 'Dirección' }), { target: { value: 'Corrientes 456' } })
+  const menu = await screen.findByRole('listbox', { name: 'Dirección opciones' })
   fireEvent.click(await within(menu).findByRole('option', { name: 'Corrientes 456, Buenos Aires' }))
   await waitFor(() => {
-    if ((screen.getByRole('combobox', { name: 'Número' }) as HTMLInputElement).value !== '456') throw new Error('Resolution pending')
+    if ((screen.getByRole('combobox', { name: 'Dirección' }) as HTMLInputElement).value !== 'Corrientes 456, Buenos Aires, Buenos Aires') throw new Error('Resolution pending')
   })
 }

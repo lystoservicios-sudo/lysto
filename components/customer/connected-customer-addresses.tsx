@@ -84,6 +84,14 @@ export function ConnectedCustomerAddresses({
   async function save(event: FormEvent) {
     event.preventDefault()
     if (busy) return
+    const savedAddress = page.items.find((address) => address.id === value.id)
+    const unchangedLocation = savedAddress && (['street', 'number', 'city', 'province'] as const)
+      .every((field) => savedAddress[field] === value[field])
+    if (!locationProof && !unchangedLocation) {
+      setFailed(true)
+      setMessage('Elegí una dirección de las opciones para confirmar la ubicación.')
+      return
+    }
     const parsed = addressInputSchema.safeParse(
       Object.fromEntries(
         Object.entries(value).filter(
@@ -94,14 +102,6 @@ export function ConnectedCustomerAddresses({
     if (!parsed.success) {
       setFailed(true)
       setMessage('Completá los datos obligatorios de la dirección.')
-      return
-    }
-    const savedAddress = page.items.find((address) => address.id === value.id)
-    const unchangedLocation = savedAddress && (['street', 'number', 'city', 'province'] as const)
-      .every((field) => savedAddress[field] === value[field])
-    if (!locationProof && !unchangedLocation) {
-      setFailed(true)
-      setMessage('Elegí una dirección de las opciones del número para confirmar la ubicación.')
       return
     }
     setBusy(true)

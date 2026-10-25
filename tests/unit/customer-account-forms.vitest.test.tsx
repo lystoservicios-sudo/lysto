@@ -66,10 +66,10 @@ describe('customer account forms', () => {
     fireEvent.click(elevator)
     expect(elevator.checked).toBe(false)
 
-    const street = screen.getByRole('textbox', { name: 'Calle' })
+    const street = screen.getByRole('combobox', { name: 'Dirección' })
     fireEvent.change(street, { target: { value: '' } })
     expect(street.getAttribute('aria-invalid')).toBe('true')
-    expect(screen.getByText('Ingresá la calle.')).toBeTruthy()
+    expect(screen.getByText('Elegí una dirección de las opciones para confirmar la ubicación.')).toBeTruthy()
     expect((screen.getByRole('button', { name: 'Guardar dirección' }) as HTMLButtonElement).disabled).toBe(true)
     expect(onSubmit).not.toHaveBeenCalled()
   })
@@ -85,7 +85,7 @@ describe('customer account forms', () => {
     const onSubmit = vi.fn(async () => ({ ok: false, message: 'La dirección no pudo guardarse' }))
     render(<CustomerAddressForm initialValue={customerDemoFixtures.addresses[0]} onSubmit={onSubmit} />)
 
-    fireEvent.change(screen.getByRole('textbox', { name: 'Ciudad' }), { target: { value: 'Rosario' } })
+    fireEvent.change(screen.getByRole('textbox', { name: 'Piso' }), { target: { value: '8' } })
     fireEvent.click(screen.getByRole('button', { name: 'Guardar dirección' }))
 
     expect(await screen.findByRole('alert')).toHaveProperty('textContent', expect.stringContaining('La dirección no pudo guardarse'))

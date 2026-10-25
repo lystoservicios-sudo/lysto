@@ -40,7 +40,7 @@ describe('customer secondary navigation and preserved content', () => {
     expect(screen.getByRole('link', { name: 'Volver a Hogar' }).getAttribute('href')).toBe('/app/hogar')
     expect(screen.getByRole('heading', { level: 1, name: 'Direcciones y accesos' })).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Editar Mi casa' }))
-    expect((screen.getByLabelText('Calle *') as HTMLInputElement).value).toBe('Lavalle')
+    expect((screen.getByRole('combobox', { name: 'Dirección' }) as HTMLInputElement).value).toBe('Lavalle 123, CABA, Buenos Aires')
     expect(screen.getByRole('button', { name: 'Guardar dirección' })).toBeTruthy()
   })
   it('grounds equipment in Hogar without losing registration or archive navigation', async () => {

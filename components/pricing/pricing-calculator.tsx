@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Button, ButtonLink } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Field, Input } from '@/components/ui/input'
+import { ArgentineAddressFields } from '@/components/location/argentine-address-fields'
 import { AIR_CONDITIONING_ISSUES, TIME_WINDOWS } from '@/lib/domain/constants'
 import {
   calculateServiceQuote,
@@ -41,11 +42,9 @@ export function PricingCalculator({
     materialsConfirmed: false
   })
   const [address, setAddress] = useState({
-    street: 'Av. Corrientes',
-    number: '1240',
-    city: 'CABA',
-    province: 'Buenos Aires'
+    street: '', number: '', city: '', province: ''
   })
+  const [locationProof, setLocationProof] = useState('')
   const [date, setDate] = useState(tomorrow)
   const [timeWindow, setTimeWindow] = useState<string>(TIME_WINDOWS[1])
   const [customerId, setCustomerId] = useState('')
@@ -149,6 +148,10 @@ export function PricingCalculator({
       (save && replaces && revisionReason.trim().length < 15)
     )
       return
+    if (!locationProof) {
+      setNotice('Elegí una dirección de las opciones para confirmar la ubicación.')
+      return
+    }
     setBusy(true)
     setNotice('')
     try {
@@ -359,24 +362,11 @@ export function PricingCalculator({
           <Card className="space-y-4 p-5 shadow-none">
             <h2 className="text-xl font-bold">Domicilio y traslado</h2>
             <div className="grid gap-4 sm:grid-cols-2">
-              {(
-                [
-                  ['street', 'Calle'],
-                  ['number', 'Altura'],
-                  ['city', 'Localidad'],
-                  ['province', 'Provincia']
-                ] as const
-              ).map(([name, label]) => (
-                <Field key={name} label={label}>
-                  <Input
-                    value={address[name]}
-                    onChange={(e) => {
-                      setAddress({ ...address, [name]: e.target.value })
-                      setRouteConfirmed(false)
-                    }}
-                  />
-                </Field>
-              ))}
+              <ArgentineAddressFields idPrefix="quote-location" value={address}
+                labels={{ street: 'Calle', number: 'Altura', city: 'Localidad', province: 'Provincia' }}
+                groupClassName="col-span-full" fieldClassName="space-y-2" inputClassName={fieldClass}
+                disabled={busy || !canOperations} onProofChange={setLocationProof}
+                onChange={next => { setAddress(next); setRouteConfirmed(false) }} />
               <Field label="Fecha">
                 <Input
                   type="date"
@@ -778,6 +768,7 @@ export function PricingCalculator({
                 setManualRouteReason('')
                 setInput(row.input)
                 setAddress(row.address)
+                setLocationProof('')
                 setCustomerId(row.customer_id)
                 setDate(tomorrow())
                 setMaterialPrice(row.input.materials?.[0]?.unitPrice ?? 0)

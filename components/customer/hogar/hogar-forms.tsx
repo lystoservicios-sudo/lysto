@@ -134,6 +134,10 @@ export function HomeForm({
   async function submit(event: FormEvent) {
     event.preventDefault()
     setFormError('')
+    if (!flow.existing && addressMode === 'new' && !locationProof) {
+      setFormError('Elegí una dirección de las opciones para confirmar la ubicación.')
+      return
+    }
     const candidate = {
       ...newAddress,
       label: newAddress.label || value.name,
@@ -149,10 +153,6 @@ export function HomeForm({
     }
     if ((!value.addressId && addressMode !== 'new') || !value.name.trim()) {
       setFormError('Elegí una dirección y un nombre para tu hogar.')
-      return
-    }
-    if (!flow.existing && addressMode === 'new' && !locationProof) {
-      setFormError('Elegí una dirección de las opciones del número para confirmar la ubicación.')
       return
     }
     await onSave(value, !flow.existing && addressMode === 'new' ? { ...candidate, ...(locationProof ? { locationProof } : {}) } : undefined)

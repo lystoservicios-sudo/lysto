@@ -6,9 +6,10 @@ import { POST as RENEW } from '@/app/api/location/renew/route'
 import { ApiError } from '@/lib/http/api-error'
 
 const state = vi.hoisted(() => ({
-  role: 'customer', denied: false, suggest: vi.fn(), resolve: vi.fn(), issue: vi.fn(), readProof: vi.fn(), limit: vi.fn(), remember: vi.fn()
+  role: 'customer', denied: false, admin: vi.fn(), suggest: vi.fn(), resolve: vi.fn(), issue: vi.fn(), readProof: vi.fn(), limit: vi.fn(), remember: vi.fn()
 }))
 vi.mock('@/lib/auth/session', () => ({
+  requireAdminPermission: state.admin,
   requireSecuritySession: async () => {
     if (state.denied) throw new ApiError('unauthorized')
     return { role: state.role, profileId: '10000000-0000-4000-8000-000000000001' }
@@ -26,6 +27,7 @@ vi.mock('@/lib/security/rate-limit', async (importActual) => {
 beforeEach(() => {
   vi.stubEnv('NEXT_PUBLIC_APP_URL', 'http://localhost')
   state.role = 'customer'; state.denied = false
+  state.admin.mockReset().mockResolvedValue({})
   state.suggest.mockReset().mockResolvedValue([{ kind: 'province', id: '06', label: 'Buenos Aires' }])
   state.resolve.mockReset().mockResolvedValue({ street: 'GRL BELGRANO', number: '123', city: 'Quilmes Oeste', province: 'Buenos Aires', provinceId: '06', cityId: '0665801007', streetId: '066580100704335', formattedAddress: 'GRL BELGRANO 123, Quilmes Oeste, Buenos Aires', latitude: -34.7, longitude: -58.3, precision: 'rooftop', source: 'georef_google' })
   state.issue.mockReset().mockReturnValue('signed-location-proof')
@@ -60,10 +62,25 @@ describe('private location HTTP routes', () => {
     expect(state.resolve).toHaveBeenCalledWith(expect.objectContaining({ streetId: '066580100704335' }))
   })
 
-  it('rejects anonymous and admin access before contacting providers', async () => {
+  it('allows location lookup and resolution for an administrator with operations access', async () => {
+    state.role = 'admin'
+    expect((await GET(new Request('http://localhost/api/location/suggestions?kind=address&query=Pavon%202012'))).status).toBe(200)
+    const response = await POST(new Request('http://localhost/api/location/resolve', { method: 'POST', headers: { 'content-type': 'application/json', origin: 'http://localhost' }, body: JSON.stringify({ street: 'GRL BELGRANO', number: '123', city: 'Quilmes Oeste', province: 'Buenos Aires' }) }))
+    expect(response.status).toBe(200)
+    expect(state.admin).toHaveBeenCalledWith('operations', expect.objectContaining({ role: 'admin' }))
+  })
+
+  it.each(['forbidden', 'mfa_required'] as const)('preserves admin permission and MFA denial: %s', async code => {
+    state.role = 'admin'
+    state.admin.mockRejectedValue(new ApiError(code))
+    expect((await GET(new Request('http://localhost/api/location/suggestions?kind=address&query=Pavon%202012'))).status).toBe(403)
+    expect(state.suggest).not.toHaveBeenCalled()
+  })
+
+  it('rejects anonymous and unsupported roles before contacting providers', async () => {
     state.denied = true
     expect((await GET(new Request('http://localhost/api/location/suggestions?kind=province&query=buenos'))).status).toBe(401)
-    state.denied = false; state.role = 'admin'
+    state.denied = false; state.role = 'unknown'
     expect((await GET(new Request('http://localhost/api/location/suggestions?kind=province&query=buenos'))).status).toBe(403)
     expect(state.suggest).not.toHaveBeenCalled()
   })

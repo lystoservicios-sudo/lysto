@@ -4,10 +4,10 @@ import { useEffect, useRef, useState } from 'react'
 import type { LocationSuggestion, ResolvedAddress } from '@/lib/location/contracts'
 import { LocationCombobox } from './location-combobox'
 
-export function FullAddressCombobox({ id, label, name, value, onChange, onResolved, disabled = false, required = true, className = '', inputClassName = '', ariaInvalid, ariaDescribedBy, revisionKey }:
+export function FullAddressCombobox({ id, label, name, value, onChange, onResolved, onSelectionStart, disabled = false, required = true, className = '', inputClassName = '', ariaInvalid, ariaDescribedBy, revisionKey }:
   { id: string; label: string; name?: string; value: string; onChange: (value: string) => void;
     onResolved: (value: { value: string; proof: string; address: ResolvedAddress }) => void; disabled?: boolean;
-    required?: boolean; className?: string; inputClassName?: string; ariaInvalid?: boolean; ariaDescribedBy?: string; revisionKey?: string | number }) {
+    required?: boolean; className?: string; inputClassName?: string; ariaInvalid?: boolean; ariaDescribedBy?: string; revisionKey?: string | number; onSelectionStart?: () => void }) {
   const revision = useRef(0)
   const [resolutionError, setResolutionError] = useState('')
   const active = useRef<AbortController | null>(null)
@@ -21,6 +21,7 @@ export function FullAddressCombobox({ id, label, name, value, onChange, onResolv
   }
   const resolve = async (item: LocationSuggestion) => {
     if (!item.street || !item.number || !item.city || !item.province) return
+    onSelectionStart?.()
     const ticket = ++revision.current
     setResolutionError('')
     active.current?.abort()

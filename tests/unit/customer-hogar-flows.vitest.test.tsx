@@ -156,8 +156,8 @@ describe('Hogar complete functional flows', () => {
     beginCreation({ homes: [], addresses: [], equipment: [] }, 'house')
     await populateNewAddress(); click('Crear hogar')
     await waitFor(() => expect(screen.getByRole('alert')).toBeTruthy())
-    expect(screen.getByLabelText('Calle')).toHaveProperty('value', 'Corrientes')
-    expect(screen.getByLabelText('Calle').matches(':disabled')).toBe(true)
+    expect(screen.getByRole('combobox', { name: 'Dirección' })).toHaveProperty('value', 'Corrientes 456, Buenos Aires, Buenos Aires')
+    expect(screen.getByRole('combobox', { name: 'Dirección' }).matches(':disabled')).toBe(true)
     click('Reintentar creación')
     await waitFor(() => expect(screen.getByLabelText('Hogar actual')).toHaveProperty('value', ids.newHome))
     expect(request.mock.calls.map(([path]) => path)).toEqual(['/api/customer/homes', '/api/customer/homes'])
@@ -168,7 +168,7 @@ describe('Hogar complete functional flows', () => {
   it('keeps incomplete new addresses local and explains the missing fields', () => {
     beginCreation({ homes: [], addresses: [], equipment: [] })
     fireEvent.submit(screen.getByLabelText('Nombre del hogar').closest('form')!)
-    expect(screen.getByRole('alert').textContent).toContain('Completá calle, número, ciudad y provincia')
+    expect(screen.getByRole('alert').textContent).toContain('Elegí una dirección de las opciones')
     expect(request).not.toHaveBeenCalled()
   })
 

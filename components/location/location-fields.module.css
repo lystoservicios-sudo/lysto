@@ -9,3 +9,4 @@
 @keyframes location-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .busy { animation: none; border-color: #2563eb; } }
 
+.fullWidth { grid-column: 1 / -1; min-width: 0; }
