@@ -4,6 +4,7 @@ import { AirConditioningWizard } from '@/features/service-request/air-conditioni
 import type { CustomerHomesSnapshot } from '@/lib/customer-homes/contracts'
 import { calculateServiceQuote, defaultQuotePolicy } from '@/lib/pricing/service-quote'
 import { storePendingPayment, storeRequestPhotos } from '@/features/service-request/request-flow-client'
+import { selectUnitAddress, withLocationProvider } from './location-provider-fixture'
 
 const actor = '00000000-0000-4000-8000-000000000001'
 const addressId = '00000000-0000-4000-8000-000000000002'
@@ -250,19 +251,20 @@ describe('Pedir approved contextual screens', () => {
     persisted.equipment = []
     persisted.homes[0] = { ...persisted.homes[0], name: 'Oficina nueva', kind: 'office', floors: [{ id: floorId, name: 'Planta principal', order: 0, rooms: [] }], placements: [] }
     const submitted: Record<string, unknown>[] = []
-    vi.stubGlobal('fetch', vi.fn(async (_input: RequestInfo | URL, options?: RequestInit) => {
+    vi.stubGlobal('fetch', withLocationProvider(vi.fn(async (_input: RequestInfo | URL, options?: RequestInit) => {
       if (options?.method === 'POST') { submitted.push(JSON.parse(options.body as string)); return new Response(JSON.stringify({ home: persisted.homes[0], address: persisted.addresses[0] }), { status: 201 }) }
       return new Response(JSON.stringify(persisted), { status: 200 })
-    }))
+    })))
     mount({ homes: [], addresses: [], equipment: [] })
     fireEvent.click(screen.getByRole('radio', { name: /No enfría/ })); next()
     fireEvent.click(screen.getByRole('button', { name: 'Añadir hogar' }))
     fireEvent.change(screen.getByLabelText('Nombre del hogar'), { target: { value: 'Oficina nueva' } })
     fireEvent.change(screen.getByLabelText('Tipo de lugar'), { target: { value: 'office' } })
-    for (const [label, value] of [['Calle', 'San Martín'], ['Número', '456'], ['Ciudad', 'CABA'], ['Provincia', 'Buenos Aires']]) fireEvent.change(screen.getByLabelText(label), { target: { value } })
+    await selectUnitAddress()
     fireEvent.click(screen.getByRole('button', { name: 'Guardar hogar' }))
     expect(await screen.findByRole('option', { name: 'Oficina nueva' })).toBeTruthy()
     expect(submitted).toHaveLength(1)
+    expect(submitted[0].newAddress).toMatchObject({ street: 'Corrientes', number: '456', city: 'Buenos Aires', province: 'Buenos Aires', locationProof: 'unit-location-proof' })
     expect(submitted[0].floors).toEqual([expect.objectContaining({ rooms: [] })])
     expect(submitted[0].placements).toEqual([])
     expect((screen.getByRole('button', { name: 'Continuar con los detalles' }) as HTMLButtonElement).disabled).toBe(true)
@@ -277,14 +279,14 @@ describe('Pedir approved contextual screens', () => {
     expect(screen.queryByText('Aire verificado.jpg')).toBeNull()
   })
   it('keeps an acknowledged home creation pending if its refresh subsequently loses authorization', async () => {
-    vi.stubGlobal('fetch', vi.fn(async (_input: RequestInfo | URL, options?: RequestInit) => options?.method === 'POST'
+    vi.stubGlobal('fetch', withLocationProvider(vi.fn(async (_input: RequestInfo | URL, options?: RequestInit) => options?.method === 'POST'
       ? new Response(JSON.stringify({ home: requestSnapshot().homes[0] }), { status: 201 })
-      : new Response('{}', { status: 403 })))
+      : new Response('{}', { status: 403 }))))
     mount({ homes: [], addresses: [], equipment: [] })
     fireEvent.click(screen.getByRole('radio', { name: /No enfría/ })); next()
     fireEvent.click(screen.getByRole('button', { name: 'Añadir hogar' }))
     fireEvent.change(screen.getByLabelText('Nombre del hogar'), { target: { value: 'Casa' } })
-    for (const [label, value] of [['Calle', 'San Martín'], ['Número', '456'], ['Ciudad', 'CABA'], ['Provincia', 'Buenos Aires']]) fireEvent.change(screen.getByLabelText(label), { target: { value } })
+    await selectUnitAddress()
     fireEvent.click(screen.getByRole('button', { name: 'Guardar hogar' }))
     expect(await screen.findByRole('alert')).toBeTruthy()
     expect(screen.getByText('Guardado pendiente de confirmar')).toBeTruthy()

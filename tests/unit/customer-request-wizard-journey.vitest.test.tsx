@@ -2,9 +2,10 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AirConditioningWizard } from '@/features/service-request/air-conditioning-wizard'
 import { readPendingPayment } from '@/features/service-request/request-flow-client'
-import { addHomeEquipmentSchema, createHomeSchema, saveHomeSchema, type CustomerHomesSnapshot } from '@/lib/customer-homes/contracts'
+import { addHomeEquipmentSchema, createHomeMutationSchema, saveHomeSchema, type CustomerHomesSnapshot } from '@/lib/customer-homes/contracts'
 import { money } from '@/lib/pricing/service-quote'
 import { journeyActor, journeyIds as ids, journeyNow, journeyService, journeySnapshot } from '../fixtures/pedir-journey'
+import { selectUnitAddress, withLocationProvider } from './location-provider-fixture'
 
 const boundary = vi.hoisted(() => ({ service: null as unknown as ReturnType<typeof journeyService>['service'], actor: null as unknown as typeof journeyActor }))
 vi.mock('@/lib/customer-requests/service', async importActual => {
@@ -48,7 +49,7 @@ describe('Pedir seven-step component journey with the real quote/preparation ser
       if (key === 'location') return { ...nativeWindow.location, assign }
       return Reflect.get(target, key, target)
     } }))
-    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+    vi.stubGlobal('fetch', withLocationProvider(vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = new URL(String(input), 'https://lysto.test'), method = init?.method ?? 'GET'
       expect(url.origin).toBe('https://lysto.test')
       const body = init?.body ? JSON.parse(String(init.body)) : undefined
@@ -57,12 +58,15 @@ describe('Pedir seven-step component journey with the real quote/preparation ser
       const request = new Request(url, { ...init, headers: { ...Object.fromEntries(new Headers(init?.headers)), Origin: url.origin } })
       // Inline inventory uses actual form/client schemas. Only its external persistence is a fixture.
       if (url.pathname === '/api/customer/homes' && method === 'POST') {
-        const parsed = createHomeSchema.parse(body)
-        expect(parsed.addressId).toBeNull(); expect(parsed.newAddress).toBeDefined()
+        const parsed = createHomeMutationSchema.parse(body)
+        expect(parsed.addressId).toBeNull()
+        expect(parsed.newAddress).toMatchObject({ street: 'Corrientes', number: '456', city: 'Buenos Aires', province: 'Buenos Aires', locationProof: 'unit-location-proof' })
         expect(parsed.floors).toHaveLength(1); expect(parsed.floors[0].rooms).toEqual([]); expect(parsed.placements).toEqual([])
         const { idempotencyKey, newAddress, addressId, ...configuration } = parsed
         void idempotencyKey; void addressId
-        const address = { ...newAddress!, id: ids.address, version: 1, createdAt: journeyNow.toISOString(), archivedAt: null }
+        const { locationProof, ...confirmedAddress } = newAddress!
+        expect(locationProof).toBe('unit-location-proof')
+        const address = { ...confirmedAddress, id: ids.address, version: 1, createdAt: journeyNow.toISOString(), archivedAt: null }
         const home = { ...configuration, id: ids.home, addressId: ids.address, version: 1 }
         inventory = { homes: [home], addresses: [address], equipment: [] }
         return Response.json({ home, address }, { status: 201 })
@@ -105,7 +109,7 @@ describe('Pedir seven-step component journey with the real quote/preparation ser
         return Response.json({ checkouts: [{ id: ids.checkout, job_id: ids.job, extra_id: null, status: canonicalStatus }], role: 'customer' })
       }
       throw new Error(`Unexpected frontend request: ${method} ${url.pathname}`)
-    }))
+    })))
     render(<AirConditioningWizard customerId={ids.customer} initialData={inventory} />)
     const next = () => fireEvent.click(screen.getByRole('button', { name: /^Continuar/ }))
     expect(screen.getByRole('heading', { name: branch.inline ? 'Otro aire o equipo nuevo' : 'Aire del living' })).toBeTruthy()
@@ -115,8 +119,7 @@ describe('Pedir seven-step component journey with the real quote/preparation ser
       fireEvent.click(screen.getByRole('button', { name: 'Añadir hogar' }))
       fireEvent.change(screen.getByLabelText('Nombre del hogar'), { target: { value: 'Mi casa' } })
       fireEvent.change(screen.getByLabelText('Tipo de lugar'), { target: { value: 'house' } })
-      for (const [label, value] of [['Calle', 'Visita'], ['Número', '20'], ['Ciudad', 'CABA'], ['Provincia', 'CABA']])
-        fireEvent.change(screen.getByLabelText(label), { target: { value } })
+      await selectUnitAddress()
       fireEvent.click(screen.getByRole('button', { name: 'Guardar hogar' }))
       expect(await screen.findByRole('option', { name: 'Mi casa' })).toBeTruthy()
       fireEvent.click(screen.getByRole('button', { name: 'Añadir ambiente' }))
