@@ -15,15 +15,15 @@ const censusAddress = {
   provincia: { id: '06', nombre: 'Buenos Aires' }, ubicacion: { lat: null, lon: null }
 }
 
-it('accepts the observed GeoRef census locality when the finer locality is null without losing the other suggestions', async () => {
+it('accepts the observed GeoRef census locality without confusing a different street with the query', async () => {
   const fetcher = vi.fn(() => response({ cantidad: 2, total: 2, inicio: 0, parametros: {}, direcciones: [
     censusAddress,
     { ...censusAddress, localidad: { id: '0680501005', nombre: 'El Talar' }, calle: { ...censusAddress.calle, id: '068050100504995', nombre: 'PAVON' } }
   ] })) as unknown as typeof fetch
-  const suggestions = await suggestLocations({ kind: 'address', query: 'Pavon 2012' }, fetcher)
-  expect(suggestions).toHaveLength(2)
+  const suggestions = await suggestLocations({ kind: 'address', query: 'Ernesto Pavoni 2012' }, fetcher)
+  expect(suggestions).toHaveLength(1)
   expect(suggestions.find(item => item.cityId === '06665010')).toMatchObject({ city: 'El Paraíso', latitude: null, longitude: null })
-  expect(suggestions.find(item => item.cityId === '0680501005')).toMatchObject({ city: 'El Talar' })
+  expect(suggestions.some(item => item.street === 'PAVON')).toBe(false)
   expect((await georefAddresses({ kind: 'address', query: '2012', street: 'ERNESTO PAVONI', city: 'El Paraíso', cityId: '06665010', province: 'Buenos Aires', provinceId: '06' }, fetcher))[0].localidad)
     .toEqual({ id: '06665010', nombre: 'El Paraíso' })
 })
@@ -34,10 +34,11 @@ it('uses a comma-separated locality to narrow an unscoped full address search', 
   const url = new URL(String(vi.mocked(fetcher).mock.calls[0][0]))
   expect(url.searchParams.get('direccion')).toBe('Calle 23 5871')
   expect(url.searchParams.get('localidad')).toBe('Berazategui')
-  expect(url.searchParams.has('provincia')).toBe(false)
+  expect(url.searchParams.get('provincia')).toBe('02')
+  expect(new Set(vi.mocked(fetcher).mock.calls.map(([request]) => new URL(String(request)).searchParams.get('provincia')))).toEqual(new Set(['02', '06']))
 })
 
-it('offers national address alternatives beyond the first eight with a distinct locality and province', async () => {
+it('offers covered exact street alternatives with a distinct locality and province', async () => {
   const entries = Array.from({ length: 10 }, (_, index) => ({ ...censusAddress,
     calle: { ...censusAddress.calle, id: `fuzzy-${index}` },
     nomenclatura: `ERNESTO PAVONI 2012, Localidad ${index}, Buenos Aires`
@@ -52,15 +53,15 @@ it('offers national address alternatives beyond the first eight with a distinct 
     ...entries, caba, cordoba, { ...cordoba, calle: { ...cordoba.calle, id: 'foreign' }, provincia: { id: 'ES', nombre: 'España' } }
   ] })) as unknown as typeof fetch
   const suggestions = await suggestLocations({ kind: 'address', query: 'Pavón 2012' }, fetcher)
-  expect(suggestions).toHaveLength(12)
+  expect(suggestions).toHaveLength(1)
   expect(suggestions[0]).toMatchObject({ streetId: caba.calle.id, cityId: caba.localidad.id,
     label: 'AV PAVON 2012', secondary: 'San Cristóbal · Comuna 3 · CABA · Argentina' })
-  expect(suggestions[1]).toMatchObject({ label: 'PAVON 2012', secondary: 'Toledo · Santa María · Córdoba · Argentina' })
-  expect(suggestions.every(item => item.provinceId !== 'ES')).toBe(true)
+  expect(suggestions.every(item => ['02', '06'].includes(item.provinceId!))).toBe(true)
+  expect(suggestions.some(item => item.street === 'ERNESTO PAVONI')).toBe(false)
   const url = new URL(String(vi.mocked(fetcher).mock.calls[0][0]))
   expect(url.origin).toBe('https://apis.datos.gob.ar')
   expect(url.searchParams.get('max')).toBe('100')
-  expect(url.searchParams.has('provincia')).toBe(false)
+  expect(url.searchParams.get('provincia')).toBe('02')
 })
 
 it('does not turn invalid upstream data into a user validation error', async () => {

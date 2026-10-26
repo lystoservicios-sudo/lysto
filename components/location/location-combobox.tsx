@@ -10,11 +10,11 @@ type Context = Partial<Pick<LocationSuggestion, 'provinceId' | 'province' | 'cit
 
 export function LocationCombobox({ id, label, name, value, kind, context, onChange, onSelect, disabled = false,
   required = false, className = '', inputClassName = '', minChars = kind === 'address' ? 1 : 2, placeholder,
-  ariaInvalid, ariaDescribedBy }:
+  ariaInvalid, ariaDescribedBy, searchEnabled = true }:
   { id: string; label: string; name?: string; value: string; kind: LocationKind; context?: Context;
     onChange: (value: string) => void; onSelect: (item: LocationSuggestion) => void; disabled?: boolean;
     required?: boolean; className?: string; inputClassName?: string; minChars?: number; placeholder?: string;
-    ariaInvalid?: boolean; ariaDescribedBy?: string }) {
+    ariaInvalid?: boolean; ariaDescribedBy?: string; searchEnabled?: boolean }) {
   const [items, setItems] = useState<LocationSuggestion[]>([])
   const [busy, setBusy] = useState(false)
   const [attempted, setAttempted] = useState(false)
@@ -22,7 +22,7 @@ export function LocationCombobox({ id, label, name, value, kind, context, onChan
   const query = value.trim()
   const contextKey = JSON.stringify(context ?? {})
   useEffect(() => {
-    if (disabled || query.length < minChars) { setItems([]); setBusy(false); setAttempted(false); setFailed(false); return }
+    if (disabled || !searchEnabled || query.length < minChars) { setItems([]); setBusy(false); setAttempted(false); setFailed(false); return }
     const controller = new AbortController()
     setItems([]); setBusy(false); setAttempted(false); setFailed(false)
     const timer = window.setTimeout(async () => {
@@ -42,7 +42,7 @@ export function LocationCombobox({ id, label, name, value, kind, context, onChan
     return () => { window.clearTimeout(timer); controller.abort() }
     // contextKey is the stable dependency; using the object would restart on every render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [disabled, query, kind, minChars, contextKey])
+  }, [disabled, searchEnabled, query, kind, minChars, contextKey])
   const stableItems = useMemo(() => items, [items])
   const combo = useCombobox({
     id, items: stableItems, inputValue: value, itemToString: (item) => item?.label ?? '',

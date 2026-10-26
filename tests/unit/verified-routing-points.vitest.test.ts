@@ -50,3 +50,10 @@ it('does not trust malformed stored coordinates', async () => {
   await geocodeSavedRoutingAddress('Pavon 2012, San Cristóbal, CABA','key')
   expect(state.geocode).toHaveBeenCalledTimes(1)
 })
+it('never treats an unverified manual cache record as a routing point', async () => {
+  state.rpc.mockResolvedValue({ data: { ...point, latitude: null, longitude: null, precision: 'unverified', coordinateSource: 'manual' }, error: null })
+  state.geocode.mockResolvedValue(point)
+  await expect(geocodeSavedRoutingAddress('Pavon 2012, San Cristóbal, CABA', 'key')).resolves.toEqual(point)
+  expect(state.geocode).toHaveBeenCalledTimes(1)
+  expect(state.rpc).toHaveBeenLastCalledWith('store_verified_routing_point', expect.objectContaining({ p_point: point }))
+})

@@ -16,8 +16,10 @@ export async function POST(request: Request) {
   return locationRoute(request, async () => {
     const { proof, ...expected } = renewalSchema.parse(await readPrivateJsonBody(request))
     const previous = readAuthenticLocationProof(proof, expected)
-    const address = await resolveArgentineAddress({ ...expected, provinceId: previous.provinceId, cityId: previous.cityId, streetId: previous.streetId })
-    await rememberResolvedAddress(address)
+    const address = previous.source === 'manual' ? previous : await resolveArgentineAddress({
+      ...expected, provinceId: previous.provinceId, cityId: previous.cityId, streetId: previous.streetId
+    })
+    if (address.source !== 'manual') await rememberResolvedAddress(address)
     return privateJson({ address, proof: issueLocationProof(address) })
   })
 }

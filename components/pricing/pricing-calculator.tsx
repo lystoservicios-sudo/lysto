@@ -149,7 +149,7 @@ export function PricingCalculator({
     )
       return
     if (!locationProof) {
-      setNotice('Elegí una dirección de las opciones para confirmar la ubicación.')
+      setNotice('Elegí una sugerencia o ingresá la dirección manualmente para continuar.')
       return
     }
     setBusy(true)

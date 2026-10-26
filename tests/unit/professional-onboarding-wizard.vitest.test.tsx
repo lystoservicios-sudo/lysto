@@ -62,7 +62,7 @@ function fillPersonal() {
   for (const [label, value] of [['Teléfono', personal.phone], ['DNI', personal.dni], ['CUIL', personal.cuil], ['Fecha de nacimiento', personal.birthdate], ['Dirección', personal.address]]) fireEvent.change(screen.getByLabelText(label), { target: { value } })
 }
 beforeEach(() => { mocks.account = { configured: true, linked: false }; mocks.refresh.mockResolvedValue(mocks.account); vi.spyOn(window, 'scrollTo').mockImplementation(() => {}) })
-afterEach(() => { cleanup(); vi.restoreAllMocks(); mocks.request.mockReset(); mocks.replace.mockReset() })
+afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); mocks.request.mockReset(); mocks.replace.mockReset() })
 
 it('shows seven focused steps and saves personal data and address with successive versions', async () => {
   transport(initial)
@@ -210,6 +210,55 @@ it('does not overwrite new edits when a background context read finishes late', 
   fireEvent.change(screen.getByLabelText('Teléfono'), { target: { value: '1123456789' } })
   await act(async () => resolve(initial))
   expect((screen.getByLabelText('Teléfono') as HTMLInputElement).value).toBe('1123456789')
+})
+it('keeps the refreshed professional address when a late manual address confirmation arrives', async () => {
+  const context = { ...initial, application: { ...application, address: 'Primera 123, Quilmes, Buenos Aires, Argentina' } }
+  const refreshed = { ...context, application: { ...context.application, version: 2, address: 'Actualizada 456, Quilmes, Buenos Aires, Argentina' } }
+  const manual = { street: 'Dirección manual', number: 'S/N', city: 'Quilmes', province: 'Buenos Aires',
+    provinceId: '06', formattedAddress: 'Dirección manual S/N, Quilmes, Buenos Aires, Argentina',
+    source: 'manual', precision: 'unverified', latitude: null, longitude: null }
+  let finish!: (response: Response) => void
+  vi.stubGlobal('fetch', vi.fn((url: RequestInfo | URL) => String(url).endsWith('/resolve')
+    ? new Promise<Response>(resolve => { finish = resolve })
+    : Promise.resolve(Response.json({ suggestions: [] }))))
+  mocks.request.mockResolvedValue(refreshed)
+  render(<ConnectedProfessionalOnboarding initial={context} />)
+  fireEvent.click(screen.getByRole('button', { name: 'Mi dirección no aparece' }))
+  fireEvent.change(screen.getByRole('textbox', { name: 'Calle' }), { target: { value: manual.street } })
+  fireEvent.change(screen.getByRole('textbox', { name: 'Altura' }), { target: { value: manual.number } })
+  fireEvent.click(screen.getByRole('button', { name: 'Usar esta dirección' }))
+  await waitFor(() => expect(finish).toBeTypeOf('function'))
+
+  fireEvent.focus(window)
+  await waitFor(() => expect(screen.getByRole('combobox', { name: 'Dirección' })).toHaveProperty('value', refreshed.application.address))
+  expect(mocks.request).toHaveBeenCalledWith('/api/professional/onboarding/context')
+
+  await act(async () => { finish(Response.json({ address: manual, proof: 'stale-manual-receipt' })); await Promise.resolve() })
+  expect(screen.getByRole('combobox', { name: 'Dirección' })).toHaveProperty('value', refreshed.application.address)
+  expect(screen.queryByText(/Dirección ingresada manualmente/)).toBeNull()
+})
+it('saves a manually entered professional address with its receipt before advancing', async () => {
+  const context = { ...initial, application: { ...personal, address: '' } }
+  const manual = { street: 'Pasaje de ejemplo', number: 'S/N', city: 'Quilmes', province: 'Buenos Aires',
+    provinceId: '06', formattedAddress: 'Pasaje de ejemplo S/N, Quilmes, Buenos Aires, Argentina',
+    source: 'manual', precision: 'unverified', latitude: null, longitude: null }
+  const proof = 'manual-receipt-for-professional-save'
+  transport(context)
+  vi.stubGlobal('fetch', vi.fn(async (url: RequestInfo | URL) => String(url).endsWith('/resolve')
+    ? Response.json({ address: manual, proof }) : Response.json({ suggestions: [] })))
+  render(<ConnectedProfessionalOnboarding initial={context} />)
+  fireEvent.click(screen.getByRole('button', { name: 'Mi dirección no aparece' }))
+  for (const [label, value] of [['Calle', manual.street], ['Altura', manual.number], ['Localidad', manual.city], ['Provincia', manual.province]])
+    fireEvent.change(screen.getByLabelText(label), { target: { value } })
+  fireEvent.click(screen.getByRole('button', { name: 'Usar esta dirección' }))
+  await waitFor(() => expect(screen.getByRole('combobox', { name: 'Dirección' })).toHaveProperty('value', manual.formattedAddress))
+  expect(screen.getByText(/Dirección ingresada manualmente/)).toBeTruthy()
+  fireEvent.click(screen.getByRole('button', { name: 'Guardar y continuar' }))
+  await screen.findByRole('heading', { name: 'Tu oficio' })
+  expect(mocks.request).toHaveBeenCalledWith('/api/professional/onboarding/address', 'POST', {
+    address: manual.formattedAddress, locationProof: proof, expectedVersion: 1
+  })
+  expect(mocks.request.mock.calls.filter(([url]) => url === '/api/professional/onboarding/address')).toHaveLength(1)
 })
 it('lets an approved technician complete a missing avatar without unlocking application edits', () => {
   const context = complete(); context.application.status = 'approved'; context.avatarUrl = null; context.readyForNewWork = false; context.readinessReasons = ['foto']; mocks.account.linked = true

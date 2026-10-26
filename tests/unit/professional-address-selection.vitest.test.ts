@@ -18,5 +18,5 @@ it('explains a typed but unconfirmed address before attempting persistence', asy
 it('shows the address selection instruction instead of a generic validation error', async () => {
   vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ code: 'location_selection_required' }), { status: 400 })))
   await expect(privateRequest('/api/professional/onboarding/address', 'POST', {}))
-    .rejects.toMatchObject({ status: 400, message: expect.stringContaining('Seleccioná una dirección de la lista') })
+    .rejects.toMatchObject({ status: 400, message: expect.stringContaining('Elegí una sugerencia') })
 })

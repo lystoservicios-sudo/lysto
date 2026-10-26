@@ -3,20 +3,33 @@
 import { useEffect, useRef, useState } from 'react'
 import type { LocationSuggestion, ResolvedAddress } from '@/lib/location/contracts'
 import { LocationCombobox } from './location-combobox'
+import { ManualAddressEntry } from './manual-address-entry'
+import styles from './location-fields.module.css'
 
-export function FullAddressCombobox({ id, label, name, value, onChange, onResolved, onSelectionStart, disabled = false, required = true, className = '', inputClassName = '', ariaInvalid, ariaDescribedBy, revisionKey }:
+const sameDisplayedAddress = (a: string, b: string) => {
+  const normalized = (text: string) => text.trim().replace(/,\s*Argentina\s*$/i, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ')
+  return normalized(a) === normalized(b)
+}
+
+export function FullAddressCombobox({ id, label, name, value, onChange, onResolved, onSelectionStart, disabled = false, required = true, className = '', inputClassName = '', ariaInvalid, ariaDescribedBy, revisionKey, context }:
   { id: string; label: string; name?: string; value: string; onChange: (value: string) => void;
     onResolved: (value: { value: string; proof: string; address: ResolvedAddress }) => void; disabled?: boolean;
-    required?: boolean; className?: string; inputClassName?: string; ariaInvalid?: boolean; ariaDescribedBy?: string; revisionKey?: string | number; onSelectionStart?: () => void }) {
+    required?: boolean; className?: string; inputClassName?: string; ariaInvalid?: boolean; ariaDescribedBy?: string; revisionKey?: string | number; onSelectionStart?: () => void;
+    context?: Partial<Pick<LocationSuggestion, 'city' | 'cityId' | 'province' | 'provinceId'>> }) {
   const revision = useRef(0)
   const [resolutionError, setResolutionError] = useState('')
+  const [manualOpen, setManualOpen] = useState(false)
+  const [manualConfirmed, setManualConfirmed] = useState(false)
+  const manualValue = useRef('')
   const active = useRef<AbortController | null>(null)
   useEffect(() => () => active.current?.abort(), [])
   useEffect(() => { revision.current += 1; active.current?.abort(); setResolutionError('') }, [revisionKey])
+  useEffect(() => { if (manualValue.current && !sameDisplayedAddress(value, manualValue.current)) setManualConfirmed(false) }, [value])
   const change = (next: string) => {
     revision.current += 1
     active.current?.abort()
     setResolutionError('')
+    setManualConfirmed(false)
     onChange(next)
   }
   const resolve = async (item: LocationSuggestion) => {
@@ -40,11 +53,19 @@ export function FullAddressCombobox({ id, label, name, value, onChange, onResolv
       onResolved({ value: payload.address.formattedAddress, address: payload.address, proof: payload.proof })
     } catch {
       if (!controller.signal.aborted && ticket === revision.current)
-        setResolutionError('No pudimos confirmar la dirección. Volvé a elegir una opción para reintentar.')
+        setResolutionError('No pudimos confirmar la dirección. Podés elegir otra opción o ingresarla manualmente.')
     }
   }
-  return <><LocationCombobox id={id} name={name} label={label} value={value} kind="address" minChars={5} disabled={disabled} required={required} placeholder="Escribí calle y número"
-    className={className} inputClassName={inputClassName} ariaInvalid={Boolean(resolutionError) || ariaInvalid} ariaDescribedBy={[ariaDescribedBy, resolutionError ? `${id}-resolution-error` : undefined].filter(Boolean).join(' ') || undefined}
-    onChange={change} onSelect={(item) => void resolve(item)} />{resolutionError && <p id={`${id}-resolution-error`} role="alert">{resolutionError}</p>}</>
+  return <><LocationCombobox id={id} name={name} label={label} value={value} kind="address" minChars={5} disabled={disabled || manualOpen} context={context} searchEnabled={!manualConfirmed} required={required} placeholder="Escribí calle y número"
+    className={className} inputClassName={inputClassName} ariaInvalid={Boolean(resolutionError) || ariaInvalid} ariaDescribedBy={[ariaDescribedBy, !manualOpen && !manualConfirmed ? `${id}-search-hint` : undefined, resolutionError ? `${id}-resolution-error` : undefined].filter(Boolean).join(' ') || undefined}
+    onChange={change} onSelect={(item) => void resolve(item)} />
+    {!manualOpen && !manualConfirmed && <p id={`${id}-search-hint`} className={styles.status}>Agregá la localidad para distinguir calles con el mismo nombre.</p>}
+    {!manualOpen && <button type="button" disabled={disabled} className={styles.manualToggle} onClick={() => { change(value); onSelectionStart?.(); setManualOpen(true) }}>Mi dirección no aparece</button>}
+    {manualOpen && <ManualAddressEntry key={revisionKey} id={id} value={value} context={context} disabled={disabled} onStart={() => onSelectionStart?.()}
+      onCancel={() => { revision.current += 1; active.current?.abort(); setManualOpen(false); setResolutionError('') }}
+      onResolved={result => { manualValue.current = result.value; setManualOpen(false); setManualConfirmed(true); onResolved(result) }} />}
+    {resolutionError && <p id={`${id}-resolution-error`} role="alert">{resolutionError}</p>}
+    {manualConfirmed && <p role="status" className={styles.status}>Dirección ingresada manualmente. Verificaremos la ubicación antes de calcular el traslado.</p>}
+  </>
 }
 

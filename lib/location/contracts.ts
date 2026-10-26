@@ -50,7 +50,20 @@ export const addressSelectionSchema = z.object({
 }).strict()
 export type AddressSelection = z.infer<typeof addressSelectionSchema>
 
-export const resolvedAddressSchema = addressSelectionSchema.extend({
+const manualAddressFieldsSchema = addressSelectionSchema.pick({ street: true, number: true, city: true, province: true }).extend({
+  street: z.string().trim().min(1).max(150),
+  number: z.string().trim().min(1).max(30),
+  province: z.enum(['CABA', 'Buenos Aires'])
+})
+export const manualAddressSelectionSchema = manualAddressFieldsSchema.extend({ mode: z.literal('manual') }).strict()
+  .superRefine((value, context) => {
+    if (`${value.street} ${value.number}, ${value.city}, ${value.province}, Argentina`.length > 200)
+      context.addIssue({ code: 'custom', path: ['street'], message: 'manual_address_too_long' })
+  })
+export const addressResolutionInputSchema = z.union([addressSelectionSchema, manualAddressSelectionSchema])
+export type AddressResolutionInput = z.infer<typeof addressResolutionInputSchema>
+
+const verifiedResolvedAddressSchema = addressSelectionSchema.extend({
   provinceId: z.string().min(1).max(20),
   cityId: z.string().min(1).max(30),
   streetId: z.string().min(1).max(40),
@@ -60,5 +73,17 @@ export const resolvedAddressSchema = addressSelectionSchema.extend({
   precision: z.enum(['rooftop', 'range_interpolated', 'geometric_center']),
   source: z.enum(['georef_google', 'georef_openrouteservice', 'georef'])
 }).strict()
+const manualResolvedAddressSchema = manualAddressFieldsSchema.extend({
+  provinceId: z.enum(['02', '06']),
+  cityId: z.string().min(1).max(30).optional(),
+  streetId: z.string().min(1).max(40).optional(),
+  formattedAddress: z.string().min(1).max(200),
+  latitude: z.null(), longitude: z.null(),
+  precision: z.literal('unverified'), source: z.literal('manual')
+}).strict().superRefine((value, context) => {
+  if (value.provinceId !== (value.province === 'CABA' ? '02' : '06'))
+    context.addIssue({ code: 'custom', path: ['provinceId'], message: 'province_mismatch' })
+})
+export const resolvedAddressSchema = z.discriminatedUnion('source', [verifiedResolvedAddressSchema, manualResolvedAddressSchema])
 export type ResolvedAddress = z.infer<typeof resolvedAddressSchema>
 

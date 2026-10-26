@@ -259,6 +259,7 @@ function Registration({ initial }: { initial: OnboardingContext }) {
   function addressField() {
     const id = 'registration-address'
     return <><FullAddressCombobox id={id} label="Dirección" value={draft.address ?? ''} disabled={disabled}
+      revisionKey={`${context.application.professionalId}:${context.application.version}`}
       className={styles.field}
       ariaInvalid={!!errors.address} ariaDescribedBy={`${id}-hint${errors.address ? ` ${id}-error` : ''}`}
       onChange={(value) => { setLocationProof(''); update('address', value) }}

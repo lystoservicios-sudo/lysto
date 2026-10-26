@@ -168,7 +168,7 @@ describe('Hogar complete functional flows', () => {
   it('keeps incomplete new addresses local and explains the missing fields', () => {
     beginCreation({ homes: [], addresses: [], equipment: [] })
     fireEvent.submit(screen.getByLabelText('Nombre del hogar').closest('form')!)
-    expect(screen.getByRole('alert').textContent).toContain('Elegí una dirección de las opciones')
+    expect(screen.getByRole('alert').textContent).toContain('Elegí una sugerencia o ingresá la dirección manualmente')
     expect(request).not.toHaveBeenCalled()
   })
 

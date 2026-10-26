@@ -39,7 +39,7 @@ export function CompleteProfileForm({ missing, next, address = null }: { missing
   return <form action={action} className="auth-form" onSubmit={event => {
     if (needsLocation && !locationProof) {
       event.preventDefault()
-      setLocationError('Elegí una dirección de las opciones para confirmar la ubicación.')
+      setLocationError('Elegí una sugerencia o ingresá la dirección manualmente para continuar.')
     }
   }}><input type="hidden" name="next" value={next} />
     {missing.filter((key) => key !== 'property_type' && !geographic.has(key)).map((key) => <AuthInput key={key} name={key} {...fieldDetails[key as Exclude<CustomerField, 'property_type'>]} disabled={pending} />)}

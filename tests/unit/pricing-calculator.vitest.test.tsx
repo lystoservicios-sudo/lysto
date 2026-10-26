@@ -46,7 +46,7 @@ describe('pricing calculator gross split configuration', () => {
     fireEvent.change(screen.getByRole('combobox', { name: 'Dirección' }), { target: { value: 'Corrientes 456' } })
     fireEvent.click(screen.getByRole('button', { name: 'Calcular con datos del servidor' }))
     expect(writes).toHaveLength(0)
-    expect(screen.getByText('Elegí una dirección de las opciones para confirmar la ubicación.')).toBeTruthy()
+    expect(screen.getByText('Elegí una sugerencia o ingresá la dirección manualmente para continuar.')).toBeTruthy()
     await selectUnitAddress()
     fireEvent.change(screen.getByLabelText('Identificador del cliente (para guardar)'), { target: { value: '10000000-0000-4000-8000-000000000001' } })
     fireEvent.click(screen.getByRole('button', { name: 'Guardar presupuesto' }))

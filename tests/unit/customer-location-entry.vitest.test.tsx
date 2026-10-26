@@ -35,7 +35,7 @@ describe('customer location entry points', () => {
     fireEvent.change(screen.getByLabelText(/Nombre de la dirección/), { target: { value: 'Casa' } })
     fireEvent.change(screen.getByRole('combobox', { name: 'Dirección' }), { target: { value: 'Corrientes 1234' } })
     fireEvent.submit(container.querySelector('form')!)
-    expect(screen.getByRole('alert').textContent).toContain('Elegí una dirección de las opciones')
+    expect(screen.getByRole('alert').textContent).toContain('Elegí una sugerencia o ingresá la dirección manualmente')
   })
 
   it('preserves editing a saved address label without requiring another location lookup', async () => {
@@ -61,6 +61,6 @@ describe('customer location entry points', () => {
     fireEvent.change(screen.getByRole('combobox', { name: 'Dirección' }), { target: { value: 'Corrientes 1234' } })
     fireEvent.submit(container.querySelector('form')!)
     expect(save).not.toHaveBeenCalled()
-    expect(screen.getByRole('alert').textContent).toContain('Elegí una dirección de las opciones')
+    expect(screen.getByRole('alert').textContent).toContain('Elegí una sugerencia o ingresá la dirección manualmente')
   })
 })

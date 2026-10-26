@@ -19,12 +19,20 @@ export function ArgentineAddressFields({ value, onChange, onProofChange, idPrefi
   // Resolution is asynchronous; use the current callbacks to preserve auxiliary edits.
   const callbacks = useRef({ onChange, onProofChange })
   callbacks.current = { onChange, onProofChange }
+  const searchContext = useRef({ city: value.city, province: value.province })
+  const recordRevision = useRef(revisionKey)
+  if (recordRevision.current !== revisionKey) {
+    recordRevision.current = revisionKey
+    searchContext.current = { city: value.city, province: value.province }
+  }
+  if (value.number && value.city && value.province) searchContext.current = { city: value.city, province: value.province }
   const query = [[value.street, value.number].filter(Boolean).join(' '), value.city, value.province].filter(Boolean).join(', ')
   const locationRevision = JSON.stringify([revisionKey, value.street, value.number, value.city, value.province])
 
   return <div className={groupClassName}>
     <div className={styles.fullWidth}>
       <FullAddressCombobox id={`${idPrefix}-address`} label="Dirección" value={query}
+        context={searchContext.current}
         disabled={disabled} className={fieldClassName} inputClassName={inputClassName}
         ariaInvalid={ariaInvalid} ariaDescribedBy={ariaDescribedBy} revisionKey={locationRevision}
         onSelectionStart={() => callbacks.current.onProofChange?.('')}

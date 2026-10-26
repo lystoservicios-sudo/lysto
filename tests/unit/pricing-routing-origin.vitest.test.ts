@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
-import { defaultQuotePolicy } from '@/lib/pricing/service-quote'
+import { defaultQuotePolicy, type TravelEstimate } from '@/lib/pricing/service-quote'
 import { routingAddressKey } from '@/lib/location/verified-points'
 
 const boundary = vi.hoisted(() => ({ session: vi.fn(), policy: vi.fn(), rpc: vi.fn() }))
@@ -24,13 +24,14 @@ const originPoint = {
   latitude: -34.62658, longitude: -58.39343,
   province: 'CABA', precision: 'range_interpolated', coordinateSource: 'georef'
 }
-function request(city = 'Berazategui') {
+function request(city = 'Berazategui', number = '5871', manual?: { route: TravelEstimate; reason?: string }) {
   return new Request('https://lysto.test/api/pricing/quote', {
     method: 'POST', headers: { 'Content-Type': 'application/json', Origin: 'https://lysto.test' },
     body: JSON.stringify({ issue: 'mantenimiento', timeSince: 'days', urgency: 'flexible',
       propertyType: 'house', access: { hasParking: true }, equipment: { capacity: 3000, technology: 'conventional' },
       scenario: 'maintenance', materials: [], materialsConfirmed: true,
-      address: { street: 'CALLE 23', number: '5871', city, province: 'Buenos Aires' },
+      address: { street: 'CALLE 23', number, city, province: 'Buenos Aires' },
+      ...(manual ? { manualRoute: manual.route, ...(manual.reason ? { manualRouteReason: manual.reason } : {}) } : {}),
       preferredDate: '2026-10-28', timeWindow: '10:00 – 12:00', save: false })
   })
 }
@@ -68,6 +69,77 @@ it.each([undefined, '', '   '])('keeps an administrative calculation in review w
   const data = await response.json()
   expect(data).toMatchObject({ quoteId: null, routingNotice: expect.stringContaining('profesional asignado'),
     quote: { route: null, readyToOffer: false, reviewReasons: expect.arrayContaining(['travel_unverified']) } })
+  expect(fetcher).not.toHaveBeenCalled()
+  expect(boundary.rpc).not.toHaveBeenCalled()
+})
+
+it.each(['S/N', ' sin número ', 'km 12,5', '1234567', 'A'.repeat(30)])('keeps a textual house number in review without consulting routing providers (%s)', async number => {
+  vi.stubEnv('LYSTO_ROUTING_ORIGIN', origin)
+  const fetcher = vi.fn(async () => Response.json({ features: [] }))
+  vi.stubGlobal('fetch', fetcher)
+  const response = await POST(request('Berazategui', number))
+  expect(response.status).toBe(200)
+  expect(await response.json()).toMatchObject({
+    quoteId: null,
+    routingNotice: expect.stringMatching(/altura.*verificación/i),
+    quote: { route: null, readyToOffer: false, reviewReasons: expect.arrayContaining(['travel_unverified']) }
+  })
+  expect(fetcher).not.toHaveBeenCalled()
+  expect(boundary.rpc).not.toHaveBeenCalled()
+})
+
+it.each(['', '   ', 'A'.repeat(31)])('rejects an empty or oversized house number before routing (%s)', async number => {
+  vi.stubEnv('LYSTO_ROUTING_ORIGIN', origin)
+  const fetcher = vi.fn()
+  vi.stubGlobal('fetch', fetcher)
+  const response = await POST(request('Berazategui', number))
+  expect(response.status).toBe(400)
+  expect(await response.json()).toMatchObject({ code: 'invalid_input' })
+  expect(fetcher).not.toHaveBeenCalled()
+  expect(boundary.rpc).not.toHaveBeenCalled()
+})
+
+const manualRoute: TravelEstimate = {
+  source: 'manual', origin: 'Base verificada por operaciones', destination: 'CALLE 23 S/N, Berazategui',
+  province: 'Buenos Aires', outboundKm: 30, returnKm: 32, outboundMinutes: 45, returnMinutes: 50,
+  tolls: 0, tollsVerified: true, measuredAt: now.toISOString()
+}
+const manualReason = 'Recorrido y tiempos verificados por operaciones para la dirección sin altura.'
+
+it('preserves an authorized administrative manual route and its financial review for a textual house number', async () => {
+  vi.stubEnv('LYSTO_ROUTING_ORIGIN', origin)
+  const fetcher = vi.fn()
+  vi.stubGlobal('fetch', fetcher)
+  const response = await POST(request('Berazategui', 'S/N', { route: manualRoute, reason: manualReason }))
+  expect(response.status).toBe(200)
+  expect(await response.json()).toMatchObject({ routingNotice: null,
+    quote: { route: manualRoute, readyToOffer: false, reviewReasons: expect.arrayContaining(['travel_unverified']) } })
+  expect(fetcher).not.toHaveBeenCalled()
+  expect(boundary.rpc).not.toHaveBeenCalled()
+})
+
+it('still requires an explanation for an administrative manual route', async () => {
+  const response = await POST(request('Berazategui', 'S/N', { route: manualRoute }))
+  expect(response.status).toBe(400)
+  expect(await response.json()).toMatchObject({ code: 'invalid_input' })
+})
+
+it.each([
+  { role: 'customer', assuranceLevel: 'aal1', permissions: [] },
+  { role: 'admin', assuranceLevel: 'aal2', permissions: ['finance'] }
+])('does not let a $role without operations authorization use a manual route', async authority => {
+  boundary.session.mockResolvedValue({ ...authority,
+    profileId: '00000000-0000-4000-8000-000000000001', client: {} })
+  const fetcher = vi.fn()
+  vi.stubGlobal('fetch', fetcher)
+  const input = await request('Berazategui', 'S/N', { route: manualRoute, reason: manualReason }).json()
+  delete input.scenario
+  input.materialsConfirmed = false
+  const response = await POST(new Request('https://lysto.test/api/pricing/quote', {
+    method: 'POST', headers: { 'Content-Type': 'application/json', Origin: 'https://lysto.test' },
+    body: JSON.stringify(input)
+  }))
+  expect(response.status).toBe(403)
   expect(fetcher).not.toHaveBeenCalled()
   expect(boundary.rpc).not.toHaveBeenCalled()
 })

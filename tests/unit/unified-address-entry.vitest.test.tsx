@@ -24,7 +24,7 @@ it('explains why profile completion cannot submit an unselected address', () => 
   const { container } = render(<CompleteProfileForm missing={['street', 'number', 'city', 'province']} next="/app" address={null} />)
   fireEvent.change(screen.getByRole('combobox', { name: 'Dirección' }), { target: { value: 'Pavon 2012' } })
   fireEvent.submit(container.querySelector('form')!)
-  expect(screen.getByRole('alert').textContent).toBe('Elegí una dirección de las opciones para confirmar la ubicación.')
+  expect(screen.getByRole('alert').textContent).toBe('Elegí una sugerencia o ingresá la dirección manualmente para continuar.')
 })
 
 it('submits all canonical address fields and the proof from the existing profile-completion form', async () => {

@@ -10,3 +10,18 @@
 @media (prefers-reduced-motion: reduce) { .busy { animation: none; border-color: #2563eb; } }
 
 .fullWidth { grid-column: 1 / -1; min-width: 0; }
+.manualToggle { margin-top: .65rem; border: 0; padding: .4rem 0; background: transparent; color: #1d4ed8; font: inherit; font-size: .85rem; font-weight: 600; cursor: pointer; text-decoration: underline; text-underline-offset: .2rem; }
+.manual { margin-top: .75rem; padding: 1rem; border: 1px solid #cbd5e1; border-radius: 1rem; background: #f8fafc; }
+.manual fieldset { min-width: 0; padding: 0; border: 0; margin: 0; }
+.manual legend { color: #0f172a; font-size: .95rem; font-weight: 700; }
+.manual p { margin: .35rem 0 .8rem; color: #475569; font-size: .85rem; }
+.manualGrid { display: grid; gap: .75rem; grid-template-columns: minmax(0, 1fr); }
+.manualGrid label { display: flex; min-width: 0; flex-direction: column; gap: .3rem; color: #334155; font-size: .85rem; font-weight: 600; }
+.manualGrid input, .manualGrid select { box-sizing: border-box; width: 100%; min-height: 2.75rem; border: 1px solid #cbd5e1; border-radius: .7rem; padding: .6rem .7rem; background: white; color: #0f172a; font: inherit; }
+.manualActions { display: flex; flex-wrap: wrap; gap: .65rem; margin-top: 1rem; }
+.manualActions button { min-height: 2.75rem; border: 1px solid #cbd5e1; border-radius: .75rem; padding: .6rem .9rem; background: white; color: #334155; font: inherit; font-size: .85rem; font-weight: 600; cursor: pointer; }
+.manualActions button:first-child { border-color: #1d4ed8; background: #1d4ed8; color: white; }
+.manualToggle:focus-visible, .manualActions button:focus-visible, .manualGrid input:focus-visible, .manualGrid select:focus-visible { outline: 3px solid #60a5fa; outline-offset: 3px; }
+.manualToggle:disabled, .manualActions button:disabled { opacity: .5; cursor: default; }
+.error { margin-top: .6rem; font-size: .85rem; color: #b91c1c; }
+@media (min-width: 640px) { .manualGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

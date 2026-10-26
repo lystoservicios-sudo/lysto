@@ -1,18 +1,24 @@
 import 'server-only'
 
-import { addressSelectionSchema, resolvedAddressSchema, type AddressSelection, type ResolvedAddress } from './contracts'
+import { addressResolutionInputSchema, resolvedAddressSchema, type ResolvedAddress } from './contracts'
 import { georefAddresses } from './georef'
 import { geocodeVerifiedAddress } from './google-geocoding'
 import { geocodeRoutingAddress } from './routing-geocoding'
 
-export async function resolveArgentineAddress(raw: AddressSelection, options?: {
+export async function resolveArgentineAddress(raw: unknown, options?: {
   apiKey?: string
   georefFetcher?: typeof fetch
   googleFetcher?: typeof fetch
   orsApiKey?: string
   orsFetcher?: typeof fetch
 }): Promise<ResolvedAddress> {
-  const input = addressSelectionSchema.parse(raw)
+  const input = addressResolutionInputSchema.parse(raw)
+  if ('mode' in input) return resolvedAddressSchema.parse({
+    street: input.street, number: input.number, city: input.city, province: input.province,
+    provinceId: input.province === 'CABA' ? '02' : '06',
+    formattedAddress: `${input.street} ${input.number}, ${input.city}, ${input.province}, Argentina`,
+    latitude: null, longitude: null, precision: 'unverified', source: 'manual'
+  })
   if (input.provinceId && !['02', '06'].includes(input.provinceId)) throw new Error('outside_coverage')
   const matches = await georefAddresses({
     kind: 'address', query: input.number, street: input.street, streetId: input.streetId,

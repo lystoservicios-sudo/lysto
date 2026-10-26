@@ -23,7 +23,7 @@ async function storePoint(address: string, point: VerifiedRoutingPoint) {
   if (error) throw new Error('location_storage_unavailable')
 }
 export async function rememberResolvedAddress(address: ResolvedAddress) {
-  if (address.precision === 'geometric_center') return
+  if (address.source === 'manual' || address.precision === 'geometric_center') return
   const point = pointSchema.parse({formattedAddress:address.formattedAddress, latitude:address.latitude, longitude:address.longitude,
     province:address.province, precision:address.precision,
     coordinateSource:address.source === 'georef' ? 'georef' : address.source === 'georef_openrouteservice' ? 'openrouteservice' : 'google'})
