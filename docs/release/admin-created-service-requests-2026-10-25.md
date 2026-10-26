@@ -6,7 +6,7 @@ Fecha del usuario: 25 de octubre de 2026, Buenos Aires.
 
 Acceso desde `/admin/solicitudes` y la ficha del cliente a `/admin/solicitudes/nueva`. El operador elige cliente, domicilio, equipo, servicio, alcance, técnico, agenda, total y comisión por porcentaje o monto fijo. Puede tomar como referencia un presupuesto anterior, guardar un borrador, revisar y enviar. Los borradores e historial tienen paginación.
 
-El equipo puede quedar pendiente en el borrador; debe estar seleccionado al enviar y seguir vigente cuando el cliente confirma, porque el diagnóstico y cierre técnicos requieren ese vínculo. El técnico acepta mediante el flujo de asignación existente. El cliente recibe el resumen y confirma explícitamente antes de abrir Mercado Pago. Administración no acepta ni paga por el cliente.
+El equipo puede quedar pendiente en el borrador; debe estar seleccionado al enviar y seguir vigente cuando el cliente confirma, porque el diagnóstico y cierre técnicos requieren ese vínculo. El técnico queda asignado directamente al enviar, sin aceptar la solicitud. El cliente recibe el resumen de inmediato y confirma explícitamente antes de abrir Mercado Pago. Administración no acepta ni paga por el cliente.
 
 Crear importes personalizados requiere `owner` o ambos permisos `operations` y `finance`, con MFA y sesión vigente. Los importes enviados son inmutables. Cambios de asignación o agenda invalidan una confirmación con versiones anteriores. Un reemplazo administrativo utiliza una nueva solicitud; el flujo financiero heredado no puede clonar un contrato manual incompleto.
 
@@ -56,3 +56,7 @@ Publicada el 25/10/2026 por pedido explícito del usuario en https://lystohogar.
 - La verificación fresca de Supabase conservó RLS, wrappers invoker, denegación anónima y ambos guards de reemplazo. No se aplicaron cambios adicionales de base de datos durante la publicación.
 
 Evidencia local: `output/admin-request-production-release.json`, informes y logs en `.worktrees/admin-request-production-release/output/`, y captura `output/playwright/admin-created-request-production.png`. Los cambios previos del usuario permanecieron intactos en la carpeta inicial. No se envió un PR ni se hizo push.
+
+## Corrección vigente: sin aceptación del técnico
+
+El requisito anterior de aceptación técnica fue retirado por corrección explícita del usuario. La asignación directa y el acceso inmediato del cliente a confirmar y pagar están publicados. Ver `direct-service-assignment-2026-10-25.md` para la verificación y el runtime actual. Los resultados anteriores de aceptación técnica describen la primera versión y ya no definen el flujo vigente.
