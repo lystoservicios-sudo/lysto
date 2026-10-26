@@ -59,13 +59,15 @@ beforeEach(() => {
 })
 afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); vi.useRealTimers() })
 
-it.each([undefined, '', '   '])('reports a missing calculator origin before querying a provider instead of blaming the confirmed destination (%s)', async configuredOrigin => {
+it.each([undefined, '', '   '])('keeps an administrative calculation in review when no departure point is available (%s)', async configuredOrigin => {
   vi.stubEnv('LYSTO_ROUTING_ORIGIN', configuredOrigin)
   const fetcher = vi.fn(async () => Response.json({ features: [] }))
   vi.stubGlobal('fetch', fetcher)
   const response = await POST(request())
-  expect(response.status).toBe(503)
-  expect(await response.json()).toMatchObject({ code: 'routing_not_configured', error: expect.stringContaining('base') })
+  expect(response.status).toBe(200)
+  const data = await response.json()
+  expect(data).toMatchObject({ quoteId: null, routingNotice: expect.stringContaining('profesional asignado'),
+    quote: { route: null, readyToOffer: false, reviewReasons: expect.arrayContaining(['travel_unverified']) } })
   expect(fetcher).not.toHaveBeenCalled()
   expect(boundary.rpc).not.toHaveBeenCalled()
 })

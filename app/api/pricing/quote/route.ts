@@ -104,8 +104,10 @@ export async function POST(request: Request) {
     let routingNotice: string | null = null
     if (!route) {
       const origin = process.env.LYSTO_ROUTING_ORIGIN?.trim()
-      if (!origin) throw new Error('routing_not_configured:origin')
-      try {
+      if (!origin) {
+        routingNotice =
+          'El traslado se verifica con el profesional asignado. Para incluirlo en esta cotización, registrá una ruta manual verificada.'
+      } else try {
         route = await estimateTravel({
           address: `${body.address.street} ${body.address.number}, ${body.address.city}, ${body.address.province}, Argentina`,
           origin,

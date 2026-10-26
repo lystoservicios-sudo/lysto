@@ -467,8 +467,8 @@ export function PricingCalculator({
               </div>
             ) : (
               <p className="text-xs text-slate-500">
-                Se consultarán rutas de ida y vuelta. Cobertura máxima: 180 minutos
-                de ida desde la base de referencia en CABA.
+                Para verificar el traslado se necesitan el punto de salida del profesional y las
+                rutas de ida y vuelta. Cobertura máxima: 180 minutos de ida.
               </p>
             )}
           </Card>
