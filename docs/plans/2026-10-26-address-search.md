@@ -1,5 +1,8 @@
 # Address search implementation plan
 
+> **Reemplazado el 26/10/2026:** el titular retiró el ingreso manual y pidió Provincia obligatoria antes de Dirección. Consultar el [plan vigente](2026-10-26-province-first-address.md) y el [resultado publicado](../qa/2026-10-26-province-first-address.md). Lo siguiente conserva el historial de la implementación anterior.
+
+
 **Goal:** encontrar coincidencias territoriales correctas y permitir guardar una dirección manual sin simular una ubicación verificada.
 
 **Architecture:** GeoRef filtrado y búsqueda interpretada en servidor; componente compartido con alternativa manual. El servidor firma una entrada no verificada y conserva el requisito de coordenadas reales para el traslado y el precio final.

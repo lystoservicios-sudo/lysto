@@ -1,5 +1,8 @@
 # Búsqueda de direcciones y salida manual
 
+> **Reemplazado el 26/10/2026:** el titular retiró el ingreso manual y pidió Provincia obligatoria antes de Dirección. Consultar el [plan vigente](2026-10-26-province-first-address.md) y el [resultado publicado](../qa/2026-10-26-province-first-address.md). Lo siguiente conserva el historial de la implementación anterior.
+
+
 ## Objetivo autorizado
 
 El usuario pidió corregir el buscador completo, encontrar la dirección correcta, evitar bloqueos si ninguna opción sirve, probarlo y publicarlo. Se trabaja sobre la rama de revisión existente; no se revierten publicaciones concurrentes ni se contratan servicios.

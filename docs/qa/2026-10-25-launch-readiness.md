@@ -2,7 +2,11 @@
 
 Fecha: 25/10/2026, Argentina. Estado: **correcciones prioritarias publicadas; avisos internos restablecidos; pendientes y límites expresos más abajo**.
 
-## Actualización del 26/10: buscador de direcciones
+## Actualización del 26/10: provincia obligatoria y dirección validada
+
+El titular retiró el ingreso manual. Se publicó runtime **8f2c3a62dda26ee3e782d7cb6d76fea48e406370** con Provincia antes de Dirección, filtro exclusivo por la provincia elegida y comprobante obligatorio para completar el perfil o guardar un domicilio nuevo. La prueba pública de Pavón 2012 devolvió sólo la provincia elegida en CABA, Buenos Aires y Córdoba; se confirmaron puntos reales de CABA y Córdoba. [Resultado, pruebas y límites de esta reparación](2026-10-26-province-first-address.md). Esta versión reemplaza la actualización anterior que sigue como historial.
+
+## Histórico del 26/10: primera reparación de direcciones
 
 Se publicó el buscador territorial con ingreso manual y salida a ayuda para traslado no verificable. Suite completa **2.435/2.435**, compilación, dominio y formulario compartido publicados comprobados. El caso puntual de Berazategui se reemplazó por la corrección del flujo general; no se cambiaron coordenadas ni direcciones de clientes. [Informe de direcciones y límites](2026-10-26-address-search.md). La publicación vigente de esta actualización es `8cb1de60b434f9bc9e503d2af7e9c0c14b6ca742`; las verificaciones históricas siguientes conservan su fecha y versión.
 

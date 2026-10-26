@@ -16,3 +16,7 @@ Sólo una dirección resuelta y validada por el servidor permite completar el re
 4. Verificación: tests enfocados primero, tipos, lint, dominio, herramientas, suite completa y revisión independiente. Compilar candidato sin dominio, comprobar commit exacto y versión pública antes de promover. Publicar conservando cambios concurrentes; verificar en navegador el selector, la búsqueda limitada y la ausencia de ingreso manual. Documentar límites sin crear usuarios, pedidos o cobros productivos de prueba.
 
 No cambia el esquema ni se realizan escrituras masivas o destructivas. Continúa la autorización de publicar la reparación.
+
+## Ejecución cerrada
+
+Runtime 8f2c3a62dda26ee3e782d7cb6d76fea48e406370 publicado y comprobado. Revisión independiente y controles técnicos correctos. Corrida completa de 2.478 casos con una expectativa de mensaje antigua; su archivo se corrigió y pasó 2/2 sin cambios de runtime. No se reetiquetó el informe original ni se repitió la suite completa después de esa aserción. [Informe final y comprobación real por provincias](../qa/2026-10-26-province-first-address.md).

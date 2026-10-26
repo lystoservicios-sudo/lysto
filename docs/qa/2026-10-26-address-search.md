@@ -1,5 +1,8 @@
 # Buscador de direcciones — 26/10/2026
 
+> **Reemplazado el 26/10/2026:** el titular retiró el ingreso manual y pidió Provincia obligatoria antes de Dirección. Consultar el [plan vigente](../plans/2026-10-26-province-first-address.md) y el [resultado publicado](2026-10-26-province-first-address.md). Lo siguiente conserva el historial de la implementación anterior.
+
+
 Estado: **publicado y comprobado en el dominio público**.
 
 ## Cambio
