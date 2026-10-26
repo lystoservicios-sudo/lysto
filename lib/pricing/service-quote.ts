@@ -372,5 +372,7 @@ export function calculateServiceQuote(
   }
 }
 export type ServiceQuote = ReturnType<typeof calculateServiceQuote> & {
+  manualPricing?: boolean
+  serviceTitle?: string
   specialPricing?: { kind: 'owner_maintenance_test'; amount: number }
 }

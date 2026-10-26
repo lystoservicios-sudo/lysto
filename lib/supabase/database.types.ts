@@ -3672,6 +3672,7 @@ export type Database = {
           preferred_date: string
           previous_quote_id: string | null
           quote: Json
+          quote_origin: string
           request_id: string | null
           review_reason: string | null
           reviewed_at: string | null
@@ -3700,6 +3701,7 @@ export type Database = {
           preferred_date: string
           previous_quote_id?: string | null
           quote: Json
+          quote_origin?: string
           request_id?: string | null
           review_reason?: string | null
           reviewed_at?: string | null
@@ -3728,6 +3730,7 @@ export type Database = {
           preferred_date?: string
           previous_quote_id?: string | null
           quote?: Json
+          quote_origin?: string
           request_id?: string | null
           review_reason?: string | null
           reviewed_at?: string | null
@@ -4131,6 +4134,30 @@ export type Database = {
     Functions: {
       read_verified_routing_point: { Args: { p_key: string }; Returns: Json }
       store_verified_routing_point: { Args: { p_key: string; p_point: Json }; Returns: undefined }
+      admin_service_request_options: {
+        Args: { p_customer_id?: string; p_search?: string }
+        Returns: Json
+      }
+      read_admin_service_requests: {
+        Args: { p_id?: string; p_limit?: number; p_cursor_at?: string; p_cursor_id?: string }
+        Returns: Json
+      }
+      save_admin_service_request: {
+        Args: { p_input: Json }
+        Returns: Json
+      }
+      get_admin_service_request_for_job: {
+        Args: { p_job_id: string }
+        Returns: Json
+      }
+      accept_admin_service_request: {
+        Args: { p_id: string; p_expected_version: number; p_assignment_version: number; p_schedule_version: number }
+        Returns: Json
+      }
+      read_customer_payment_summaries: {
+        Args: { p_id?: string; p_status?: string; p_limit?: number; p_cursor_at?: string; p_cursor_id?: string }
+        Returns: Json
+      }
       accept_professional_invitation: {
         Args: { p_token: string }
         Returns: Json

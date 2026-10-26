@@ -13,6 +13,7 @@ import { customerInitialPaymentState } from '@/features/customer/services-view-m
 import { isExpiredAutomaticRequest } from '@/lib/jobs/visit-address'
 import type { JobStatus } from '@/lib/domain/types'
 import type { ServiceQuote } from '@/lib/pricing/service-quote'
+import type { ManagedRequestSummary } from '@/lib/admin/service-request-contract'
 import type { CustomerJobVisit } from './job-visit-card'
 import styles from './customer-service-detail.module.css'
 
@@ -20,6 +21,7 @@ type Extra = { id: string; fault: string; description: string; amount: number; s
 type Diagnosis = { id: string; actual_diagnosis: string; base_scope: string; evidence_ids: string[]; status: string; version: number; decision_reason: string | null }
 type FinalReport = { id: string; real_diagnosis: string; work_done: string; parts_used?: string | null; final_state: string; maintenance_option: string; next_maintenance_date?: string | null; warranty_days?: number; after_photo_ids: string[]; version: number; created_at: string }
 export type CustomerServiceDetailData = {
+  managedRequest?: ManagedRequestSummary | null
   role: string
   job: { id: string; status: string; professionalName: string | null; contractSource?: string | null; requestStatus?: string }
   visitAddressLabel?: string | null
@@ -121,7 +123,7 @@ export function CustomerServiceDetail({ data, onReload, reloadError = '', reload
   const equipmentName = data.customerService?.equipmentName
   const address = data.job.contractSource != null ? data.customerService?.addressLabel ?? data.visitAddressLabel ?? null
     : data.customerService?.addressLabel ?? data.visit?.addressLabel ?? (data.savedQuote ? [data.savedQuote.address.street, data.savedQuote.address.number, data.savedQuote.address.city].filter(Boolean).join(' ') : null)
-  const title = issue === 'mantenimiento' ? 'Mantenimiento de aire' : issue === 'instalacion' ? 'Instalación de aire' : 'Reparación de aire'
+  const title = data.savedQuote?.quote.serviceTitle ?? (issue === 'mantenimiento' ? 'Mantenimiento de aire' : issue === 'instalacion' ? 'Instalación de aire' : 'Reparación de aire')
   const initialCheckout = checkouts?.find(item => item.extra_id === null)
   const paymentState = checkouts ? customerInitialPaymentState(checkouts.map(item => ({ jobId: item.job_id, extraId: item.extra_id, status: item.status })), data.job.id) : 'unknown'
   const paid = paymentState === 'approved'

@@ -51,6 +51,13 @@ export async function GET(request: Request) {
       .select('*')
       .eq('request_id', job.request_id)
       .single()
+    const managedResult = await s.client.rpc('get_admin_service_request_for_job', { p_job_id: job.id })
+    if (managedResult.error && !['42883', 'PGRST202'].includes(managedResult.error.code ?? ''))
+      throwPricingDatabaseError(managedResult.error)
+    const managed = managedResult.data as {
+      summary: import('@/lib/admin/service-request-contract').ManagedRequestSummary
+      savedQuote: typeof savedQuote
+    } | null
     const { data: extras } = await s.client
       .from('job_extras')
       .select('*')
@@ -110,7 +117,8 @@ export async function GET(request: Request) {
       job: { ...job, professionalName, ...(serviceRequest?.contract_source ? {
         contractSource: serviceRequest.contract_source, requestStatus: serviceRequest.status
       } : {}) },
-      savedQuote,
+      savedQuote: managed?.savedQuote ?? savedQuote,
+      managedRequest: managed?.summary ?? null,
       extras: extras ?? [],
       onsiteDiagnosis: onsite.data ?? null,
       finalReport: finalReport.data ?? null,

@@ -175,10 +175,16 @@ describe('Pedir complete HTTP/calculator/ledger boundary journey, without extern
     providerStatus = 'approved'
     expect((await refresh()).status).toBe(200)
     const approved = await (await readCheckouts(request(`/api/mercadopago/checkouts?jobId=${ids.job}`))).json()
-    expect(approved.checkouts[0]).toMatchObject({ ...frozenSplit, status: 'approved', observations: [expect.objectContaining({
-      providerFee: providerFee.toFixed(2), netReceived: (Number(frozenSplit.professional_amount) - providerFee).toFixed(2) })] })
+    expect(approved.checkouts[0]).toMatchObject({ amount: frozenSplit.amount, status: 'approved',
+      observations: [{ paymentId: '444', status: 'approved', refunded: '0.00' }] })
+    expect(approved.checkouts[0]).not.toHaveProperty('marketplace_fee')
+    expect(approved.checkouts[0]).not.toHaveProperty('professional_amount')
+    expect(approved.checkouts[0].observations[0]).not.toHaveProperty('providerFee')
+    expect(approved.checkouts[0].observations[0]).not.toHaveProperty('netReceived')
+    expect(db.checkout).toMatchObject(frozenSplit)
     expect(paymentPresentation(approved.checkouts[0].status).title).toBe('Pago confirmado')
-    expect(db.observations.get('444')).toMatchObject({ provider_fee: providerFee.toFixed(2), issues: [] })
+    expect(db.observations.get('444')).toMatchObject({ provider_fee: providerFee.toFixed(2),
+      net_received_amount: (Number(frozenSplit.professional_amount) - providerFee).toFixed(2), issues: [] })
     expect(db.projections).toHaveLength(2)
     expect(db.projections.map(projection => projection[6])).toEqual(['pending', 'approved'])
     expect(db.projections.map(projection => projection[4])).toEqual(['444', '444'])

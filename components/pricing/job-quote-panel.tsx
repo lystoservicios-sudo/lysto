@@ -13,6 +13,7 @@ import { PaymentPanel } from '@/components/payments/payment-panel'
 import { JobCloseoutForm } from '@/components/pro/job-closeout-form'
 import { CustomerServiceDetail, type CustomerServiceDetailData } from '@/components/customer/customer-service-detail'
 import { isExpiredAutomaticRequest } from '@/lib/jobs/visit-address'
+import { ManagedRequestConfirmation } from '@/components/customer/managed-request-confirmation'
 import {
   JobVisitCard,
   type CustomerJobVisit,
@@ -202,6 +203,13 @@ export function JobQuotePanel({ jobId, requestId }: { jobId?: string; requestId?
   }
   if (data?.role === 'customer') {
     if (loadedIdentity !== routeIdentity) return <div className="space-y-4" aria-busy="true"><h1 className="text-2xl font-bold">Consultando el servicio</h1><p className="text-sm text-slate-600">Verificamos los datos del servicio seleccionado.</p></div>
+    if (data.managedRequest && !data.managedRequest.acceptedAt) return <ManagedRequestConfirmation
+      key={`${data.managedRequest.id}:${data.managedRequest.version}:${data.managedRequest.assignmentVersion}:${data.managedRequest.scheduleVersion}`}
+      summary={data.managedRequest} jobId={data.job.id} professionalName={data.job.professionalName}
+      address={data.customerService?.addressLabel ?? null}
+      onRefresh={() => { setCustomerReloading(true); setRevision(value => value + 1) }}
+      onConfirmed={() => { window.history.replaceState(window.history.state, '', `${window.location.pathname}${window.location.search}#pago`); setCustomerReloading(true); setRevision(value => value + 1) }}
+    />
     return <CustomerServiceDetail key={data.job.id} data={data} reloadError={message} reloadInProgress={customerReloading} onReload={() => { setCustomerReloading(true); setRevision(value => value + 1) }} />
   }
   if (actorRole === 'customer') {

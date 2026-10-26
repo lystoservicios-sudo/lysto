@@ -93,6 +93,10 @@ export async function getQuotePolicyRecord(client: PricingSession['client']) {
 }
 export function throwPricingDatabaseError(error: { code?: string; message?: string }): never {
   if (error.message?.includes('booking_notice_required')) throw new Error('booking_notice_required')
+  if (error.message?.includes('equipment_required_before_send')) throw new ApiError('equipment_required')
+  if (error.message?.includes('professional_ineligible_or_unavailable')) throw new ApiError('professional_unavailable')
+  if (error.message?.includes('seller_not_linked')) throw new ApiError('payment_account_required')
+  if (error.message?.includes('administrative_replacement_requires_new_request')) throw new ApiError('administrative_replacement_required')
   if (error.code === '42501') throw new ApiError('forbidden')
   if (error.code === 'PT409' || error.code === '40001' || error.code === '23505') throw new ApiError('conflict')
   if (error.code === 'P0002') throw new ApiError('not_found')

@@ -6,6 +6,7 @@ import { paymentError, sameOrigin } from '@/lib/payments/marketplace-config'
 import { reconcileCheckout, renewCheckout } from '@/lib/payments/marketplace'
 import { assertPaymentCustomerRequestActor } from '@/lib/payments/customer-request-actor'
 import { enforceRateLimit, RateLimitExceeded, rateLimitResponse } from '@/lib/security/rate-limit'
+import { customerCheckoutProjection } from '@/lib/payments/customer-projection'
 
 export const runtime = 'nodejs'
 
@@ -35,7 +36,7 @@ export async function GET(request: Request) {
         (code === '42P01' && message.includes('marketplace_order_observations')))) throw error
       result = await db.query(legacyCheckoutListSql, params)
     }
-    return privateJson({ checkouts: result.rows, role: actor.role }, { headers: { 'Cache-Control': 'no-store' } })
+    return privateJson({ checkouts: actor.role === 'customer' ? result.rows.map(customerCheckoutProjection) : result.rows, role: actor.role }, { headers: { 'Cache-Control': 'no-store' } })
   } catch (error) {
     return paymentError(error)
   }

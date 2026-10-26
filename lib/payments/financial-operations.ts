@@ -112,8 +112,10 @@ async function rpc(session: Session, name: string, args: Record<string, unknown>
     session.client.rpc as unknown as (
       n: string,
       a: Record<string, unknown>
-    ) => Promise<{ data: unknown; error: { code?: string } | null }>
+    ) => Promise<{ data: unknown; error: { code?: string; message?: string } | null }>
   )(name, args)
+  if (result.error?.message?.includes('administrative_replacement_requires_new_request'))
+    throw new ApiError('administrative_replacement_required')
   if (result.error) fail(result.error.code)
   return result.data
 }
