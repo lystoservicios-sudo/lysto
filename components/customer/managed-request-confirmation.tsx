@@ -79,11 +79,11 @@ export function ManagedRequestConfirmation({ summary, jobId, professionalName, a
       </dl>
     </section>
     {summary.canAccept ? <section className={styles.section}>
-      <h2>Confirmá el servicio</h2><p>El profesional confirmó su disponibilidad. Revisá el alcance, la visita y el importe antes de continuar.</p>
+      <h2>Confirmá el servicio</h2><p>El servicio ya tiene un técnico asignado. Revisá el alcance, la visita y el importe antes de continuar.</p>
       <label className="flex items-start gap-3 py-4 text-sm"><input type="checkbox" checked={consent} disabled={busy || uncertain} onChange={event => setConsent(event.target.checked)} className="mt-1 h-5 w-5 shrink-0" />Acepto el servicio, el horario y el precio total indicado.</label>
       <button className={styles.primaryButton} disabled={!consent || busy || uncertain} onClick={() => void confirm()}>{busy ? 'Preparando pago…' : 'Confirmar y pagar'}</button>
       <p className={styles.muted}>El pago se completa con Mercado Pago. Confirmar el servicio por sí solo no realiza ningún cobro.</p>
-    </section> : <section className={styles.section}><h2>Estamos coordinando tu servicio</h2><p>Lysto está terminando de coordinar el servicio. Te avisaremos cuando puedas confirmar y pagar.</p><button className={styles.secondaryButton} disabled={busy} onClick={onRefresh}>Actualizar estado</button></section>}
+    </section> : <section className={styles.section}><h2>Revisá el estado del servicio</h2><p>Esta solicitud no está disponible para confirmar con los datos actuales. Actualizá el estado o contactá a Lysto.</p><button className={styles.secondaryButton} disabled={busy} onClick={onRefresh}>Actualizar estado</button></section>}
     {message ? <p role="status" className={styles.notice}>{message}</p> : null}
     {uncertain ? <button className={styles.secondaryButton} onClick={onRefresh}>Consultar estado</button> : null}
   </div>

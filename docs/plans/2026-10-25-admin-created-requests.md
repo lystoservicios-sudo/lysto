@@ -2,9 +2,9 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Administrators create priced, assigned requests for customers who only confirm terms and pay after professional acceptance.
+**Goal:** Administrators create priced, assigned requests for customers who only confirm terms and pay immediately, with no professional acceptance step.
 
-**Architecture:** Private versioned drafts generate canonical requests, manual quotes, jobs and assignment offers atomically. Customer confirmation accepts the frozen quote; existing marketplace checkout continues to derive the authoritative total and split from it. Role-aware RPCs and UI keep internal financial details out of the customer summary.
+**Architecture:** Private versioned drafts generate canonical requests, manual quotes, jobs and direct professional assignments atomically. Customer confirmation accepts the frozen quote; existing marketplace checkout continues to derive the authoritative total and split from it. Role-aware RPCs and UI keep internal financial details out of the customer summary.
 
 **Tech Stack:** Next.js 15, React 19, TypeScript, Zod, Supabase/PostgreSQL, Vitest, Playwright.
 
@@ -30,7 +30,7 @@
 
 - Extend `app/api/pricing/job/route.ts`, `components/pricing/job-quote-panel.tsx`, `components/customer/customer-service-detail.tsx`, `components/pricing/quote-breakdown.tsx`, and the quote type with a manual-price marker.
 - Add customer confirmation panel with request summary, explicit consent and payment entry. Never enable checkout until the customer confirmation RPC succeeds; existing database payment guards remain authoritative.
-- Test professional acceptance gating, customer confirmation recovery, no commission display and exact approved total.
+- Test immediate customer confirmation without professional acceptance, customer confirmation recovery, no commission display and exact approved total.
 
 ### Task 5: Verify and integrate
 

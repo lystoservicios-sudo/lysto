@@ -8,10 +8,16 @@ const request: ManagedRequestSummary = { id: '00000000-0000-4000-8000-0000000000
   startsAt: '2027-01-10T13:00:00Z', durationMinutes: 60, acceptedAt: null, canAccept: false,
   assignmentVersion: 1, scheduleVersion: 2 }
 afterEach(() => { cleanup(); vi.unstubAllGlobals() })
-it('does not allow confirmation or payment before professional acceptance', () => {
+it('does not allow confirmation or payment when the assigned service is unavailable', () => {
   render(<ManagedRequestConfirmation summary={request} onConfirmed={vi.fn()} onRefresh={vi.fn()} />)
   expect(screen.queryByRole('button', { name: 'Confirmar y pagar' })).toBeNull()
-  expect(screen.getByText(/terminando de coordinar/)).toBeTruthy()
+  expect(screen.getByText(/Esta solicitud no está disponible para confirmar/)).toBeTruthy()
+})
+it('lets the customer confirm an assigned service without claiming the technician accepted', () => {
+  render(<ManagedRequestConfirmation summary={{ ...request, canAccept: true }} onConfirmed={vi.fn()} onRefresh={vi.fn()} />)
+  expect(screen.getByText(/El servicio ya tiene un técnico asignado/)).toBeTruthy()
+  expect(screen.getByRole('button', { name: 'Confirmar y pagar' })).toBeTruthy()
+  expect(screen.queryByText(/profesional confirmó su disponibilidad/)).toBeNull()
 })
 it('submits explicit consent tied to the displayed quote, professional and schedule versions', async () => {
   const confirmed = vi.fn()

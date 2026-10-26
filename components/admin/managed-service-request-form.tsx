@@ -241,14 +241,14 @@ export function ManagedServiceRequestForm({
   const mutationBlocked = disabled || loadingOptions || optionsError
 
   if (sent) return <div className="adm-stack">
-    <Header title="Solicitud enviada al técnico" description="El cliente podrá confirmar y pagar cuando el profesional acepte. Consultá el trabajo para ver la asignación y el pago actuales." back={{ href: '/admin/solicitudes', label: 'Solicitudes' }} />
+    <Header title="Solicitud enviada al cliente" description="El técnico quedó asignado. El cliente ya puede revisar el servicio, confirmar y pagar. Consultá el trabajo para ver el estado actual." back={{ href: '/admin/solicitudes', label: 'Solicitudes' }} />
     <Panel title={record.input.serviceTitle}><p>{record.input.description}</p><p className={styles.sentAmount}>{ars(record.input.total)}</p>
       <div className="adm-inline"><Link className="adm-button adm-button-primary" href={`/admin/trabajos/${record.jobId}`}>Ver trabajo</Link><Link className="adm-button adm-button-secondary" href="/admin/solicitudes">Volver a solicitudes</Link></div>
     </Panel>
   </div>
 
   return <div className="adm-stack">
-    <Header title={initialRecord ? 'Editar solicitud' : 'Crear solicitud'} description="Prepará el servicio en nombre del cliente. El cliente solo revisa, confirma y paga cuando el técnico acepta." back={{ href: '/admin/solicitudes', label: 'Solicitudes' }} />
+    <Header title={initialRecord ? 'Editar solicitud' : 'Crear solicitud'} description="Prepará el servicio en nombre del cliente. Al enviarlo, el técnico queda asignado y el cliente puede confirmar y pagar." back={{ href: '/admin/solicitudes', label: 'Solicitudes' }} />
     {error ? <p className="adm-notice" role="alert">{error}</p> : null}
     {message ? <p className="adm-notice success" role="status">{message}</p> : null}
     {needsRecovery ? <Button disabled={busy} onClick={() => void consult()}>{busy ? 'Consultando…' : 'Consultar estado'}</Button> : null}
@@ -270,9 +270,9 @@ export function ManagedServiceRequestForm({
             <div><dt>Comisión acordada</dt><dd>{amounts ? ars(amounts.platformFee) : '—'}</dd></div>
             <div><dt>Para el técnico antes de cargos</dt><dd>{amounts ? ars(amounts.professionalAmount) : '—'}</dd></div>
           </dl>
-          <p className={styles.help}>Al enviar se guarda este alcance, precio y reparto. Primero recibe la propuesta el técnico; cuando acepta, el cliente recibe el resumen para confirmar y pagar.</p>
+          <p className={styles.help}>Al enviar, el técnico queda asignado y se reserva la visita. El cliente recibe este alcance y precio para confirmar y pagar.</p>
           {!professional?.paymentAccountConnected ? <p role="alert" className="adm-notice">El técnico debe vincular su cuenta de cobro antes de enviar esta solicitud.</p> : null}
-          <div className="adm-save-bar"><Button onClick={() => setPreview(false)}>Volver a editar</Button><Button variant="primary" disabled={mutationBlocked || !professional?.paymentAccountConnected} onClick={() => void save('send')}>{busy ? 'Enviando…' : 'Enviar al técnico'}</Button></div>
+          <div className="adm-save-bar"><Button onClick={() => setPreview(false)}>Volver a editar</Button><Button variant="primary" disabled={mutationBlocked || !professional?.paymentAccountConnected} onClick={() => void save('send')}>{busy ? 'Enviando…' : 'Enviar solicitud'}</Button></div>
         </Panel> : <>
           <Panel title="1. Cliente y domicilio" description="Usá los datos registrados en la cuenta del cliente.">
             <div className={styles.search}>
