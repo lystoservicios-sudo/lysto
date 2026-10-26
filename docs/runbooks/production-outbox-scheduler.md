@@ -8,6 +8,8 @@ Se descartó `pg_net` tras una prueba con rollback en el proyecto: sus tablas y 
 
 El modo `inAppOnly:true` sigue disponible para una operación limitada a avisos internos. El modo completo respeta NOTIFICATIONS_EMAIL_ENABLED y las preferencias aplicables; no reclama email si su transporte está apagado. Antes de activarlo deben comprobarse remitente, DNS, primera entrega autorizada, vigencia de cada evento y sus claves de deduplicación. El guard suprime anuncios de estados de trabajos ya superados y visitas que ya comenzaron, sin cambiar el historial interno ni los recibos válidos.
 
+La migración `20261026020758_admin_visit_email_after_payment.sql` protege además el flujo administrativo directo: la visita se comunica después del consentimiento del cliente y del pago inicial aprobado. Su clave `visit-confirmed-paid:<job>:<versión>` evita colisiones con mensajes prematuros antiguos. La revalidación exige la misma persona asignada, cliente y reserva futura; no agrega aceptación técnica. Se conserva el aviso de profesional asignado para entrar a revisar y pagar. No resetear eventos suprimidos para forzar la confirmación posterior.
+
 ## Preparación y activación controlada
 
 1. Verificar el proyecto `dqonlqcurvjnjgsczevu`, el dominio, el despliegue exacto y los guards de estado de email. Comprobar que la ruta respeta `inAppOnly:true` sin llamar al proveedor; para el modo completo, acreditar dominio verificado y una entrega autorizada en Resend.
@@ -48,7 +50,7 @@ Los objetos de la extensión HTTP conservan EXECUTE PUBLIC otorgado por `supabas
 
 ## Activación comprobada el 25/10/2026
 
-El titular autorizó los correos automáticos. Se verificaron seis entregas Delivered, cuatro avisos obsoletos suprimidos, cero pendientes en ambos canales y cinco ejecuciones consecutivas correctas del job completo. Ver [evidencia de activación](../qa/2026-10-25-automatic-email-activation.md).
+El titular autorizó los correos automáticos. Se verificaron seis entregas Delivered, cuatro avisos obsoletos suprimidos, cero pendientes en ambos canales y cinco ejecuciones consecutivas correctas del job completo. Después de aplicar 104 y reactivar, se comprobaron otras ocho ejecuciones correctas tras la publicación final. Ver [evidencia de activación](../qa/2026-10-25-automatic-email-activation.md).
 
 ## Pausa y recuperación
 

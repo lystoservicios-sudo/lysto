@@ -1,6 +1,6 @@
 # Inventario de API
 
-Generado desde los métodos exportados en `app/api/**/route.ts`. Total: **129 métodos**. El control automático falla si aparece o desaparece un método sin regenerar este archivo.
+Generado desde los métodos exportados en `app/api/**/route.ts`. Total: **133 métodos**. El control automático falla si aparece o desaparece un método sin regenerar este archivo.
 
 | Método | Ruta | Estado | Autoridad | Destino canónico | Prueba contractual |
 |---|---|---|---|---|---|
@@ -25,6 +25,9 @@ Generado desde los métodos exportados en `app/api/**/route.ts`. Total: **129 m�
 | `POST` | `/api/admin/professionals/review` | Activa | Sesión: admin; permiso operations | `/api/admin/professionals/review` | `tests/integration/api-inventory.test.ts` |
 | `GET` | `/api/admin/professionals` | Activa | Sesión: sesión; permiso operations | `/api/admin/professionals` | `tests/integration/api-inventory.test.ts` |
 | `POST` | `/api/admin/professionals/suspend` | Activa | Sesión: admin; permiso operations | `/api/admin/professionals/suspend` | `tests/integration/api-inventory.test.ts` |
+| `GET` | `/api/admin/service-requests/options` | Activa | Sesión: admin | `/api/admin/service-requests/options` | `tests/integration/api-inventory.test.ts` |
+| `GET` | `/api/admin/service-requests` | Activa | Sesión: admin | `/api/admin/service-requests` | `tests/integration/api-inventory.test.ts` |
+| `POST` | `/api/admin/service-requests` | Activa | Sesión: admin | `/api/admin/service-requests` | `tests/integration/api-inventory.test.ts` |
 | `POST` | `/api/contact` | Activa | Sesión y autorización verificadas por el servicio de la ruta | `/api/contact` | `tests/integration/api-inventory.test.ts` |
 | `GET` | `/api/customer/account/export` | Activa | Sesión: customer | `/api/customer/account/export` | `tests/integration/api-inventory.test.ts` |
 | `POST` | `/api/customer/account/password` | Activa | Sesión: customer | `/api/customer/account/password` | `tests/integration/api-inventory.test.ts` |
@@ -44,6 +47,7 @@ Generado desde los métodos exportados en `app/api/**/route.ts`. Total: **129 m�
 | `POST` | `/api/customer/homes` | Activa | Sesión: customer | `/api/customer/homes` | `tests/integration/api-inventory.test.ts` |
 | `PUT` | `/api/customer/homes` | Activa | Sesión: customer | `/api/customer/homes` | `tests/integration/api-inventory.test.ts` |
 | `DELETE` | `/api/customer/homes` | Activa | Sesión: customer | `/api/customer/homes` | `tests/integration/api-inventory.test.ts` |
+| `POST` | `/api/customer/managed-request/confirm` | Activa | Sesión: customer | `/api/customer/managed-request/confirm` | `tests/integration/api-inventory.test.ts` |
 | `GET` | `/api/customer/payment-result` | Activa | Sesión: customer | `/api/customer/payment-result` | `tests/integration/api-inventory.test.ts` |
 | `GET` | `/api/customer/payments/[id]/record` | Activa | Sesión: customer | `/api/customer/payments/[id]/record` | `tests/integration/api-inventory.test.ts` |
 | `GET` | `/api/customer/preferences` | Activa | Sesión: customer | `/api/customer/preferences` | `tests/integration/api-inventory.test.ts` |

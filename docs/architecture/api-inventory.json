@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "generatedFrom": "app/api/**/route.ts",
-  "count": 129,
+  "count": 133,
   "entries": [
     {
       "route": "/api/admin/approve-professional",
@@ -172,6 +172,30 @@
       "test": "tests/integration/api-inventory.test.ts"
     },
     {
+      "route": "/api/admin/service-requests/options",
+      "method": "GET",
+      "status": "active",
+      "authority": "Sesión: admin",
+      "canonicalDestination": "/api/admin/service-requests/options",
+      "test": "tests/integration/api-inventory.test.ts"
+    },
+    {
+      "route": "/api/admin/service-requests",
+      "method": "GET",
+      "status": "active",
+      "authority": "Sesión: admin",
+      "canonicalDestination": "/api/admin/service-requests",
+      "test": "tests/integration/api-inventory.test.ts"
+    },
+    {
+      "route": "/api/admin/service-requests",
+      "method": "POST",
+      "status": "active",
+      "authority": "Sesión: admin",
+      "canonicalDestination": "/api/admin/service-requests",
+      "test": "tests/integration/api-inventory.test.ts"
+    },
+    {
       "route": "/api/contact",
       "method": "POST",
       "status": "active",
@@ -321,6 +345,14 @@
       "status": "active",
       "authority": "Sesión: customer",
       "canonicalDestination": "/api/customer/homes",
+      "test": "tests/integration/api-inventory.test.ts"
+    },
+    {
+      "route": "/api/customer/managed-request/confirm",
+      "method": "POST",
+      "status": "active",
+      "authority": "Sesión: customer",
+      "canonicalDestination": "/api/customer/managed-request/confirm",
       "test": "tests/integration/api-inventory.test.ts"
     },
     {

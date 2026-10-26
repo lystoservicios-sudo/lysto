@@ -4,11 +4,11 @@ Fecha: 25/10/2026, Argentina. Estado: **correcciones prioritarias publicadas; av
 
 ## Actualización: correo automático resuelto
 
-El titular autorizó continuar con los correos automáticos. Se aplicaron las migraciones 101/102: **seis emails vigentes Delivered en Resend, cuatro obsoletos suprimidos y cero pendientes en ambos canales**, con cinco ejecuciones automáticas consecutivas correctas. Se verificó el dominio remitente y se generó un respaldo cifrado actualizado a 102 migraciones en ambos discos. [Informe específico y límites de entrega/restauración](2026-10-25-automatic-email-activation.md). La cuenta de origen para el cálculo administrativo sigue pendiente de configuración; el destino de Berazategui ya fue confirmado por el titular.
+El titular autorizó continuar con los correos automáticos. Se aplicaron las migraciones 101/102: **seis emails vigentes Delivered en Resend, cuatro obsoletos suprimidos y cero pendientes en ambos canales**, con cinco ejecuciones automáticas consecutivas correctas. Se verificó el dominio remitente y se generó un respaldo cifrado actualizado a 102 migraciones en ambos discos. [Informe específico y límites de entrega/restauración](2026-10-25-automatic-email-activation.md). El destino de Berazategui fue confirmado por el titular. El pedido automático calcula desde el profesional asignado; no se requiere una dirección general de Lysto. La calculadora sin punto de salida mantiene el traslado pendiente de verificación.
 
 ## Publicación verificada
 
-El usuario autorizó publicar la corrección y priorizar los problemas importantes para la apertura de mañana. Se publicó [lystohogar.com](https://lystohogar.com) con el deployment `dpl_C9CwFTKtfwuk6QeXuWkvny6o39wW`, estado READY y commit runtime `84749ada84856a1ff18cecc2503f8ffe5473c36b`. La respuesta pública de `/api/health/live` devuelve ese commit y HTTP 200; `/api/health/ready` devuelve ready/production y HTTP 200.
+El usuario autorizó publicar la corrección y priorizar los problemas importantes para la apertura de mañana. Se publicó [lystohogar.com](https://lystohogar.com) con el deployment `dpl_Fhmdge6SozEjBijBvPaSByU2Zwbv`, estado READY/PROMOTED y commit runtime `ad231c2bf17b3528dc4582fdc757d2f623a6e908`. La respuesta pública de `/api/health/live` devuelve ese commit y HTTP 200; `/api/health/ready` devuelve ready/production y HTTP 200.
 
 La primera auditoría partió del runtime `f8bd22c`. Durante el trabajo otra publicación actualizó producción a `d7ac08d56f2630964a59259867671ddc98356a65`. Se canceló el primer candidato sin promoverlo y se integraron las correcciones sobre esa nueva base, conservando las mejoras de búsqueda de direcciones e invitaciones. El checkout inicial `E:/Proyectos/GitHub/Lysto`, con cambios ajenos, no se revirtió ni se mezcló. El trabajo propio está en `C:/Users/quime/.codex/worktrees/launch-readiness-20261025/Lysto`, rama `codex/launch-readiness-20261025`.
 
@@ -19,9 +19,9 @@ La primera auditoría partió del runtime `f8bd22c`. Durante el trabajo otra pub
 | Sitio y salud | Dominio público y versión exacta comprobados; live y ready HTTP 200. Solicitudes y checkouts nuevos mantienen sus interruptores anteriores habilitados. |
 | Cliente | Pagos muestra cuatro movimientos existentes. El pedido guardado se pudo recalcular: mantenimiento de 3.000 frigorías para el 28/10, 10–12, precio de **ARS 195.000** y botón Mercado Pago habilitado. No se completó un pago nuevo. El domicilio de esta prueba coincide con el origen del profesional; no acredita traslado distinto de cero. |
 | Profesional | Cobros carga con la sesión guardada. Los pagos aprobados conservan su estado y el reparto 18/82; los enlaces vencidos ahora se muestran correctamente como «Enlace vencido». |
-| Administrador | Gestión de pagos y Entrega de notificaciones cargan. Estados, importes y enlaces al trabajo son visibles sin iniciar cobros, conciliaciones, cancelaciones ni devoluciones. Se dejó la sesión administradora disponible. |
+| Administrador | Gestión de pagos y Entrega de notificaciones cargan. Estados, importes y enlaces al trabajo son visibles sin iniciar cobros, conciliaciones, cancelaciones ni devoluciones. Estas pantallas se comprobaron en la publicación anterior. En la comprobación final la sesión del navegador integrado correspondía al cliente; /admin devolvió 404 sin datos y se continuó desde /app. La interfaz administrativa final no se volvió a comprobar: sus cambios de código y guards SQL sí tienen regresiones y revisión independiente. |
 | Separación de roles | Antes de publicar, cliente → admin/pro devolvió 404 sin datos de otro rol. No se modificaron las reglas de autorización. |
-| Supabase | Acceso real por CLI Owner; proyecto `dqonlqcurvjnjgsczevu`. Hay **102 migraciones** tras activar también el correo automático. El inventario inicial tenía 72 tablas públicas y cero sin RLS; el ensayo de restauración también verificó cero tablas públicas sin RLS. |
+| Supabase | Acceso real por CLI Owner; proyecto `dqonlqcurvjnjgsczevu`. Hay **104 migraciones** tras activar el correo automático y proteger la confirmación administrativa posterior al pago. El inventario inicial tenía 72 tablas públicas y cero sin RLS; el ensayo de restauración también verificó cero tablas públicas sin RLS. |
 | Advisors posteriores | **33 WARN de seguridad y 38 de rendimiento; cero ERROR**. Incluyen 31 funciones privilegiadas expuestas, extensión en public, protección contra contraseñas filtradas no habilitada y políticas permisivas múltiples. No se revocaron permisos legítimos para ocultar avisos. |
 | Regresiones SQL | Pasaron `scripts/qa/notification-delivery-boolean.sql` y `scripts/qa/customer-payment-read-permissions.sql` sobre producción, sin insertar pruebas ni cambiar permisos. |
 | Errores de ejecución | Escaneo del deployment publicado, nivel error, últimos 15 minutos, límite 100: **cero entradas**, comando exit 0. Es una ventana acotada y no acredita alertas externas o ausencia de todo error futuro. |
@@ -35,7 +35,7 @@ Las capturas de la auditoría inicial son privadas: `E:/Proyectos/GitHub/Lysto/o
 - Administración y profesionales distinguían mal un checkout ready cuya fecha había pasado. Ahora indican «Enlace vencido»; aprobados y pendientes conservan su estado. Dos regresiones fallaron antes del cambio y pasaron después; también se comprobó visualmente el resultado publicado.
 - POST del worker admite el modo interno explícito `inAppOnly:true`. No configura transporte de correo ni reclama emails en ese modo. GET y POST normal, y las invitaciones síncronas profesionales, conservan su comportamiento. La nueva propiedad se admite sólo en outbox: el parser compartido de devoluciones la sigue rechazando antes de ejecutar trabajo financiero. Se observaron las regresiones fallando antes del arreglo y pasando después.
 - Se corrigieron fixtures antiguos sin relajar el producto: UUID sintéticos inválidos, una fecha anterior al mínimo de tres días hábiles, un mock de guardado incierto afectado por el autocompletado y tres pruebas que buscaban los campos retirados por el buscador unificado. Las pruebas del recorrido siguen usando cotización/preparación reales y verifican el reparto 18/82, identidad canónica y locationProof. Producción tiene cero UUID fuera de formato en trabajos, categorías y tipos de problema.
-- La revisión independiente no dejó hallazgos bloqueantes pendientes en los cambios revisados.
+- La revisión independiente no dejó hallazgos bloqueantes pendientes en los cambios revisados. Se conservó la publicación concurrente de asignación directa y aprobación de documentos; respecto de ese runtime sólo cambió la calculadora sin punto de salida, que queda en revisión y no habilita oferta/aceptación sin traslado verificado. El flujo automático conserva el origen del profesional.
 
 ## Avisos internos recuperados
 
@@ -70,13 +70,17 @@ Esto **no acredita una restauración integral G13**: no se probaron los servicio
 
 La revisión automática rechazó eliminar la carpeta temporal de restauración con el motivo literal **«blocked by policy»**. No se intentó otra vía de borrado. Quedó retenida en `C:/Users/quime/.codex/private/lysto-backups/2026-10-25-235352-874a32d2/restore-local`, con PostgreSQL detenido y ACL comprobada exclusivamente para el usuario actual y SYSTEM.
 
+## Actualización del respaldo a 104
+
+Se creó un snapshot independiente de 104 migraciones tras corregir la confirmación administrativa posterior al consentimiento/pago. Manifiestos en `C:/Users/quime/.codex/private/lysto-backups/20261026T022149Z-snapshot104-3f1821/backup-manifest.json` y `E:/Backups/Lysto/20261026T022149Z-snapshot104-3f1821/backup-manifest.json`; 16 archivos contrastados, fuentes 100–104 exactas y los 41 objetos de Storage coincidentes. Los respaldos 99/102 permanecen intactos. No se restauró este archivo completo y se conservan los límites de recuperación anteriores. [Detalle del correo y respaldo 104](2026-10-25-automatic-email-activation.md).
+
 ## Verificación final del candidato
 
 | Comprobación | Resultado |
 | --- | --- |
-| Suite unitaria completa | **2.299/2.299 pruebas, 255/255 archivos**, cero fallos, omitidas o pendientes; exit 0. |
+| Suite unitaria completa | **2.357/2.357 pruebas, 265/265 archivos**, cero fallos, omitidas o pendientes; exit 0. |
 | Dominio | **174/174**. |
-| Herramientas | **164/164**, sin omisiones; incluye los cuatro contratos del scheduler. |
+| Herramientas | **165/165**, sin omisiones; incluye los cuatro contratos del scheduler. |
 | Tipos y lint | Aprobados. |
 | Build de producción | Deployment final READY con el commit exacto; live/ready y navegación verificados antes y después de promover. |
 | Dependencias de producción | **Cero avisos conocidos** de cualquier severidad en la auditoría final. |
@@ -84,13 +88,17 @@ La revisión automática rechazó eliminar la carpeta temporal de restauración 
 
 La primera pasada sobre la base concurrente detectó tres pruebas del formulario anterior; se corrigieron y sus 25 casos pasaron antes de repetir toda la suite final. Los grupos enfocados no se suman al total unitario.
 
+La corrida final publicada corresponde a `output/mail-release-final-unit.json`: 2.357 casos en 265 archivos, sin omitidas ni pendientes; tipos, lint, 174 controles de dominio y 165 de herramientas aprobados. Los 80 casos enfocados posteriores al ajuste de cálculo también pasaron antes de repetir toda la suite. La compilación ad231c2 se preparó sin dominio, se verificó live/ready, se promovió y se contrastó de nuevo con el dominio público. El pedido automático del cliente se recalculó después de publicar: HTTP 200/status ready/$195.000 y pago habilitado, sin pulsarlo. Ida/vuelta 0 km; no acredita el traslado a Berazategui. La captura automática falló por timeout del navegador; la evidencia conservada es la respuesta de red y el estado visible de la interfaz.
+
+Evidencia final ignorada: `output/mail-release-final-public-health.json`, `mail-release-final-customer-smoke.json`, `mail-admin-104-active-observation.json`, `mail-admin-104-verify.json` y `mail-release-final-errors.jsonl`.
+
 Evidencia local ignorada: `output/launch-final-acceptance.json`, `output/launch-final-acceptance.log`, `output/launch-final-acceptance-typecheck.log`, `output/launch-final-acceptance-audit.json`, `output/launch-publish-domain.log`, `output/launch-publish-tooling.log`, `output/launch-final-staged-smoke.json`, `output/launch-scheduler-observation.json`, `output/launch-production-inapp-recovery.json` y `output/launch-production-error-scan.log`.
 
 ## Pendientes expresos para la apertura
 
 1. **Correo del servicio: resuelto.** Se verificaron dominio/DNS y seis entregas en Resend; el procesamiento automático está activo. Delivered no demuestra lectura ni ubicación en la bandeja principal. Ver el informe específico.
 2. **Recorrido financiero real:** falta una nueva prueba de cobro, webhook y devolución en esta revisión. Las pantallas consultaron los pagos autorizados anteriores; las pruebas automáticas no sustituyen una operación real. No se hizo un cobro nuevo ni se modificaron sus importes.
-3. **Cobertura geográfica:** el titular confirmó el punto censal de Calle 23 5871 y el servidor lo resolvió correctamente. La prueba administrativa detectó que falta LYSTO_ROUTING_ORIGIN; el fallback Obelisco es rechazado por carecer de altura. Falta configurar la base que indique el titular y acreditar ida/vuelta reales; no es un fallo del destino seleccionado.
+3. **Cobertura geográfica:** el titular confirmó el punto censal de Calle 23 5871 y el servidor lo resolvió correctamente. La prueba administrativa detectó que el fallback Obelisco no era un origen válido. El pedido automático usa el origen del profesional asignado; se retiró la solicitud de una base general. La calculadora sin punto de salida mantiene el traslado sin verificar y el presupuesto en revisión, con alternativa de ruta manual verificada. Falta acreditar ida/vuelta reales distintas de cero en el recorrido automático; no es un fallo del destino confirmado.
 4. **Recuperación completa y operación:** faltan restauración integral de servicios, custodia independiente del equipo, automatización de copias, RPO/RTO aceptados y alertas externas verificadas. Los advisors WARN siguen documentados. La suite integral protegida requiere un entorno aislado; no se ejecutó contra producción ni se falsificó evidencia de gates humanos/proveedor.
 
 ## Referencias oficiales
