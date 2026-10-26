@@ -52,4 +52,30 @@ describe('profile persistence through guarded versioned assets', () => {
     expect(mocks.write).toHaveBeenCalledWith(authority, 'address', expect.objectContaining({ street: 'Corrientes', isDefault: true }), null, null)
     expect(mocks.write.mock.calls[0][2]).not.toHaveProperty('customer_id')
   })
+  it('updates all geographic fields from the verified selection when an existing address is partial', async () => {
+    const selected = { street: 'SAN MARTIN', number: '123', city: 'Córdoba', province: 'Córdoba' }
+    mocks.read.mockResolvedValueOnce({ ...session, address: { ...address, number: '' } })
+      .mockResolvedValueOnce({ ...session, address: { ...address, ...selected } })
+    const form = new FormData()
+    Object.entries({ ...selected, first_name: 'Tampered', property_type: 'house' }).forEach(([key, value]) => form.set(key, value))
+    form.set('location_proof', issueLocationProof({ ...selected, provinceId: '14', cityId: '14014010', streetId: '1401401000123',
+      formattedAddress: 'SAN MARTIN 123, Córdoba, Córdoba, Argentina', latitude: -31.4167, longitude: -64.1833,
+      precision: 'range_interpolated', source: 'georef' }, proofSecret))
+    await expect(completeProfileAction(initial, form)).rejects.toThrow('REDIRECT:/app')
+    expect(mocks.write).toHaveBeenCalledTimes(1)
+    expect(mocks.write).toHaveBeenCalledWith(authority, 'address', expect.objectContaining({
+      ...selected, propertyType: 'apartment', label: 'Casa'
+    }), address.id, address.version)
+  })
+  it('saves only the missing property type without requesting or replacing the existing geographic selection', async () => {
+    mocks.read.mockResolvedValueOnce({ ...session, address: { ...address, property_type: '' } })
+      .mockResolvedValueOnce({ ...session, address: { ...address, property_type: 'house' } })
+    const form = new FormData()
+    Object.entries({ street: 'Tampered', number: '456', city: 'Córdoba', province: 'Córdoba', property_type: 'house' }).forEach(([key, value]) => form.set(key, value))
+    await expect(completeProfileAction(initial, form)).rejects.toThrow('REDIRECT:/app')
+    expect(mocks.write).toHaveBeenCalledTimes(1)
+    expect(mocks.write).toHaveBeenCalledWith(authority, 'address', expect.objectContaining({
+      street: address.street, number: address.number, city: address.city, province: address.province, propertyType: 'house'
+    }), address.id, address.version)
+  })
 })

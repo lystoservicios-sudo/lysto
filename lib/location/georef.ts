@@ -8,6 +8,7 @@ import {
   type LocationSuggestionInput
 } from './contracts'
 import { addressSearchQuery, normalizeAddressStreet, normalizeLocationText } from './search-query'
+import { findArgentineProvince } from './provinces'
 
 const territory = z.object({ id: z.string(), nombre: z.string() })
 const nullableTerritory = z.object({ id: z.string().nullable(), nombre: z.string().nullable() })
@@ -69,7 +70,8 @@ async function get<T>(path: string, params: URLSearchParams, schema: z.ZodType<T
 
 function context(input: LocationSuggestionInput) {
   const params = new URLSearchParams({ max: '8' })
-  if (input.provinceId || input.province) params.set('provincia', input.provinceId || input.province || '')
+  const province = findArgentineProvince(input.provinceId || input.province)
+  if (province) params.set('provincia', province.id)
   if (input.cityId || input.city) params.set('localidad', input.cityId || input.city || '')
   return params
 }
@@ -77,11 +79,13 @@ function context(input: LocationSuggestionInput) {
 export async function georefAddresses(input: LocationSuggestionInput, fetcher: typeof fetch = fetch, options?: { discovery: boolean }): Promise<GeorefAddress[]> {
   const value = locationSuggestionInputSchema.parse(input)
   if (value.kind !== 'address') throw new Error('address_query_required')
+  const province = findArgentineProvince(value.provinceId || value.province)
+  if (!province) return []
   if (options?.discovery) {
     const query = addressSearchQuery(value)
     if (!query.number || !normalizeAddressStreet(query.street) || !query.provinces.length) return []
-    // Partition before max: a popular street in Buenos Aires must not exhaust
-    // a combined/national page and hide all CABA matches.
+    // Apply the selected province before max. Locality and census locality are
+    // separate scopes inside that province, never broader geographic fallbacks.
     const results = await Promise.allSettled(query.provinces.flatMap(province => {
       const scopes: Record<string, string>[] = query.cityId ? [{ localidad: query.cityId }] : query.city
         ? [{ localidad: query.city }, { localidad_censal: query.city }] : [{}]
@@ -102,42 +106,42 @@ export async function georefAddresses(input: LocationSuggestionInput, fetcher: t
     ))
   }
   const params = context(value)
-  if (!value.provinceId && !value.province) params.set('provincia', '02,06')
   const parts = value.query.split(',').map(part => part.trim())
   const fullAddressWithCity = !value.street && !value.cityId && !value.city && parts.length === 2 && parts.every(Boolean)
   if (fullAddressWithCity) params.set('localidad', parts[1])
   params.set('direccion', value.street ? `${value.street} ${value.query}` : fullAddressWithCity ? parts[0] : value.query)
   const data = await get('direcciones', params, addressResponse, fetcher)
-  return data.direcciones
+  return data.direcciones.filter(item => item.provincia.id === province.id)
 }
 
 export async function suggestLocations(raw: LocationSuggestionInput, fetcher: typeof fetch = fetch): Promise<LocationSuggestion[]> {
   const input = locationSuggestionInputSchema.parse(raw)
+  const province = findArgentineProvince(input.provinceId || input.province)
+  if (input.kind !== 'province' && !province) return []
   let suggestions: LocationSuggestion[]
   if (input.kind === 'province') {
     const params = new URLSearchParams({ nombre: input.query, max: '8' })
     const data = await get('provincias', params, provinceResponse, fetcher)
     suggestions = data.provincias
-      .filter((item) => ['02', '06'].includes(item.id))
-      .map((item) => ({ kind: 'province', id: item.id, label: item.nombre, provinceId: item.id, province: item.nombre }))
+      .filter((item) => findArgentineProvince(item.id))
+      .map((item) => ({ kind: 'province', id: item.id, label: findArgentineProvince(item.id)!.label, provinceId: item.id, province: findArgentineProvince(item.id)!.name }))
   } else if (input.kind === 'city') {
     const params = context(input); params.set('nombre', input.query)
     const data = await get('localidades', params, localityResponse, fetcher)
-    suggestions = data.localidades.map((item) => ({ kind: 'city', id: item.id, label: item.nombre, secondary: `${item.departamento.nombre}, ${item.provincia.nombre}`, provinceId: item.provincia.id, province: item.provincia.nombre, cityId: item.id, city: item.nombre }))
+    suggestions = data.localidades.filter(item => item.provincia.id === province!.id).map((item) => ({ kind: 'city', id: item.id, label: item.nombre, secondary: `${item.departamento.nombre}, ${item.provincia.nombre}`, provinceId: item.provincia.id, province: province!.name, cityId: item.id, city: item.nombre }))
   } else if (input.kind === 'street') {
     const params = context(input)
-    if (!input.provinceId && !input.province) params.set('provincia', '02,06')
     params.set('nombre', input.query)
     const data = await get('calles', params, streetResponse, fetcher)
-    suggestions = data.calles.map((item) => ({ kind: 'street', id: item.id, label: item.nombre, secondary: `${item.localidad.nombre}, ${item.provincia.nombre}`, provinceId: item.provincia.id, province: item.provincia.nombre, cityId: item.localidad.id, city: item.localidad.nombre, streetId: item.id, street: item.nombre }))
+    suggestions = data.calles.filter(item => item.provincia.id === province!.id).map((item) => ({ kind: 'street', id: item.id, label: item.nombre, secondary: `${item.localidad.nombre}, ${item.provincia.nombre}`, provinceId: item.provincia.id, province: province!.name, cityId: item.localidad.id, city: item.localidad.nombre, streetId: item.id, street: item.nombre }))
   } else {
     const discovery = !input.street && !input.streetId
     const data = await georefAddresses(input, fetcher, { discovery })
-    suggestions = data.filter((item) => item.calle.id && item.calle.nombre && ['02', '06'].includes(item.provincia.id)).map((item) => ({
+    suggestions = data.filter((item) => item.calle.id && item.calle.nombre && item.provincia.id === province!.id).map((item) => ({
       kind: 'address', id: `${item.calle.id}:${item.altura.valor}:${item.localidad.id}`,
       label: discovery ? `${item.calle.nombre} ${item.altura.valor}` : item.nomenclatura,
       ...(discovery ? { secondary: addressContext(item) } : {}),
-      provinceId: item.provincia.id, province: item.provincia.nombre, cityId: item.localidad.id, city: item.localidad.nombre,
+      provinceId: item.provincia.id, province: province!.name, cityId: item.localidad.id, city: item.localidad.nombre,
       streetId: item.calle.id!, street: item.calle.nombre!, number: String(item.altura.valor), latitude: item.ubicacion.lat, longitude: item.ubicacion.lon
     }))
   }

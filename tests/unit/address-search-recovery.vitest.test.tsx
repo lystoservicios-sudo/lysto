@@ -2,153 +2,94 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { useState } from 'react'
 import { afterEach, expect, it, vi } from 'vitest'
 import { ArgentineAddressFields } from '@/components/location/argentine-address-fields'
-import { FullAddressCombobox } from '@/components/location/full-address-combobox'
 
-const manual = { street: 'Calle del ejemplo', number: '1234', city: 'Quilmes', province: 'Buenos Aires',
-  provinceId: '06', formattedAddress: 'Calle del ejemplo 1234, Quilmes, Buenos Aires, Argentina',
-  source: 'manual', precision: 'unverified', latitude: null, longitude: null }
+const suggestion = { kind: 'address', id: 'pavon-caba', label: 'AV PAVON 2012', secondary: 'San Cristóbal · CABA · Argentina',
+  street: 'AV PAVON', number: '2012', city: 'San Cristóbal', cityId: '02021010', province: 'CABA', provinceId: '02', streetId: '0202101000123' }
+const address = { street: 'AV PAVON', number: '2012', city: 'San Cristóbal', province: 'CABA', provinceId: '02', cityId: '02021010', streetId: '0202101000123',
+  formattedAddress: 'AV PAVON 2012, San Cristóbal, CABA, Argentina', source: 'georef', precision: 'range_interpolated', latitude: -34.623, longitude: -58.397 }
 afterEach(() => vi.unstubAllGlobals())
-
-function fillManual() {
-  fireEvent.change(screen.getByRole('textbox', { name: 'Calle' }), { target: { value: manual.street } })
-  fireEvent.change(screen.getByRole('textbox', { name: 'Altura' }), { target: { value: manual.number } })
-  fireEvent.change(screen.getByRole('textbox', { name: 'Localidad' }), { target: { value: manual.city } })
-  fireEvent.change(screen.getByRole('combobox', { name: 'Provincia' }), { target: { value: manual.province } })
-}
 function Harness() {
   const [value, setValue] = useState({ street: '', number: '', city: '', province: '' })
   const [proof, setProof] = useState('')
   return <form onSubmit={event => event.preventDefault()}>
-    <ArgentineAddressFields value={value} onChange={setValue} onProofChange={setProof} idPrefix="recovery"
+    <ArgentineAddressFields value={value} onChange={setValue} onProofChange={setProof} idPrefix="province-first"
       labels={{ street: 'Calle', number: 'Altura', city: 'Localidad', province: 'Provincia' }} />
     <output data-testid="result">{JSON.stringify({ ...value, proof })}</output>
     <button type="submit" disabled={!proof}>Guardar domicilio</button>
   </form>
 }
-
-it.each([200, 503])('offers manual entry when suggestions are empty or unavailable (%s)', async status => {
-  vi.stubGlobal('fetch', vi.fn(async () => Response.json({ suggestions: [] }, { status })))
-  render(<Harness />)
-  fireEvent.change(screen.getByRole('combobox', { name: 'Dirección' }), { target: { value: 'Calle del ejemplo 1234' } })
-  fireEvent.click(screen.getByRole('button', { name: 'Mi dirección no aparece' }))
-  expect(screen.getByRole('textbox', { name: 'Localidad' })).toBeTruthy()
-  expect(screen.getByRole('button', { name: 'Usar esta dirección' }).getAttribute('type')).toBe('button')
-  expect(document.querySelectorAll('form')).toHaveLength(1)
-})
-
-it('saves typed address fields and its signed receipt without claiming a verified point', async () => {
-  const fetcher = vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
-    if (String(url).includes('/suggestions')) return Response.json({ suggestions: [] })
-    expect(init?.method).toBe('POST')
-    return Response.json({ address: manual, proof: 'manual-receipt' })
-  })
-  vi.stubGlobal('fetch', fetcher)
-  render(<Harness />)
-  fireEvent.click(screen.getByRole('button', { name: 'Mi dirección no aparece' }))
-  fillManual()
-  fireEvent.click(screen.getByRole('button', { name: 'Usar esta dirección' }))
-  await waitFor(() => expect(JSON.parse(screen.getByTestId('result').textContent!)).toMatchObject({
-    street: manual.street, number: manual.number, city: manual.city, province: manual.province, proof: 'manual-receipt'
-  }))
-  expect((screen.getByRole('button', { name: 'Guardar domicilio' }) as HTMLButtonElement).disabled).toBe(false)
-  expect(screen.getByText(/antes de calcular el traslado/)).toBeTruthy()
-  const resolve = fetcher.mock.calls.find(([url]) => String(url).endsWith('/resolve'))
-  expect(resolve).toBeTruthy()
-  expect(JSON.parse(String(resolve?.[1]?.body))).toEqual({ mode: 'manual', street: manual.street, number: manual.number, city: manual.city, province: manual.province })
-  fireEvent.change(screen.getByRole('combobox', { name: 'Dirección' }), { target: { value: 'Otra calle 555' } })
-  expect(JSON.parse(screen.getByTestId('result').textContent!).proof).toBe('')
+function selectProvince(id = '02') { fireEvent.change(screen.getByRole('combobox', { name: 'Provincia' }), { target: { value: id } }) }
+function query(value = 'Pavon 2012') { fireEvent.change(screen.getByRole('combobox', { name: 'Dirección' }), { target: { value } }) }
+function result() { return JSON.parse(screen.getByTestId('result').textContent!) }
+function setup(resolve: (url: RequestInfo | URL, init?: RequestInit) => Promise<Response> = async (url) => String(url).includes('/suggestions')
+  ? Response.json({ suggestions: [suggestion] }) : Response.json({ address, proof: 'verified-proof' })) {
+  const fetcher = vi.fn(resolve); vi.stubGlobal('fetch', fetcher); render(<Harness />); return fetcher
+}
+it('requires an Argentine province above the disabled address before searching', () => {
+  const fetcher = setup()
+  const province = screen.getByRole('combobox', { name: 'Provincia' }) as HTMLSelectElement
+  const direction = screen.getByRole('combobox', { name: 'Dirección' }) as HTMLInputElement
+  expect(province.required).toBe(true)
+  expect(province.value).toBe('')
+  expect(province.compareDocumentPosition(direction) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  expect(direction.disabled).toBe(true)
+  expect(fetcher).not.toHaveBeenCalled()
   expect((screen.getByRole('button', { name: 'Guardar domicilio' }) as HTMLButtonElement).disabled).toBe(true)
 })
-
-it('retains editable manual fields after a failed confirmation and permits retry', async () => {
-  let attempts = 0
-  vi.stubGlobal('fetch', vi.fn(async (url: RequestInfo | URL) => {
-    if (String(url).includes('/suggestions')) return Response.json({ suggestions: [] })
-    attempts++
-    return attempts === 1 ? Response.json({}, { status: 503 }) : Response.json({ address: manual, proof: 'retry-proof' })
-  }))
-  render(<Harness />)
-  fireEvent.click(screen.getByRole('button', { name: 'Mi dirección no aparece' }))
-  fillManual()
-  fireEvent.click(screen.getByRole('button', { name: 'Usar esta dirección' }))
-  await screen.findByRole('alert')
-  expect((screen.getByRole('textbox', { name: 'Calle' }) as HTMLInputElement).value).toBe(manual.street)
-  fireEvent.click(screen.getByRole('button', { name: 'Usar esta dirección' }))
-  await waitFor(() => expect(JSON.parse(screen.getByTestId('result').textContent!).proof).toBe('retry-proof'))
-  expect(attempts).toBe(2)
+it('offers 23 Argentine provinces and CABA separately', () => {
+  setup()
+  const selector = screen.getByRole('combobox', { name: 'Provincia' }) as HTMLSelectElement
+  expect(selector.options).toHaveLength(25)
+  expect([...selector.options].map(option => option.textContent)).toEqual(expect.arrayContaining(['Buenos Aires', 'Córdoba', 'Santa Fe', 'Ciudad Autónoma de Buenos Aires (CABA)']))
+  expect([...selector.options].map(option => option.value)).toEqual(expect.arrayContaining(['02', '06', '14', '82']))
 })
-
-it('rejects incomplete manual fields without a request', () => {
-  const fetcher = vi.fn()
-  vi.stubGlobal('fetch', fetcher)
-  render(<Harness />)
-  fireEvent.click(screen.getByRole('button', { name: 'Mi dirección no aparece' }))
-  fireEvent.click(screen.getByRole('button', { name: 'Usar esta dirección' }))
-  expect(screen.getByRole('alert').textContent).toContain('Completá')
-  expect(fetcher).not.toHaveBeenCalled()
+it('keeps the chosen province while typing and sends it on every search', async () => {
+  const fetcher = setup(); selectProvince('06'); query('Pavon 2012, Córdoba')
+  await waitFor(() => expect(fetcher).toHaveBeenCalled())
+  const params = new URL(String(fetcher.mock.calls[0][0]), 'https://lysto.test').searchParams
+  expect(params.get('provinceId')).toBe('06'); expect(params.get('province')).toBe('Buenos Aires')
+  expect(result()).toMatchObject({ province: 'Buenos Aires', number: '', city: '', proof: '' })
 })
-
-it.each([['Otra 500, Quilmes, Buenos Aires', 'Buenos Aires', 'Quilmes'], ['Otra 500, Provincia de Buenos Aires', 'Buenos Aires', ''], ['Cerrito 628, CABA', 'CABA', 'CABA'], ['Cerrito 628, Ciudad de Buenos Aires', 'CABA', 'CABA']])('uses explicit location instead of previous context (%s)', (query, province, city) => {
-  vi.stubGlobal('fetch', vi.fn(async () => Response.json({ suggestions: [] })))
-  function Existing() {
-    const [value, setValue] = useState({ street: 'Corrientes', number: '1234', city: 'San Nicolás', province: 'CABA' })
-    return <ArgentineAddressFields value={value} onChange={setValue} onProofChange={vi.fn()} idPrefix="existing"
-      labels={{ street: 'Calle', number: 'Altura', city: 'Localidad', province: 'Provincia' }} />
-  }
-  render(<Existing />)
-  fireEvent.change(screen.getByRole('combobox', { name: 'Dirección' }), { target: { value: query } })
-  fireEvent.click(screen.getByRole('button', { name: 'Mi dirección no aparece' }))
-  expect((screen.getByRole('combobox', { name: 'Provincia' }) as HTMLSelectElement).value).toBe(province)
-  expect((screen.getByRole('textbox', { name: 'Localidad' }) as HTMLInputElement).value).toBe(city)
+it('confirms a selected address with the canonical fields and proof', async () => {
+  setup(); selectProvince(); query()
+  fireEvent.click(await screen.findByRole('option', { name: /AV PAVON 2012/ }))
+  await waitFor(() => expect(result()).toMatchObject({ street: address.street, number: '2012', city: address.city, province: 'CABA', proof: 'verified-proof' }))
+  expect((screen.getByRole('button', { name: 'Guardar domicilio' }) as HTMLButtonElement).disabled).toBe(false)
 })
-
-it('checks the full address length including the country before submitting', () => {
-  const fetcher = vi.fn(async () => Response.json({ address: manual, proof: 'should-not-submit' }))
-  vi.stubGlobal('fetch', fetcher)
-  render(<Harness />)
-  fireEvent.click(screen.getByRole('button', { name: 'Mi dirección no aparece' }))
-  fillManual()
-  fireEvent.change(screen.getByRole('textbox', { name: 'Calle' }), { target: { value: 'S'.repeat(140) } })
-  fireEvent.change(screen.getByRole('textbox', { name: 'Localidad' }), { target: { value: 'Q'.repeat(30) } })
-  fireEvent.click(screen.getByRole('button', { name: 'Usar esta dirección' }))
-  expect(screen.getByRole('alert').textContent).toContain('demasiado larga')
-  expect(fetcher).not.toHaveBeenCalled()
+it('clears the entire selection and proof when the province changes', async () => {
+  setup(); selectProvince(); query(); fireEvent.click(await screen.findByRole('option', { name: /AV PAVON 2012/ }))
+  await waitFor(() => expect(result().proof).toBe('verified-proof'))
+  selectProvince('82')
+  expect(result()).toEqual({ street: '', number: '', city: '', province: 'Santa Fe', proof: '' })
+  expect((screen.getByRole('combobox', { name: 'Dirección' }) as HTMLInputElement).value).toBe('')
+  expect((screen.getByRole('button', { name: 'Guardar domicilio' }) as HTMLButtonElement).disabled).toBe(true)
 })
-
-it('does not apply a delayed manual response after switching back to search and editing', async () => {
-  let finish!: (response: Response) => void
-  const resolved = vi.fn()
-  vi.stubGlobal('fetch', vi.fn((url: RequestInfo | URL) => String(url).includes('/suggestions')
-    ? Promise.resolve(Response.json({ suggestions: [] })) : new Promise<Response>(resolve => { finish = resolve })))
-  function Direct() {
-    const [value, setValue] = useState('')
-    return <FullAddressCombobox id="stale-manual" label="Dirección" value={value} onChange={setValue} onResolved={resolved} />
-  }
-  render(<Direct />)
-  fireEvent.click(screen.getByRole('button', { name: 'Mi dirección no aparece' }))
-  fillManual()
-  fireEvent.click(screen.getByRole('button', { name: 'Usar esta dirección' }))
-  await waitFor(() => expect(finish).toBeTypeOf('function'))
-  fireEvent.click(screen.getByRole('button', { name: 'Volver al buscador' }))
-  fireEvent.change(screen.getByRole('combobox', { name: 'Dirección' }), { target: { value: 'Otra calle 555' } })
-  await act(async () => { finish(Response.json({ address: manual, proof: 'stale-proof' })); await Promise.resolve() })
-  expect(resolved).not.toHaveBeenCalled()
+it.each([200, 503])('does not offer a manual bypass after an empty or failed search (%s)', async status => {
+  setup(async () => Response.json({ suggestions: [] }, { status })); selectProvince(); query('No existe 99999')
+  await screen.findByText(status === 200 ? 'No encontramos coincidencias.' : 'No pudimos cargar opciones. Intentá nuevamente.')
+  expect(screen.queryByRole('button', { name: 'Mi dirección no aparece' })).toBeNull()
+  expect(screen.queryByRole('button', { name: 'Usar esta dirección' })).toBeNull()
+  expect(result().proof).toBe('')
+  expect((screen.getByRole('combobox', { name: 'Dirección' }) as HTMLInputElement).value).toBe('No existe 99999')
+  expect((screen.getByRole('button', { name: 'Guardar domicilio' }) as HTMLButtonElement).disabled).toBe(true)
 })
-
-it('discards a pending manual confirmation when the parent changes the saved record version', async () => {
-  let finish!: (response: Response) => void
-  const resolved = vi.fn()
-  vi.stubGlobal('fetch', vi.fn((url: RequestInfo | URL) => String(url).includes('/suggestions')
-    ? Promise.resolve(Response.json({ suggestions: [] })) : new Promise<Response>(resolve => { finish = resolve })))
-  const { rerender } = render(<FullAddressCombobox id="manual-version" label="Dirección" value="" revisionKey="pro:1"
-    onChange={vi.fn()} onResolved={resolved} />)
-  fireEvent.click(screen.getByRole('button', { name: 'Mi dirección no aparece' }))
-  fillManual()
-  fireEvent.click(screen.getByRole('button', { name: 'Usar esta dirección' }))
-  await waitFor(() => expect(finish).toBeTypeOf('function'))
-  rerender(<FullAddressCombobox id="manual-version" label="Dirección" value="Otra 500, CABA" revisionKey="pro:2"
-    onChange={vi.fn()} onResolved={resolved} />)
-  await act(async () => { finish(Response.json({ address: manual, proof: 'old-version-proof' })); await Promise.resolve() })
-  expect(resolved).not.toHaveBeenCalled()
-  expect((screen.getByRole('textbox', { name: 'Calle' }) as HTMLInputElement).value).toBe('Otra')
+it('discards resolution from the previous province even if the request ignores abort', async () => {
+  let finish!: (value: Response) => void
+  setup(async url => String(url).includes('/suggestions') ? Response.json({ suggestions: [suggestion] }) : new Promise<Response>(resolve => { finish = resolve }))
+  selectProvince(); query(); fireEvent.click(await screen.findByRole('option', { name: /AV PAVON 2012/ }))
+  await waitFor(() => expect(finish).toBeTypeOf('function')); selectProvince('14')
+  await act(async () => { finish(Response.json({ address, proof: 'stale-proof' })); await Promise.resolve() })
+  expect(result()).toEqual({ street: '', number: '', city: '', province: 'Córdoba', proof: '' })
+})
+it('rejects a response from a province other than the selected one', async () => {
+  setup(async url => String(url).includes('/suggestions') ? Response.json({ suggestions: [suggestion] })
+    : Response.json({ address: { ...address, province: 'Buenos Aires', provinceId: '06' }, proof: 'wrong-province-proof' }))
+  selectProvince(); query(); fireEvent.click(await screen.findByRole('option', { name: /AV PAVON 2012/ }))
+  await screen.findByRole('alert'); expect(result().proof).toBe('')
+})
+it('does not accept a legacy manual response as a verified selection', async () => {
+  setup(async url => String(url).includes('/suggestions') ? Response.json({ suggestions: [suggestion] })
+    : Response.json({ address: { ...address, source: 'manual', precision: 'unverified', latitude: null, longitude: null }, proof: 'legacy-manual-proof' }))
+  selectProvince(); query(); fireEvent.click(await screen.findByRole('option', { name: /AV PAVON 2012/ }))
+  await screen.findByRole('alert'); expect(result().proof).toBe('')
 })

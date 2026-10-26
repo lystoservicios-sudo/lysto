@@ -89,7 +89,7 @@ export function ConnectedCustomerAddresses({
       .every((field) => savedAddress[field] === value[field])
     if (!locationProof && !unchangedLocation) {
       setFailed(true)
-      setMessage('Elegí una sugerencia o ingresá la dirección manualmente para continuar.')
+      setMessage('Elegí la provincia y seleccioná una dirección de la lista para continuar.')
       return
     }
     const parsed = addressInputSchema.safeParse(

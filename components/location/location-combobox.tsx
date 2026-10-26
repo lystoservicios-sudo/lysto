@@ -4,6 +4,7 @@ import { useCombobox } from 'downshift'
 import { useEffect, useMemo, useState } from 'react'
 
 import { locationSuggestionSchema, type LocationKind, type LocationSuggestion } from '@/lib/location/contracts'
+import { findArgentineProvince } from '@/lib/location/provinces'
 import styles from './location-fields.module.css'
 
 type Context = Partial<Pick<LocationSuggestion, 'provinceId' | 'province' | 'cityId' | 'city' | 'streetId' | 'street'>>
@@ -34,7 +35,10 @@ export function LocationCombobox({ id, label, name, value, kind, context, onChan
         if (!response.ok) throw new Error('suggestions_unavailable')
         const payload = await response.json() as { suggestions?: unknown }
         if (controller.signal.aborted) return
-        setItems(locationSuggestionSchema.array().parse(payload.suggestions)); setAttempted(true); setFailed(false)
+        const selectedProvince = findArgentineProvince(context?.provinceId) ?? findArgentineProvince(context?.province)
+        const suggestions = locationSuggestionSchema.array().parse(payload.suggestions).filter(item => kind !== 'address' || !selectedProvince ||
+          (findArgentineProvince(item.provinceId) ?? findArgentineProvince(item.province))?.id === selectedProvince.id)
+        setItems(suggestions); setAttempted(true); setFailed(false)
       } catch (error) {
         if (!controller.signal.aborted && !(error instanceof DOMException && error.name === 'AbortError')) { setItems([]); setAttempted(true); setFailed(true) }
       } finally { if (!controller.signal.aborted) setBusy(false) }

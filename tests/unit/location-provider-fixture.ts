@@ -15,6 +15,7 @@ export function withLocationProvider(domainFetch: typeof fetch): typeof fetch {
 }
 
 export async function selectUnitAddress() {
+  fireEvent.change(screen.getByRole('combobox', { name: 'Provincia' }), { target: { value: '06' } })
   fireEvent.change(screen.getByRole('combobox', { name: 'Dirección' }), { target: { value: 'Corrientes 456' } })
   const menu = await screen.findByRole('listbox', { name: 'Dirección opciones' })
   fireEvent.click(await within(menu).findByRole('option', { name: 'Corrientes 456, Buenos Aires' }))

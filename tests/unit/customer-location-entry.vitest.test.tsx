@@ -33,9 +33,9 @@ describe('customer location entry points', () => {
   it('explains an unconfirmed new address in Más before attempting persistence', () => {
     const { container } = render(<ConnectedCustomerAddresses initialPage={emptyPage} />)
     fireEvent.change(screen.getByLabelText(/Nombre de la dirección/), { target: { value: 'Casa' } })
-    fireEvent.change(screen.getByRole('combobox', { name: 'Dirección' }), { target: { value: 'Corrientes 1234' } })
+    fireEvent.change(screen.getByRole('combobox', { name: 'Provincia' }), { target: { value: '02' } }); fireEvent.change(screen.getByRole('combobox', { name: 'Dirección' }), { target: { value: 'Corrientes 1234' } })
     fireEvent.submit(container.querySelector('form')!)
-    expect(screen.getByRole('alert').textContent).toContain('Elegí una sugerencia o ingresá la dirección manualmente')
+    expect(screen.getByRole('alert').textContent).toContain('Elegí la provincia y seleccioná una dirección de la lista')
   })
 
   it('preserves editing a saved address label without requiring another location lookup', async () => {
@@ -58,9 +58,9 @@ describe('customer location entry points', () => {
   it('explains an unconfirmed new home address before attempting persistence', () => {
     const save = vi.fn()
     const { container } = render(<HomeForm flow={{ type: 'home', value: { ...configuration(), name: 'Casa' }, key: 'key', existing: false }} addresses={[]} homes={[]} busy={false} locked={false} onChange={vi.fn()} onSave={save} onCancel={vi.fn()} />)
-    fireEvent.change(screen.getByRole('combobox', { name: 'Dirección' }), { target: { value: 'Corrientes 1234' } })
+    fireEvent.change(screen.getByRole('combobox', { name: 'Provincia' }), { target: { value: '02' } }); fireEvent.change(screen.getByRole('combobox', { name: 'Dirección' }), { target: { value: 'Corrientes 1234' } })
     fireEvent.submit(container.querySelector('form')!)
     expect(save).not.toHaveBeenCalled()
-    expect(screen.getByRole('alert').textContent).toContain('Elegí una sugerencia o ingresá la dirección manualmente')
+    expect(screen.getByRole('alert').textContent).toContain('Elegí la provincia y seleccioná una dirección de la lista')
   })
 })

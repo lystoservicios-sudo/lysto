@@ -58,8 +58,7 @@ export function verifyLocationProof(token: string, expected: Pick<ResolvedAddres
   return address
 }
 
-/** Recovers an authentic selection for renewal. Provider selections must be
- * resolved again; manual selections may only be reissued as unverified. */
+/** Recovers an authentic verified selection for fresh provider resolution. */
 export function readAuthenticLocationProof(token: string, expected: Pick<ResolvedAddress, 'street' | 'number' | 'city' | 'province'>, secret?: string, now = new Date()) {
   const address = verifiedPayload(token, secret, now, true)
   assertExpectedAddress(address, expected)

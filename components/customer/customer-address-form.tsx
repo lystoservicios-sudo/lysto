@@ -97,7 +97,7 @@ export function CustomerAddressForm({ initialValue, onSubmit }: {
           onChange={location => { setValue(current => ({ ...current, ...location })); setLocationTouched(true); setSubmission({ state: 'idle' }) }}
           onProofChange={setLocationProof}
           after={{ number: <>{field('floor', 'Piso', 'address-line2')}{field('apartment', 'Departamento')}</> }} />
-        {locationTouched && locationInvalid && <p id="address-location-error" className="col-span-full text-sm font-semibold text-red-700">Elegí una sugerencia o ingresá la dirección manualmente para continuar.</p>}
+        {locationTouched && locationInvalid && <p id="address-location-error" className="col-span-full text-sm font-semibold text-red-700">Elegí la provincia y seleccioná una dirección de la lista para continuar.</p>}
       </div>
       <fieldset>
         <legend className="text-sm font-semibold text-slate-800">Condiciones de acceso</legend>

@@ -1,7 +1,7 @@
 import 'server-only'
 import { createHash } from 'node:crypto'
 import { z } from 'zod'
-import type { ResolvedAddress } from './contracts'
+import { resolvedAddressSchema, type ResolvedAddress } from './contracts'
 import { geocodeRoutingAddress } from './routing-geocoding'
 import { quoteWriter } from '@/lib/pricing/server'
 import type { Json } from '@/lib/supabase/database.types'
@@ -23,7 +23,9 @@ async function storePoint(address: string, point: VerifiedRoutingPoint) {
   if (error) throw new Error('location_storage_unavailable')
 }
 export async function rememberResolvedAddress(address: ResolvedAddress) {
-  if (address.source === 'manual' || address.precision === 'geometric_center') return
+  address = resolvedAddressSchema.parse(address)
+  // This cache and its SQL enum belong to commercial routing, not national registration.
+  if (!['CABA', 'Buenos Aires'].includes(address.province)) return
   const point = pointSchema.parse({formattedAddress:address.formattedAddress, latitude:address.latitude, longitude:address.longitude,
     province:address.province, precision:address.precision,
     coordinateSource:address.source === 'georef' ? 'georef' : address.source === 'georef_openrouteservice' ? 'openrouteservice' : 'google'})

@@ -4,7 +4,7 @@ import { ZodError } from 'zod'
 const errors = {
   location_selection_required: {
     status: 400,
-    message: 'Elegí una sugerencia o usá «Mi dirección no aparece» para ingresarla manualmente.'
+    message: 'Elegí la provincia y seleccioná una dirección de la lista.'
   },
   professional_invitation_exists: {
     status: 409,

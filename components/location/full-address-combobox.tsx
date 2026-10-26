@@ -1,71 +1,100 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import type { LocationSuggestion, ResolvedAddress } from '@/lib/location/contracts'
+import { resolvedAddressSchema, type LocationSuggestion, type ResolvedAddress } from '@/lib/location/contracts'
+import { ARGENTINE_PROVINCES, findArgentineProvince } from '@/lib/location/provinces'
 import { LocationCombobox } from './location-combobox'
-import { ManualAddressEntry } from './manual-address-entry'
 import styles from './location-fields.module.css'
 
-const sameDisplayedAddress = (a: string, b: string) => {
-  const normalized = (text: string) => text.trim().replace(/,\s*Argentina\s*$/i, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ')
-  return normalized(a) === normalized(b)
-}
+const provinceFromAddress = (value: string) => value.split(',').reverse().map(part => findArgentineProvince(part.trim())).find(Boolean)
 
-export function FullAddressCombobox({ id, label, name, value, onChange, onResolved, onSelectionStart, disabled = false, required = true, className = '', inputClassName = '', ariaInvalid, ariaDescribedBy, revisionKey, context }:
+export function FullAddressCombobox({ id, label, name, value, onChange, onResolved, onSelectionStart, onProvinceChange,
+  disabled = false, required = true, className = '', inputClassName = '', ariaInvalid, ariaDescribedBy, revisionKey, context }:
   { id: string; label: string; name?: string; value: string; onChange: (value: string) => void;
     onResolved: (value: { value: string; proof: string; address: ResolvedAddress }) => void; disabled?: boolean;
-    required?: boolean; className?: string; inputClassName?: string; ariaInvalid?: boolean; ariaDescribedBy?: string; revisionKey?: string | number; onSelectionStart?: () => void;
+    required?: boolean; className?: string; inputClassName?: string; ariaInvalid?: boolean; ariaDescribedBy?: string;
+    revisionKey?: string | number; onSelectionStart?: () => void; onProvinceChange?: (province: string) => void;
     context?: Partial<Pick<LocationSuggestion, 'city' | 'cityId' | 'province' | 'provinceId'>> }) {
+  const contextProvince = findArgentineProvince(context?.provinceId) ?? findArgentineProvince(context?.province)
+  const [provinceId, setProvinceId] = useState(() => contextProvince?.id ?? provinceFromAddress(value)?.id ?? '')
+  const province = findArgentineProvince(provinceId)
   const revision = useRef(0)
+  const recordRevision = useRef(revisionKey)
   const [resolutionError, setResolutionError] = useState('')
-  const [manualOpen, setManualOpen] = useState(false)
-  const [manualConfirmed, setManualConfirmed] = useState(false)
-  const manualValue = useRef('')
   const active = useRef<AbortController | null>(null)
   useEffect(() => () => active.current?.abort(), [])
-  useEffect(() => { revision.current += 1; active.current?.abort(); setResolutionError('') }, [revisionKey])
-  useEffect(() => { if (manualValue.current && !sameDisplayedAddress(value, manualValue.current)) setManualConfirmed(false) }, [value])
-  const change = (next: string) => {
+  useEffect(() => {
     revision.current += 1
     active.current?.abort()
     setResolutionError('')
-    setManualConfirmed(false)
+    if (contextProvince) setProvinceId(contextProvince.id)
+    else if (recordRevision.current !== revisionKey) setProvinceId(provinceFromAddress(value)?.id ?? '')
+    recordRevision.current = revisionKey
+    // value is read only when the parent changes the record revision.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [revisionKey, contextProvince?.id])
+  const change = (next: string) => {
+    if (disabled || !province) return
+    revision.current += 1
+    active.current?.abort()
+    setResolutionError('')
     onChange(next)
   }
+  const changeProvince = (next: string) => {
+    if (disabled) return
+    const nextProvince = findArgentineProvince(next)
+    revision.current += 1
+    active.current?.abort()
+    setResolutionError('')
+    setProvinceId(nextProvince?.id ?? '')
+    onSelectionStart?.()
+    if (onProvinceChange) onProvinceChange(nextProvince?.name ?? '')
+    else onChange('')
+  }
   const resolve = async (item: LocationSuggestion) => {
-    if (!item.street || !item.number || !item.city || !item.province) return
+    const itemProvince = findArgentineProvince(item.provinceId) ?? findArgentineProvince(item.province)
+    if (!province || itemProvince?.id !== province.id || !item.street || !item.number || !item.city || !item.province) return
     onSelectionStart?.()
     const ticket = ++revision.current
     setResolutionError('')
     active.current?.abort()
-    if (item.provinceId && !['02', '06'].includes(item.provinceId)) {
-      setResolutionError('Por ahora el servicio está disponible en CABA y la provincia de Buenos Aires.')
-      return
-    }
     const controller = new AbortController()
     active.current = controller
     try {
-      const response = await fetch('/api/location/resolve', { method: 'POST', credentials: 'same-origin', signal: controller.signal, headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ street: item.street, number: item.number, city: item.city, province: item.province, provinceId: item.provinceId, cityId: item.cityId, streetId: item.streetId }) })
+      const response = await fetch('/api/location/resolve', { method: 'POST', credentials: 'same-origin', signal: controller.signal,
+        headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ street: item.street, number: item.number, city: item.city,
+          province: province.name, provinceId: province.id, cityId: item.cityId, streetId: item.streetId }) })
       if (!response.ok) throw new Error('address_resolution_failed')
-      const payload = await response.json() as { address: ResolvedAddress; proof: string }
+      const payload = await response.json() as { address: unknown; proof: unknown }
+      const address = resolvedAddressSchema.parse(payload.address)
+      if (address.provinceId !== province.id || findArgentineProvince(address.province)?.id !== province.id ||
+          !Number.isFinite(address.latitude) || !Number.isFinite(address.longitude) || typeof payload.proof !== 'string' || !payload.proof)
+        throw new Error('address_resolution_mismatch')
       if (controller.signal.aborted || ticket !== revision.current) return
-      onResolved({ value: payload.address.formattedAddress, address: payload.address, proof: payload.proof })
+      onResolved({ value: address.formattedAddress, address, proof: payload.proof })
     } catch {
       if (!controller.signal.aborted && ticket === revision.current)
-        setResolutionError('No pudimos confirmar la dirección. Podés elegir otra opción o ingresarla manualmente.')
+        setResolutionError('No pudimos confirmar la dirección. Revisá calle, altura y localidad, o elegí otra opción.')
     }
   }
-  return <><LocationCombobox id={id} name={name} label={label} value={value} kind="address" minChars={5} disabled={disabled || manualOpen} context={context} searchEnabled={!manualConfirmed} required={required} placeholder="Escribí calle y número"
-    className={className} inputClassName={inputClassName} ariaInvalid={Boolean(resolutionError) || ariaInvalid} ariaDescribedBy={[ariaDescribedBy, !manualOpen && !manualConfirmed ? `${id}-search-hint` : undefined, resolutionError ? `${id}-resolution-error` : undefined].filter(Boolean).join(' ') || undefined}
-    onChange={change} onSelect={(item) => void resolve(item)} />
-    {!manualOpen && !manualConfirmed && <p id={`${id}-search-hint`} className={styles.status}>Agregá la localidad para distinguir calles con el mismo nombre.</p>}
-    {!manualOpen && <button type="button" disabled={disabled} className={styles.manualToggle} onClick={() => { change(value); onSelectionStart?.(); setManualOpen(true) }}>Mi dirección no aparece</button>}
-    {manualOpen && <ManualAddressEntry key={revisionKey} id={id} value={value} context={context} disabled={disabled} onStart={() => onSelectionStart?.()}
-      onCancel={() => { revision.current += 1; active.current?.abort(); setManualOpen(false); setResolutionError('') }}
-      onResolved={result => { manualValue.current = result.value; setManualOpen(false); setManualConfirmed(true); onResolved(result) }} />}
-    {resolutionError && <p id={`${id}-resolution-error`} role="alert">{resolutionError}</p>}
-    {manualConfirmed && <p role="status" className={styles.status}>Dirección ingresada manualmente. Verificaremos la ubicación antes de calcular el traslado.</p>}
+  const searchContext = { ...context, provinceId: province?.id, province: province?.name }
+  return <>
+    <div className={[styles.field, styles.province, className].filter(Boolean).join(' ')}>
+      <label htmlFor={id + '-province'}>Provincia</label>
+      <select id={id + '-province'} value={provinceId} required={required} disabled={disabled} className={inputClassName}
+        onChange={event => changeProvince(event.target.value)}>
+        <option value="">Elegí una provincia</option>
+        {ARGENTINE_PROVINCES.map(item => <option key={item.id} value={item.id}>{item.label}</option>)}
+      </select>
+    </div>
+    <LocationCombobox id={id} name={name} label={label} value={value} kind="address" minChars={5}
+      disabled={disabled || !province} context={searchContext} required={required} placeholder="Escribí calle y número"
+      className={className} inputClassName={inputClassName} ariaInvalid={Boolean(resolutionError) || ariaInvalid}
+      ariaDescribedBy={[ariaDescribedBy, id + '-search-hint', resolutionError ? id + '-resolution-error' : undefined].filter(Boolean).join(' ')}
+      onChange={change} onSelect={item => void resolve(item)} />
+    <p id={id + '-search-hint'} className={styles.status}>{province
+      ? 'Escribí calle y altura. Agregá la localidad para distinguir direcciones de la misma provincia.'
+      : 'Primero elegí la provincia del domicilio.'}</p>
+    {resolutionError && <p id={id + '-resolution-error'} role="alert">{resolutionError}</p>}
   </>
 }
-

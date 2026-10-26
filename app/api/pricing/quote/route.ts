@@ -33,7 +33,10 @@ const schema = quoteInputSchema
     address: z
       .object({
         street: z.string().trim().min(2).max(150),
-        number: z.string().trim().min(1).max(30),
+        number: z
+          .string()
+          .trim()
+          .regex(/^\d{1,6}$/),
         city: z.string().trim().min(2).max(100),
         province: z.string().trim().min(2).max(100),
         floor: z.string().max(20).optional(),
@@ -99,10 +102,7 @@ export async function POST(request: Request) {
     const policy = policyRecord.policy
     let route: z.infer<typeof routeSchema> | undefined = body.manualRoute
     let routingNotice: string | null = null
-    if (!route && !/^\d{1,6}$/.test(body.address.number)) {
-      routingNotice =
-        'La altura indicada requiere verificación. El traslado está pendiente y el importe mostrado todavía no lo incluye.'
-    } else if (!route) {
+    if (!route) {
       const origin = process.env.LYSTO_ROUTING_ORIGIN?.trim()
       if (!origin) {
         routingNotice =

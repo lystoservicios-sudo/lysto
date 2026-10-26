@@ -44,7 +44,11 @@ export function validateRegistration(input: { email: string; password: string; c
 export function validateProfileCompletion(profile: CustomerIdentity | null, address: CustomerAddress | null, formData: FormData) {
   const current = { ...profile, ...address }
   const missing = missingCustomerFields(profile, address)
-  return fieldsSchema.safeParse(Object.fromEntries(customerFields.map((key) => [key, missing.includes(key) ? formData.get(key) : current[key]])))
+  const geographic = new Set<CustomerField>(['street', 'number', 'city', 'province'])
+  const needsLocation = missing.some((key) => geographic.has(key))
+  return fieldsSchema.safeParse(Object.fromEntries(customerFields.map((key) => [key,
+    missing.includes(key) || needsLocation && geographic.has(key) ? formData.get(key) : current[key]
+  ])))
 }
 
 export function textValue(formData: FormData, name: string) {

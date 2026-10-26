@@ -40,4 +40,22 @@ describe('customer access and progressive onboarding', () => {
     expect(validateProfileCompletion({ ...profile, phone: '' }, address, data)).toMatchObject({ success: true, data: { first_name: 'Ana', phone: '+54 9 11 8765 4321' } })
     expect(validateProfileCompletion(profile, null, new FormData()).success).toBe(false)
   })
+  it.each(['street', 'number', 'city', 'province'] as const)('takes the entire selected address when the saved %s is missing', key => {
+    const selected = { street: 'SAN MARTIN', number: '123', city: 'Córdoba', province: 'Córdoba' }
+    const data = new FormData()
+    Object.entries({ ...selected, first_name: 'Modified', phone: '+5493519999999', property_type: 'house' }).forEach(([name, value]) => data.set(name, value))
+    expect(validateProfileCompletion(profile, { ...address, [key]: '' }, data)).toMatchObject({ success: true,
+      data: { ...selected, ...profile, property_type: address.property_type } })
+  })
+  it('does not mix a partial submitted address with saved geographic fields', () => {
+    const data = new FormData()
+    data.set('number', '456')
+    expect(validateProfileCompletion(profile, { ...address, number: '' }, data).success).toBe(false)
+  })
+  it('preserves the existing address when only the property type is missing', () => {
+    const data = new FormData()
+    Object.entries({ street: 'Changed', number: '456', city: 'Córdoba', province: 'Córdoba', property_type: 'house' }).forEach(([name, value]) => data.set(name, value))
+    expect(validateProfileCompletion(profile, { ...address, property_type: '' }, data)).toMatchObject({ success: true,
+      data: { ...address, property_type: 'house', ...profile } })
+  })
 })

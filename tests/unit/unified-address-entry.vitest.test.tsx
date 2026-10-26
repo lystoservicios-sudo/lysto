@@ -4,7 +4,7 @@ import { afterEach, expect, it, vi } from 'vitest'
 import { ArgentineAddressFields } from '@/components/location/argentine-address-fields'
 import { CompleteProfileForm } from '@/components/auth/customer-forms'
 
-const address = { street: 'PAVON', number: '2012', city: 'Merlo', province: 'Buenos Aires', provinceId: '06', cityId: '06539010', streetId: 'pavon', formattedAddress: 'PAVON 2012, Merlo, Buenos Aires' }
+const address = { street: 'PAVON', number: '2012', city: 'Merlo', province: 'Buenos Aires', provinceId: '06', cityId: '06539010', streetId: 'pavon', formattedAddress: 'PAVON 2012, Merlo, Buenos Aires', latitude: -34.66, longitude: -58.72, source: 'georef', precision: 'range_interpolated' }
 const suggestion = { street: address.street, number: address.number, city: address.city, province: address.province, provinceId: address.provinceId, cityId: address.cityId, streetId: address.streetId, kind: 'address', id: 'merlo', label: 'PAVON 2012' }
 function provider() {
   const fetcher = vi.fn(async (input: RequestInfo | URL) => Response.json(String(input).includes('/suggestions')
@@ -14,7 +14,7 @@ function provider() {
   return fetcher
 }
 async function chooseAddress() {
-  fireEvent.change(screen.getByRole('combobox', { name: 'Dirección' }), { target: { value: 'Pavon 2012' } })
+  fireEvent.change(screen.getByRole('combobox', { name: 'Provincia' }), { target: { value: '06' } }); fireEvent.change(screen.getByRole('combobox', { name: 'Dirección' }), { target: { value: 'Pavon 2012' } })
   fireEvent.click(await screen.findByRole('option', { name: 'PAVON 2012 Merlo · Buenos Aires · Argentina' }))
   await waitFor(() => expect(screen.getByRole('combobox', { name: 'Dirección' })).toHaveProperty('value', address.formattedAddress))
 }
@@ -22,22 +22,22 @@ afterEach(() => vi.unstubAllGlobals())
 
 it('explains why profile completion cannot submit an unselected address', () => {
   const { container } = render(<CompleteProfileForm missing={['street', 'number', 'city', 'province']} next="/app" address={null} />)
-  fireEvent.change(screen.getByRole('combobox', { name: 'Dirección' }), { target: { value: 'Pavon 2012' } })
+  fireEvent.change(screen.getByRole('combobox', { name: 'Provincia' }), { target: { value: '06' } }); fireEvent.change(screen.getByRole('combobox', { name: 'Dirección' }), { target: { value: 'Pavon 2012' } })
   fireEvent.submit(container.querySelector('form')!)
-  expect(screen.getByRole('alert').textContent).toBe('Elegí una sugerencia o ingresá la dirección manualmente para continuar.')
+  expect(screen.getByRole('alert').textContent).toBe('Elegí la provincia y seleccioná una dirección de la lista para continuar.')
 })
 
 it('submits all canonical address fields and the proof from the existing profile-completion form', async () => {
   const fetcher = provider()
   const { container } = render(<CompleteProfileForm missing={['street', 'number', 'city', 'province']} next="/app" address={null} />)
-  expect(screen.getAllByRole('combobox')).toHaveLength(1)
+  expect(screen.getAllByRole('combobox')).toHaveLength(2)
   await chooseAddress()
   const form = new FormData(container.querySelector('form')!)
   expect(Object.fromEntries(form)).toMatchObject({ street: 'PAVON', number: '2012', city: 'Merlo', province: 'Buenos Aires', location_proof: 'confirmed-merlo' })
   const resolution = fetcher.mock.calls.find(([input]) => String(input).endsWith('/resolve'))
   expect(resolution).toBeTruthy()
-  fireEvent.change(screen.getByRole('combobox'), { target: { value: 'Otra 123' } })
-  expect(Object.fromEntries(new FormData(container.querySelector('form')!))).toMatchObject({ street: 'Otra 123', number: '', city: '', province: '', location_proof: '' })
+  fireEvent.change(screen.getByRole('combobox', { name: 'Dirección' }), { target: { value: 'Otra 123' } })
+  expect(Object.fromEntries(new FormData(container.querySelector('form')!))).toMatchObject({ street: 'Otra 123', number: '', city: '', province: 'Buenos Aires', location_proof: '' })
 })
 
 it('keeps floor and apartment controls and their latest values while an address is resolving', async () => {
@@ -53,7 +53,7 @@ it('keeps floor and apartment controls and their latest values while an address 
       <output data-testid="saved">{JSON.stringify(value)}</output></>
   }
   render(<Harness />)
-  fireEvent.change(screen.getByRole('combobox', { name: 'Dirección' }), { target: { value: 'Pavon 2012' } })
+  fireEvent.change(screen.getByRole('combobox', { name: 'Provincia' }), { target: { value: '06' } }); fireEvent.change(screen.getByRole('combobox', { name: 'Dirección' }), { target: { value: 'Pavon 2012' } })
   fireEvent.click(await screen.findByRole('option', { name: 'PAVON 2012' }))
   await waitFor(() => expect(finish).toBeTypeOf('function'))
   fireEvent.change(screen.getByLabelText('Piso'), { target: { value: '8' } })

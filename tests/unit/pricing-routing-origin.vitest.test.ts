@@ -73,17 +73,12 @@ it.each([undefined, '', '   '])('keeps an administrative calculation in review w
   expect(boundary.rpc).not.toHaveBeenCalled()
 })
 
-it.each(['S/N', ' sin número ', 'km 12,5', '1234567', 'A'.repeat(30)])('keeps a textual house number in review without consulting routing providers (%s)', async number => {
+it.each(['S/N', ' sin número ', 'km 12,5', '1234567', 'A'.repeat(30)])('rejects an unvalidated textual house number before routing (%s)', async number => {
   vi.stubEnv('LYSTO_ROUTING_ORIGIN', origin)
-  const fetcher = vi.fn(async () => Response.json({ features: [] }))
-  vi.stubGlobal('fetch', fetcher)
+  const fetcher = vi.fn(); vi.stubGlobal('fetch', fetcher)
   const response = await POST(request('Berazategui', number))
-  expect(response.status).toBe(200)
-  expect(await response.json()).toMatchObject({
-    quoteId: null,
-    routingNotice: expect.stringMatching(/altura.*verificación/i),
-    quote: { route: null, readyToOffer: false, reviewReasons: expect.arrayContaining(['travel_unverified']) }
-  })
+  expect(response.status).toBe(400)
+  expect(await response.json()).toMatchObject({ code: 'invalid_input' })
   expect(fetcher).not.toHaveBeenCalled()
   expect(boundary.rpc).not.toHaveBeenCalled()
 })
@@ -100,17 +95,17 @@ it.each(['', '   ', 'A'.repeat(31)])('rejects an empty or oversized house number
 })
 
 const manualRoute: TravelEstimate = {
-  source: 'manual', origin: 'Base verificada por operaciones', destination: 'CALLE 23 S/N, Berazategui',
+  source: 'manual', origin: 'Base verificada por operaciones', destination: 'CALLE 23 5871, Berazategui',
   province: 'Buenos Aires', outboundKm: 30, returnKm: 32, outboundMinutes: 45, returnMinutes: 50,
   tolls: 0, tollsVerified: true, measuredAt: now.toISOString()
 }
 const manualReason = 'Recorrido y tiempos verificados por operaciones para la dirección sin altura.'
 
-it('preserves an authorized administrative manual route and its financial review for a textual house number', async () => {
+it('preserves an authorized administrative route and its financial review for a validated numeric house number', async () => {
   vi.stubEnv('LYSTO_ROUTING_ORIGIN', origin)
   const fetcher = vi.fn()
   vi.stubGlobal('fetch', fetcher)
-  const response = await POST(request('Berazategui', 'S/N', { route: manualRoute, reason: manualReason }))
+  const response = await POST(request('Berazategui', '5871', { route: manualRoute, reason: manualReason }))
   expect(response.status).toBe(200)
   expect(await response.json()).toMatchObject({ routingNotice: null,
     quote: { route: manualRoute, readyToOffer: false, reviewReasons: expect.arrayContaining(['travel_unverified']) } })
@@ -118,8 +113,14 @@ it('preserves an authorized administrative manual route and its financial review
   expect(boundary.rpc).not.toHaveBeenCalled()
 })
 
+it('cannot use an operations route to bypass address height validation', async () => {
+  const response = await POST(request('Berazategui', 'S/N', { route: manualRoute, reason: manualReason }))
+  expect(response.status).toBe(400)
+  expect(await response.json()).toMatchObject({ code: 'invalid_input' })
+})
+
 it('still requires an explanation for an administrative manual route', async () => {
-  const response = await POST(request('Berazategui', 'S/N', { route: manualRoute }))
+  const response = await POST(request('Berazategui', '5871', { route: manualRoute }))
   expect(response.status).toBe(400)
   expect(await response.json()).toMatchObject({ code: 'invalid_input' })
 })
@@ -132,7 +133,7 @@ it.each([
     profileId: '00000000-0000-4000-8000-000000000001', client: {} })
   const fetcher = vi.fn()
   vi.stubGlobal('fetch', fetcher)
-  const input = await request('Berazategui', 'S/N', { route: manualRoute, reason: manualReason }).json()
+  const input = await request('Berazategui', '5871', { route: manualRoute, reason: manualReason }).json()
   delete input.scenario
   input.materialsConfirmed = false
   const response = await POST(new Request('https://lysto.test/api/pricing/quote', {

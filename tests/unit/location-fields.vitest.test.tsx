@@ -8,6 +8,7 @@ import { FullAddressCombobox } from '@/components/location/full-address-combobox
 const json = (value: unknown) => Promise.resolve(new Response(JSON.stringify(value), { status: 200, headers: { 'Content-Type': 'application/json' } }))
 
 afterEach(() => vi.unstubAllGlobals())
+function selectProvince(id = '02') { const field = screen.getByLabelText('Provincia') as HTMLSelectElement; if (!field.value) fireEvent.change(field, { target: { value: id } }) }
 
 it.each(['fields', 'full'] as const)('shows a retryable resolution failure in %s without confirming an address', async (mode) => {
   const confirmed = vi.fn()
@@ -22,7 +23,7 @@ it.each(['fields', 'full'] as const)('shows a retryable resolution failure in %s
       : <AddressHarness confirmed={confirmed} />
   }
   render(<Harness />)
-  fireEvent.change(screen.getByLabelText('Dirección'), { target: { value: 'Corrientes 123' } })
+  selectProvince(); fireEvent.change(screen.getByLabelText('Dirección'), { target: { value: 'Corrientes 123' } })
   fireEvent.click(await screen.findByRole('option', { name: suggestion.label }))
   expect((await screen.findByRole('alert')).textContent).toContain('No pudimos confirmar la dirección')
   expect(confirmed.mock.calls.every(([proof]) => proof === '')).toBe(true)
@@ -38,12 +39,12 @@ describe('Argentina address fields', () => {
   it('invalidates confirmation after the address query changes', () => {
     const confirmed = vi.fn()
     render(<AddressHarness confirmed={confirmed} />)
-    fireEvent.change(screen.getByLabelText('Dirección'), { target: { value: 'Otra dirección' } })
+    selectProvince(); fireEvent.change(screen.getByLabelText('Dirección'), { target: { value: 'Otra dirección' } })
     expect(confirmed).toHaveBeenLastCalledWith('')
   })
   it('renders one full-address search in the existing field group', () => {
     render(<AddressHarness />)
-    expect(screen.getAllByRole('combobox')).toHaveLength(1)
+    expect(screen.getAllByRole('combobox')).toHaveLength(2)
     expect(screen.getByLabelText('Dirección').getAttribute('placeholder')).toBe('Escribí calle y número')
   })
 })
@@ -59,10 +60,10 @@ describe('technician full address field', () => {
       const [value, setValue] = useState('')
       return <FullAddressCombobox id="latest-options" label="Dirección" value={value} onChange={setValue} onResolved={vi.fn()} />
     }
-    render(<Harness />)
-    fireEvent.change(screen.getByLabelText('Dirección'), { target: { value: 'Pavon 2012' } })
+    render(<Harness />); selectProvince('06')
+    selectProvince(); fireEvent.change(screen.getByLabelText('Dirección'), { target: { value: 'Pavon 2012' } })
     await waitFor(() => expect(finishOld).toBeTypeOf('function'))
-    fireEvent.change(screen.getByLabelText('Dirección'), { target: { value: 'Pavon 2012, Merlo' } })
+    selectProvince(); fireEvent.change(screen.getByLabelText('Dirección'), { target: { value: 'Pavon 2012, Merlo' } })
     expect(await screen.findByRole('option', { name: 'PAVON 2012, Merlo' })).toBeTruthy()
     finishOld(new Response(JSON.stringify({ suggestions: [option('El Talar')] })))
     await waitFor(() => expect(screen.queryByRole('option', { name: 'PAVON 2012, El Talar' })).toBeNull())
@@ -77,33 +78,35 @@ describe('technician full address field', () => {
     ]
     const fetcher = vi.fn((input: RequestInfo | URL, init?: RequestInit) => String(input).includes('/suggestions')
       ? json({ suggestions: options })
-      : json({ address: { ...JSON.parse(String(init?.body)), formattedAddress: 'PAVON 2012, Merlo, Buenos Aires' }, proof: 'merlo-proof' }))
+      : json({ address: { ...JSON.parse(String(init?.body)), streetId: '0653901000123', formattedAddress: 'PAVON 2012, Merlo, Buenos Aires', latitude: -34.66, longitude: -58.72, precision: 'range_interpolated', source: 'georef' }, proof: 'merlo-proof' }))
     vi.stubGlobal('fetch', fetcher)
     function Harness() {
       const [value, setValue] = useState('')
       return <FullAddressCombobox id="choices" label="Dirección" value={value} onChange={setValue} onResolved={resolved} />
     }
-    render(<Harness />)
-    fireEvent.change(screen.getByLabelText('Dirección'), { target: { value: 'Pavon 2012' } })
+    render(<Harness />); selectProvince('06')
+    selectProvince(); fireEvent.change(screen.getByLabelText('Dirección'), { target: { value: 'Pavon 2012' } })
     const merlo = await screen.findByRole('option', { name: 'PAVON 2012 Merlo · Buenos Aires · Argentina' })
     expect(within(merlo).getByText('PAVON 2012').tagName).toBe('STRONG')
-    expect(screen.getByRole('option', { name: 'AV PAVON 2012 San Cristóbal · CABA · Argentina' })).toBeTruthy()
+    expect(screen.queryByRole('option', { name: 'AV PAVON 2012 San Cristóbal · CABA · Argentina' })).toBeNull()
     fireEvent.click(merlo)
     await waitFor(() => expect(resolved).toHaveBeenCalledWith(expect.objectContaining({ proof: 'merlo-proof' })))
     const saved = fetcher.mock.calls.find(([, init]) => init?.method === 'POST')
     expect(JSON.parse(String(saved?.[1]?.body))).toMatchObject({ street: 'PAVON', cityId: '06539010', provinceId: '06' })
   })
 
-  it('explains the current coverage when a national result is outside the service area', async () => {
+  it('validates a selected Argentine province without changing service coverage', async () => {
     const resolved = vi.fn()
-    const fetcher = vi.fn(() => json({ suggestions: [{ kind: 'address', id: 'cordoba', label: 'PAVON 2012, Toledo, Córdoba', street: 'PAVON', number: '2012', city: 'Toledo', province: 'Córdoba', provinceId: '14' }] }))
+    const item = { kind: 'address', id: 'cordoba', label: 'PAVON 2012, Toledo, Córdoba', street: 'PAVON', number: '2012', city: 'Toledo', cityId: '14014010', streetId: '1401401000123', province: 'Córdoba', provinceId: '14' }
+    const fetcher = vi.fn((input: RequestInfo | URL) => String(input).includes('/suggestions') ? json({ suggestions: [item] })
+      : json({ address: { street: item.street, number: item.number, city: item.city, cityId: item.cityId, streetId: item.streetId, province: item.province,
+        provinceId: '14', formattedAddress: item.label, latitude: -31.5, longitude: -64, source: 'georef', precision: 'range_interpolated' }, proof: 'cordoba-proof' }))
     vi.stubGlobal('fetch', fetcher)
     render(<FullAddressCombobox id="coverage" label="Dirección" value="Pavon 2012" onChange={vi.fn()} onResolved={resolved} />)
-    fireEvent.click(screen.getByLabelText('Dirección'))
-    fireEvent.click(await screen.findByRole('option', { name: 'PAVON 2012, Toledo, Córdoba' }))
-    expect((await screen.findByRole('alert')).textContent).toContain('CABA y la provincia de Buenos Aires')
-    expect(fetcher.mock.calls).toHaveLength(1)
-    expect(resolved).not.toHaveBeenCalled()
+    selectProvince('14'); selectProvince(); fireEvent.click(screen.getByLabelText('Dirección'))
+    fireEvent.click(await screen.findByRole('option', { name: item.label }))
+    await waitFor(() => expect(resolved).toHaveBeenCalledWith(expect.objectContaining({ proof: 'cordoba-proof' })))
+    expect(new URL(String(fetcher.mock.calls[0][0]), 'https://lysto.test').searchParams.get('provinceId')).toBe('14')
   })
 
   it('keeps the Dirección label and returns the canonical address and proof', async () => {
@@ -118,7 +121,7 @@ describe('technician full address field', () => {
       return <FullAddressCombobox id="pro-address" label="Dirección" value={value} onChange={setValue} onResolved={resolved} />
     }
     render(<Harness />)
-    fireEvent.change(screen.getByLabelText('Dirección'), { target: { value: 'Rivadavia 1234' } })
+    selectProvince(); fireEvent.change(screen.getByLabelText('Dirección'), { target: { value: 'Rivadavia 1234' } })
     fireEvent.click(await screen.findByRole('option', { name: /AV RIVADAVIA 1234/ }))
     await waitFor(() => expect(resolved).toHaveBeenCalledWith(expect.objectContaining({ proof: 'pro-proof', value: 'Av. Rivadavia 1234, CABA, Argentina' })))
   })
@@ -136,10 +139,10 @@ describe('technician full address field', () => {
       return <FullAddressCombobox id="stale-address" label="Dirección" value={value} onChange={setValue} onResolved={resolved} />
     }
     render(<Harness />)
-    fireEvent.change(screen.getByLabelText('Dirección'), { target: { value: 'Rivadavia 1234' } })
+    selectProvince(); fireEvent.change(screen.getByLabelText('Dirección'), { target: { value: 'Rivadavia 1234' } })
     fireEvent.click(await screen.findByRole('option', { name: /AV RIVADAVIA 1234/ }))
     await waitFor(() => expect(finishResolve).toBeTypeOf('function'))
-    fireEvent.change(screen.getByLabelText('Dirección'), { target: { value: 'Otra dirección' } })
+    selectProvince(); fireEvent.change(screen.getByLabelText('Dirección'), { target: { value: 'Otra dirección' } })
     finishResolve(new Response(JSON.stringify({ address: { street: 'AV RIVADAVIA', number: '1234', city: 'San Nicolás', province: 'CABA', provinceId: '02', cityId: '02007010', streetId: '0200701000085', formattedAddress: 'Av. Rivadavia 1234, CABA, Argentina', latitude: -34.6, longitude: -58.4, precision: 'rooftop', source: 'georef_google' }, proof: 'old-proof' }), { status: 200 }))
     await Promise.resolve()
     expect(resolved).not.toHaveBeenCalled()
@@ -155,7 +158,7 @@ describe('technician full address field', () => {
       throw new Error('Unexpected request')
     }))
     const { rerender } = render(<FullAddressCombobox id="record-address" label="Dirección" value="Rivadavia 1234" revisionKey="first" onChange={vi.fn()} onResolved={resolved} />)
-    fireEvent.click(screen.getByLabelText('Dirección'))
+    selectProvince(); fireEvent.click(screen.getByLabelText('Dirección'))
     fireEvent.click(await screen.findByRole('option', { name: /AV RIVADAVIA 1234/ }))
     await waitFor(() => expect(finishResolve).toBeTypeOf('function'))
     rerender(<FullAddressCombobox id="record-address" label="Dirección" value="Otra dirección" revisionKey="second" onChange={vi.fn()} onResolved={resolved} />)

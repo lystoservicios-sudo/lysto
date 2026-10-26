@@ -135,7 +135,7 @@ export function HomeForm({
     event.preventDefault()
     setFormError('')
     if (!flow.existing && addressMode === 'new' && !locationProof) {
-      setFormError('Elegí una sugerencia o ingresá la dirección manualmente para continuar.')
+      setFormError('Elegí la provincia y seleccioná una dirección de la lista para continuar.')
       return
     }
     const candidate = {

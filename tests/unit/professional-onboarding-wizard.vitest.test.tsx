@@ -21,6 +21,17 @@ const application = {
   mobilityType: '', bio: '', categoryIds: [], zoneIds: [], tools: [], availability: []
 }
 const personal = { ...application, phone: '1122334455', dni: '12345678', cuil: '27123456789', birthdate: '1990-01-20', address: 'Calle Falsa 123, CABA' }
+const selectedAddress = { street: 'CALLE FALSA', number: '123', city: 'San Nicolás', province: 'CABA', provinceId: '02',
+  cityId: '02007010', streetId: '0200701000085', formattedAddress: personal.address,
+  source: 'georef' as const, precision: 'range_interpolated' as const, latitude: -34.6, longitude: -58.4 }
+const addressOption = { kind: 'address' as const, id: 'address-selection', label: personal.address,
+  street: selectedAddress.street, number: selectedAddress.number, city: selectedAddress.city, cityId: selectedAddress.cityId,
+  province: selectedAddress.province, provinceId: selectedAddress.provinceId, streetId: selectedAddress.streetId }
+const selectedProof = 'verified-professional-address-proof'
+function addressTransport(resolve = async () => Response.json({ address: selectedAddress, proof: selectedProof })) {
+  vi.stubGlobal('fetch', vi.fn(async (url: RequestInfo | URL) => String(url).includes('/suggestions')
+    ? Response.json({ suggestions: [addressOption] }) : resolve()))
+}
 const initial: OnboardingContext = {
   application, requirements: null, documents: [], eligible: false, decisionReason: null,
   catalog: { categories: [{ id: category, name: 'Aire acondicionado' }], zones: [{ id: zone, name: 'Palermo' }] }, legal: null
@@ -58,10 +69,14 @@ function transport(seed: OnboardingContext) {
     return structuredClone(server)
   })
 }
-function fillPersonal() {
-  for (const [label, value] of [['Teléfono', personal.phone], ['DNI', personal.dni], ['CUIL', personal.cuil], ['Fecha de nacimiento', personal.birthdate], ['Dirección', personal.address]]) fireEvent.change(screen.getByLabelText(label), { target: { value } })
+async function fillPersonal() {
+  for (const [label, value] of [['Teléfono', personal.phone], ['DNI', personal.dni], ['CUIL', personal.cuil], ['Fecha de nacimiento', personal.birthdate]]) fireEvent.change(screen.getByLabelText(label), { target: { value } })
+  fireEvent.change(screen.getByRole('combobox', { name: 'Provincia' }), { target: { value: '02' } })
+  fireEvent.change(screen.getByRole('combobox', { name: 'Dirección' }), { target: { value: 'Calle Falsa 123' } })
+  fireEvent.click(await screen.findByRole('option', { name: personal.address }))
+  await waitFor(() => expect(screen.getByRole('combobox', { name: 'Dirección' })).toHaveProperty('value', personal.address))
 }
-beforeEach(() => { mocks.account = { configured: true, linked: false }; mocks.refresh.mockResolvedValue(mocks.account); vi.spyOn(window, 'scrollTo').mockImplementation(() => {}) })
+beforeEach(() => { addressTransport(); mocks.account = { configured: true, linked: false }; mocks.refresh.mockResolvedValue(mocks.account); vi.spyOn(window, 'scrollTo').mockImplementation(() => {}) })
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); mocks.request.mockReset(); mocks.replace.mockReset() })
 
 it('shows seven focused steps and saves personal data and address with successive versions', async () => {
@@ -69,12 +84,12 @@ it('shows seven focused steps and saves personal data and address with successiv
   render(<ConnectedProfessionalOnboarding initial={initial} />)
   expect(screen.getByText('Paso 1 de 7')).toBeTruthy()
   expect(screen.getByRole('navigation', { name: 'Pasos de la postulación' })).toBeTruthy()
-  fillPersonal()
+  await fillPersonal()
   fireEvent.click(screen.getByRole('button', { name: 'Guardar y continuar' }))
   await waitFor(() => expect(screen.getByRole('heading', { name: 'Tu oficio' })).toBeTruthy())
   expect((screen.getByRole('button', { name: 'Guardar y continuar' }) as HTMLButtonElement).disabled).toBe(false)
   expect(screen.queryByRole('button', { name: /Descartar mis cambios/ })).toBeNull()
-  expect(mocks.request).toHaveBeenCalledWith('/api/professional/onboarding/address', 'POST', { address: personal.address, locationProof: '', expectedVersion: 2 })
+  expect(mocks.request).toHaveBeenCalledWith('/api/professional/onboarding/address', 'POST', { address: personal.address, locationProof: selectedProof, expectedVersion: 2 })
 })
 it('validates only the current group without requesting incomplete future groups', () => {
   render(<ConnectedProfessionalOnboarding initial={initial} />)
@@ -89,7 +104,7 @@ it('does not lose the confirmed version when the independent address save fails'
     if (args[0] === '/api/professional/onboarding/address' && !failed) { failed = true; throw new Error('No pudimos guardar el domicilio.') }
     return real(...args)
   })
-  render(<ConnectedProfessionalOnboarding initial={initial} />); fillPersonal()
+  render(<ConnectedProfessionalOnboarding initial={initial} />); await fillPersonal()
   fireEvent.click(screen.getByRole('button', { name: 'Guardar y continuar' }))
   await screen.findByText('No pudimos guardar el domicilio.')
   expect((screen.getByLabelText('Dirección') as HTMLInputElement).value).toBe(personal.address)
@@ -99,7 +114,7 @@ it('does not lose the confirmed version when the independent address save fails'
 it('requires acknowledged context readback before advancing', async () => {
   transport(initial); const real = mocks.request.getMockImplementation()!
   mocks.request.mockImplementation(async (...args) => args[0] === '/api/professional/onboarding/context' ? Promise.reject(new Error('No pudimos actualizar la información.')) : real(...args))
-  render(<ConnectedProfessionalOnboarding initial={initial} />); fillPersonal()
+  render(<ConnectedProfessionalOnboarding initial={initial} />); await fillPersonal()
   fireEvent.click(screen.getByRole('button', { name: 'Guardar y continuar' }))
   await screen.findByText('No pudimos actualizar la información.')
   expect(screen.getByRole('heading', { name: 'Tus datos' })).toBeTruthy()
@@ -184,7 +199,7 @@ it('saves an incomplete but structurally valid draft before exiting', async () =
 })
 it('removes private data and prevents another save after revoked access', async () => {
   mocks.request.mockRejectedValue(new PrivateRequestError('Tu sesión terminó.', 401))
-  render(<ConnectedProfessionalOnboarding initial={initial} />); fillPersonal()
+  render(<ConnectedProfessionalOnboarding initial={initial} />); await fillPersonal()
   fireEvent.click(screen.getByRole('button', { name: 'Guardar y continuar' }))
   await screen.findByRole('heading', { name: 'Volvé a ingresar' })
   expect(screen.queryByDisplayValue('12345678')).toBeNull()
@@ -211,54 +226,51 @@ it('does not overwrite new edits when a background context read finishes late', 
   await act(async () => resolve(initial))
   expect((screen.getByLabelText('Teléfono') as HTMLInputElement).value).toBe('1123456789')
 })
-it('keeps the refreshed professional address when a late manual address confirmation arrives', async () => {
-  const context = { ...initial, application: { ...application, address: 'Primera 123, Quilmes, Buenos Aires, Argentina' } }
+it('keeps the refreshed professional address when a late verified resolution arrives', async () => {
+  const context = { ...initial, application: { ...application, address: personal.address } }
   const refreshed = { ...context, application: { ...context.application, version: 2, address: 'Actualizada 456, Quilmes, Buenos Aires, Argentina' } }
-  const manual = { street: 'Dirección manual', number: 'S/N', city: 'Quilmes', province: 'Buenos Aires',
-    provinceId: '06', formattedAddress: 'Dirección manual S/N, Quilmes, Buenos Aires, Argentina',
-    source: 'manual', precision: 'unverified', latitude: null, longitude: null }
   let finish!: (response: Response) => void
-  vi.stubGlobal('fetch', vi.fn((url: RequestInfo | URL) => String(url).endsWith('/resolve')
-    ? new Promise<Response>(resolve => { finish = resolve })
-    : Promise.resolve(Response.json({ suggestions: [] }))))
+  addressTransport(() => new Promise<Response>(resolve => { finish = resolve }))
   mocks.request.mockResolvedValue(refreshed)
   render(<ConnectedProfessionalOnboarding initial={context} />)
-  fireEvent.click(screen.getByRole('button', { name: 'Mi dirección no aparece' }))
-  fireEvent.change(screen.getByRole('textbox', { name: 'Calle' }), { target: { value: manual.street } })
-  fireEvent.change(screen.getByRole('textbox', { name: 'Altura' }), { target: { value: manual.number } })
-  fireEvent.click(screen.getByRole('button', { name: 'Usar esta dirección' }))
+  fireEvent.click(screen.getByRole('combobox', { name: 'Dirección' }))
+  fireEvent.click(await screen.findByRole('option', { name: personal.address }))
   await waitFor(() => expect(finish).toBeTypeOf('function'))
-
   fireEvent.focus(window)
   await waitFor(() => expect(screen.getByRole('combobox', { name: 'Dirección' })).toHaveProperty('value', refreshed.application.address))
   expect(mocks.request).toHaveBeenCalledWith('/api/professional/onboarding/context')
-
-  await act(async () => { finish(Response.json({ address: manual, proof: 'stale-manual-receipt' })); await Promise.resolve() })
+  await act(async () => { finish(Response.json({ address: selectedAddress, proof: 'stale-proof' })); await Promise.resolve() })
   expect(screen.getByRole('combobox', { name: 'Dirección' })).toHaveProperty('value', refreshed.application.address)
-  expect(screen.queryByText(/Dirección ingresada manualmente/)).toBeNull()
+  expect(screen.getByRole('combobox', { name: 'Provincia' })).toHaveProperty('value', '06')
 })
-it('saves a manually entered professional address with its receipt before advancing', async () => {
-  const context = { ...initial, application: { ...personal, address: '' } }
-  const manual = { street: 'Pasaje de ejemplo', number: 'S/N', city: 'Quilmes', province: 'Buenos Aires',
-    provinceId: '06', formattedAddress: 'Pasaje de ejemplo S/N, Quilmes, Buenos Aires, Argentina',
-    source: 'manual', precision: 'unverified', latitude: null, longitude: null }
-  const proof = 'manual-receipt-for-professional-save'
-  transport(context)
-  vi.stubGlobal('fetch', vi.fn(async (url: RequestInfo | URL) => String(url).endsWith('/resolve')
-    ? Response.json({ address: manual, proof }) : Response.json({ suggestions: [] })))
-  render(<ConnectedProfessionalOnboarding initial={context} />)
-  fireEvent.click(screen.getByRole('button', { name: 'Mi dirección no aparece' }))
-  for (const [label, value] of [['Calle', manual.street], ['Altura', manual.number], ['Localidad', manual.city], ['Provincia', manual.province]])
-    fireEvent.change(screen.getByLabelText(label), { target: { value } })
-  fireEvent.click(screen.getByRole('button', { name: 'Usar esta dirección' }))
-  await waitFor(() => expect(screen.getByRole('combobox', { name: 'Dirección' })).toHaveProperty('value', manual.formattedAddress))
-  expect(screen.getByText(/Dirección ingresada manualmente/)).toBeTruthy()
+it('requires province before the professional can search and offers no manual entry', () => {
+  render(<ConnectedProfessionalOnboarding initial={initial} />)
+  expect(screen.getByRole('combobox', { name: 'Provincia' })).toHaveProperty('value', '')
+  expect(screen.getByRole('combobox', { name: 'Dirección' })).toHaveProperty('disabled', true)
+  expect(screen.queryByRole('button', { name: 'Mi dirección no aparece' })).toBeNull()
+})
+it('saves a resolved professional address with its receipt before advancing', async () => {
+  transport(initial)
+  render(<ConnectedProfessionalOnboarding initial={initial} />)
+  await fillPersonal()
   fireEvent.click(screen.getByRole('button', { name: 'Guardar y continuar' }))
   await screen.findByRole('heading', { name: 'Tu oficio' })
   expect(mocks.request).toHaveBeenCalledWith('/api/professional/onboarding/address', 'POST', {
-    address: manual.formattedAddress, locationProof: proof, expectedVersion: 1
+    address: personal.address, locationProof: selectedProof, expectedVersion: 2
   })
   expect(mocks.request.mock.calls.filter(([url]) => url === '/api/professional/onboarding/address')).toHaveLength(1)
+})
+it('does not advance when the resolver returns a legacy manual address', async () => {
+  const context = { ...initial, application: { ...personal, address: '' } }
+  transport(context)
+  addressTransport(async () => Response.json({ address: { ...selectedAddress, source: 'manual', precision: 'unverified', latitude: null, longitude: null }, proof: 'legacy-manual-proof' }))
+  render(<ConnectedProfessionalOnboarding initial={context} />)
+  fireEvent.change(screen.getByRole('combobox', { name: 'Provincia' }), { target: { value: '02' } })
+  fireEvent.change(screen.getByRole('combobox', { name: 'Dirección' }), { target: { value: 'Calle Falsa 123' } })
+  fireEvent.click(await screen.findByRole('option', { name: personal.address }))
+  await screen.findByRole('alert')
+  expect(screen.getByRole('heading', { name: 'Tus datos' })).toBeTruthy()
+  expect(mocks.request.mock.calls.filter(([url]) => url === '/api/professional/onboarding/address')).toHaveLength(0)
 })
 it('lets an approved technician complete a missing avatar without unlocking application edits', () => {
   const context = complete(); context.application.status = 'approved'; context.avatarUrl = null; context.readyForNewWork = false; context.readinessReasons = ['foto']; mocks.account.linked = true
@@ -282,7 +294,7 @@ it('does not mistake its acknowledged save version for a concurrent edit during 
     if (args[0] === '/api/professional/onboarding/context') await new Promise(resolve => setTimeout(resolve, 20))
     return real(...args)
   })
-  render(<ConnectedProfessionalOnboarding initial={initial} />); fillPersonal()
+  render(<ConnectedProfessionalOnboarding initial={initial} />); await fillPersonal()
   fireEvent.click(screen.getByRole('button', { name: 'Guardar y continuar' }))
   await screen.findByRole('heading', { name: 'Tu oficio' })
   expect(screen.queryByRole('button', { name: /Descartar mis cambios/ })).toBeNull()
@@ -325,7 +337,7 @@ it('does not silently ignore saving while a background read is still in flight',
     if (args[0] === '/api/professional/onboarding/context' && first) { first=false; return new Promise<OnboardingContext>(done => {resolve=done}) }
     return real(...args)
   })
-  render(<ConnectedProfessionalOnboarding initial={initial} />); fireEvent.focus(window); fillPersonal()
+  render(<ConnectedProfessionalOnboarding initial={initial} />); fireEvent.focus(window); await fillPersonal()
   fireEvent.click(screen.getByRole('button', { name: 'Guardar y continuar' }))
   await screen.findByRole('heading', { name: 'Tu oficio' })
   await act(async () => resolve(initial))
@@ -343,7 +355,7 @@ it('lets the applicant explicitly remove a specialty that is no longer in the ac
 it('keeps the canonical connection step if another session submits during save readback', async () => {
   transport(initial); const real = mocks.request.getMockImplementation()!
   mocks.request.mockImplementation(async (...args) => args[0] === '/api/professional/onboarding/context' ? { ...complete(), application: { ...complete().application, status:'form_submitted', version:4 } } : real(...args))
-  render(<ConnectedProfessionalOnboarding initial={initial} />); fillPersonal()
+  render(<ConnectedProfessionalOnboarding initial={initial} />); await fillPersonal()
   fireEvent.click(screen.getByRole('button', {name:'Guardar y continuar'}))
   await screen.findByText('Vincular Mercado Pago')
   expect(screen.getByText('Paso 7 de 7')).toBeTruthy()

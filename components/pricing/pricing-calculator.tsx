@@ -149,7 +149,7 @@ export function PricingCalculator({
     )
       return
     if (!locationProof) {
-      setNotice('Elegí una sugerencia o ingresá la dirección manualmente para continuar.')
+      setNotice('Elegí la provincia y seleccioná una dirección de la lista para continuar.')
       return
     }
     setBusy(true)

@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { findArgentineProvince } from './provinces'
 
 export const locationKindSchema = z.enum(['province', 'city', 'street', 'address'])
 export type LocationKind = z.infer<typeof locationKindSchema>
@@ -50,40 +51,26 @@ export const addressSelectionSchema = z.object({
 }).strict()
 export type AddressSelection = z.infer<typeof addressSelectionSchema>
 
-const manualAddressFieldsSchema = addressSelectionSchema.pick({ street: true, number: true, city: true, province: true }).extend({
-  street: z.string().trim().min(1).max(150),
-  number: z.string().trim().min(1).max(30),
-  province: z.enum(['CABA', 'Buenos Aires'])
+export const addressResolutionInputSchema = addressSelectionSchema.superRefine((value, context) => {
+  const province = findArgentineProvince(value.province)
+  if (!province || (value.provinceId && findArgentineProvince(value.provinceId)?.id !== province.id))
+    context.addIssue({ code: 'custom', path: ['province'], message: 'argentine_province_required' })
 })
-export const manualAddressSelectionSchema = manualAddressFieldsSchema.extend({ mode: z.literal('manual') }).strict()
-  .superRefine((value, context) => {
-    if (`${value.street} ${value.number}, ${value.city}, ${value.province}, Argentina`.length > 200)
-      context.addIssue({ code: 'custom', path: ['street'], message: 'manual_address_too_long' })
-  })
-export const addressResolutionInputSchema = z.union([addressSelectionSchema, manualAddressSelectionSchema])
 export type AddressResolutionInput = z.infer<typeof addressResolutionInputSchema>
 
-const verifiedResolvedAddressSchema = addressSelectionSchema.extend({
+export const resolvedAddressSchema = addressSelectionSchema.extend({
   provinceId: z.string().min(1).max(20),
   cityId: z.string().min(1).max(30),
   streetId: z.string().min(1).max(40),
   formattedAddress: z.string().min(1).max(500),
-  latitude: z.number().finite(),
-  longitude: z.number().finite(),
-  precision: z.enum(['rooftop', 'range_interpolated', 'geometric_center']),
+  latitude: z.number().finite().min(-90).max(90),
+  longitude: z.number().finite().min(-180).max(180),
+  precision: z.enum(['rooftop', 'range_interpolated']),
   source: z.enum(['georef_google', 'georef_openrouteservice', 'georef'])
-}).strict()
-const manualResolvedAddressSchema = manualAddressFieldsSchema.extend({
-  provinceId: z.enum(['02', '06']),
-  cityId: z.string().min(1).max(30).optional(),
-  streetId: z.string().min(1).max(40).optional(),
-  formattedAddress: z.string().min(1).max(200),
-  latitude: z.null(), longitude: z.null(),
-  precision: z.literal('unverified'), source: z.literal('manual')
 }).strict().superRefine((value, context) => {
-  if (value.provinceId !== (value.province === 'CABA' ? '02' : '06'))
+  const province = findArgentineProvince(value.province)
+  if (!province || findArgentineProvince(value.provinceId)?.id !== province.id)
     context.addIssue({ code: 'custom', path: ['provinceId'], message: 'province_mismatch' })
 })
-export const resolvedAddressSchema = z.discriminatedUnion('source', [verifiedResolvedAddressSchema, manualResolvedAddressSchema])
 export type ResolvedAddress = z.infer<typeof resolvedAddressSchema>
 

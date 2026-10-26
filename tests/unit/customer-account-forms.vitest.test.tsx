@@ -69,7 +69,7 @@ describe('customer account forms', () => {
     const street = screen.getByRole('combobox', { name: 'Dirección' })
     fireEvent.change(street, { target: { value: '' } })
     expect(street.getAttribute('aria-invalid')).toBe('true')
-    expect(screen.getByText('Elegí una sugerencia o ingresá la dirección manualmente para continuar.')).toBeTruthy()
+    expect(screen.getByText('Elegí la provincia y seleccioná una dirección de la lista para continuar.')).toBeTruthy()
     expect((screen.getByRole('button', { name: 'Guardar dirección' }) as HTMLButtonElement).disabled).toBe(true)
     expect(onSubmit).not.toHaveBeenCalled()
   })
