@@ -467,7 +467,7 @@ export function PricingCalculator({
               </div>
             ) : (
               <p className="text-xs text-slate-500">
-                Se consultarán rutas de ida y vuelta con Google Maps. Cobertura máxima: 180 minutos
+                Se consultarán rutas de ida y vuelta. Cobertura máxima: 180 minutos
                 de ida desde la base de referencia en CABA.
               </p>
             )}

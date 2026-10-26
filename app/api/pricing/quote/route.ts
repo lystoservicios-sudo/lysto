@@ -103,12 +103,12 @@ export async function POST(request: Request) {
     let route: z.infer<typeof routeSchema> | undefined = body.manualRoute
     let routingNotice: string | null = null
     if (!route) {
+      const origin = process.env.LYSTO_ROUTING_ORIGIN?.trim()
+      if (!origin) throw new Error('routing_not_configured:origin')
       try {
         route = await estimateTravel({
           address: `${body.address.street} ${body.address.number}, ${body.address.city}, ${body.address.province}, Argentina`,
-          origin:
-            process.env.LYSTO_ROUTING_ORIGIN ??
-            'Obelisco, Ciudad Autónoma de Buenos Aires, Argentina',
+          origin,
           departureTime,
           now
         })

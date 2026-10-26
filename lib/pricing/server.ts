@@ -70,8 +70,10 @@ export function pricingError(error: unknown) {
   return privateJson(
     {
       error:
-        messages[known] ??
-        'No se pudo completar la operación. Revisá los datos o contactá a operaciones.',
+        code === 'routing_not_configured:origin'
+          ? 'Falta configurar la dirección de base de Lysto en CABA para calcular el traslado.'
+          : messages[known] ??
+            'No se pudo completar la operación. Revisá los datos o contactá a operaciones.',
       code: known in messages ? known : 'pricing_unavailable'
     },
     { status: known.includes('configured') || known === 'pricing_database_not_ready' || known === 'new_requests_paused' ? 503 : 400 }

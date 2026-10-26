@@ -2,6 +2,10 @@
 
 Fecha: 25/10/2026, Argentina. Estado: **correcciones prioritarias publicadas; avisos internos restablecidos; pendientes y límites expresos más abajo**.
 
+## Actualización: correo automático resuelto
+
+El titular autorizó continuar con los correos automáticos. Se aplicaron las migraciones 101/102: **seis emails vigentes Delivered en Resend, cuatro obsoletos suprimidos y cero pendientes en ambos canales**, con cinco ejecuciones automáticas consecutivas correctas. Se verificó el dominio remitente y se generó un respaldo cifrado actualizado a 102 migraciones en ambos discos. [Informe específico y límites de entrega/restauración](2026-10-25-automatic-email-activation.md). La cuenta de origen para el cálculo administrativo sigue pendiente de configuración; el destino de Berazategui ya fue confirmado por el titular.
+
 ## Publicación verificada
 
 El usuario autorizó publicar la corrección y priorizar los problemas importantes para la apertura de mañana. Se publicó [lystohogar.com](https://lystohogar.com) con el deployment `dpl_C9CwFTKtfwuk6QeXuWkvny6o39wW`, estado READY y commit runtime `84749ada84856a1ff18cecc2503f8ffe5473c36b`. La respuesta pública de `/api/health/live` devuelve ese commit y HTTP 200; `/api/health/ready` devuelve ready/production y HTTP 200.
@@ -17,7 +21,7 @@ La primera auditoría partió del runtime `f8bd22c`. Durante el trabajo otra pub
 | Profesional | Cobros carga con la sesión guardada. Los pagos aprobados conservan su estado y el reparto 18/82; los enlaces vencidos ahora se muestran correctamente como «Enlace vencido». |
 | Administrador | Gestión de pagos y Entrega de notificaciones cargan. Estados, importes y enlaces al trabajo son visibles sin iniciar cobros, conciliaciones, cancelaciones ni devoluciones. Se dejó la sesión administradora disponible. |
 | Separación de roles | Antes de publicar, cliente → admin/pro devolvió 404 sin datos de otro rol. No se modificaron las reglas de autorización. |
-| Supabase | Acceso real por CLI Owner; proyecto `dqonlqcurvjnjgsczevu`. Hay **100 migraciones** tras la reparación operativa. El inventario inicial tenía 72 tablas públicas y cero sin RLS; el ensayo de restauración también verificó cero tablas públicas sin RLS. |
+| Supabase | Acceso real por CLI Owner; proyecto `dqonlqcurvjnjgsczevu`. Hay **102 migraciones** tras activar también el correo automático. El inventario inicial tenía 72 tablas públicas y cero sin RLS; el ensayo de restauración también verificó cero tablas públicas sin RLS. |
 | Advisors posteriores | **33 WARN de seguridad y 38 de rendimiento; cero ERROR**. Incluyen 31 funciones privilegiadas expuestas, extensión en public, protección contra contraseñas filtradas no habilitada y políticas permisivas múltiples. No se revocaron permisos legítimos para ocultar avisos. |
 | Regresiones SQL | Pasaron `scripts/qa/notification-delivery-boolean.sql` y `scripts/qa/customer-payment-read-permissions.sql` sobre producción, sin insertar pruebas ni cambiar permisos. |
 | Errores de ejecución | Escaneo del deployment publicado, nivel error, últimos 15 minutos, límite 100: **cero entradas**, comando exit 0. Es una ventana acotada y no acredita alertas externas o ausencia de todo error futuro. |
@@ -45,7 +49,7 @@ El job `lysto-production-outbox-v1`, id 1, se instaló pausado y se activó sól
 
 - **Cero avisos internos pendientes**, cero dead letters y cero leases vencidos.
 - Los recursos o destinatarios ya no válidos se suprimieron mediante el flujo existente, sin borrar ni reescribir masivamente la cola.
-- **Diez emails siguen en cola, con cero intentos**. El scheduler no los reclama; no se cambió el interruptor global de email ni se afectaron invitaciones síncronas.
+- En el control inicial quedaron diez emails sin intentos. La activación posterior procesó seis vigentes, suprimió cuatro obsoletos y dejó cero pendientes, sin cambiar el interruptor global ni afectar invitaciones síncronas.
 
 Procedimiento de activación, comprobación y pausa: [scheduler de producción](../runbooks/production-outbox-scheduler.md). No se contrató Vercel Pro ni otro plan.
 
@@ -84,9 +88,9 @@ Evidencia local ignorada: `output/launch-final-acceptance.json`, `output/launch-
 
 ## Pendientes expresos para la apertura
 
-1. **Correo del servicio:** validar remitente, DNS y recepción autorizada antes de activar su procesamiento automático. La configuración de registro/confirmación y el SMTP personalizado de Supabase estaban habilitados, pero son otro sistema y no acreditan entrega al buzón.
+1. **Correo del servicio: resuelto.** Se verificaron dominio/DNS y seis entregas en Resend; el procesamiento automático está activo. Delivered no demuestra lectura ni ubicación en la bandeja principal. Ver el informe específico.
 2. **Recorrido financiero real:** falta una nueva prueba de cobro, webhook y devolución en esta revisión. Las pantallas consultaron los pagos autorizados anteriores; las pruebas automáticas no sustituyen una operación real. No se hizo un cobro nuevo ni se modificaron sus importes.
-3. **Cobertura geográfica:** el incidente documentado de la dirección numerada de Berazategui no se volvió a reproducir en esta revisión. Tampoco se acreditó un traslado distinto de cero con el proveedor real. No ampliar la promesa de cobertura apoyándose sólo en la prueba de San Cristóbal.
+3. **Cobertura geográfica:** el titular confirmó el punto censal de Calle 23 5871 y el servidor lo resolvió correctamente. La prueba administrativa detectó que falta LYSTO_ROUTING_ORIGIN; el fallback Obelisco es rechazado por carecer de altura. Falta configurar la base que indique el titular y acreditar ida/vuelta reales; no es un fallo del destino seleccionado.
 4. **Recuperación completa y operación:** faltan restauración integral de servicios, custodia independiente del equipo, automatización de copias, RPO/RTO aceptados y alertas externas verificadas. Los advisors WARN siguen documentados. La suite integral protegida requiere un entorno aislado; no se ejecutó contra producción ni se falsificó evidencia de gates humanos/proveedor.
 
 ## Referencias oficiales

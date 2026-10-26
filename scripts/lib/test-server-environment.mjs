@@ -11,6 +11,7 @@ export function createTestServerEnvironment(env, cwd = process.cwd()) {
   const isolated = { ...env }
   for (const key of Object.keys(isolated)) if (key.startsWith('MERCADOPAGO_')) delete isolated[key]
   delete isolated.GOOGLE_MAPS_SERVER_API_KEY
+  delete isolated.OPENROUTESERVICE_API_KEY
   delete isolated.LOCATION_PROOF_SECRET
   delete isolated.RESEND_API_KEY
   delete isolated.NOTIFICATIONS_EMAIL_FROM
@@ -20,6 +21,8 @@ export function createTestServerEnvironment(env, cwd = process.cwd()) {
   isolated.OUTBOX_WORKER_ENABLED = 'false'
   isolated.REFUND_WORKER_ENABLED = 'false'
   isolated.NOTIFICATIONS_EMAIL_ENABLED = 'false'
+  // Explicit fictional calculator base; provider credentials stay removed.
+  isolated.LYSTO_ROUTING_ORIGIN = 'Base de prueba 123, CABA, Argentina'
   return { ...isolated, APP_ENV: 'test', MERCADOPAGO_MODE: 'test', MERCADOPAGO_DATABASE_URL: target.databaseUrl,
     NEXT_PUBLIC_SUPABASE_URL: target.apiUrl, NEXT_PUBLIC_SUPABASE_ANON_KEY: env.LYSTO_TEST_ANON_KEY,
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: env.LYSTO_TEST_ANON_KEY,

@@ -6,6 +6,7 @@ import type { CustomerAssetAddress } from '@/lib/customer-assets/contracts'
 import type { ServiceQuote } from '@/lib/pricing/service-quote'
 import { assertTestEnvironment, readTestIdentity } from '../../scripts/lib/test-environment.mjs'
 import { TIME_WINDOWS } from '@/lib/domain/constants'
+import { earliestCustomerVisitDay } from '@/lib/scheduling/customer-booking-notice'
 import type { CustomerHome } from '@/lib/customer-homes/contracts'
 import type { CustomerAssetEquipment } from '@/lib/customer-assets/contracts'
 
@@ -43,7 +44,7 @@ test('legacy reviewed quote API preserves its persistent identifier and downstre
     // dictate the newly approved automatic-contract wizard or create a fake job.
     const response = await page.request.post('/api/pricing/quote', {
       headers: { origin: new URL(page.url()).origin },
-      data: { issue: 'no_enfria', timeSince: 'days', urgency: 'flexible', propertyType: ownedAddress.propertyType, access: ownedAddress.access, equipment: { technology: 'unknown' }, address: { street: ownedAddress.street, number: ownedAddress.number, city: ownedAddress.city, province: ownedAddress.province, floor: ownedAddress.floor ?? '', apartment: ownedAddress.apartment ?? '' }, preferredDate: new Date(Date.now() + 2 * 86400000).toISOString().slice(0, 10), timeWindow: TIME_WINDOWS[1], uploadIntentIds: [], save: true }
+      data: { issue: 'no_enfria', timeSince: 'days', urgency: 'flexible', propertyType: ownedAddress.propertyType, access: ownedAddress.access, equipment: { technology: 'unknown' }, address: { street: ownedAddress.street, number: ownedAddress.number, city: ownedAddress.city, province: ownedAddress.province, floor: ownedAddress.floor ?? '', apartment: ownedAddress.apartment ?? '' }, preferredDate: earliestCustomerVisitDay(), timeWindow: TIME_WINDOWS[1], uploadIntentIds: [], save: true }
     })
     expect(response.status()).toBe(200)
     const saved = await response.json() as { quoteId: string; quote: ServiceQuote; routingNotice: string | null }

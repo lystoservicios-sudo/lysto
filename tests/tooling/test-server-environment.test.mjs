@@ -50,9 +50,22 @@ test('Next dotenv files cannot reintroduce remote configuration', () => {
 test('quote integration cannot inherit a billable routing credential', () => {
   const fixture = setup()
   try {
-    const actual = environment.createTestServerEnvironment({ ...fixture.env, GOOGLE_MAPS_SERVER_API_KEY: 'billable-provider-secret', LOCATION_PROOF_SECRET: 'real-location-secret' }, fixture.cwd)
+    const actual = environment.createTestServerEnvironment({ ...fixture.env, GOOGLE_MAPS_SERVER_API_KEY: 'billable-provider-secret', OPENROUTESERVICE_API_KEY: 'inherited-routing-secret', LOCATION_PROOF_SECRET: 'real-location-secret' }, fixture.cwd)
     assert.equal(actual.GOOGLE_MAPS_SERVER_API_KEY, undefined)
+    assert.equal(actual.OPENROUTESERVICE_API_KEY, undefined)
     assert.equal(actual.LOCATION_PROOF_SECRET, undefined)
+  } finally { fixture.cleanup() }
+})
+
+test('disposable calculator has an explicit fictional origin instead of inheriting a production base', () => {
+  const fixture = setup()
+  try {
+    for (const origin of [undefined, 'Production base must not enter test configuration']) {
+      const input = { ...fixture.env, LYSTO_ROUTING_ORIGIN: origin }
+      const actual = environment.createTestServerEnvironment(input, fixture.cwd)
+      assert.equal(actual.LYSTO_ROUTING_ORIGIN, 'Base de prueba 123, CABA, Argentina')
+      assert.equal(input.LYSTO_ROUTING_ORIGIN, origin)
+    }
   } finally { fixture.cleanup() }
 })
 
