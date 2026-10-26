@@ -39,3 +39,7 @@ Archivos: `components/location/full-address-combobox.tsx`, `argentine-address-fi
 3. Confirmar versión pública vigente e integrar cambios concurrentes antes de preparar el despliegue.
 4. Preparar producción sin asignar dominio, verificar build/health y búsqueda/entrada manual en navegador, promover y comprobar la versión exacta y recorrido publicado.
 5. Guardar evidencia y límites en `docs/qa/`, publicar la rama propia y dejar el checkout limpio. No afirmar entrega de coordenadas exactas para una entrada manual ni crear un pago de prueba.
+
+## Ejecución completada
+
+Implementación runtime `8cb1de60b434f9bc9e503d2af7e9c0c14b6ca742` publicada en `dpl_BJpcaH7e3ivTTirBxeJNFmkDiFPs`. Revisión independiente cerrada; 2.435 pruebas unitarias/270 archivos, tipos, lint, 174 controles de dominio y 165 de herramientas correctos. Búsqueda y confirmación manual comprobadas en el dominio con la sesión administrativa disponible, sin crear pedidos, pagos ni domicilios productivos. [Evidencia y límites](../qa/2026-10-26-address-search.md).

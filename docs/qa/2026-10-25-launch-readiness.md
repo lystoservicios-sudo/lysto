@@ -2,6 +2,10 @@
 
 Fecha: 25/10/2026, Argentina. Estado: **correcciones prioritarias publicadas; avisos internos restablecidos; pendientes y límites expresos más abajo**.
 
+## Actualización del 26/10: buscador de direcciones
+
+Se publicó el buscador territorial con ingreso manual y salida a ayuda para traslado no verificable. Suite completa **2.435/2.435**, compilación, dominio y formulario compartido publicados comprobados. El caso puntual de Berazategui se reemplazó por la corrección del flujo general; no se cambiaron coordenadas ni direcciones de clientes. [Informe de direcciones y límites](2026-10-26-address-search.md). La publicación vigente de esta actualización es `8cb1de60b434f9bc9e503d2af7e9c0c14b6ca742`; las verificaciones históricas siguientes conservan su fecha y versión.
+
 ## Actualización: correo automático resuelto
 
 El titular autorizó continuar con los correos automáticos. Se aplicaron las migraciones 101/102: **seis emails vigentes Delivered en Resend, cuatro obsoletos suprimidos y cero pendientes en ambos canales**, con cinco ejecuciones automáticas consecutivas correctas. Se verificó el dominio remitente y se generó un respaldo cifrado actualizado a 102 migraciones en ambos discos. [Informe específico y límites de entrega/restauración](2026-10-25-automatic-email-activation.md). El destino de Berazategui fue confirmado por el titular. El pedido automático calcula desde el profesional asignado; no se requiere una dirección general de Lysto. La calculadora sin punto de salida mantiene el traslado pendiente de verificación.
