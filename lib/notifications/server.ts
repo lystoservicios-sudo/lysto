@@ -7,9 +7,13 @@ import { emailSnapshotSchema, sendTransactionalEmail } from './provider'
 import { runOutboxBatch } from './worker'
 import { logEvent } from '@/lib/observability/logger'
 
-export async function dispatchNotifications(batchSize: number, invitationId?: string) {
+export async function dispatchNotifications(
+  batchSize: number,
+  invitationId?: string,
+  options: { inAppOnly?: boolean } = {}
+) {
   const appUrl = notificationOrigin(process.env.NEXT_PUBLIC_APP_URL ?? '')
-  const enabled = process.env.NOTIFICATIONS_EMAIL_ENABLED === 'true'
+  const enabled = !options.inAppOnly && process.env.NOTIFICATIONS_EMAIL_ENABLED === 'true'
   const from = enabled
     ? z
         .string()

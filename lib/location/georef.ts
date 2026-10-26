@@ -61,7 +61,7 @@ function addressContext(address: GeorefAddress) {
   return [...new Set([address.localidad.nombre, address.departamento.nombre, province, 'Argentina'])].join(' · ')
 }
 
-async function get<T>(path: string, params: URLSearchParams, schema: z.ZodType<T, z.ZodTypeDef, unknown>, fetcher: typeof fetch): Promise<T> {
+async function get<T>(path: string, params: URLSearchParams, schema: z.ZodType<T, unknown>, fetcher: typeof fetch): Promise<T> {
   const response = await fetcher(`${endpoint}/${path}?${params.toString()}`, {
     cache: 'no-store', signal: AbortSignal.timeout(8_000), headers: { Accept: 'application/json' }
   })

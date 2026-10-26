@@ -55,3 +55,23 @@ it('logs claim and acceptance counts when the worker does not send', async () =>
     claimed: 0, accepted: 0, failed: 0, suppressed: 0, lostClaims: 0
   })
 })
+
+it('does not configure an email sender for an internal-only scheduler batch', async () => {
+  vi.stubEnv('RESEND_API_KEY', '')
+  vi.stubEnv('NOTIFICATIONS_EMAIL_FROM', '')
+  runOutboxBatch.mockResolvedValue({ claimed: 1, accepted: 0, inApp: 1, failed: 0, suppressed: 0, lostClaims: 0 })
+  const { dispatchNotifications } = await import('@/lib/notifications/server')
+  await dispatchNotifications(5, undefined, { inAppOnly: true })
+  expect(runOutboxBatch).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+    batchSize: 5, sendEmail: undefined, enforceCustomerPreferences: true
+  }))
+})
+
+it('keeps the synchronous invitation email sender enabled independently of scheduler mode', async () => {
+  runOutboxBatch.mockResolvedValue({ claimed: 1, accepted: 1, failed: 0, suppressed: 0, lostClaims: 0 })
+  const { dispatchProfessionalInvitation } = await import('@/lib/notifications/server')
+  await expect(dispatchProfessionalInvitation('96000000-0000-4000-8000-000000000001')).resolves.toEqual({ accepted: true, reason: null })
+  expect(runOutboxBatch).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+    invitationId: '96000000-0000-4000-8000-000000000001', sendEmail: expect.any(Function)
+  }))
+})

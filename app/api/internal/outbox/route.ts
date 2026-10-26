@@ -5,9 +5,11 @@ import { dispatchNotifications } from '@/lib/notifications/server'
 export const runtime = 'nodejs'
 export const maxDuration = 60
 
-async function runBatch(batchSize: number) {
+async function runBatch(batchSize: number, inAppOnly = false) {
   try {
-    return privateJson(await dispatchNotifications(batchSize))
+    return privateJson(await (inAppOnly
+      ? dispatchNotifications(batchSize, undefined, { inAppOnly: true })
+      : dispatchNotifications(batchSize)))
   } catch {
     return privateJson(
       { error: 'No se pudo completar el lote; los leases pendientes podrán recuperarse.' },
@@ -37,11 +39,11 @@ export async function POST(request: Request) {
     )
   )
     return privateJson({ error: 'Worker no disponible.' }, { status: 403 })
-  let input: { batchSize: number }
+  let input: { batchSize: number; inAppOnly?: boolean }
   try {
-    input = await readOutboxBody(request)
+    input = await readOutboxBody(request, { allowInAppOnly: true })
   } catch {
     return privateJson({ error: 'Solicitud inválida.' }, { status: 400 })
   }
-  return runBatch(input.batchSize)
+  return runBatch(input.batchSize, input.inAppOnly)
 }

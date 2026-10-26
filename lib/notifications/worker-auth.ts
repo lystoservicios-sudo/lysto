@@ -18,7 +18,10 @@ export function authorizeOutboxWorker(
     actual = Buffer.from(header)
   return actual.length === expected.length && timingSafeEqual(actual, expected)
 }
-export async function readOutboxBody(request: Request) {
+export async function readOutboxBody(
+  request: Request,
+  options: { allowInAppOnly?: boolean } = {}
+) {
   if (
     request.headers.get('content-type')?.split(';')[0].trim().toLowerCase() !== 'application/json'
   )
@@ -39,10 +42,11 @@ export async function readOutboxBody(request: Request) {
       if (length > 1024) throw new Error('worker_body_too_large')
       chunks.push(chunk.value)
     }
-    return z
-      .object({ batchSize: z.number().int().min(1).max(5).default(5) })
-      .strict()
-      .parse(JSON.parse(Buffer.concat(chunks).toString('utf8')))
+    const base = z.object({ batchSize: z.number().int().min(1).max(5).default(5) })
+    const schema = options.allowInAppOnly
+      ? base.extend({ inAppOnly: z.boolean().optional() }).strict()
+      : base.strict()
+    return schema.parse(JSON.parse(Buffer.concat(chunks).toString('utf8')))
   } finally {
     clearTimeout(timer)
     await reader.cancel().catch(() => undefined)
