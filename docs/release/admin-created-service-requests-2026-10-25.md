@@ -43,4 +43,16 @@ Los asesores de seguridad y rendimiento devolvieron los mismos 71 avisos previos
 
 ## Publicación
 
-El código se integró en el proyecto local conservando los cambios previos del usuario. La aplicación frontend todavía no se publicó en producción como parte de esta tarea. No se envió un PR ni se hizo push.
+Publicada el 25/10/2026 por pedido explícito del usuario en https://lystohogar.com. Se preparó la rama `codex/admin-request-production-release` sobre el runtime real más reciente, `84749ada84856a1ff18cecc2503f8ffe5473c36b`, y se incorporó la función sin revertir las correcciones ya publicadas. El código ejecutable publicado corresponde a `00853e22680385dfc1430b7ad82455de9012cba0`.
+
+- Despliegue: `dpl_GbWiZPVwzTQT1y2wioamSZN1pG11`, estado `READY / PROMOTED`, entorno `production`.
+- Anterior: `dpl_C9CwFTKtfwuk6QeXuWkvny6o39wW`. Se comprobó que siguiera asignado al dominio inmediatamente antes de activar la nueva versión.
+- Compilación remota con configuración real de producción: correcta, 118 páginas. Primero se preparó con `--skip-domain` y luego se promovió esa misma compilación.
+- Base de producción antes de integrar: 2.299 pruebas unitarias correctas. Candidato integrado: 2.336 correctas y tres fallos del único archivo de recorrido de pagos que esperaba comisiones en la respuesta del cliente. Se actualizó exclusivamente esa prueba para exigir su ausencia y seguir comprobando reparto congelado, cargos y netos internos, proyecciones e idempotencia. La repetición focalizada aprobó las tres regresiones y la proyección privada: 4/4. Los reportes de la corrida global y de la repetición se conservan por separado; no se repitió toda la suite después de ese ajuste de pruebas.
+- Función administrativa integrada: 40/40 pruebas enfocadas; dominio: 174/174; tipos y lint correctos. Revisión independiente del merge y del ajuste de pruebas: sin P1/P2.
+- Se verificó por SHA-1 que los 840 archivos de código/recursos subidos no cambiaron con el ajuste exclusivo de pruebas. El resto de las seis entradas del manifiesto eran directorios vacíos. Los secretos, pruebas, salidas locales y SQL quedaron fuera de la subida.
+- Comprobación real del dominio: asignado al nuevo despliegue. Desde la sesión administradora se abrió Solicitudes, se comprobó el enlace «Crear solicitud» y se abrió el formulario con clientes, domicilios, servicio, equipo, técnico, agenda, precio y comisión. No se guardaron borradores ni se enviaron solicitudes de prueba.
+- Consulta de errores del despliegue en los últimos 15 minutos: cero entradas. Es una comprobación puntual, no monitoreo continuo.
+- La verificación fresca de Supabase conservó RLS, wrappers invoker, denegación anónima y ambos guards de reemplazo. No se aplicaron cambios adicionales de base de datos durante la publicación.
+
+Evidencia local: `output/admin-request-production-release.json`, informes y logs en `.worktrees/admin-request-production-release/output/`, y captura `output/playwright/admin-created-request-production.png`. Los cambios previos del usuario permanecieron intactos en la carpeta inicial. No se envió un PR ni se hizo push.
