@@ -27,6 +27,9 @@ export function ConnectedProfessionalReview({
     setBusy(false)
   }, [])
   const [documentUrl, setDocumentUrl] = useState<{ id: string; url: string } | null>(null)
+  const [documentFeedback, setDocumentFeedback] = useState<
+    Record<string, { error?: string; message?: string }>
+  >({})
   const application = review.application
   const reviewing = ['form_submitted', 'under_review'].includes(application.status)
   const requiredDocuments = [...new Set([
@@ -82,8 +85,48 @@ export function ConnectedProfessionalReview({
     event.preventDefault()
     if (busy) return
     const form = event.currentTarget,
-      values = new FormData(form),
+      values = new FormData(form, (event.nativeEvent as SubmitEvent).submitter),
       decision = values.get('decision')
+    let reason = String(values.get('reason') ?? '').trim()
+    const expiresAt = String(values.get('expiresAt') ?? '').trim() || null
+    if (documentId) {
+      const showDocumentError = (detail: string) =>
+        setDocumentFeedback((previous) => ({ ...previous, [documentId]: { error: detail } }))
+      setDocumentFeedback((previous) => ({ ...previous, [documentId]: {} }))
+      if (decision !== 'approved' && decision !== 'rejected') {
+        showDocumentError('Elegí Aprobar documento o Solicitar corrección.')
+        return
+      }
+      if (reason.length > 1000) {
+        showDocumentError('Las observaciones admiten hasta 1000 caracteres.')
+        return
+      }
+      if (decision === 'rejected' && [...reason].length < 10) {
+        showDocumentError('Para solicitar una corrección, escribí un motivo de al menos 10 caracteres.')
+        return
+      }
+      const dateField = form.elements.namedItem('expiresAt') as HTMLInputElement
+      if (dateField.validity.badInput || (expiresAt && (
+        !/^\d{4}-\d{2}-\d{2}$/.test(expiresAt) ||
+        !Number.isFinite(Date.parse(expiresAt)) ||
+        new Date(expiresAt).toISOString().slice(0, 10) !== expiresAt ||
+        expiresAt <= new Date().toISOString().slice(0, 10)
+      ))) {
+        const minimumDate = new Date(Date.now() + 86400000).toISOString().slice(0, 10).split('-').reverse().join('/')
+        showDocumentError(`La fecha de vencimiento debe ser el ${minimumDate} o una fecha posterior. Si el documento no vence, dejala vacía.`)
+        return
+      }
+      const document = review.documents.find((item) => item.id === documentId)
+      if (decision === 'approved' && !expiresAt && review.requirements?.policies.some((policy) =>
+        policy.expiryDocuments.includes(document?.documentType ?? '')
+      )) {
+        showDocumentError('La fecha de vencimiento es obligatoria para aprobar este documento.')
+        return
+      }
+      // Keep the persisted audit reason while allowing an ordinary approval without extra prose.
+      if (decision === 'approved' && [...reason].length < 10)
+        reason = `Documento aprobado.${reason ? ` ${reason}` : ''}`
+    }
     setBusy(true)
     setError('')
     setMessage('')
@@ -91,7 +134,7 @@ export function ConnectedProfessionalReview({
       const input = {
         professionalId: application.professionalId,
         expectedVersion: application.version,
-        reason: values.get('reason'),
+        reason,
         decision
       }
       const next = await privateRequest<ProfessionalReview>(
@@ -99,13 +142,21 @@ export function ConnectedProfessionalReview({
           ? '/api/admin/professionals/documents/review'
           : '/api/admin/professionals/review',
         'POST',
-        documentId ? { ...input, documentId, expiresAt: values.get('expiresAt') || null } : input
+        documentId ? { ...input, documentId, expiresAt } : input
       )
       setReview(next)
       form.reset()
-      setMessage('Revisión registrada.')
+      if (documentId)
+        setDocumentFeedback((previous) => ({ ...previous, [documentId]: {
+          message: decision === 'approved' ? 'Documento aprobado.' : 'Corrección solicitada.'
+        } }))
+      else setMessage('Revisión registrada.')
     } catch (failure) {
-      setError(requestError(failure))
+      if (documentId)
+        setDocumentFeedback((previous) => ({ ...previous, [documentId]: {
+          error: `No se guardó la revisión. ${requestError(failure)}`
+        } }))
+      else setError(requestError(failure))
     } finally {
       setBusy(false)
     }
@@ -299,27 +350,28 @@ export function ConnectedProfessionalReview({
               </p>
             )}
             {reviewing && document.inSubmission && (
-              <form className="adm-form" onSubmit={(event) => void decide(event, document.id)}>
+              <form className="adm-form" noValidate onSubmit={(event) => void decide(event, document.id)}>
                 <fieldset disabled={busy}>
-                  <Field label="Resultado de la revisión documental">
-                    <select name="decision" required defaultValue="">
-                      <option value="" disabled>
-                        Seleccionar
-                      </option>
-                      <option value="approved">Aprobar documento</option>
-                      <option value="rejected">Observar documento</option>
-                    </select>
+                  <Field label="Fecha de vencimiento (si corresponde)"
+                    hint="Es el vencimiento del documento, no la fecha de revisión. Dejala vacía si no vence.">
+                    <input type="date" name="expiresAt" defaultValue={document.expiresAt ?? ''}
+                      min={new Date(Date.now() + 86400000).toISOString().slice(0, 10)} />
                   </Field>
-                  <Field label="Fecha de vencimiento">
-                    <input type="date" name="expiresAt" defaultValue={document.expiresAt ?? ''} />
+                  <Field label="Observaciones"
+                    hint="Opcionales para aprobar. Para solicitar una corrección, explicá el motivo con al menos 10 caracteres.">
+                    <textarea name="reason" maxLength={1000} />
                   </Field>
-                  <Field label="Motivo y observaciones">
-                    <textarea name="reason" minLength={10} maxLength={1000} required />
-                  </Field>
-                  <Button type="submit">Registrar revisión documental</Button>
+                  <div className="flex flex-wrap gap-3">
+                    <Button type="submit" name="decision" value="approved" variant="primary">Aprobar documento</Button>
+                    <Button type="submit" name="decision" value="rejected">Solicitar corrección</Button>
+                  </div>
                 </fieldset>
               </form>
             )}
+            {documentFeedback[document.id]?.error &&
+              <p role="alert" className="adm-notice">{documentFeedback[document.id].error}</p>}
+            {documentFeedback[document.id]?.message &&
+              <p role="status" className="adm-notice success">{documentFeedback[document.id].message}</p>}
           </section>
         ))}
       </Panel>
